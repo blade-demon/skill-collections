@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  today-windvane 示例输入 mockup。
+  完全虚构，零版权风险。作为 design-to-spec skill 的样例输入。
+  真实项目中此位置通常是 Figma 导出的 PNG 或手绘截图。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 200" width="375" height="200" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <!-- 页面背景 -->
+  <rect width="375" height="200" fill="#F4F5F7"/>
+
+  <!-- 卡片容器 -->
+  <rect x="16" y="16" width="343" height="168" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+  <!-- 卡片标题「今日风口」 -->
+  <text x="32" y="38" font-size="14" font-weight="600" fill="#1D2129">今日风口</text>
+
+  <!-- ===== 热点行（上半行） ===== -->
+  <!-- 「热点」徽章 —— 单一图片资产（production 由设计交付 PNG/WebP），此处用渐变占位 -->
+  <defs>
+    <linearGradient id="hotBadgeGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F53F3F"/>
+      <stop offset="100%" stop-color="#FF7D00"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="56" width="32" height="40" rx="6" ry="6" fill="url(#hotBadgeGradient)"/>
+  <text x="48" y="72" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">热</text>
+  <text x="48" y="88" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">点</text>
+
+  <!-- 热点标题（单行截断，尾部 ...） -->
+  <text x="84" y="68" font-size="13" font-weight="500" fill="#1D2129">示例热点标题持续发酵引发市…</text>
+
+  <!-- 两个行业标签（双列固定宽度） -->
+  <!-- 左标签 -->
+  <text x="84" y="90" font-size="11" fill="#FF7D00">🔥</text>
+  <text x="96" y="90" font-size="11" fill="#4E5969">示例行业</text>
+  <text x="145" y="90" font-size="11" font-weight="500" fill="#F53F3F">+5.14%</text>
+  <!-- 右标签 -->
+  <text x="200" y="90" font-size="11" fill="#FF7D00">🔥</text>
+  <text x="212" y="90" font-size="11" fill="#4E5969">另一行业名…</text>
+  <text x="285" y="90" font-size="11" font-weight="500" fill="#F53F3F">+99.99%</text>
+
+  <!-- 右侧 chevron -->
+  <text x="340" y="76" font-size="14" fill="#C9CDD4">›</text>
+
+  <!-- 分割线 -->
+  <line x1="32" y1="112" x2="343" y2="112" stroke="#F2F3F5" stroke-width="1"/>
+
+  <!-- ===== 基金推荐行（下半行） ===== -->
+  <!-- Sparkline（简化折线，上升趋势） -->
+  <polyline points="32,158 44,152 56,148 68,140 80,138 92,132 104,128"
+            fill="none" stroke="#F53F3F" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- 基金名称（单行截断） -->
+  <text x="116" y="140" font-size="13" fill="#1D2129">示例宽基指数基金 A 类…</text>
+
+  <!-- 涨幅标签 -->
+  <text x="116" y="158" font-size="11" fill="#86909C">近一年涨幅</text>
+  <text x="172" y="158" font-size="11" font-weight="500" fill="#F53F3F">+5.14%</text>
+
+  <!-- CTA 药丸按钮（outlined） -->
+  <rect x="288" y="140" width="56" height="28" rx="14" ry="14" fill="#FFFFFF" stroke="#F53F3F" stroke-width="1"/>
+  <text x="316" y="158" font-size="12" font-weight="500" fill="#F53F3F" text-anchor="middle">买一笔</text>
+</svg>

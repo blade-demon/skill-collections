@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  today-windvane 示例输入 mockup（标注版）。
+  左侧为 mockup 本体，编号圆圈标出关键视觉元素；右侧 legend 面板映射编号 → spec.md 中的 Requirement / Scenario。
+  教学目的：展示「图里每个视觉决策 ↔ 规格条目」的对应关系。
+
+  埋点信息不在本 SVG 承载 —— 完整事件清单、触发条件、参数、状态请看 notes.md 的「埋点锚点」表。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+  <!-- 背景 -->
+  <rect width="900" height="420" fill="#FFFFFF"/>
+
+  <!-- 标题 -->
+  <text x="24" y="30" font-size="14" font-weight="600" fill="#1D2129">today-windvane · mockup ↔ spec 映射</text>
+  <text x="24" y="48" font-size="11" fill="#86909C">左：简化 mockup（零版权）。编号圆圈为视觉锚点；颜色区分「identified（蓝）/ inferred（紫）/ needs_human_input（橙）」。</text>
+
+  <!-- ========== 左侧：mockup 区 ========== -->
+  <rect x="24" y="64" width="375" height="200" fill="#F4F5F7"/>
+
+  <!-- 卡片 -->
+  <rect x="40" y="80" width="343" height="168" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+  <!-- 标题 -->
+  <text x="56" y="102" font-size="14" font-weight="600" fill="#1D2129">今日风口</text>
+
+  <!-- 热点行 -->
+  <!-- 「热点」徽章 —— 单一图片资产（PNG/WebP），此处用渐变占位 -->
+  <defs>
+    <linearGradient id="hotBadgeGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F53F3F"/>
+      <stop offset="100%" stop-color="#FF7D00"/>
+    </linearGradient>
+  </defs>
+  <rect x="56" y="120" width="32" height="40" rx="6" ry="6" fill="url(#hotBadgeGradient)"/>
+  <text x="72" y="136" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">热</text>
+  <text x="72" y="152" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">点</text>
+
+  <text x="108" y="132" font-size="13" font-weight="500" fill="#1D2129">示例热点标题持续发酵引发市…</text>
+
+  <text x="108" y="154" font-size="11" fill="#FF7D00">🔥</text>
+  <text x="120" y="154" font-size="11" fill="#4E5969">示例行业</text>
+  <text x="169" y="154" font-size="11" font-weight="500" fill="#F53F3F">+5.14%</text>
+  <text x="224" y="154" font-size="11" fill="#FF7D00">🔥</text>
+  <text x="236" y="154" font-size="11" fill="#4E5969">另一行业名…</text>
+  <text x="309" y="154" font-size="11" font-weight="500" fill="#F53F3F">+99.99%</text>
+
+  <text x="364" y="140" font-size="14" fill="#C9CDD4">›</text>
+
+  <!-- 分割线 -->
+  <line x1="56" y1="176" x2="367" y2="176" stroke="#F2F3F5" stroke-width="1"/>
+
+  <!-- 基金行 -->
+  <polyline points="56,222 68,216 80,212 92,204 104,202 116,196 128,192"
+            fill="none" stroke="#F53F3F" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <text x="140" y="204" font-size="13" fill="#1D2129">示例宽基指数基金 A 类…</text>
+
+  <text x="140" y="222" font-size="11" fill="#86909C">近一年涨幅</text>
+  <text x="196" y="222" font-size="11" font-weight="500" fill="#F53F3F">+5.14%</text>
+
+  <rect x="312" y="204" width="56" height="28" rx="14" ry="14" fill="#FFFFFF" stroke="#F53F3F" stroke-width="1"/>
+  <text x="340" y="222" font-size="12" font-weight="500" fill="#F53F3F" text-anchor="middle">买一笔</text>
+
+  <!-- ========== 编号圆圈（叠在 mockup 上） ========== -->
+  <!-- 编号颜色：identified=#1664FF, inferred=#7B61FF, needs_human_input=#FF7D00 -->
+
+  <!-- ① 卡片标题「今日风口」— identified -->
+  <g>
+    <circle cx="110" cy="96" r="10" fill="#1664FF"/>
+    <text x="110" y="100" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+  </g>
+
+  <!-- ② 「热点」徽章（图片资产）— identified -->
+  <g>
+    <circle cx="38" cy="140" r="10" fill="#1664FF"/>
+    <text x="38" y="144" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+  </g>
+
+  <!-- ③ 热点标题（单行截断）— identified -->
+  <g>
+    <circle cx="280" cy="132" r="10" fill="#1664FF"/>
+    <text x="280" y="136" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+  </g>
+
+  <!-- ④ 双列固定宽度行业标签 — identified -->
+  <g>
+    <circle cx="191" cy="154" r="10" fill="#1664FF"/>
+    <text x="191" y="158" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+  </g>
+
+  <!-- ⑤ chevron — inferred（点击导航目的地未标） -->
+  <g>
+    <circle cx="368" cy="138" r="10" fill="#7B61FF"/>
+    <text x="368" y="142" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+  </g>
+
+  <!-- ⑥ Sparkline — inferred（图片 vs canvas 未注） -->
+  <g>
+    <circle cx="92" cy="208" r="10" fill="#7B61FF"/>
+    <text x="92" y="212" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+  </g>
+
+  <!-- ⑦ 基金名称（单行截断）— identified -->
+  <g>
+    <circle cx="230" cy="204" r="10" fill="#1664FF"/>
+    <text x="230" y="208" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+  </g>
+
+  <!-- ⑧ CTA「买一笔」— inferred（事件不路由，未登录态未画） -->
+  <g>
+    <circle cx="340" cy="218" r="10" fill="#7B61FF"/>
+    <text x="340" y="222" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+  </g>
+
+  <!-- ⑨ 加载 / 错误 / 空态 — needs_human_input（图里没画） -->
+  <g>
+    <circle cx="404" cy="80" r="10" fill="#FF7D00"/>
+    <text x="404" y="84" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
+  </g>
+
+  <!-- ========== 右侧：Legend 面板 ========== -->
+  <rect x="430" y="64" width="450" height="340" fill="#FAFBFC" stroke="#E5E6EB" stroke-width="1"/>
+  <text x="446" y="86" font-size="13" font-weight="600" fill="#1D2129">Legend — 元素 ↔ 规格映射</text>
+  <line x1="446" y1="96" x2="864" y2="96" stroke="#E5E6EB" stroke-width="1"/>
+
+  <!-- 颜色图例 -->
+  <circle cx="456" cy="112" r="6" fill="#1664FF"/>
+  <text x="468" y="116" font-size="11" fill="#4E5969">identified（图里可直接看出）</text>
+  <circle cx="618" cy="112" r="6" fill="#7B61FF"/>
+  <text x="630" y="116" font-size="11" fill="#4E5969">inferred（根据约定推断）</text>
+  <circle cx="768" cy="112" r="6" fill="#FF7D00"/>
+  <text x="780" y="116" font-size="11" fill="#4E5969">needs_human_input</text>
+
+  <line x1="446" y1="128" x2="864" y2="128" stroke="#E5E6EB" stroke-width="1"/>
+
+  <!-- 映射表 -->
+  <g font-size="11" fill="#1D2129">
+    <text x="446" y="148" font-weight="600">①</text>
+    <text x="466" y="148">卡片标题「今日风口」 → 组件根容器标识，不单独对应 Requirement</text>
+
+    <text x="446" y="170" font-weight="600">②</text>
+    <text x="466" y="170">「热点」徽章（单一图片资产 badgeIconUrl）→ Requirement: 热点行展示</text>
+
+    <text x="446" y="192" font-weight="600">③</text>
+    <text x="466" y="192">热点标题单行截断 → Scenario: 标题超出单行宽度</text>
+
+    <text x="446" y="214" font-weight="600">④</text>
+    <text x="466" y="214">双列固定宽度标签 → Scenario: 行业标签以等宽双列渲染</text>
+    <text x="466" y="230" fill="#86909C">         + Requirement: 热点标签格式化（正/负/零、精度、火焰图标）</text>
+
+    <text x="446" y="252" font-weight="600">⑤</text>
+    <text x="466" y="252">右侧 chevron → Requirement: 热点行点击行为（tap-hotspot 事件）</text>
+    <text x="466" y="268" fill="#86909C">         导航目的地未标 → notes.md 开放问题 1</text>
+
+    <text x="446" y="290" font-weight="600">⑥</text>
+    <text x="466" y="290">Sparkline → Scenario: URL 字符串 / Scenario: 数组降级 console.warn</text>
+    <text x="466" y="306" fill="#86909C">         v1 用 &lt;image&gt; 还是 canvas → notes.md 决策已锁定为 image</text>
+
+    <text x="446" y="328" font-weight="600">⑦</text>
+    <text x="466" y="328">基金名称单行截断 → Scenario: 基金名称溢出中间列</text>
+
+    <text x="446" y="350" font-weight="600">⑧</text>
+    <text x="466" y="350">CTA「买一笔」→ Requirement: 基金 CTA 点击行为（catchtap 不冒泡）</text>
+    <text x="466" y="366" fill="#86909C">         未登录态 → Requirement: 非 success 状态切换 · disabled Scenario</text>
+
+    <text x="446" y="388" font-weight="600">⑨</text>
+    <text x="466" y="388">loading / error / empty 三态图里未画 → Requirement: 非 success 状态切换</text>
+    <text x="466" y="404" fill="#86909C">         骨架 / 错误兜底视觉 → 开放问题 3、5（needs_human_input 占位 Scenario）</text>
+  </g>
+
+</svg>
