@@ -35,6 +35,65 @@ interface <ComponentName>Events {
 }
 ```
 
+### 接口字段映射表（仅当用户提供接口文档时填写）
+
+> 记录接口响应字段与 UI 展示含义的对应关系，作为数据契约的事实源。若用户回复「字段名即含义」则省略此表。
+>
+> **枚举字段处理原则**：枚举值必须全部列出，不得省略。每个枚举值在「UI 展示含义」列写明对应的视觉呈现（颜色 / 文案 / 图标 / 显隐规则）。枚举值缺失或不全的字段在「备注」列标 `needs_human_input: 枚举值未完整确认`，并在「开放问题」节补充追问。
+
+| 接口字段名 | 接口类型 | 枚举值（全量） | UI 中展示为 | 来源标注 | 备注 |
+|-----------|---------|--------------|------------|---------|------|
+| `<fieldName>` | `string \| number \| boolean` | `VAL_A` / `VAL_B` / — | <每个枚举值对应的视觉规则，或「连续值，见备注」> | `api` / `derived` / `prop` | <可空性 / 格式约束 / needs_human_input> |
+
+### Java DTO 草稿（仅当用户在步骤 0 选择「需要」时输出）
+
+> 根据推断的 Props 生成后端参考结构。类型映射规则：
+> - 基础类型：`string → String`、`number → Double` 或 `Integer`（看精度）、`boolean → Boolean`、`string[] → List<String>`
+> - **枚举字段 → 独立 Java `enum`**，枚举常量使用接口原始值的 UPPER_SNAKE_CASE 形式，并附 `@JsonValue` 标注原始值（字符串枚举）或序数（整型枚举）
+> - 嵌套对象 → 独立内部 `record`
+>
+> **这是推断草稿，不是最终接口契约**，后端应以实际业务需求为准。
+
+```java
+// <ComponentName>DTO.java — AI 根据截图推断，供后端参考
+public record <ComponentName>DTO(
+    // <Type> <fieldName>,  // <UI 含义> — 请后端确认类型与可空性
+) {
+
+    // 枚举示例（有枚举字段时生成，无则省略）
+    public enum <FieldName>Enum {
+        // VAL_A("val_a"),  // UI 展示：<对应视觉规则>
+        // VAL_B("val_b");  // UI 展示：<对应视觉规则>
+        //
+        // private final String value;
+        // <FieldName>Enum(String value) { this.value = value; }
+        // @JsonValue public String getValue() { return value; }
+    }
+}
+```
+
+## 数据获取方式
+
+> 描述组件如何调用接口拿到数据。如果数据由父组件通过 Props 传入（纯展示组件），此节写「由父组件传入，无直接接口调用」并跳过下表。
+>
+> **字段说明**
+> - **触发时机**：组件挂载时 / 用户操作触发 / 轮询 / 父组件调用方法 / 其他
+> - **缓存策略**：无缓存 / 内存缓存（TTL） / 持久化缓存（storage） / SWR / 其他
+> - **幂等性**：重复调用是否安全（对 GET 通常是，对 POST 需确认）
+
+| 接口/方法名 | 调用时机 | 请求关键参数 | 响应关键字段 | 缓存策略 | 补充说明 |
+| --------- | ------- | ---------- | ---------- | ------- | ------- |
+| `<endpoint 或方法名>` | <挂载时 / 用户点击 / 滚动到底 / 其他> | <param1, param2> | <field1, field2> | <无缓存 / TTL=Xs / SWR> | <needs_human_input 或已确认> |
+
+### 数据获取补充说明
+
+- **分页 / 无限滚动**：<是否分页，page/cursor 参数名，pageSize 默认值>
+- **并发请求**：<是否需要并行调多个接口，如何聚合结果>
+- **竞态处理**：<旧请求返回时是否需要取消或忽略（如搜索框场景）>
+- **重试策略**：<失败后是否自动重试，最大重试次数，退避策略>
+- **鉴权方式**：<token 放 header / cookie / 无需鉴权>
+- **Mock 方案**：<开发阶段如何 mock（MSW / 本地 JSON / 已有 mock server）>
+
 ## 状态枚举
 
 枚举此组件所有可观察的运行时状态。**每个标 ✅ 的状态在 `spec.md` 中至少要有 1 条对应 Scenario**；未在 mockup 中体现的状态保留 ✅ 标记并在备注里写「mockup 未提供 → needs_human_input」。
