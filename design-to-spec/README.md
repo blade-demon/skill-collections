@@ -501,9 +501,12 @@ skills/design-to-spec/
 │   ├── data-fetching.md               # 数据获取逻辑设计模板（9 节，含错误分级 / 状态机 / 待确认项）
 │   ├── spec.md                        # OpenSpec 增量模板（新建组件用，仅 ADDED）
 │   └── spec-modified.md               # OpenSpec 增量模板（改造既有组件用，MODIFIED + 可选 ADDED/REMOVED）
+├── icon.svg                           # skill 图标（矢量，256×256 视口）
+├── icon.png                           # skill 图标（位图，256×256 px）
 └── examples/
     └── today-windvane/                # golden sample（含状态枚举 9 行 + 埋点锚点 9 条的完整示范）
-        ├── notes.md
+        ├── notes.md                   # 设计笔记（含接口字段映射表 + 数据获取方式节，模拟接口文档场景）
+        ├── data-fetching.md           # 数据获取逻辑设计（七节，接口文档模拟场景输出示例）
         ├── input.svg                  # 干净版示例输入设计稿（零版权、零品牌风险）
         ├── input-annotated.svg        # 标注版：编号圆圈 + Legend 映射到 spec 的 Requirement/Scenario
         └── specs/today-windvane/spec.md
@@ -521,3 +524,47 @@ skills/design-to-spec/
 **调试 skill 行为**
 
 如果 skill 产出的文件风格偏离 golden sample（比如场景过少、数据契约字段用了视觉命名而非业务命名），通常是 `examples/today-windvane/` 需要更新——这是 skill 主要的风格校准源。改那份样本比改 SKILL.md 更快见效。
+
+---
+
+## 资源说明
+
+### 图标
+
+| 文件 | 规格 | 用途 |
+|------|------|------|
+| [`icon.svg`](./icon.svg) | 矢量，256×256 视口，圆角背景（靛蓝 → 紫渐变） | 任意尺寸缩放，设计工具使用 |
+| [`icon.png`](./icon.png) | 位图，256×256 px | skill 平台展示、README 头图 |
+
+图标设计语义：左侧「设计稿线框」经箭头转换为右侧「结构化规格文档」，直观体现 design → spec 的核心流程。
+
+### 参考文档
+
+| 文件 | 用途 |
+|------|------|
+| [`references/visual-analysis-checklist.md`](./references/visual-analysis-checklist.md) | 步骤 1 视觉枚举检查清单，防止漏掉设计细节 |
+| [`references/openspec-format.md`](./references/openspec-format.md) | OpenSpec 格式规范，定义 Requirement / Scenario 写法 |
+| [`references/scenario-writing-guide.md`](./references/scenario-writing-guide.md) | Scenario 写作纪律：反模式 + 自检清单 |
+| [`references/stack-hints/miniprogram.md`](./references/stack-hints/miniprogram.md) | 微信小程序（glass-easel）特有注意事项 |
+| [`references/stack-hints/web.md`](./references/stack-hints/web.md) | React / Vue / 通用 Web 注意事项 |
+
+### 模板
+
+| 文件 | 用途 |
+|------|------|
+| [`templates/notes.md`](./templates/notes.md) | 设计笔记模板，包含数据契约、接口字段映射表、Java DTO 草稿、数据获取方式、状态枚举、埋点锚点等全节 |
+| [`templates/data-fetching.md`](./templates/data-fetching.md) | 数据获取逻辑设计模板，九节自包含文档，面向实现开发者 |
+| [`templates/spec.md`](./templates/spec.md) | OpenSpec 增量模板（新建组件，仅 ADDED） |
+| [`templates/spec-modified.md`](./templates/spec-modified.md) | OpenSpec 增量模板（改造既有组件，MODIFIED + 可选 ADDED / REMOVED） |
+
+### Golden Sample
+
+[`examples/today-windvane/`](./examples/today-windvane/) 是 skill 的风格校准源，完整演示了一次 v0.5.1 输出：
+
+| 文件 | 说明 |
+|------|------|
+| [`notes.md`](./examples/today-windvane/notes.md) | 完整设计笔记，含接口字段映射表（模拟接口文档场景）和数据获取方式节 |
+| [`data-fetching.md`](./examples/today-windvane/data-fetching.md) | 数据获取逻辑设计，模拟有接口文档场景的七节示例输出 |
+| [`input.svg`](./examples/today-windvane/input.svg) | 干净版示例输入设计稿（零版权、零品牌风险） |
+| [`input-annotated.svg`](./examples/today-windvane/input-annotated.svg) | 标注版：编号圆圈 + Legend 映射到 spec 的 Requirement / Scenario |
+| [`specs/today-windvane/spec.md`](./examples/today-windvane/specs/today-windvane/spec.md) | 对应的 OpenSpec 增量规格 |
