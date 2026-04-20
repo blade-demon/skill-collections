@@ -2,7 +2,7 @@
 name: design-to-spec
 metadata:
   version: 0.5.0
-description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注释的线框图）转换为结构化的实现规格说明 —— 输出两份文件（设计笔记 + OpenSpec 兼容的规格增量），可作为 Superpowers `plan` 或任何执行规划工作流的输入。支持同时消费后端接口文档（OpenAPI / Markdown / TS 类型 / GraphQL schema）以抬升数据契约的准确性——接口文档回答"数据是什么"，mockup 回答"数据如何展示"，两者 diff 出派生字段与未使用字段。当用户提供 UI 图片并讨论如何将其实现为组件时使用此技能，即使他们没有明确说"规格"—— 例如"帮我把这张图做成组件"、"我想把这个 mockup 实现出来"、"based on this design how should we build..."、"from this screenshot, plan the implementation"。当用户说"设计稿"、"mockup"、"wireframe"、"comp"、"UI 图"，或附加图片并询问组件分解、数据结构、props、布局策略或实现步骤时也触发。不要在纯美学反馈（"这好看吗"）、像素级 CSS 提取、或没有实现意图的一般性设计评审时触发。
+description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注释的线框图）转换为结构化的实现规格说明 —— 输出两份文件（设计笔记 + OpenSpec 兼容的规格增量），可作为 Superpowers `plan` 或任何执行规划工作流的输入。支持同时消费后端接口文档（OpenAPI / Markdown / TS 类型 / GraphQL schema）以抬升数据契约的准确性——接口文档回答"数据是什么"，mockup 回答"数据如何展示"，两者 diff 出派生字段与未使用字段。在数据契约之外，还会推导数据获取方式（调用时机、分页、竞态、缓存、鉴权、Mock 方案），让实现 AI 不必自己猜接口调用模式。当用户提供 UI 图片并讨论如何将其实现为组件时使用此技能，即使他们没有明确说"规格"—— 例如"帮我把这张图做成组件"、"我想把这个 mockup 实现出来"、"based on this design how should we build..."、"from this screenshot, plan the implementation"。当用户说"设计稿"、"mockup"、"wireframe"、"comp"、"UI 图"，或附加图片并询问组件分解、数据结构、props、布局策略或实现步骤时也触发。不要在纯美学反馈（"这好看吗"）、像素级 CSS 提取、或没有实现意图的一般性设计评审时触发。
 ---
 
 # design-to-spec
@@ -17,15 +17,16 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 ## 输出
 
-两份文件，固定结构：
+三份文件，固定结构：
 
 ```
 <workspace>/design-spec/<component-name>/
 ├── notes.md                         # 为什么 + 决策 + 数据契约 + 置信度 + 开放问题 + 计划提示
+├── data-fetching.md                 # 数据获取逻辑设计（触发时机 + 请求链路 + 错误分级 + 状态机）
 └── specs/<capability>/spec.md       # OpenSpec 增量（Requirements + Scenarios）
 ```
 
-信息密度足够供 Superpowers `plan` 消费，`spec.md` 路径兼容 OpenSpec 工具链。不生成 `proposal.md` / `design.md` / `tasks.md` —— 这些要么是 `notes.md` 已覆盖的子集，要么是下游 plan 阶段会重新生成的中间产物。
+信息密度足够供 Superpowers `plan` 消费，`spec.md` 路径兼容 OpenSpec 工具链。`data-fetching.md` 是独立的工程设计文档，可直接交给实现开发者而无需阅读 `notes.md` 全文。不生成 `proposal.md` / `design.md` / `tasks.md` —— 这些要么是 `notes.md` 已覆盖的子集，要么是下游 plan 阶段会重新生成的中间产物。
 
 ## 何时使用
 
@@ -40,7 +41,7 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 ## 输入
 
-当此技能触发时，收集以下输入（仅在缺失且材料影响输出时才通过 AskUserQuestion 询问）：
+当此技能触发时，以下输入通过两个渠道收集：**用户主动提供**（已在对话中）和**步骤 0 的交互式询问**（工作流开始前主动发起）。只有图片是硬性前提，其余通过步骤 0 的分支引导获取。
 
 1. **图片**（必需）—— mockup 本身。作为图片附件已在对话上下文中。
 2. **组件名称**（推荐）—— 例如 `today-windvane`。如果缺失，从 mockup 的可见标题或用户的措辞推断，然后在输出中确认。
@@ -48,13 +49,117 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 4. **设计系统提示**（可选）—— `tdesign` / `nutui` / `vant` / `antd` / `shadcn` / 等。用于将原子组件建议偏向现有基础组件。
 5. **能力名称**（可选）—— 此功能所属的 OpenSpec `capability`。如果缺失，默认组件名称。
 6. **现有代码库提示**（可选）—— 如果用户的项目有可复用的原子组件（例如现有的 `vertical-scroll` 组件），在分解中引用它们，以便输出不会重新发明它们。对 `components/` 或 `src/components/` 进行快速 `Glob` 通常就足够了。
-7. **API 文档 / 接口契约**（可选，**强烈推荐**）—— 可接受的形态：OpenAPI / Swagger（YAML/JSON）、Markdown 接口文档、Postman collection、后端导出的 TS 类型声明、GraphQL schema、Protobuf。只需要能提取「字段名 + 类型 + 可空 + 枚举值」四元组即可，不必写解析器。存在接口文档时，数据契约推导从「视觉反推」升级到「文档抄写 + mockup diff」，置信度地图中大量条目从 `inferred` 升级到 `identified`，开放问题减少一半以上。
+7. **API 文档 / 接口契约 + 字段映射**（通过步骤 0 交互式收集）—— 见下方步骤 0 的两条分支。
+8. **数据获取方式补充说明**（可选）—— 接口调用的行为约束，接口文档通常不写但实现必须知道的信息，例如：
+   - 何时调用（挂载时自动 fetch / 用户触发 / 父组件控制）
+   - 轮询间隔或实时推送方式（WebSocket / SSE / 长轮询）
+   - 分页方案（page+pageSize / cursor / 无限滚动偏移量）
+   - 竞态处理需求（搜索框防抖、旧请求取消）
+   - 缓存策略（SWR / TTL / 不缓存）
+   - 鉴权方式（Bearer Token / Cookie / 无需）
+   - 开发阶段 Mock 方案（MSW / 本地 fixture / 已有 mock server）
+
+   如果用户未主动提供且组件明显需要调接口，在收集输入阶段通过 **AskUserQuestion** 询问这些关键点（不要一次列出所有问题，优先问触发时机和分页方案）。纯展示型组件（数据完全由父组件 Props 传入）可跳过此输入。
 
 不要因缺失可选输入而阻塞。使用合理的默认值并在置信度地图中标记假设。
 
 ## 工作流程 —— 按顺序执行这些步骤
 
-顺序很重要。步骤 1-2 是证据收集，必须在综合*之前*进行，以防止模型虚构元素。
+顺序很重要。步骤 0 是交互式输入收集，必须在任何分析之前完成；步骤 1-2 是证据收集，必须在综合*之前*进行，以防止模型虚构元素。
+
+### 步骤 0：接口文档与数据来源确认（交互式，阻塞）
+
+**在开始任何视觉分析之前执行此步骤。** 通过 `AskUserQuestion` 主动询问，等待用户回复后再继续。不要跳过、也不要把问题合并到输出文件里——这是一次真正的人机交互停顿。
+
+#### 步骤 0a：询问接口文档
+
+用以下措辞（或等效中文）通过 `AskUserQuestion` 提问：
+
+> 在开始分析之前，请问您是否有该组件对应的**接口文档**？
+>
+> 支持的格式：OpenAPI/Swagger YAML、Markdown 接口文档、Postman Collection、TypeScript 类型定义、GraphQL Schema 等。
+>
+> - **有** → 请直接粘贴内容（或描述接口结构），我会根据文档生成更准确的数据契约
+> - **暂无 / 跳过** → 直接回复「跳过」，我将根据截图推断组件所需字段
+
+等待用户回复，根据回复走对应分支：
+
+---
+
+#### 步骤 0b-A：用户提供了接口文档
+
+读取用户提供的接口文档内容，然后**再次通过 `AskUserQuestion`** 询问字段映射：
+
+> 收到接口文档，谢谢！
+>
+> 为了更准确地对应截图中的 UI 展示，请您提供**接口响应字段 → UI 数据含义**的映射关系。
+>
+> 格式示例（无需严格按表格，文字描述也可以）：
+>
+> | 接口字段名 | 类型 | 枚举值（如有） | UI 中展示为 | 备注 |
+> |-----------|------|--------------|------------|------|
+> | `fundName` | string | — | 基金名称（卡片标题） | |
+> | `nav` | number | — | 最新净值，保留 4 位小数 | |
+> | `yearChange` | number | — | 年涨跌幅，带正负号和百分比符号 | 前端派生还是后端直出？ |
+> | `status` | string | `ACTIVE` / `SUSPENDED` / `CLOSED` | 状态标签，ACTIVE 显示绿色「正常」，其余显示灰色「暂停」 | |
+> | `riskLevel` | integer | `1`=低风险 / `2`=中风险 / `3`=高风险 | 风险等级图标 | |
+>
+> **枚举字段请务必列出所有枚举值及其 UI 展示含义**，这直接影响状态枚举和 Scenario 生成。
+>
+> 如果字段名和枚举值语义已足够清晰，回复「字段名即含义」即可，我会自行推断。
+
+收到映射信息后，将其缓存到「接口字段映射表」，在步骤 5（数据契约推导）时作为首要事实源使用，字段来源标注升级为 `source: api (mapped)`。
+
+**若用户跳过映射**（回复「字段名即含义」或类似措辞）：直接进入步骤 1，在步骤 2 从接口文档中抽取字段四元组，并在数据契约注释里标 `source: api`。
+
+---
+
+#### 步骤 0b-B：用户跳过 / 暂无接口文档
+
+通过 `AskUserQuestion` 询问：
+
+> 好的，我将根据截图推断组件所需的数据字段（Props）。
+>
+> 推断出的 Props 接口后续可以作为**后端 Java DTO 的参考依据**。请问是否需要在输出中同时生成一份面向后端的 **Java DTO 草稿**（`record` 或 `class` 结构）？
+>
+> - **需要** → 我会在 `notes.md` 中额外输出一节 Java DTO 草稿（字段名转 camelCase，类型映射到 Java 基础类型）
+> - **不需要** → 仅输出 TypeScript Props，跳过 Java 部分
+
+根据用户回复设置标志位 `generate_java_dto = true/false`，在步骤 7 写 `notes.md` 时据此决定是否输出「Java DTO 草稿」节。
+
+所有从截图推断的字段在数据契约中标 `source: api (inferred)`，并在开放问题里添加「请后端确认接口字段名与类型，可参考 notes.md 中的 Props 推断」。
+
+---
+
+#### 步骤 0c：开放式数据获取描述（两条分支后统一执行）
+
+无论用户是否提供了接口文档，都执行此步骤。通过 `AskUserQuestion` 发起一次**开放式提问**，让用户用自己的语言描述数据获取逻辑，而不是填空或选择。
+
+> 最后一个问题：请**用自己的话**描述一下这个组件是怎么拿到数据的？
+>
+> 不需要固定格式，自然描述即可。比如想想这几个方向：
+>
+> - 数据从哪来？（某个接口 / 父组件传进来 / 本地缓存 / 多个来源聚合）
+> - 什么时候会去请求？（页面一打开 / 用户点了某个按钮 / 滚动到底部触发）
+> - 如果请求失败了，组件怎么处理？
+> - 有没有缓存、轮询、或者实时推送的需求？
+>
+> 如果这个组件不需要请求接口（比如纯展示、数据完全由父组件传入），直接说「不需要」即可。
+
+**等待用户回复。** 不论回复详略，都进入步骤 1；从用户描述中提取以下信号，缓存备用（步骤 5.5 时消费）：
+
+| 信号维度 | 从描述中捕获的关键词 / 短语 | 不确定时的默认值 |
+|---------|------------------------|---------------|
+| 是否直接调接口 | 「接口」「请求」「fetch」vs「父组件传」「props」 | 假设调接口，标 `inferred` |
+| 触发时机 | 「打开」「挂载」「点击」「滚动」「切换 tab」 | 挂载时，标 `inferred` |
+| 失败处理 | 「重试」「提示」「兜底」「toast」「回退」 | 标 `needs_human_input` |
+| 特殊机制 | 「缓存」「轮询」「WebSocket」「SSE」「分页」「防抖」 | 无，标 `identified`（用户明确说没有） |
+
+若用户回复「不需要」或描述为纯展示组件，设置 `data_source = props_only`，步骤 5.5 中「数据获取方式」节写「由父组件传入，无直接接口调用」，`data-fetching.md` 仅输出简化版（只含「数据流向」和「父组件约定」两节）。
+
+---
+
+**步骤 0 完成后**，继续进入步骤 1。
 
 ### 步骤 1：视觉枚举通道
 
@@ -124,13 +229,53 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 **接口文档 + mockup 双输入时的处理流程**：
 
 1. **以接口文档字段为基线**，抄写字段名、类型、可空性 —— 不要猜
-2. **和 mockup 做 diff**，找出两类异常：
+2. **枚举字段必须展开**（这是最容易被省略的一步）：
+   - 在 TS interface 里用字符串字面量联合类型：`status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED'`，而不是宽泛的 `string`
+   - 每个枚举值在 inline 注释里写明 UI 展示规则，例如 `// ACTIVE → 绿色「正常」标签；SUSPENDED / CLOSED → 灰色「暂停」`
+   - 如果接口文档枚举值不完整（仅写了部分示例），在开放问题里加「请确认 `<fieldName>` 的完整枚举值列表」，字段类型降级为 `string` 并标 `needs_human_input`
+   - 整型枚举（如 `riskLevel: 1 | 2 | 3`）同样展开，注释里写每个值的含义，不要用 `number`
+3. **和 mockup 做 diff**，找出两类异常：
    - **接口有 UI 没用** → 不放入 Props（Props 只放组件实际消费的字段），在 `notes.md` 决策里加一条「Props 为什么不透传 X 字段」，避免下游 AI 看到接口文档时自作主张加回来
    - **UI 有接口没有** → 标为 `source: derived` 或 `source: prop`，必须有明确来源解释；否则退化为 `needs_human_input` 并加开放问题
-3. **可空性冲突**时以接口文档为准，mockup 里画了 fallback 视觉但接口字段是 `required` 的话，那个 fallback 视觉属于 `partial` 状态而非 `success` 状态
-4. **新增 `backend_contract_required` 计划提示**到「计划提示」小节，让实现 AI 调真实接口时做二次校验——接口文档可能过时
+4. **可空性冲突**时以接口文档为准，mockup 里画了 fallback 视觉但接口字段是 `required` 的话，那个 fallback 视觉属于 `partial` 状态而非 `success` 状态
+5. **新增 `backend_contract_required` 计划提示**到「计划提示」小节，让实现 AI 调真实接口时做二次校验——接口文档可能过时
 
-**只有 mockup、没有接口文档时**：从视觉反推字段，所有字段标 `source: api (inferred)`，并在开放问题里加一条「请确认接口字段名与类型」。
+**枚举字段与步骤 4.5（状态枚举）的联动**：每个枚举值都是潜在的独立 UI 状态。处理完枚举字段后，回头检查步骤 4.5 的状态枚举表——`status: 'ACTIVE' | 'SUSPENDED'` 这样的字段通常意味着至少需要两条独立 Scenario，而非用 `partial` 笼统覆盖。
+
+**只有 mockup、没有接口文档时**：从视觉反推字段，所有字段标 `source: api (inferred)`，并在开放问题里加一条「请确认接口字段名与类型，以及所有枚举字段的完整取值列表」。
+
+### 步骤 5.5：数据获取方式推导
+
+本步骤同时负责两件事：（1）填写 `notes.md` 的「数据获取方式」表；（2）**生成独立的 `data-fetching.md` 文档**。
+
+**信息来源优先级**（高 → 低）：
+
+1. 步骤 0c 用户的开放式描述 → 最高优先级，视为 `identified`，是 `data-fetching.md` 的主要素材
+2. API 文档（输入 #7）中的接口路径、HTTP 方法、query 参数 → 补充 `identified`，调用时机仍需推断
+3. 从 mockup 的 UI 行为反推（如下拉刷新控件 → `pullToRefresh`，「加载更多」→ 分页）→ `inferred`
+4. 无任何线索 → `needs_human_input`，加入「开放问题」
+
+**从开放式描述中提炼结构化内容**：
+
+用户的自然语言描述往往混杂了触发时机、错误处理、缓存、分页等多个维度。将其拆解到 `data-fetching.md` 对应节，不要直接复制原文。例如：
+
+- 「页面打开就请求，失败了给个 toast 然后展示空态」
+  → 触发时机：组件挂载（`onMounted`）；错误处理：toast 通知 + 降级到 `empty` 态（而非 `error` 态）
+- 「用户点了刷新按钮才重新拉，有个 loading 转圈」
+  → 触发时机：用户操作（`tap-refresh`）；需要 `loading` 中间态
+- 「搜索框输入后 300ms 请求」
+  → 竞态风险高，需防抖 + 旧请求取消；在「竞态处理」节展开
+
+**生成 `data-fetching.md`**：从 `templates/data-fetching.md` 填写。**所有来自步骤 0c 用户描述的内容都要放进去**，不要遗漏——这是用户在整个流程中贡献原始知识最密集的时刻。模糊或矛盾的描述转化为 `⚠️ 待确认` 条目，不要静默忽略。
+
+**与其他步骤的联动**：
+
+- 「调用时机 = 挂载时」→ 在步骤 4.5 的 `loading` 触发条件里补充「组件挂载即发起请求」
+- 「分页 / 无限滚动」→ 在状态枚举里确认是否需要 `fetchingMore` 中间态
+- 「竞态风险」→ 在`data-fetching.md` 竞态节展开，并在「计划提示」里加 `race_condition_handling` 标签
+- 「缓存策略」→ 影响 `stale` 状态是否需要在状态枚举中保留
+
+**纯展示组件的处理**（`data_source = props_only`）：`notes.md` 的「数据获取方式」节只写一行「由父组件传入，无直接接口调用」；`data-fetching.md` 输出简化版（仅「数据流向」+「父组件约定」两节，其余节省略）。
 
 ### 步骤 6：组件分解
 
@@ -164,7 +309,13 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 从 `templates/notes.md` 填写 `notes.md`。spec 模板根据步骤 6.5 的判定结果选择：**新建** 用 `templates/spec.md`（仅 ADDED）；**改造** 用 `templates/spec-modified.md`（MODIFIED + 可选 ADDED/REMOVED）。最终都写入 `specs/<capability>/spec.md`。
 
-`notes.md` 按顺序包含：**为什么** → **决策**（3-5 条，每条带一句理由）→ **数据契约**（TS interface）→ **状态枚举**（loading/empty/success/error 等，✅ 必需的状态全部列出）→ **组件分解** → **布局陷阱**（只列真正会踩的）→ **置信度地图** → **开放问题** → **计划提示**（snake_case 标签）→ **交叉引用** → **埋点锚点**（供 design-to-track 等下游 skill 消费）。
+**数据契约节的条件输出**：
+
+- 如果用户在步骤 0b-A 提供了接口文档和字段映射 → 填写「接口字段映射表」，数据契约字段来源标 `source: api (mapped)`
+- 如果用户在步骤 0b-B 选择了「需要 Java DTO」（`generate_java_dto = true`）→ 填写「Java DTO 草稿」节；否则整节省略，不留空占位
+- 两者皆无 → 只输出 TS interface，字段标 `source: api (inferred)`
+
+`notes.md` 按顺序包含：**为什么** → **决策**（3-5 条，每条带一句理由）→ **数据契约**（TS interface + 可选接口字段映射表 + 可选 Java DTO 草稿）→ **数据获取方式**（接口调用表 + 补充说明，纯展示组件写「由父传入」）→ **状态枚举**（loading/empty/success/error 等，✅ 必需的状态全部列出）→ **组件分解** → **布局陷阱**（只列真正会踩的）→ **置信度地图** → **开放问题** → **计划提示**（snake_case 标签）→ **交叉引用** → **埋点锚点**（供 design-to-track 等下游 skill 消费）。
 
 `spec.md` 使用 OpenSpec 格式：每个行为能力一个 `### Requirement:`，每个后面跟随 **2–4 个** `#### Scenario:` 块，采用 `- WHEN` / `- THEN` 项目符号形式。每个 Requirement 至少有一个非-happy-path Scenario（零值、极值、缺字段、异常输入）。结果描述必须可断言（DOM 节点、事件 detail、textContent、属性值），禁止用「正确渲染」「优雅显示」这类形容词。
 
@@ -172,11 +323,21 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 最后填写 `notes.md` 的「埋点锚点」表。原则：**所有 spec.md 中带 `tap-` / `view-` / `enter-` / `submit-` 等前缀的事件，以及任何主转化 / 主曝光路径，都至少要有一行埋点锚点**。即使决定不埋点也必须显式标 `not-tracked`，不要漏 —— 这一节是下游 `design-to-track` skill 的唯一输入接口，漏掉等于让它重新看一遍 mockup，破坏 skill 群的"单一事实源"分工。
 
+**写文件顺序**：`notes.md` → `data-fetching.md` → `spec.md`。`data-fetching.md` 在 `notes.md` 数据获取方式节写完后立即生成，不要拖到最后——它的「待确认项」可能影响 spec.md 里 Scenario 的 WHEN 子句。
+
 ### 步骤 8：呈现输出
 
-写完文件后，用 `computer://` 链接呈现它们，并附上 2-3 句摘要，突出强调：(a) 最重要的 1-2 个开放问题，(b) 任何 `needs_human_input` 标志，(c) 建议的下一步（通常是：将 `notes.md` 输入到 Superpowers `/plan` 运行，传递 `--target <stack>`）。
+写完三份文件后，用 `computer://` 链接呈现它们，按以下格式给出摘要：
 
-显式告诉用户：**生成的文件是协作草稿，鼓励迭代修订**。`needs_human_input` 标志和「开放问题」就是期待人类编辑的锚点。
+```
+📄 notes.md          — 设计决策 + 数据契约 + 开放问题
+📄 data-fetching.md  — 数据获取逻辑设计（实现开发者的直接入口）
+📄 specs/.../spec.md — OpenSpec 行为规格
+```
+
+摘要正文突出：(a) 最重要的 1-2 个开放问题，(b) `data-fetching.md` 中标了 `⚠️ 待确认` 的关键项（这是最容易被遗忘但影响最大的），(c) 建议的下一步（通常是：将 `notes.md` + `data-fetching.md` 一起输入 Superpowers `/plan`，传递 `--target <stack>`）。
+
+显式告诉用户：**生成的文件是协作草稿，鼓励迭代修订**。`data-fetching.md` 中的 `⚠️ 待确认` 和 `notes.md` 中的 `needs_human_input` 就是期待人类编辑的锚点。
 
 ### 步骤 8.5（可选）：生成 annotated SVG
 
@@ -206,6 +367,7 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 - `references/stack-hints/miniprogram.md` —— 微信小程序（glass-easel / WXML / WXSS）注意事项
 - `references/stack-hints/web.md` —— 通用 Web（React/Vue/HTML）注意事项
 - `templates/notes.md` —— 合并笔记模板（含状态枚举、埋点锚点等小节）
+- `templates/data-fetching.md` —— 数据获取逻辑设计文档模板（在步骤 5.5 中填写）
 - `templates/spec.md` —— OpenSpec 增量模板（**新建**组件用，仅 `## ADDED Requirements`）
 - `templates/spec-modified.md` —— OpenSpec 增量模板（**改造**既有组件用，含 MODIFIED / ADDED / REMOVED 三块）
 - `examples/today-windvane/` —— golden sample：
