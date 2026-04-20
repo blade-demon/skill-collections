@@ -2,7 +2,14 @@
 name: design-to-spec
 metadata:
   version: 0.5.1
-description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注释的线框图）转换为结构化的实现规格说明 —— 输出三份文件（设计笔记 + 数据获取逻辑设计 + OpenSpec 兼容的规格增量），可作为 Superpowers `plan` 或任何执行规划工作流的输入。在开始视觉分析之前，通过交互式步骤 0 主动收集接口文档、字段映射（含枚举值全量）、Java DTO 需求、数据获取方式（开放式描述），而不是被动等待。接口文档回答"数据是什么"，mockup 回答"数据如何展示"，用户描述回答"数据怎么拿到"，三者共同决定 data-fetching.md 的内容深度。枚举字段强制展开为 TS 字面量联合类型，不允许宽泛 string / number。当用户提供 UI 图片并讨论如何将其实现为组件时使用此技能，即使他们没有明确说"规格"—— 例如"帮我把这张图做成组件"、"我想把这个 mockup 实现出来"、"based on this design how should we build..."、"from this screenshot, plan the implementation"。当用户说"设计稿"、"mockup"、"wireframe"、"comp"、"UI 图"，或附加图片并询问组件分解、数据结构、props、布局策略或实现步骤时也触发。不要在纯美学反馈（"这好看吗"）、像素级 CSS 提取、或没有实现意图的一般性设计评审时触发。
+description: |
+  将 UI mockup 图片转换为三份结构化产物：notes.md（设计决策 + 数据契约）、data-fetching.md（数据获取逻辑设计）、spec.md（OpenSpec 行为规格）。
+
+  分析前先通过交互式步骤 0 主动收集：接口文档（决定数据契约准确度）、字段映射含枚举值全量（决定枚举展开深度）、数据获取方式的开放式描述（决定 data-fetching.md 内容深度）。三种输入各司其职：接口文档回答「数据是什么」，mockup 回答「数据如何展示」，用户描述回答「数据怎么拿到」。
+
+  触发条件：用户提供 UI 图片，并讨论实现方案、组件拆分、数据结构、props 设计或布局策略。触发词包括「设计稿」「mockup」「wireframe」「UI 图」「帮我把这张图做成组件」「from this screenshot, plan the implementation」等。
+
+  不触发：纯美学反馈（"好看吗"）、像素级 CSS 提取、没有实现意图的浏览性讨论。
 ---
 
 # design-to-spec
