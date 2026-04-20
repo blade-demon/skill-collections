@@ -1,8 +1,8 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.4.0
-description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注释的线框图）转换为结构化的实现规格说明 —— 输出两份文件（设计笔记 + OpenSpec 兼容的规格增量），可作为 Superpowers `plan` 或任何执行规划工作流的输入。当用户提供 UI 图片并讨论如何将其实现为组件时使用此技能，即使他们没有明确说"规格"—— 例如"帮我把这张图做成组件"、"我想把这个 mockup 实现出来"、"based on this design how should we build..."、"from this screenshot, plan the implementation"。当用户说"设计稿"、"mockup"、"wireframe"、"comp"、"UI 图"，或附加图片并询问组件分解、数据结构、props、布局策略或实现步骤时也触发。不要在纯美学反馈（"这好看吗"）、像素级 CSS 提取、或没有实现意图的一般性设计评审时触发。
+  version: 0.5.0
+description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注释的线框图）转换为结构化的实现规格说明 —— 输出两份文件（设计笔记 + OpenSpec 兼容的规格增量），可作为 Superpowers `plan` 或任何执行规划工作流的输入。支持同时消费后端接口文档（OpenAPI / Markdown / TS 类型 / GraphQL schema）以抬升数据契约的准确性——接口文档回答"数据是什么"，mockup 回答"数据如何展示"，两者 diff 出派生字段与未使用字段。当用户提供 UI 图片并讨论如何将其实现为组件时使用此技能，即使他们没有明确说"规格"—— 例如"帮我把这张图做成组件"、"我想把这个 mockup 实现出来"、"based on this design how should we build..."、"from this screenshot, plan the implementation"。当用户说"设计稿"、"mockup"、"wireframe"、"comp"、"UI 图"，或附加图片并询问组件分解、数据结构、props、布局策略或实现步骤时也触发。不要在纯美学反馈（"这好看吗"）、像素级 CSS 提取、或没有实现意图的一般性设计评审时触发。
 ---
 
 # design-to-spec
@@ -48,6 +48,7 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 4. **设计系统提示**（可选）—— `tdesign` / `nutui` / `vant` / `antd` / `shadcn` / 等。用于将原子组件建议偏向现有基础组件。
 5. **能力名称**（可选）—— 此功能所属的 OpenSpec `capability`。如果缺失，默认组件名称。
 6. **现有代码库提示**（可选）—— 如果用户的项目有可复用的原子组件（例如现有的 `vertical-scroll` 组件），在分解中引用它们，以便输出不会重新发明它们。对 `components/` 或 `src/components/` 进行快速 `Glob` 通常就足够了。
+7. **API 文档 / 接口契约**（可选，**强烈推荐**）—— 可接受的形态：OpenAPI / Swagger（YAML/JSON）、Markdown 接口文档、Postman collection、后端导出的 TS 类型声明、GraphQL schema、Protobuf。只需要能提取「字段名 + 类型 + 可空 + 枚举值」四元组即可，不必写解析器。存在接口文档时，数据契约推导从「视觉反推」升级到「文档抄写 + mockup diff」，置信度地图中大量条目从 `inferred` 升级到 `identified`，开放问题减少一半以上。
 
 不要因缺失可选输入而阻塞。使用合理的默认值并在置信度地图中标记假设。
 
@@ -69,6 +70,17 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 如果可以访问用户的项目根目录，对 `components/`、`src/components/` 或等效目录进行快速 `Glob`，以发现组件应该复用的现有原子组件。按路径捕获它们，以便您可以在 `notes.md` 中引用它们。
 
+**如果用户提供了 API 文档 / 接口契约**，在此步骤读取并提取以下四元组到内存（不必全文记忆）：
+
+- 每个相关字段的 **名称**（业务语义名，如 `yearChange`、`fundCode`）
+- **类型**（`string` / `number` / `string[]` / 嵌套对象等）
+- **可空性**（`required` / `optional` / `nullable`）
+- **枚举值或格式约束**（如 `error.code` 的具体枚举、日期格式、精度）
+
+这四元组将在步骤 5（数据契约推导）成为事实源，让数据契约从猜测升级为抄写。
+
+**如果用户提供了 API 文档 / 接口契约**（输入 #7），在本步骤一并摄取。提取每个接口返回体的「字段名 + 类型 + 可空 + 枚举值 + 单位/格式」五元组并缓存到临时结构。常见来源：OpenAPI YAML（`components.schemas`）、后端 TS 类型文件（`interface Foo { ... }`）、Markdown 接口文档的「响应字段表」、GraphQL schema 的 type 定义。**不要尝试对接口文档做业务语义改写**——字段名照抄（哪怕后端写得不够语义化），因为数据契约要和实际接口对齐，改名是实现层的事情。
+
 ### 步骤 3：信息分层
 
 将枚举的元素分组为层次结构：**容器 → 区域 → 行 → 原子**。识别可复用原子组件的候选者（徽章、标签、微型图表、药丸按钮）。任何出现两次或以上 —— 或具有通用原始组件的视觉特征 —— 都是原子候选者。
@@ -89,11 +101,36 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 
 跳过此步会导致 spec.md 只覆盖 happy-path，是当前 skill 最容易踩的回归。每个 ✅ 状态在步骤 7 都要变成 spec.md 中的至少一条 Scenario（详见 `references/scenario-writing-guide.md` 的「状态覆盖硬规则」）。
 
+**如果有 API 文档**，状态的「触发条件」列可以升级为具体的接口契约：
+
+- `loading` 的触发条件从「数据请求中」升级为「HTTP 请求未返回 && `props.loading === true`」
+- `empty` 的触发条件从「内容为空」升级为「`data.items.length === 0` 且接口返回 2xx」
+- `error` 的触发条件按接口文档定义的 `error.code` 枚举值展开（例如 `NETWORK_ERROR` / `VALIDATION_FAILED` / `FORBIDDEN` 各自是否独立展示）
+- 这些具体触发条件在步骤 7 会直接变成 spec.md Scenario 里可断言的 `WHEN` 子句
+
 ### 步骤 5：数据契约推导
 
 使用**业务语义字段名**生成 TypeScript 风格的接口，而不是视觉名称。优先使用 `yearChange` 而不是 `redText`；`hot` 而不是 `flameIcon`；`ctaLabel` 而不是 `buttonText`。
 
 输入（props）、输出（事件）以及值得公开的任何内部状态都应单独枚举。明确标记可选字段。
+
+**字段来源标注（必做）**：每个字段在 inline TS 注释中写明来源：
+
+- `// source: api` —— 直接来自后端接口文档，字段名和类型必须与接口一致
+- `// source: derived` —— 前端从其他字段派生（如 `yearChange = (currentNav - yearAgoNav) / yearAgoNav * 100`），注释里写出派生公式
+- `// source: prop` —— 由父组件/宿主页面传入（如 `isLoggedIn`），不来自接口也非派生
+- `// source: ui-only` —— UI 内部状态，不进 Props（如 `isExpanded`、`scrollY`），通常不在 Props interface，而在「内部状态」里
+
+**接口文档 + mockup 双输入时的处理流程**：
+
+1. **以接口文档字段为基线**，抄写字段名、类型、可空性 —— 不要猜
+2. **和 mockup 做 diff**，找出两类异常：
+   - **接口有 UI 没用** → 不放入 Props（Props 只放组件实际消费的字段），在 `notes.md` 决策里加一条「Props 为什么不透传 X 字段」，避免下游 AI 看到接口文档时自作主张加回来
+   - **UI 有接口没有** → 标为 `source: derived` 或 `source: prop`，必须有明确来源解释；否则退化为 `needs_human_input` 并加开放问题
+3. **可空性冲突**时以接口文档为准，mockup 里画了 fallback 视觉但接口字段是 `required` 的话，那个 fallback 视觉属于 `partial` 状态而非 `success` 状态
+4. **新增 `backend_contract_required` 计划提示**到「计划提示」小节，让实现 AI 调真实接口时做二次校验——接口文档可能过时
+
+**只有 mockup、没有接口文档时**：从视觉反推字段，所有字段标 `source: api (inferred)`，并在开放问题里加一条「请确认接口字段名与类型」。
 
 ### 步骤 6：组件分解
 
@@ -191,6 +228,8 @@ description: 将 UI mockup 图片（截图、设计稿、手绘草图或带注�
 - **不要生成 `tasks.md`。**Superpowers `plan` 会基于 `notes.md` + `spec.md` 重新生成任务分解，此阶段的任务列表是多余的中间产物。
 - **不要为输出写单独的 README。**`notes.md` 是入口点；README 是多余的。
 - **不要把复合图片资产拆成代码绘制节点。**看到「渐变背景 + 堆叠文字 + 规则边界」的视觉单元（徽章、角标、标志性图标）时，默认假设它是**单一设计交付图片**（PNG/WebP）。数据契约用 URL 字段（如 `badgeIconUrl` / `iconUrl`），spec 的 Scenario 断言 DOM 是 `<image>` 且不存在独立文本节点兜底。把它拆成 rect + text 会导致跨端字体渲染漂移，且活动换图被迫发版。只有当设计明确说「这是代码绘制的药丸/按钮」时才按 primitives 拆。
+- **不要用接口文档替代视觉枚举。**接口文档回答「数据是什么」，mockup 回答「数据如何展示」——两者不互相替代。有接口文档时仍然要跑步骤 1（视觉枚举），只是名字换成「UI 字段枚举」，跑完后和接口文档做 diff。跳过视觉枚举会丢失截断/省略号/颜色/交互 affordance 这些 mockup 独有的信息，数据契约会变成「接口全透传 Props」——这是一个反模式，因为接口往往返回 20 个字段而 UI 只用 8 个，全透传会让组件耦合到后端数据形状。
+- **不要盲信接口文档的可空性。**接口文档里的 `optional` 经常是后端为了向前兼容留的口子，真实调用时基本都会传。如果 UI 行为依赖某字段必存在（例如 `hotspot.title` 渲染逻辑没有 null 分支），在数据契约里标为 `required` 并加一句注释「接口标 optional 但业务保证存在，为空时视为 error 态」，同时在开放问题里加一条请后端确认。
 
 ## 格式提醒
 

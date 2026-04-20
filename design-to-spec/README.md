@@ -4,7 +4,7 @@
 
 本文件是 skill 的使用手册，回答「怎么触发、给什么输入、拿到什么、之后怎么办」。skill 的内部工作流程在 `SKILL.md`；不需要阅读 SKILL.md 也能用这份指南正常工作。
 
-**当前版本**：`0.4.0` —— 引入可选的 annotated SVG 输出（把「视觉元素 ↔ spec Requirement/Scenario」锁进一张图）；新增「复合图片资产辨识」反模式（避免把单一 PNG 拆成代码绘制的 rect+text）；examples/today-windvane/ 追加 `input.svg` + `input-annotated.svg` 两份视觉锚点。0.3.0 的状态枚举、埋点锚点、改造既有组件分支保持不变。
+**当前版本**：`0.5.0` —— 新增 **API 文档 / 接口契约** 作为可选输入（支持 OpenAPI / Markdown / TS 类型 / GraphQL schema / Postman），数据契约推导从「视觉反推」升级为「文档抄写 + mockup diff」；每个字段增加 `source: api | derived | prop | ui-only` 来源标注；步骤 4.5 的状态触发条件可引用接口 `error.code` 枚举；新增两条反模式（不要用接口文档替代视觉枚举、不要盲信接口文档的可空性）。`0.4.0` 的 annotated SVG、复合图片资产反模式，`0.3.0` 的状态枚举、埋点锚点、改造既有组件分支保持不变。
 
 ---
 
@@ -71,8 +71,9 @@
 | 设计系统         | 可选    | 无                        | `tdesign` / `nutui` / `vant` / `antd` / `shadcn` |
 | 能力名称（capability） | 可选  | 同组件名称                   | OpenSpec 的 `capability` 归属                      |
 | 现有代码库        | 自动    | 项目根目录                   | skill 会自动 Glob `components/` 发现可复用原子组件          |
+| **API 文档 / 接口契约** | **可选，强烈推荐** | 无 | OpenAPI / Swagger YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman collection —— 任一种即可。数据契约推导会从「视觉反推」升级为「文档抄写 + mockup diff」，置信度地图大量条目从 `inferred` 升级到 `identified` |
 
-**不要因为可选输入缺失而拖延**，skill 会用合理默认值并在置信度地图里标记假设。
+**不要因为可选输入缺失而拖延**，skill 会用合理默认值并在置信度地图里标记假设。**但如果手边有接口文档，强烈建议一并提供**——这是单个投入 ROI 最高的输入，能同时提升数据契约准确性、减少开放问题、让状态 Scenario 的 `WHEN` 子句变得可断言。
 
 ---
 
@@ -81,15 +82,16 @@
 skill 会线性跑完 10 步（8 个主步 + 2 个插步），中间**不会**停下来问问题（除非关键输入缺失到无法继续）。典型耗时 2–5 分钟。
 
 1. 视觉枚举通道——逐项列出图片里看得到的东西
-2. 技术栈和上下文解析——匹配 `references/stack-hints/<stack>.md`，Glob 现有组件
+2. 技术栈和上下文解析——匹配 `references/stack-hints/<stack>.md`，Glob 现有组件；**提供了接口文档时，在这一步摄取「字段名 + 类型 + 可空 + 枚举」四元组**
 3. 信息分层——容器 / 区域 / 行 / 原子
 4. 交互推断与置信度标志——每个可交互元素分到 identified / inferred / needs_human_input
-4.5. **状态枚举**——填写 loading / empty / success / error 等可观察状态（必需 ✅ 状态全部列出，未在 mockup 中体现的标 needs_human_input）
-5. 数据契约推导——TypeScript interface，业务语义命名
+4.5. **状态枚举**——填写 loading / empty / success / error 等可观察状态（必需 ✅ 状态全部列出，未在 mockup 中体现的标 needs_human_input；**有接口文档时触发条件升级到接口 `error.code` 枚举级别**）
+5. 数据契约推导——TypeScript interface，业务语义命名，**每个字段标 `source: api | derived | prop | ui-only`**；有接口文档时以文档为基线 + mockup diff
 6. 组件分解——名称 / 目的 / 复用信号
 6.5. **判定变更类型**——新建 vs 改造既有组件（决定 spec.md 用哪份模板）
 7. 规格实体化——生成 notes.md + spec.md（含埋点锚点）
 8. 呈现输出——用 `computer://` 链接给你，附 2–3 句关键摘要
+8.5. **（可选）生成 annotated SVG**——仅在需要跨角色评审或 `needs_human_input` 较多时生成
 
 skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**——不是终稿。
 
@@ -110,7 +112,7 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 | ----------- | ----------------------------------------------------------- |
 | 为什么        | 1–2 句话：用户价值、解决什么问题                                         |
 | 决策          | 3–5 条设计决策，每条一句理由                                           |
-| 数据契约        | TypeScript 风格的 Props / Events interface                     |
+| 数据契约        | TypeScript 风格的 Props / Events interface，**每个字段带 `source: api / derived / prop / ui-only` 注释**标明来源 |
 | **状态枚举**    | loading / empty / success / error 等运行时状态；标 ✅ 的状态在 spec.md 必有 Scenario |
 | 组件分解        | 名称 / 目的 / 复用信号三列表                                         |
 | 布局陷阱        | 真正会踩的陷阱 + 修复（如 min-width:0、catchtap）                       |
@@ -133,6 +135,8 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 - **状态覆盖硬规则**：`notes.md` 状态枚举里每个标 ✅ 的状态都必须在 spec.md 中找到对应 Scenario
 
 这份是可测试的——每条 Scenario 对应一个 fixture 测试。
+
+**（可选）`input-annotated.svg`** — 视觉锚点图，仅在显式要求或跨角色评审时生成（SKILL.md 步骤 8.5）。左侧是简化 mockup + 编号圆圈 ①②...，右侧 Legend 面板把每个编号映射到 spec.md 的 Requirement / Scenario。颜色约定与 `notes.md` 置信度地图共享：`#1664FF` 蓝 = identified、`#7B61FF` 紫 = inferred、`#FF7D00` 橙 = needs_human_input。**边界原则**：SVG 只承载 spec 映射，埋点详情、开放问题、数据契约全部留在 notes.md 作为单一事实源——避免两份文件漂移。改动先改 notes.md，再同步 SVG。
 
 ---
 
@@ -219,6 +223,22 @@ skill 在步骤 6.5 会自动判定，命中以下任一信号即按"改造"处�
 - 关键参数列**业务语义名**（`fund.code`），而不是埋点 key（`f_code`）
 
 写完后扫一眼 spec.md，把所有事件名跟锚点表对一遍 —— 1:1 对得上才算合格。
+
+**有接口文档时怎么办？**
+
+把接口文档的任一形态（OpenAPI YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman collection）作为对话附件或代码块提供即可，不需要转换格式。skill 会在步骤 2 摄取「字段名 + 类型 + 可空 + 枚举」四元组，并在步骤 5 数据契约推导时做三件事：
+
+1. **以接口文档字段为基线**抄写，不从视觉反推——字段名、类型、可空性直接照搬
+2. **和 mockup 做 diff**：接口有 UI 不用的字段 → Props 里不透传，notes.md 决策里写原因；UI 有接口没有的字段 → 标 `source: derived` 或 `source: prop` 并解释来源
+3. **每个字段加 `source: api / derived / prop / ui-only` 注释**，让下游 AI 一眼看出哪些需要真的调接口验证、哪些是纯 UI 状态
+
+典型场景：
+
+- 接口返回 `{ status: "loading" | "success" | "error", errorCode: string, data: {...} }` → 状态枚举的触发条件直接引用这些枚举值，spec.md 的 `WHEN` 子句可断言 `error.code === "NETWORK_ERROR"` 而不是模糊的「请求失败」
+- 接口字段 `yearChangeRate: number | null` → 数据契约里 `yearChange` 标 `source: api`，nullable；`null` 时对应 `partial` 状态，需要加一条 Scenario
+- 接口没有 `isLoggedIn` 但 UI 有登录态分支 → 标 `source: prop`（从父组件/宿主页面传入），不要强求后端加字段
+
+**注意**：有接口文档**不代表可以跳过视觉枚举**。接口文档告诉你「数据是什么」，mockup 告诉你「数据如何展示 + 截断 + 颜色 + 交互 affordance」——两者不互相替代。跳过视觉枚举会让数据契约退化成「接口全透传 Props」，这是反模式（接口返 20 字段、UI 用 8 字段，全透传会把组件耦合到后端数据形状）。
 
 ---
 

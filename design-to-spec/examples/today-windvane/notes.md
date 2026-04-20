@@ -15,26 +15,34 @@
 
 ## 数据契约
 
+> 本 example 未提供接口文档，所有 `api` 字段标 `(inferred)`——实际使用时请后端确认字段名与类型；见「开放问题 8」。
+
 ```ts
 interface TodayWindvaneProps {
   hotspot: {
-    badgeIconUrl: string;   // 「热点」徽章图片资源（PNG/WebP），由设计交付；组件不自绘文字
-    title: string;          // 标题，UI 中截断为 1 行
+    badgeIconUrl: string;   // source: api (inferred) — 「热点」徽章图片资源（PNG/WebP），由设计交付；组件不自绘文字
+    title: string;          // source: api (inferred) — 标题，UI 中截断为 1 行
     tags: Array<{
-      name: string;         // 行业名称，UI 中截断为 1 行
-      change: number;       // 5.14 表示 +5.14%；允许负数
-      hot?: boolean;        // 默认 true；控制火焰图标
+      name: string;         // source: api (inferred) — 行业名称，UI 中截断为 1 行
+      change: number;       // source: api (inferred) — 5.14 表示 +5.14%；允许负数
+      hot?: boolean;        // source: api (inferred) — 默认 true；控制火焰图标
     }>;
-    detailUrl?: string;     // 通过 tap-hotspot 携带，内部不使用
+    detailUrl?: string;     // source: api (inferred) — 通过 tap-hotspot 携带，内部不使用
   };
   fund: {
-    code: string;           // 宿主页面用于路由
-    name: string;           // 基金名称，UI 中截断为 1 行
-    yearChange: number;     // 「近一年涨幅」百分比（可负）
-    sparkline: string | number[];  // 图片 URL 或原始点数组
-    ctaLabel?: string;      // 默认「买一笔」
+    code: string;           // source: api (inferred) — 宿主页面用于路由
+    name: string;           // source: api (inferred) — 基金名称，UI 中截断为 1 行
+    yearChange: number;     // source: api (inferred) — 「近一年涨幅」百分比（可负）
+    sparkline: string | number[];  // source: api (inferred) — 图片 URL 或原始点数组；允许 v1 字符串 URL / v2 点数组
+    ctaLabel?: string;      // source: api (inferred) — 默认「买一笔」
   };
+  isLoggedIn: boolean;      // source: prop — 由宿主页面传入，决定 CTA 是否走 login_gate 分支
+  loading?: boolean;        // source: prop — 父组件控制骨架态
+  error?: { code: string; message: string };  // source: prop — 父组件传入，触发 error 态与重试按钮
 }
+
+// 内部状态（不在 Props 中）
+// - `isBadgeLoaded: boolean`  // source: ui-only — 徽章图片加载完成后隐藏占位
 
 interface TodayWindvaneEvents {
   'tap-hotspot': (detail: { hotspot: TodayWindvaneProps['hotspot'] }) => void;

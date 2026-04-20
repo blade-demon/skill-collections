@@ -14,9 +14,20 @@
 
 ## 数据契约
 
+> 每个字段必须标注**来源**，放在 inline 注释里：
+>
+> - `source: api` —— 直接来自后端接口文档，字段名和类型必须与接口一致
+> - `source: derived` —— 前端从其他字段派生；注释里写出派生公式（例如 `yearChange = (currentNav - yearAgoNav) / yearAgoNav * 100`）
+> - `source: prop` —— 由父组件/宿主页面传入（例如 `isLoggedIn`），不来自接口也非派生
+> - `source: ui-only` —— 组件内部状态（例如 `isExpanded`），不在 Props interface 中，而在「内部状态」小节
+>
+> 如果用户提供了接口文档 → 优先用文档字段名、类型、可空性，不要猜。接口有 UI 没用的字段不放入 Props。UI 有接口没有的字段必须标为 `source: derived` 或 `source: prop`，否则退化为 `needs_human_input`。
+>
+> 如果只有 mockup 没有接口文档 → 所有字段标 `source: api (inferred)`，并在「开放问题」里加「请确认接口字段名与类型」。
+
 ```ts
 interface <ComponentName>Props {
-  // <field>: <type>;  // <关于含义、来源、格式的一行注释>
+  // <field>: <type>;  // source: api | derived | prop — <关于含义、格式的一行注释>
 }
 
 interface <ComponentName>Events {
