@@ -37,7 +37,7 @@
 - **输出从两份文件升级为三份**：`notes.md` + `data-fetching.md` + `spec.md`；写文件顺序固定为 notes → data-fetching → spec，避免 Scenario WHEN 子句写错
 - **步骤 8（呈现输出）**：摘要格式改为三文件清单，重点新增「data-fetching.md 中的 `⚠️ 待确认` 项」；用户反馈锚点从 `needs_human_input` 扩展到 `⚠️ 待确认`
 - **输入收集逻辑**：从被动等待改为主动引导，步骤 0 在分析前阻塞执行；输入 #7「API 文档」现在通过步骤 0 交互式收集，不再是静默可选项
-- **步骤 5（数据契约推导）**：原有 4 步处理流程扩展为 5 步，新增第 2 步「枚举字段必须展开」；「只有 mockup 无接口文档」的兜底提示追加「以及所有枚举字段的完整取值列表」
+- **步骤 5（数据契约推导）**：原有 4 步处理流程扩展为 5 步，新增第 2 步「枚举字段必须展开」；「只有设计稿、没有接口文档」的兜底提示追加「以及所有枚举字段的完整取值列表」
 - **`notes.md` 小节顺序**：在「数据契约」和「状态枚举」之间插入「数据获取方式」节
 - **version**：`0.5.0` → `0.5.1`
 
@@ -53,16 +53,16 @@
 
 - **API 文档 / 接口契约**作为可选输入（第 7 项），支持 OpenAPI / Swagger YAML、Markdown 接口文档、Postman Collection、TypeScript 类型定义、GraphQL Schema、Protobuf
 - **字段来源标注**：数据契约每个字段必须在 inline 注释中标明 `source: api | derived | prop | ui-only`
-- **接口文档 + mockup 双输入处理流程**：以接口文档字段为基线抄写，再与 mockup 做 diff，找出「接口有 UI 没用」和「UI 有接口没有」两类异常
+- **接口文档 + 设计稿 双输入处理流程**：以接口文档字段为基线抄写，再与 设计稿做 diff，找出「接口有 UI 没用」和「UI 有接口没有」两类异常
 - **状态触发条件升级**：有接口文档时，`loading` / `empty` / `error` 的触发条件可引用具体接口字段和 `error.code` 枚举值，直接变成 spec.md Scenario 的可断言 `WHEN` 子句
 - **两条新反模式**：
-  - 不要用接口文档替代视觉枚举（接口文档告诉你「数据是什么」，mockup 告诉你「数据如何展示」）
+  - 不要用接口文档替代视觉枚举（接口文档告诉你「数据是什么」，设计稿告诉你「数据如何展示」）
   - 不要盲信接口文档的可空性（后端标 `optional` 不代表业务上可以为空）
 - `templates/notes.md` 新增字段来源标注说明节
 
 ### Changed
 
-- 数据契约推导从「视觉反推（全部 inferred）」升级为「文档抄写 + mockup diff」，置信度地图大量条目从 `inferred` 升级到 `identified`
+- 数据契约推导从「视觉反推（全部 inferred）」升级为「文档抄写 + 设计稿 diff」，置信度地图大量条目从 `inferred` 升级到 `identified`
 
 ---
 
@@ -73,7 +73,7 @@
 ### Added
 
 - 完整的 `SKILL.md` 工作流（步骤 1–8 + 步骤 4.5 / 6.5 / 8.5 插步）
-- 视觉枚举通道（步骤 1）：逐项列出 mockup 中可见元素，含位置 / 文本 / 颜色 / 可交互性
+- 视觉枚举通道（步骤 1）：逐项列出 设计稿中可见元素，含位置 / 文本 / 颜色 / 可交互性
 - 交互推断与置信度标志（步骤 4）：identified / inferred / needs_human_input 三级分类
 - 状态枚举（步骤 4.5）：loading / empty / success / error 等运行时状态，必需状态强制列出
 - 数据契约推导（步骤 5）：TypeScript 风格 Props / Events interface，业务语义命名

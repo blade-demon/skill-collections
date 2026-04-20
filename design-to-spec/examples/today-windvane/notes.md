@@ -15,26 +15,26 @@
 
 ## 数据契约
 
-> 本 example 未提供接口文档，所有 `api` 字段标 `(inferred)`——实际使用时请后端确认字段名与类型；见「开放问题 8」。
+> 模拟场景：接口文档 `GET /api/v1/today/recommendation` 已提供，API 字段标注升级为 `api (mapped)`；未出现在接口文档中的字段保留 `prop` / `ui-only` 标注。
 
 ```ts
 interface TodayWindvaneProps {
   hotspot: {
-    badgeIconUrl: string;   // source: api (inferred) — 「热点」徽章图片资源（PNG/WebP），由设计交付；组件不自绘文字
-    title: string;          // source: api (inferred) — 标题，UI 中截断为 1 行
+    badgeIconUrl: string;   // source: api (mapped) — 「热点」徽章图片资源（PNG/WebP），由设计交付；组件不自绘文字
+    title: string;          // source: api (mapped) — 标题，UI 中截断为 1 行
     tags: Array<{
-      name: string;         // source: api (inferred) — 行业名称，UI 中截断为 1 行
-      change: number;       // source: api (inferred) — 5.14 表示 +5.14%；允许负数
-      hot?: boolean;        // source: api (inferred) — 默认 true；控制火焰图标
+      name: string;         // source: api (mapped) — 行业名称，UI 中截断为 1 行
+      change: number;       // source: api (mapped) — 5.14 表示 +5.14%；允许负数
+      hot?: boolean;        // source: api (mapped) — 默认 true；控制火焰图标
     }>;
-    detailUrl?: string;     // source: api (inferred) — 通过 tap-hotspot 携带，内部不使用
+    detailUrl?: string;     // source: api (mapped) — 通过 tap-hotspot 携带，内部不使用
   };
   fund: {
-    code: string;           // source: api (inferred) — 宿主页面用于路由
-    name: string;           // source: api (inferred) — 基金名称，UI 中截断为 1 行
-    yearChange: number;     // source: api (inferred) — 「近一年涨幅」百分比（可负）
-    sparkline: string | number[];  // source: api (inferred) — 图片 URL 或原始点数组；允许 v1 字符串 URL / v2 点数组
-    ctaLabel?: string;      // source: api (inferred) — 默认「买一笔」
+    code: string;           // source: api (mapped) — 宿主页面用于路由
+    name: string;           // source: api (mapped) — 基金名称，UI 中截断为 1 行
+    yearChange: number;     // source: api (mapped) — 「近一年涨幅」百分比（可负）
+    sparkline: string | number[];  // source: api (mapped) — 图片 URL 或原始点数组；允许 v1 字符串 URL / v2 点数组
+    ctaLabel?: string;      // source: api (mapped) — 默认「买一笔」
   };
   isLoggedIn: boolean;      // source: prop — 由宿主页面传入，决定 CTA 是否走 login_gate 分支
   loading?: boolean;        // source: prop — 父组件控制骨架态
@@ -51,6 +51,41 @@ interface TodayWindvaneEvents {
   'tap-login':   (detail: {}) => void;                        // disabled 态未登录 CTA 触发登录流
 }
 ```
+
+### 接口字段映射表
+
+> 接口：`GET /api/v1/today/recommendation`，无请求参数，返回当日单条推荐数据。
+
+| 接口字段名 | 接口类型 | 枚举值（全量） | UI 中展示为 | 来源标注 | 备注 |
+|-----------|---------|--------------|------------|---------|------|
+| `hotspot.badgeIconUrl` | `string` | — | 左侧热点徽章图片（32rpx×40rpx，`aspectFit`） | `api` | CDN URL，必传；组件不自绘文字渐变 |
+| `hotspot.title` | `string` | — | 热点标题，单行省略 | `api` | 必传；建议最长 20 字 |
+| `hotspot.tags[].name` | `string` | — | 行业标签名，单行省略 | `api` | 最多 2 条；超出截断 |
+| `hotspot.tags[].change` | `number` | — | `+5.14%` / `-3.21%`，连续值 | `api` | 正值绿色，负值红色；UI 自行格式化 |
+| `hotspot.tags[].hot` | `boolean` | `true` → 火焰图标显示；`false` → 隐藏 | 火焰图标 | `api` | 缺省视为 `true` |
+| `hotspot.detailUrl` | `string` | — | 不展示，经 `tap-hotspot` 事件透传 | `api` | 可空（无详情页时为 `null`） |
+| `fund.code` | `string` | — | 不展示，作为路由参数和埋点参数 | `api` | 必传 |
+| `fund.name` | `string` | — | 基金名称，单行省略 | `api` | 必传 |
+| `fund.yearChange` | `number` | — | `近一年涨幅 +5.14%`，连续值 | `api` | 可负；UI 自行格式化带符号 |
+| `fund.sparklineUrl` | `string` | — | 折线图图片 URL（v1） | `api` | v1 字符串 URL；v2 预留 `sparklinePoints: number[]`；可空时收缩为单行 |
+| `fund.ctaLabel` | `string` | — | CTA 按钮文案 | `api` | 可空，前端默认 `买一笔` |
+
+## 数据获取方式
+
+> 组件自行调接口并维护日级本地缓存；父组件通过 `loading` / `error` Props 可覆盖内部状态（用于页面级骨架同步）。
+
+| 接口/方法名 | 调用时机 | 请求关键参数 | 响应关键字段 | 缓存策略 | 补充说明 |
+|-----------|---------|------------|------------|---------|---------|
+| `GET /api/v1/today/recommendation` | 组件挂载（`onReady`）；缓存命中则跳过 | 无 | `hotspot`, `fund` | 本地存储 TTL = 当日 24:00 | key 格式：`today_recommendation_YYYY-MM-DD` |
+
+### 数据获取补充说明
+
+- **分页 / 无限滚动**：不涉及，当日单条推荐
+- **并发请求**：无，单接口返回全量数据
+- **竞态处理**：无高频触发场景；「重试」触发时先忽略前次在途响应（⚠️ 待确认：request 封装是否提供 abort 能力）
+- **重试策略**：失败后用户手动点「重试」触发，不自动重试
+- **鉴权方式**：token 放 header，由全局 request 封装统一处理
+- **Mock 方案**：本地 JSON 文件 / ⚠️ 待确认项目是否已接入 Mock 平台
 
 ## 状态枚举
 
@@ -90,7 +125,7 @@ interface TodayWindvaneEvents {
 | ----------------------- | ----------------- | -- |
 | 卡片标题「今日风口」              | identified        | mockup 逐字 |
 | 「热点」左侧堆叠徽章              | identified        | 橙色药丸 |
-| 热点标题截断                  | identified        | mockup 显示尾部 `…` |
+| 热点标题截断                  | identified        | 设计稿显示尾部 `…` |
 | 两个行业标签固定宽度行             | identified        | 明确注释「一行2，固定宽度度」 |
 | 标签 `+5.14%` / `+99.99%` 格式化 | identified        | mockup 可见 |
 | 热点行右侧 chevron           | identified        | 可见 `>` |
@@ -133,7 +168,7 @@ interface TodayWindvaneEvents {
 
 ## 交叉引用
 
-- 输入 mockup：见 `./input.svg`（干净版，作为 skill 输入的示例）和 `./input-annotated.svg`（带编号与 Legend 的教学版，映射每个视觉元素到 spec.md 的 Requirement / Scenario）。
+- 输入设计稿：见 `./input.svg`（干净版，作为 skill 输入的示例）和 `./input-annotated.svg`（带编号与 Legend 的教学版，映射每个视觉元素到 spec.md 的 Requirement / Scenario）。
   - 视觉摘要（供 Claude 读取的文字备份）：卡片标题「今日风口」；热点行：堆叠「热点」徽章、单行截断的示例热点标题、双标签「🔥示例行业 +5.14%」/「🔥另一行业名… +99.99%」、右侧 chevron；基金推荐行：上升 sparkline、「示例宽基指数基金 A 类…」、「近一年涨幅 5.14%」、轮廓「买一笔」CTA。
   - 设计师注释：「一行 2，固定宽度」。
   - 脱敏说明：所有行业、基金、事件文案均为虚构占位。

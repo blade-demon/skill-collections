@@ -135,7 +135,7 @@ The system SHALL render hotspot row and fund row when data is available.
 - AND 点击「重试」触发 retry 事件
 ```
 
-如果某个 ✅ 状态在 mockup 中没有视觉提示，**不要跳过 Scenario**，而是在 `notes.md` 的「开放问题」里登记一条「<state> 的视觉表现待设计签收」，同时在 spec.md 里写一条带 `needs_human_input` 标注的占位 Scenario，等设计补全后填实。
+如果某个 ✅ 状态在设计稿中没有视觉提示，**不要跳过 Scenario**，而是在 `notes.md` 的「开放问题」里登记一条「<state> 的视觉表现待设计签收」，同时在 spec.md 里写一条带 `needs_human_input` 标注的占位 Scenario，等设计补全后填实。
 
 ## 结构 vs 行为
 

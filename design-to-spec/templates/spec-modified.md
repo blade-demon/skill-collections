@@ -9,7 +9,7 @@
 -->
 
 > **引用既有 spec**：`<openspec/specs/<capability>/spec.md 或 design-spec/<component>/specs/<capability>/spec.md>`
-> **改动原因**：<1-2 句描述变更动机，对应 mockup diff 的核心>
+> **改动原因**：<1-2 句描述变更动机，对应设计稿 diff 的核心>
 > **影响面**：<受影响的调用方、需要迁移的页面、用户感知差异>
 
 ## MODIFIED Requirements

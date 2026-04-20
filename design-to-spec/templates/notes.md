@@ -23,7 +23,7 @@
 >
 > 如果用户提供了接口文档 → 优先用文档字段名、类型、可空性，不要猜。接口有 UI 没用的字段不放入 Props。UI 有接口没有的字段必须标为 `source: derived` 或 `source: prop`，否则退化为 `needs_human_input`。
 >
-> 如果只有 mockup 没有接口文档 → 所有字段标 `source: api (inferred)`，并在「开放问题」里加「请确认接口字段名与类型」。
+> 如果只有设计稿、没有接口文档 → 所有字段标 `source: api (inferred)`，并在「开放问题」里加「请确认接口字段名与类型」。
 
 ```ts
 interface <ComponentName>Props {
@@ -136,7 +136,7 @@ public record <ComponentName>DTO(
 
 ## 交叉引用
 
-- 输入 mockup：<路径 / 简述>
+- 输入设计稿：<路径 / 简述>
 - 目标技术栈：<stack>
 - 设计系统：<system 或 none>
 - 规格增量：`./specs/<capability>/spec.md`
