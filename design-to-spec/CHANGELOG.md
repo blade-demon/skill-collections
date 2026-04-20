@@ -1,0 +1,98 @@
+# Changelog — design-to-spec
+
+所有重要变更均记录在此文件中。
+
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，版本管理遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+---
+
+## [0.5.1] - 2026-04-20
+
+### Added
+
+- **交互式步骤 0（阻塞式，分析前执行）**：skill 在开始视觉枚举之前主动停顿，依次发起最多 4 次提问，引导用户提供接口信息和数据获取描述
+  - **步骤 0a**：询问是否有接口文档（支持 OpenAPI / Markdown / TS 类型 / GraphQL / Postman），等待用户回复后再继续
+  - **步骤 0b-A**（有文档）：追问接口响应字段 → UI 展示含义的映射，**枚举字段必须列出全量枚举值及每值的 UI 规则**；收到后升级字段来源标注为 `source: api (mapped)`
+  - **步骤 0b-B**（无文档）：询问是否需要 AI 根据截图推断 Props 并生成 Java DTO 草稿，设置 `generate_java_dto` 标志位
+  - **步骤 0c**（两条分支后统一执行）：开放式提问数据获取方式，用户用自然语言描述「数据从哪来 / 何时触发请求 / 失败怎么处理 / 是否分页缓存」，AI 从描述中提取五个维度信号（是否调接口、触发时机、失败处理、特殊机制、是否 props-only）
+- **新增第三份输出文件 `data-fetching.md`**：数据获取逻辑设计文档，自包含，可直接交给实现开发者而无需阅读 `notes.md`，包含九节：
+  - 数据流向（文字箭头图）
+  - 触发时机与条件（各触发事件及前提条件表）
+  - 请求链路（主请求 + 辅助请求，含接口路径、参数来源、聚合方式）
+  - 分页与无限滚动（方案、边界条件、重置时机）
+  - 缓存与复用策略（策略、粒度、失效触发、stale 态）
+  - 错误分级与降级（按 network / 5xx / 4xx / 空数据 / 字段缺失分级，每级定义 UI 行为和是否可重试）
+  - 竞态与并发处理（防抖、AbortController、并发上限）
+  - 状态机（文字状态图 + 各状态说明表）
+  - 待确认项汇总（全文 `⚠️` 条目集中列出，标注需确认对象和优先级）
+- **枚举字段强制展开**：数据契约推导（步骤 5）新增规则，枚举字段必须展开为 TS 字面量联合类型（`'ACTIVE' | 'SUSPENDED'`），整型枚举同理（`1 | 2 | 3`），不允许宽泛 `string` / `number`；每个枚举值在 inline 注释里写明 UI 展示规则
+- **枚举字段与状态枚举联动**：处理完枚举字段后自动回头检查步骤 4.5 的状态枚举表，每个枚举值视为潜在独立 UI 状态，要求各自至少有一条 Scenario
+- **接口字段映射表**（`templates/notes.md` 新增节）：记录接口响应字段与 UI 展示含义的对应关系，含「枚举值（全量）」列；枚举值缺失或不全时标 `needs_human_input` 并加追问
+- **Java DTO 草稿**（`templates/notes.md` 新增节，条件输出）：枚举字段映射为独立 Java `enum` + `@JsonValue` 标注，类型映射规则：`string → String`、`number → Double/Integer`、`string[] → List<String>`、嵌套对象 → 独立内部 record
+- **新增步骤 5.5：数据获取方式推导**：从步骤 0c 用户描述中提炼结构化内容（触发时机、请求链路、分页、缓存、竞态），同时产出 `notes.md` 数据获取汇总表和完整 `data-fetching.md`；`props_only` 场景输出简化版（仅「数据流向」+「父组件约定」两节）
+- **新增模板文件 `templates/data-fetching.md`**
+
+### Changed
+
+- **输出从两份文件升级为三份**：`notes.md` + `data-fetching.md` + `spec.md`；写文件顺序固定为 notes → data-fetching → spec，避免 Scenario WHEN 子句写错
+- **步骤 8（呈现输出）**：摘要格式改为三文件清单，重点新增「data-fetching.md 中的 `⚠️ 待确认` 项」；用户反馈锚点从 `needs_human_input` 扩展到 `⚠️ 待确认`
+- **输入收集逻辑**：从被动等待改为主动引导，步骤 0 在分析前阻塞执行；输入 #7「API 文档」现在通过步骤 0 交互式收集，不再是静默可选项
+- **步骤 5（数据契约推导）**：原有 4 步处理流程扩展为 5 步，新增第 2 步「枚举字段必须展开」；「只有 mockup 无接口文档」的兜底提示追加「以及所有枚举字段的完整取值列表」
+- **`notes.md` 小节顺序**：在「数据契约」和「状态枚举」之间插入「数据获取方式」节
+- **version**：`0.5.0` → `0.5.1`
+
+### Fixed
+
+- 枚举字段在数据契约中被宽泛化为 `string` / `number` 导致下游 AI 无法生成精确 Scenario 的问题
+
+---
+
+## [0.5.0] - 2026-04-20
+
+### Added
+
+- **API 文档 / 接口契约**作为可选输入（第 7 项），支持 OpenAPI / Swagger YAML、Markdown 接口文档、Postman Collection、TypeScript 类型定义、GraphQL Schema、Protobuf
+- **字段来源标注**：数据契约每个字段必须在 inline 注释中标明 `source: api | derived | prop | ui-only`
+- **接口文档 + mockup 双输入处理流程**：以接口文档字段为基线抄写，再与 mockup 做 diff，找出「接口有 UI 没用」和「UI 有接口没有」两类异常
+- **状态触发条件升级**：有接口文档时，`loading` / `empty` / `error` 的触发条件可引用具体接口字段和 `error.code` 枚举值，直接变成 spec.md Scenario 的可断言 `WHEN` 子句
+- **两条新反模式**：
+  - 不要用接口文档替代视觉枚举（接口文档告诉你「数据是什么」，mockup 告诉你「数据如何展示」）
+  - 不要盲信接口文档的可空性（后端标 `optional` 不代表业务上可以为空）
+- `templates/notes.md` 新增字段来源标注说明节
+
+### Changed
+
+- 数据契约推导从「视觉反推（全部 inferred）」升级为「文档抄写 + mockup diff」，置信度地图大量条目从 `inferred` 升级到 `identified`
+
+---
+
+## [0.4.0] - 2026-04-19
+
+首次发布（initial commit）。
+
+### Added
+
+- 完整的 `SKILL.md` 工作流（步骤 1–8 + 步骤 4.5 / 6.5 / 8.5 插步）
+- 视觉枚举通道（步骤 1）：逐项列出 mockup 中可见元素，含位置 / 文本 / 颜色 / 可交互性
+- 交互推断与置信度标志（步骤 4）：identified / inferred / needs_human_input 三级分类
+- 状态枚举（步骤 4.5）：loading / empty / success / error 等运行时状态，必需状态强制列出
+- 数据契约推导（步骤 5）：TypeScript 风格 Props / Events interface，业务语义命名
+- 组件分解（步骤 6）：名称 / 目的 / 复用信号（business-specific / feature-shared / atom-candidate / existing:{path}）
+- 判定变更类型（步骤 6.5）：新建 vs 改造既有组件，决定 spec.md 使用哪份模板
+- 规格实体化（步骤 7）：生成 `notes.md` + `spec.md`，含埋点锚点节
+- Annotated SVG（步骤 8.5，可选）：编号圆圈 + Legend 映射到 spec Requirement / Scenario，三色置信度配色
+- `references/visual-analysis-checklist.md`：强制枚举检查清单
+- `references/openspec-format.md`：OpenSpec 格式规范
+- `references/scenario-writing-guide.md`：Scenario 写作纪律（反模式 + 自检清单）
+- `references/stack-hints/miniprogram.md`：微信小程序注意事项
+- `references/stack-hints/web.md`：通用 Web 注意事项
+- `templates/notes.md`：设计笔记模板（含状态枚举、埋点锚点）
+- `templates/spec.md`：OpenSpec 增量模板（新建组件，仅 ADDED）
+- `templates/spec-modified.md`：OpenSpec 增量模板（改造组件，MODIFIED / ADDED / REMOVED）
+- `examples/today-windvane/`：golden sample（notes.md + spec.md + input.svg + input-annotated.svg）
+
+---
+
+[0.5.1]: https://github.com/blade-demon/skill-collections/compare/v0.5.0...feat/design-to-spec-v0.5.1
+[0.5.0]: https://github.com/blade-demon/skill-collections/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/blade-demon/skill-collections/releases/tag/v0.4.0
