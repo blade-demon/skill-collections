@@ -1,6 +1,6 @@
 # design-to-spec — 使用指南
 
-> 把一张 UI mockup 图片转换成结构化的实现规格，让下一个 AI（或人）能稳定地落地代码。
+> 把一张 UI 设计稿图片转换成结构化的实现规格，让下一个 AI（或人）能稳定地落地代码。
 
 本文件是 skill 的使用手册，回答「怎么触发、给什么输入、拿到什么、之后怎么办」。skill 的内部工作流程在 `SKILL.md`；不需要阅读 SKILL.md 也能用这份指南正常工作。
 
@@ -43,14 +43,14 @@
 
 **显式触发**
 
-直接说「用 design-to-spec 跑一下这张图」、「把这张 mockup 转成规格」、「帮我基于这个设计稿生成实现文档」——AI 会加载 skill 并要求你附上图片（如果还没附）。
+直接说「用 design-to-spec 跑一下这张图」、「把这张设计稿转成规格」、「帮我基于这个设计稿生成实现文档」——AI 会加载 skill 并要求你附上图片（如果还没附）。
 
 **自动触发关键词**
 
 附上 UI 图片的同时说以下任何一句，skill 会自动激活：
 
 - 「帮我把这张图做成组件」
-- 「我想把这个 mockup 实现出来」
+- 「我想把这份设计稿实现出来」
 - 「基于这个设计稿怎么搭」
 - 「from this screenshot, plan the implementation」
 - 提到「设计稿」、「mockup」、「wireframe」、「comp」、「UI 图」
@@ -67,13 +67,13 @@
 
 | 输入           | 必需?   | 收集方式 | 备注                                              |
 | ------------ | ----- | ------- | ----------------------------------------------- |
-| mockup 图片    | 必需    | 对话附件   | 唯一硬性前提                                          |
+| 设计稿图片    | 必需    | 对话附件   | 唯一硬性前提                                          |
 | 组件名称         | 推荐    | 对话或推断  | 例如 `today-windvane`、`weekly-insight`            |
 | 目标技术栈        | 可选    | 对话或推断  | `miniprogram` / `react` / `vue` / `flutter` / agnostic |
 | 设计系统         | 可选    | 对话或推断  | `tdesign` / `nutui` / `vant` / `antd` / `shadcn` |
 | 能力名称（capability） | 可选 | 对话或推断 | OpenSpec 的 `capability` 归属，缺失时默认组件名            |
 | 现有代码库        | 自动    | Glob 自动 | skill 自动扫描 `components/` 发现可复用原子组件             |
-| **API 文档 / 接口契约** | 可选，强烈推荐 | **步骤 0a 交互式询问** | OpenAPI YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman —— 任一种。提供后数据契约从「视觉反推」升级为「文档抄写 + mockup diff」 |
+| **API 文档 / 接口契约** | 可选，强烈推荐 | **步骤 0a 交互式询问** | OpenAPI YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman —— 任一种。提供后数据契约从「视觉反推」升级为「文档抄写 + 设计稿 diff」 |
 | **接口字段映射（含枚举值）** | 有接口文档时推荐 | **步骤 0b-A 交互式询问** | 接口响应字段 → UI 展示含义的映射；**枚举字段必须列出全量枚举值及每值的 UI 规则**，否则字段降级为 `needs_human_input` |
 | **Java DTO 草稿** | 可选 | **步骤 0b-B 交互式询问** | 仅在无接口文档时询问；AI 根据截图推断 Props，输出 Java `record` / `enum` 草稿供后端参考 |
 | **数据获取方式描述** | 可选，推荐 | **步骤 0c 开放式提问** | 用自然语言描述：数据从哪来、何时请求、失败怎么处理、是否分页/缓存/实时推送；AI 从描述中提取结构化信号并生成 `data-fetching.md` |
@@ -138,7 +138,7 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 | 置信度地图      | 每个元素/行为标 identified / inferred / needs_human_input            |
 | 开放问题        | 阻塞下游工作、需人类回答的问题                                            |
 | 计划提示        | snake_case 标签，给 Superpowers plan 使用                        |
-| 交叉引用        | 输入 mockup、技术栈、设计系统、规格增量路径                                  |
+| 交叉引用        | 输入设计稿、技术栈、设计系统、规格增量路径                                  |
 | 建议的下一步      | 通常指向 `/plan --target <stack>`                               |
 | **埋点锚点**    | 供 `design-to-track` 等下游 skill 消费的语义事件清单（不写完整 schema）       |
 
@@ -204,7 +204,7 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 
 **想重跑整个 skill 怎么办？**
 
-不推荐全量重跑——如果问题局部（比如只是某条决策错了），改那一处比重跑更快、也保留了你已经累积的评审意见。只有当输入 mockup 本身换了、或者整体技术栈判断错了时才值得重跑。
+不推荐全量重跑——如果问题局部（比如只是某条决策错了），改那一处比重跑更快、也保留了你已经累积的评审意见。只有当输入 设计稿本身换了、或者整体技术栈判断错了时才值得重跑。
 
 **多个 mockup 组成一个流程（比如一个完整页面）怎么办？**
 
@@ -290,7 +290,7 @@ status: string;
 把接口文档的任一形态（OpenAPI YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman collection）作为对话附件或代码块提供即可，不需要转换格式。skill 会在步骤 2 摄取「字段名 + 类型 + 可空 + 枚举」四元组，并在步骤 5 数据契约推导时做三件事：
 
 1. **以接口文档字段为基线**抄写，不从视觉反推——字段名、类型、可空性直接照搬
-2. **和 mockup 做 diff**：接口有 UI 不用的字段 → Props 里不透传，notes.md 决策里写原因；UI 有接口没有的字段 → 标 `source: derived` 或 `source: prop` 并解释来源
+2. **和 设计稿做 diff**：接口有 UI 不用的字段 → Props 里不透传，notes.md 决策里写原因；UI 有接口没有的字段 → 标 `source: derived` 或 `source: prop` 并解释来源
 3. **每个字段加 `source: api / derived / prop / ui-only` 注释**，让下游 AI 一眼看出哪些需要真的调接口验证、哪些是纯 UI 状态
 
 典型场景：
@@ -299,7 +299,7 @@ status: string;
 - 接口字段 `yearChangeRate: number | null` → 数据契约里 `yearChange` 标 `source: api`，nullable；`null` 时对应 `partial` 状态，需要加一条 Scenario
 - 接口没有 `isLoggedIn` 但 UI 有登录态分支 → 标 `source: prop`（从父组件/宿主页面传入），不要强求后端加字段
 
-**注意**：有接口文档**不代表可以跳过视觉枚举**。接口文档告诉你「数据是什么」，mockup 告诉你「数据如何展示 + 截断 + 颜色 + 交互 affordance」——两者不互相替代。跳过视觉枚举会让数据契约退化成「接口全透传 Props」，这是反模式（接口返 20 字段、UI 用 8 字段，全透传会把组件耦合到后端数据形状）。
+**注意**：有接口文档**不代表可以跳过视觉枚举**。接口文档告诉你「数据是什么」，设计稿告诉你「数据如何展示 + 截断 + 颜色 + 交互 affordance」——两者不互相替代。跳过视觉枚举会让数据契约退化成「接口全透传 Props」，这是反模式（接口返 20 字段、UI 用 8 字段，全透传会把组件耦合到后端数据形状）。
 
 ---
 
@@ -329,7 +329,7 @@ status: string;
                    实现 + 测试
 ```
 
-**为什么必须串行**：每个下游 skill 都需要"已经被消化过的设计意图"，而不是原始 mockup。
+**为什么必须串行**：每个下游 skill 都需要"已经被消化过的设计意图"，而不是原始设计稿。
 
 - `design-to-track` 需要的是「哪些事件、什么语义、对应哪个 Scenario」 —— 这就是「埋点锚点」+「状态枚举」+「数据契约」三节
 - `/plan` 需要的是「数据契约 + 决策 + 状态枚举 + 开放问题」 —— 这是 `notes.md` 的核心
@@ -346,7 +346,7 @@ status: string;
 | `design-to-a11y`      | notes.md 的「数据契约」+ mockup（用于对比度检查）        | `a11y-audit/<component>.md`（无障碍审计报告）         |
 | `design-to-storybook` | notes.md 的「状态枚举」+「数据契约」                 | `<component>.stories.tsx`（每状态一个 story）      |
 
-所有 skill 都遵守同一约定：**绝不重新阅读原始 mockup**，只消费 `design-spec/<component>/` 目录下的 `notes.md` + `spec.md`。这是 skill 群"单一事实源"原则的工程落地。
+所有 skill 都遵守同一约定：**绝不重新阅读原始设计稿**，只消费 `design-spec/<component>/` 目录下的 `notes.md` + `spec.md`。这是 skill 群"单一事实源"原则的工程落地。
 
 ### 与 OpenSpec 的集成
 
@@ -504,7 +504,7 @@ skills/design-to-spec/
 └── examples/
     └── today-windvane/                # golden sample（含状态枚举 9 行 + 埋点锚点 9 条的完整示范）
         ├── notes.md
-        ├── input.svg                  # 干净版示例输入 mockup（零版权、零品牌风险）
+        ├── input.svg                  # 干净版示例输入设计稿（零版权、零品牌风险）
         ├── input-annotated.svg        # 标注版：编号圆圈 + Legend 映射到 spec 的 Requirement/Scenario
         └── specs/today-windvane/spec.md
 ```
