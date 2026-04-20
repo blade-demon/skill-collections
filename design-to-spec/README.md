@@ -4,7 +4,7 @@
 
 本文件是 skill 的使用手册，回答「怎么触发、给什么输入、拿到什么、之后怎么办」。skill 的内部工作流程在 `SKILL.md`；不需要阅读 SKILL.md 也能用这份指南正常工作。
 
-**当前版本**：`0.5.0` —— 新增 **API 文档 / 接口契约** 作为可选输入（支持 OpenAPI / Markdown / TS 类型 / GraphQL schema / Postman），数据契约推导从「视觉反推」升级为「文档抄写 + mockup diff」；每个字段增加 `source: api | derived | prop | ui-only` 来源标注；步骤 4.5 的状态触发条件可引用接口 `error.code` 枚举；新增两条反模式（不要用接口文档替代视觉枚举、不要盲信接口文档的可空性）。`0.4.0` 的 annotated SVG、复合图片资产反模式，`0.3.0` 的状态枚举、埋点锚点、改造既有组件分支保持不变。
+**当前版本**：`0.5.1` —— 新增**交互式步骤 0**：skill 在开始视觉分析之前主动停顿，依次询问接口文档、字段映射（含枚举值全量）、Java DTO 需求、数据获取方式（开放式描述）。新增**第三份输出文件 `data-fetching.md`**，记录触发时机、请求链路、错误分级、竞态处理和状态机，可直接交给实现开发者而无需阅读 `notes.md` 全文。枚举字段现在强制展开为 TS 字面量联合类型，不再允许宽泛 `string` / `number`。`0.5.0` 的 API 文档摄取、字段来源标注、error.code 枚举触发条件保持不变。
 
 ---
 
@@ -25,13 +25,15 @@
 
 ## 一分钟了解
 
-给一张设计稿截图，skill 会按固定流程跑完：
+给一张设计稿截图，skill 会先与你交互收集接口信息，再按固定流程跑完分析：
 
 ```
-视觉枚举 → 歧义标记 → 状态枚举 → 契约推导 → 组件分解 → 判定新建/改造 → 规格实体化
+【交互】接口文档? → 字段映射? → Java DTO? → 数据获取描述?
+    ↓
+视觉枚举 → 歧义标记 → 状态枚举 → 契约推导 → 数据获取推导 → 组件分解 → 判定新建/改造 → 规格实体化
 ```
 
-输出两份文件：`notes.md`（设计笔记，含状态、埋点等下游接口）+ `spec.md`（OpenSpec 增量，新建用 ADDED / 改造用 MODIFIED）。
+输出三份文件：`notes.md`（设计笔记，含状态、埋点等下游接口）+ `data-fetching.md`（数据获取逻辑设计，可直接交给实现开发者）+ `spec.md`（OpenSpec 增量，新建用 ADDED / 改造用 MODIFIED）。
 
 这些产物的目标不是替代你思考，而是把 AI 的假设、推断和盲点摆在桌面上，供你评审和继续下游工作。**它同时是 `design-to-track`、`/plan` 等下游 skill 的输入接口**——`notes.md` 里"埋点锚点"和"状态枚举"两节就是为这个目的设计的。
 
@@ -63,34 +65,49 @@
 
 ## 准备输入
 
-| 输入           | 必需?   | 默认值                      | 备注                                              |
-| ------------ | ----- | ------------------------ | ----------------------------------------------- |
-| mockup 图片    | 必需    | —                        | 作为对话附件提供                                        |
-| 组件名称         | 推荐    | 从 mockup 标题或你的措辞推断       | 例如 `today-windvane`、`weekly-insight`            |
-| 目标技术栈        | 可选    | agnostic（技术栈无关）          | `miniprogram` / `react` / `vue` / `flutter`     |
-| 设计系统         | 可选    | 无                        | `tdesign` / `nutui` / `vant` / `antd` / `shadcn` |
-| 能力名称（capability） | 可选  | 同组件名称                   | OpenSpec 的 `capability` 归属                      |
-| 现有代码库        | 自动    | 项目根目录                   | skill 会自动 Glob `components/` 发现可复用原子组件          |
-| **API 文档 / 接口契约** | **可选，强烈推荐** | 无 | OpenAPI / Swagger YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman collection —— 任一种即可。数据契约推导会从「视觉反推」升级为「文档抄写 + mockup diff」，置信度地图大量条目从 `inferred` 升级到 `identified` |
+| 输入           | 必需?   | 收集方式 | 备注                                              |
+| ------------ | ----- | ------- | ----------------------------------------------- |
+| mockup 图片    | 必需    | 对话附件   | 唯一硬性前提                                          |
+| 组件名称         | 推荐    | 对话或推断  | 例如 `today-windvane`、`weekly-insight`            |
+| 目标技术栈        | 可选    | 对话或推断  | `miniprogram` / `react` / `vue` / `flutter` / agnostic |
+| 设计系统         | 可选    | 对话或推断  | `tdesign` / `nutui` / `vant` / `antd` / `shadcn` |
+| 能力名称（capability） | 可选 | 对话或推断 | OpenSpec 的 `capability` 归属，缺失时默认组件名            |
+| 现有代码库        | 自动    | Glob 自动 | skill 自动扫描 `components/` 发现可复用原子组件             |
+| **API 文档 / 接口契约** | 可选，强烈推荐 | **步骤 0a 交互式询问** | OpenAPI YAML、Markdown 接口文档、TS 类型文件、GraphQL schema、Postman —— 任一种。提供后数据契约从「视觉反推」升级为「文档抄写 + mockup diff」 |
+| **接口字段映射（含枚举值）** | 有接口文档时推荐 | **步骤 0b-A 交互式询问** | 接口响应字段 → UI 展示含义的映射；**枚举字段必须列出全量枚举值及每值的 UI 规则**，否则字段降级为 `needs_human_input` |
+| **Java DTO 草稿** | 可选 | **步骤 0b-B 交互式询问** | 仅在无接口文档时询问；AI 根据截图推断 Props，输出 Java `record` / `enum` 草稿供后端参考 |
+| **数据获取方式描述** | 可选，推荐 | **步骤 0c 开放式提问** | 用自然语言描述：数据从哪来、何时请求、失败怎么处理、是否分页/缓存/实时推送；AI 从描述中提取结构化信号并生成 `data-fetching.md` |
 
-**不要因为可选输入缺失而拖延**，skill 会用合理默认值并在置信度地图里标记假设。**但如果手边有接口文档，强烈建议一并提供**——这是单个投入 ROI 最高的输入，能同时提升数据契约准确性、减少开放问题、让状态 Scenario 的 `WHEN` 子句变得可断言。
+**步骤 0 会在分析开始前主动停顿询问**，不需要提前准备——skill 会引导你一步步提供。接口文档和数据获取描述是投入产出比最高的两个输入：接口文档让数据契约从猜测变为抄写，数据获取描述让 `data-fetching.md` 从模板变为真实设计文档。
 
 ---
 
 ## 运行流程
 
-skill 会线性跑完 10 步（8 个主步 + 2 个插步），中间**不会**停下来问问题（除非关键输入缺失到无法继续）。典型耗时 2–5 分钟。
+skill 分两个阶段跑完，先交互再分析。典型耗时 3–7 分钟。
+
+**阶段一：交互式输入收集（步骤 0，阻塞）**
+
+skill 会连续发起最多 3 次提问，收到回复后才继续：
+
+- **0a** — 是否有接口文档？（有 → 请粘贴；无 → 回复「跳过」）
+- **0b-A**（有文档）— 接口字段 → UI 展示含义的映射；**枚举字段请列出全量枚举值及每值的 UI 规则**
+- **0b-B**（无文档）— 是否需要 AI 根据截图推断 Props 并生成 Java DTO 草稿？
+- **0c**（两条分支后统一）— 请用自己的话描述这个组件怎么拿到数据（数据从哪来 / 何时触发 / 失败怎么处理 / 有无分页缓存）
+
+**阶段二：分析与生成（步骤 1–8，自动）**
 
 1. 视觉枚举通道——逐项列出图片里看得到的东西
-2. 技术栈和上下文解析——匹配 `references/stack-hints/<stack>.md`，Glob 现有组件；**提供了接口文档时，在这一步摄取「字段名 + 类型 + 可空 + 枚举」四元组**
+2. 技术栈和上下文解析——匹配 `references/stack-hints/<stack>.md`，Glob 现有组件；摄取接口文档「字段名 + 类型 + 可空 + 枚举」四元组
 3. 信息分层——容器 / 区域 / 行 / 原子
 4. 交互推断与置信度标志——每个可交互元素分到 identified / inferred / needs_human_input
-4.5. **状态枚举**——填写 loading / empty / success / error 等可观察状态（必需 ✅ 状态全部列出，未在 mockup 中体现的标 needs_human_input；**有接口文档时触发条件升级到接口 `error.code` 枚举级别**）
-5. 数据契约推导——TypeScript interface，业务语义命名，**每个字段标 `source: api | derived | prop | ui-only`**；有接口文档时以文档为基线 + mockup diff
+4.5. **状态枚举**——loading / empty / success / error 等（必需 ✅ 状态全部列出；有接口文档时触发条件升级到 `error.code` 枚举级别）
+5. 数据契约推导——TypeScript interface，业务语义命名，每个字段标 `source: api | derived | prop | ui-only`；**枚举字段强制展开为字面量联合类型**，有字段映射时来源升级为 `source: api (mapped)`
+5.5. **数据获取方式推导**——从步骤 0c 描述中提炼结构化内容，同时生成 `notes.md` 数据获取表和独立 `data-fetching.md`
 6. 组件分解——名称 / 目的 / 复用信号
 6.5. **判定变更类型**——新建 vs 改造既有组件（决定 spec.md 用哪份模板）
-7. 规格实体化——生成 notes.md + spec.md（含埋点锚点）
-8. 呈现输出——用 `computer://` 链接给你，附 2–3 句关键摘要
+7. 规格实体化——生成 notes.md + data-fetching.md + spec.md（含埋点锚点）；写文件顺序：notes → data-fetching → spec
+8. 呈现输出——三文件清单 + 关键摘要（开放问题 + data-fetching.md 待确认项）
 8.5. **（可选）生成 annotated SVG**——仅在需要跨角色评审或 `needs_human_input` 较多时生成
 
 skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**——不是终稿。
@@ -101,8 +118,9 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 
 ```
 <workspace>/design-spec/<component-name>/
-├── notes.md
-├── specs/<capability>/spec.md
+├── notes.md                   # 设计笔记（下游 skill 的输入接口）
+├── data-fetching.md           # 数据获取逻辑设计（开发者直接入口）
+├── specs/<capability>/spec.md # OpenSpec 行为规格
 └── input-annotated.svg        # 可选，按需生成
 ```
 
@@ -112,7 +130,8 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 | ----------- | ----------------------------------------------------------- |
 | 为什么        | 1–2 句话：用户价值、解决什么问题                                         |
 | 决策          | 3–5 条设计决策，每条一句理由                                           |
-| 数据契约        | TypeScript 风格的 Props / Events interface，**每个字段带 `source: api / derived / prop / ui-only` 注释**标明来源 |
+| 数据契约        | TypeScript 风格的 Props / Events interface，每个字段带 `source: api / derived / prop / ui-only` 注释；**枚举字段展开为字面量联合类型**；可选的接口字段映射表（有字段映射时）和 Java DTO 草稿（用户选择时） |
+| 数据获取方式      | 接口调用汇总表（接口名、调用时机、请求参数、缓存策略）；详细设计见 `data-fetching.md`       |
 | **状态枚举**    | loading / empty / success / error 等运行时状态；标 ✅ 的状态在 spec.md 必有 Scenario |
 | 组件分解        | 名称 / 目的 / 复用信号三列表                                         |
 | 布局陷阱        | 真正会踩的陷阱 + 修复（如 min-width:0、catchtap）                       |
@@ -122,6 +141,22 @@ skill 跑完后会**明确告诉你这是协作草稿，鼓励迭代修订**—�
 | 交叉引用        | 输入 mockup、技术栈、设计系统、规格增量路径                                  |
 | 建议的下一步      | 通常指向 `/plan --target <stack>`                               |
 | **埋点锚点**    | 供 `design-to-track` 等下游 skill 消费的语义事件清单（不写完整 schema）       |
+
+**`data-fetching.md`** — 数据获取逻辑设计，自包含，可直接交给实现开发者而无需阅读 `notes.md`：
+
+| 节          | 包含什么                                                        |
+| ----------- | ----------------------------------------------------------- |
+| 数据流向        | 文字箭头图：数据来源 → 中间层 → 组件 → DOM                               |
+| 触发时机与条件     | 各触发事件（挂载 / 用户操作 / 参数变化 / 轮询）及前提条件表                        |
+| 请求链路        | 主请求接口路径、请求参数来源；辅助请求及聚合方式（如有）                              |
+| 分页与无限滚动     | 分页方案、边界条件、重置时机（无分页时删除此节）                                   |
+| 缓存与复用策略     | 缓存策略、粒度、失效触发、stale 态处理                                     |
+| 错误分级与降级     | 按 network / 5xx / 4xx / 空数据 / 字段缺失分级，每级定义 UI 行为和是否可重试      |
+| 竞态与并发处理     | 防抖方案、AbortController / CancelToken、并发上限（无竞态风险时简写一行）         |
+| 状态机         | 文字状态图（idle → loading → success / empty / error / fetchingMore）+ 各状态说明表 |
+| **待确认项汇总** | 全文所有 `⚠️ 待确认` 条目集中列出，标注需确认对象和优先级                          |
+
+`props_only`（纯展示组件）场景：`data-fetching.md` 输出简化版，仅含「数据流向」+「父组件约定」两节。
 
 **`specs/<capability>/spec.md`** — OpenSpec 格式的行为契约。**根据步骤 6.5 的判定结果**用两份模板之一：
 
@@ -212,6 +247,32 @@ skill 在步骤 6.5 会自动判定，命中以下任一信号即按"改造"处�
 - MODIFIED 块下要列出**变更后该 Requirement 的完整 Scenario 集合**，未变化的 Scenario 也要原样复制过来，否则等于"悄悄删了"未列出的那些
 
 如果 skill 误判成新建（你能看出 spec.md 是 `## ADDED Requirements`），手动改文件头说明"这是改造"，然后让 AI 切到 spec-modified 模板重跑步骤 7。
+
+**步骤 0 的问题太多了，能不能跳过？**
+
+可以，每个问题都能回复「跳过」。跳过的代价：接口文档 → 数据契约字段全部标 `source: api (inferred)` 并进开放问题；字段映射 → 枚举值标 `needs_human_input`；Java DTO → 不生成；数据获取描述 → `data-fetching.md` 大量填 `⚠️ 待确认`，价值大幅下降。**建议至少回答步骤 0c**（数据获取描述）——哪怕一句话「页面打开就请求接口，失败给 toast」，也足够 skill 生成有意义的 `data-fetching.md`。
+
+**`data-fetching.md` 和 `notes.md` 里的「数据获取方式」节有什么区别？**
+
+两者定位不同，不合并：`notes.md` 里的「数据获取方式」是一个 **4 列汇总表**（接口、调用时机、请求参数、缓存），面向下游 skill（`/plan`、`design-to-track`）做快速摘要；`data-fetching.md` 是**完整的工程设计文档**（九节，含错误分级、状态机、竞态处理、待确认项汇总），面向实现开发者，不需要阅读其他文件就能开始写代码。如果只想快速拿到规格，看 `notes.md`；如果要实现数据层，看 `data-fetching.md`。
+
+**枚举字段的处理原则是什么？**
+
+接口文档里的枚举字段在数据契约中**必须展开为字面量联合类型**，不允许宽泛的 `string` 或 `number`：
+
+```ts
+// ✅ 正确
+status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED';  // ACTIVE → 绿色「正常」；其余 → 灰色「暂停」
+
+// ❌ 错误
+status: string;
+```
+
+整型枚举同理：`riskLevel: 1 | 2 | 3` 而不是 `number`，注释里写每个值的含义。枚举值不全（接口文档只给了部分示例）时，字段降级为 `string` 并标 `needs_human_input`，在开放问题里追问完整列表。每个枚举值还可能是独立的 UI 状态，skill 会回头检查步骤 4.5 的状态枚举表，确保每个值都有对应 Scenario。
+
+**Java DTO 草稿有什么限制？**
+
+这是 AI 根据截图**推断**的草稿，不是最终接口契约：字段名来自 UI 语义推断（非数据库字段名），类型映射遵循 `string → String`、`number → Double/Integer`（看精度）、枚举字段 → 独立 `enum` + `@JsonValue` 标注。生成后后端需要：(1) 核对字段名是否与实际表结构匹配；(2) 核对可空性（`@NotNull` / `@Nullable`）；(3) 决定是否需要额外的 validation 注解。草稿只做一件事：让前后端共同看一张"字段清单"开启对齐对话，不是直接 commit 的代码。
 
 **埋点锚点应该写多细？**
 
@@ -437,6 +498,7 @@ skills/design-to-spec/
 │       └── web.md                     # React / Vue / HTML
 ├── templates/
 │   ├── notes.md                       # 设计笔记模板（含状态枚举、埋点锚点）
+│   ├── data-fetching.md               # 数据获取逻辑设计模板（9 节，含错误分级 / 状态机 / 待确认项）
 │   ├── spec.md                        # OpenSpec 增量模板（新建组件用，仅 ADDED）
 │   └── spec-modified.md               # OpenSpec 增量模板（改造既有组件用，MODIFIED + 可选 ADDED/REMOVED）
 └── examples/
