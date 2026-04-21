@@ -6,6 +6,28 @@
 
 ---
 
+## [0.6.0] - 2026-04-21
+
+### Added
+
+- **上下文预算与分阶段释放原则**（新增独立章节，工作流程开始前必读）：
+  - 三级预算门控：< 30K tokens 跳过 Annotated SVG；< 20K tokens `data-fetching.md` 精简输出；< 10K tokens 主动停止并告知用户
+  - **API 文档摘要门控**：接口文档字段数 > 20 或原文 > 2000 字时，先提炼字段索引表，后续步骤只引用索引，不保留原始文档全文
+  - **分阶段写入规范**：步骤 7 拆为 A/B/C/D 四阶段，每阶段写完立即写入磁盘并提炼摘要锚点（数据锚点 / 待确认锚点 / 状态锚点），下游步骤只引用锚点，解决三份文件同时驻留 context 的峰值问题
+  - **引用文件按需加载规则**：明确每个 reference 文件只在对应步骤加载，步骤完成后不在后续步骤重新引用
+- **内联校准检查清单**（替代整文件读取）：把 golden sample 的核心风格信号内联为四个维度（数据契约 / 状态覆盖 / Scenario 质量 / 埋点锚点），无需加载示例文件即可对照检查
+- **锚点格式示例**：在步骤 7 中内联了三类锚点的示例，AI 可直接参照格式压缩并传递
+
+### Changed
+
+- **步骤 0b-A**：读取接口文档后增加摘要门控步骤，大型 API 文档不再全程占用 context
+- **步骤 7 写文件顺序**：从简单的「notes → data-fetching → spec」升级为四阶段分阶段写入，每阶段定义释放规则
+- **校准节**：从「完整阅读 golden sample」改为内联质量信号；golden sample 文件改为按需读取特定节，标注「不要整文件加载」
+- **捆绑资源节**：golden sample 由「必读」改为按节按需读取
+- **version**：`0.5.1` → `0.6.0`
+
+---
+
 ## [0.5.1] - 2026-04-20
 
 ### Added
@@ -93,6 +115,7 @@
 
 ---
 
+[0.6.0]: https://github.com/blade-demon/skill-collections/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/blade-demon/skill-collections/compare/v0.5.0...feat/design-to-spec-v0.5.1
 [0.5.0]: https://github.com/blade-demon/skill-collections/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/blade-demon/skill-collections/releases/tag/v0.4.0

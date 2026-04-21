@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.5.1
+  version: 0.6.0
 description: |
   将 UI 设计稿图片转换为三份结构化产物：notes.md（设计决策 + 数据契约）、data-fetching.md（数据获取逻辑设计）、spec.md（OpenSpec 行为规格）。
 
@@ -70,6 +70,44 @@ description: |
 
 不要因缺失可选输入而阻塞。使用合理的默认值并在置信度地图中标记假设。
 
+## 上下文预算与分阶段释放原则
+
+**在开始任何步骤之前读一遍这一节**，这是本 skill 应对上下文限制的核心规则。
+
+### 预算门控
+
+| 剩余 context | 执行策略 |
+|-------------|---------|
+| < 30K tokens | 跳过步骤 8.5（Annotated SVG） |
+| < 20K tokens | `data-fetching.md` 只写「数据流向」+「错误分级」+「待确认项汇总」三节 |
+| < 10K tokens | **停止**，输出「⚠️ context 不足，已生成内容已写入磁盘，请开启新会话继续」 |
+
+### API 文档摘要门控
+
+若用户提供的接口文档字段数 > 20 或原文 > 2000 字，在步骤 0b-A 读取文档后**立即提炼字段索引表**（字段名 / 类型 / 枚举值 / 可空性，精简 Markdown 表格），后续步骤只引用字段索引表，不再在 context 中保留原始文档全文。
+
+### 分阶段写入与摘要锚点（步骤 7 遵守）
+
+每完成 `notes.md` 的一个主要节，立即写入磁盘，然后将该节压缩为「摘要锚点」（≤ 10 行），下游步骤只引用锚点，不重读已写入的文件。三类锚点定义：
+
+```
+[数据锚点] Props字段名列表 + 枚举值映射 + 数据获取三元组{endpoint, trigger, cache}
+[状态锚点] {状态名 → 触发条件一行} 列表（必需状态全部列出）
+[待确认锚点] ⚠️ 条目摘要（每条 ≤ 1 行，标优先级）
+```
+
+### 引用文件按需加载
+
+各引用文件只在对应步骤加载，步骤完成后不在后续步骤重新引用：
+
+- `visual-analysis-checklist.md` → 仅步骤 1
+- `stack-hints/<stack>.md` → 仅步骤 2
+- `scenario-writing-guide.md` → 仅步骤 7（写 spec.md 之前）
+- `openspec-format.md` → 仅步骤 7（写 spec.md 之前）
+- `templates/*.md` → 各对应步骤首次使用时加载，用完即释放
+
+---
+
 ## 工作流程 —— 按顺序执行这些步骤
 
 顺序很重要。步骤 0 是交互式输入收集，必须在任何分析之前完成；步骤 1-2 是证据收集，必须在综合*之前*进行，以防止模型虚构元素。
@@ -95,7 +133,9 @@ description: |
 
 #### 步骤 0b-A：用户提供了接口文档
 
-读取用户提供的接口文档内容，然后**再次通过 `AskUserQuestion`** 询问字段映射：
+读取用户提供的接口文档内容。**API 文档摘要门控**：若字段数 > 20 或原文 > 2000 字，先提炼「字段索引表」（字段名 / 类型 / 枚举值 / 可空性，精简 Markdown 表格），后续步骤基于字段索引，不在 context 中保留原始文档全文。
+
+然后**再次通过 `AskUserQuestion`** 询问字段映射：
 
 > 收到接口文档，谢谢！
 >
@@ -330,7 +370,36 @@ description: |
 
 最后填写 `notes.md` 的「埋点锚点」表。原则：**所有 spec.md 中带 `tap-` / `view-` / `enter-` / `submit-` 等前缀的事件，以及任何主转化 / 主曝光路径，都至少要有一行埋点锚点**。即使决定不埋点也必须显式标 `not-tracked`，不要漏 —— 这一节是下游 `design-to-track` skill 的唯一输入接口，漏掉等于让它重新看一遍 mockup，破坏 skill 群的"单一事实源"分工。
 
-**写文件顺序**：`notes.md` → `data-fetching.md` → `spec.md`。`data-fetching.md` 在 `notes.md` 数据获取方式节写完后立即生成，不要拖到最后——它的「待确认项」可能影响 spec.md 里 Scenario 的 WHEN 子句。
+**分阶段写入顺序**（节约 context 的关键，每阶段写完立即调用写文件工具）：
+
+**阶段 A** — 写 `notes.md` §为什么 + §决策 + §数据契约 + §数据获取方式
+→ 写入文件后提炼「数据锚点」留存 context（≤ 8 行）；释放：原始 API 文档、步骤 0b-A 对话
+
+**阶段 B** — 写 `data-fetching.md`（基于数据锚点，不重读 `notes.md`）
+→ 写入文件后提炼「待确认锚点」（每条 ≤ 1 行）；释放：`data-fetching.md` 完整内容
+
+**阶段 C** — 追加写 `notes.md` §状态枚举 + §组件分解 + §布局陷阱 + §置信度地图 + §开放问题 + §计划提示 + §交叉引用 + §埋点锚点
+→ 写入文件后提炼「状态锚点」（每状态 ≤ 1 行）；释放：步骤 1–4.5 分析过程、`visual-analysis-checklist.md`
+
+**阶段 D** — 写 `spec.md`（基于状态锚点 + 数据锚点，不重读已生成文件）
+→ 读 `references/scenario-writing-guide.md` 和 `references/openspec-format.md`（仅此处读取一次）
+
+**锚点示例**（内联在 context 中保持 ≤ 15 行）：
+```
+[数据锚点] Props: hotspot{title,tags[].{name,change,hot},badgeIconUrl}, fund{code,name,yearChange,sparklineUrl?,ctaLabel?}
+枚举: tags[].hot true|false; sparklineUrl 可空→收缩单行
+数据获取: GET /api/v1/today/recommendation, onReady+缓存未命中, wx.setStorage日级TTL
+
+[状态锚点]
+loading: props.loading===true 或缓存未命中
+empty: hotspot===null → 卡片隐藏
+success: hotspot+fund均完整
+error: 网络失败/5xx/4xx → .error-state+重试按钮
+disabled: isLoggedIn===false → CTA灰化+tap-login
+
+[待确认锚点]
+⚠️ 401处理方式(P0)  ⚠️ 骨架屏视觉待签收(P1)  ⚠️ 超时时长(P1)
+```
 
 ### 步骤 8：呈现输出
 
@@ -377,16 +446,36 @@ description: |
 - `templates/data-fetching.md` —— 数据获取逻辑设计文档模板（在步骤 5.5 中填写）
 - `templates/spec.md` —— OpenSpec 增量模板（**新建**组件用，仅 `## ADDED Requirements`）
 - `templates/spec-modified.md` —— OpenSpec 增量模板（**改造**既有组件用，含 MODIFIED / ADDED / REMOVED 三块）
-- `examples/today-windvane/` —— golden sample：
-  - `notes.md` + `specs/today-windvane/spec.md` —— 必读，校准输出风格和深度
+- `examples/today-windvane/` —— golden sample（**按需读取特定节，不要整文件加载**）：
+  - `notes.md` —— 仅在风格校准时读「数据契约」或「埋点锚点」节
+  - `specs/today-windvane/spec.md` —— 仅在校准 Scenario 风格时读前两个 Requirement
+  - `data-fetching.md` —— 仅在需要参照七节结构时读
   - `input.svg` —— 干净版示例输入设计稿（零版权、零品牌风险）
   - `input-annotated.svg` —— 标注版：左侧 mockup + 右侧 Legend，编号圆圈把每个视觉元素映射到 spec.md 的 Requirement / Scenario。颜色约定：`#1664FF` 蓝 = identified、`#7B61FF` 紫 = inferred、`#FF7D00` 橙 = needs_human_input（与 notes.md 置信度地图共享一套配色）
 
-## 校准：阅读 golden sample
+## 校准：输出质量信号（内联，无需读取示例文件）
 
-最有价值的单个校准步骤是完整阅读 `examples/today-windvane/notes.md` 和 `examples/today-windvane/specs/today-windvane/spec.md`。它展示了此技能「好」是什么样子：数据契约中的细节深度、交互歧义如何标记、特定技术栈提示如何嵌入，以及 `notes.md` 如何为规划阶段服务。
+以下关键信号覆盖 golden sample 的核心校准要点，对照检查而无需加载示例文件：
 
-除非输入设计稿明显更简单或更复杂，否则请匹配其深度和结构进行新输出。
+**数据契约**
+- 字段数量 ≈ 设计稿实际使用的接口字段数（接口有 UI 没用的不放入 Props）
+- 枚举字段展开为字面量联合类型，每个值有 inline UI 含义注释，无裸 `string` / `number` 兜底
+- 所有字段有 `source: api | derived | prop | ui-only` 标注，无遗漏
+
+**状态覆盖**
+- `notes.md §状态枚举`：loading / empty / success / error 四个必需状态全部出现
+- `spec.md`：每个 ✅ 状态至少 1 条 Scenario；非 happy-path Scenario 数量 ≥ 1
+
+**Scenario 质量**
+- WHEN：引用具体字段/值（`data.items.length === 0`），不用「无数据时」「接口失败时」
+- THEN：指向可断言的 DOM/事件（`renders .skeleton-row`），不用「正确显示」「优雅降级」
+- 每个 Requirement 2–4 条 Scenario
+
+**埋点锚点**
+- 所有 `tap-` / `view-` 前缀事件在表中至少出现 1 行
+- 不埋点的显式标 `not-tracked`，不要漏行
+
+**可选深度校准**（仅在输出风格明显偏离时）：按需读取 `examples/today-windvane/notes.md` 的「数据契约」和「埋点锚点」两节，或 `specs/today-windvane/spec.md` 的前两个 Requirement。**不要整文件读取**。除非输入设计稿明显更简单或更复杂，匹配以上信号的深度进行输出。
 
 ## 应避免的反模式
 
