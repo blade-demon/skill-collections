@@ -117,6 +117,7 @@ YAML 读取优先使用 Python 包 `PyYAML`；若不可用，脚本会回退到 
 - 契约是否符合对应 JSON Schema
 - YAML 是否可解析
 - `mapping.component` 是否等于 `ui.name`
+- `components[].id`、`states[].id`、`api.endpoints[].id`、`requests[].id` 等关键锚点是否唯一
 - `requests[].endpoint` 是否存在于 `api.endpoints`
 - `bindings` 是否引用了存在的 UI component、API param 或 response field
 - `state_machine.to` 是否指向存在的 UI state
@@ -134,7 +135,7 @@ python3 design-to-spec/scripts/validate-output.py \
   --spec design-spec/<component>/specs/<capability>/spec.md
 ```
 
-输出校验会检查 OpenSpec 关键字、`required: true` 状态覆盖、请求 endpoint 是否进入 `data-fetching.md`、`ui_to_event` 事件是否进入 `notes.md` 或 `spec.md`，以及开放问题和待确认章节是否存在。开放问题改写导致的弱匹配默认输出 warning；加 `--strict` 可把 warning 作为错误处理。
+输出校验会检查 OpenSpec 关键字、`required: true` 状态覆盖、请求 endpoint 是否进入 `data-fetching.md`、`ui_to_event` 事件是否进入 `notes.md` 或 `spec.md`，以及开放问题和待确认章节是否存在。脚本优先解析结构化锚点：`notes.md` 的「状态枚举」表、「开放问题」编号列表和「埋点锚点」表；只有缺少结构化锚点时才退回弱文本匹配。开放问题改写导致的弱匹配默认输出 warning；加 `--strict` 可把 warning 作为错误处理。
 
 ## 下游使用
 

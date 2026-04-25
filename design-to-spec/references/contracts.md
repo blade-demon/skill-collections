@@ -59,6 +59,8 @@
 填写规则：
 
 - `data_fetching.requests[].endpoint` 必须引用 `API_Schema.endpoints[].id`。
+- `components[].id`、`states[].id`、`api.endpoints[].id`、`data_fetching.requests[].id` 和 `open_questions[].id` 必须在各自作用域内唯一。
+- 同一个 endpoint 内的 `params[].name` 和 `response_fields[].name` 必须唯一。
 - `bindings.source_ui / target_ui` 必须引用 `UI_Schema.components[].id`。
 - `bindings.source_api` 必须引用 `API_Schema.response_fields[].name`。
 - `bindings.target_api` 必须引用 `API_Schema.params[].name`。

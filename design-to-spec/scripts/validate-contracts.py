@@ -188,6 +188,62 @@ def collect_api_ids(api: dict[str, Any]) -> tuple[set[str], set[str], set[str]]:
     return endpoint_ids, params, fields
 
 
+def find_duplicates(items: list[Any]) -> set[Any]:
+    seen: set[Any] = set()
+    duplicates: set[Any] = set()
+    for item in items:
+        if item in seen:
+            duplicates.add(item)
+        else:
+            seen.add(item)
+    return duplicates
+
+
+def validate_unique_values(label: str, values: list[Any], errors: list[str]) -> None:
+    for duplicate in sorted(find_duplicates([value for value in values if value])):
+        errors.append(f"{label} contains duplicate value {duplicate!r}")
+
+
+def validate_uniqueness(ui: dict[str, Any], api: dict[str, Any], mapping: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+
+    components = ui.get("components", []) or []
+    states = ui.get("states", []) or []
+    validate_unique_values("ui.components[].id", [item.get("id") for item in components], errors)
+    validate_unique_values("ui.states[].id", [item.get("id") for item in states], errors)
+
+    endpoints = api.get("endpoints", []) or []
+    validate_unique_values("api.endpoints[].id", [item.get("id") for item in endpoints], errors)
+    for endpoint in endpoints:
+        endpoint_label = f"api.endpoints[{endpoint.get('id', '<unknown>')}]"
+        validate_unique_values(
+            f"{endpoint_label}.params[].name",
+            [item.get("name") for item in endpoint.get("params", []) or []],
+            errors,
+        )
+        validate_unique_values(
+            f"{endpoint_label}.response_fields[].name",
+            [item.get("name") for item in endpoint.get("response_fields", []) or []],
+            errors,
+        )
+
+    validate_unique_values(
+        "api.open_questions[].id",
+        [item.get("id") for item in api.get("open_questions", []) or []],
+        errors,
+    )
+
+    requests = mapping.get("data_fetching", {}).get("requests", []) or []
+    validate_unique_values("mapping.data_fetching.requests[].id", [item.get("id") for item in requests], errors)
+    validate_unique_values(
+        "mapping.open_questions[].id",
+        [item.get("id") for item in mapping.get("open_questions", []) or []],
+        errors,
+    )
+
+    return errors
+
+
 def validate(ui_doc: dict[str, Any], api_doc: dict[str, Any], mapping_doc: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     ui = ui_doc.get("ui", {})
@@ -207,6 +263,8 @@ def validate(ui_doc: dict[str, Any], api_doc: dict[str, Any], mapping_doc: dict[
     component_name = ui.get("name")
     if component_name and mapping.get("component") and mapping.get("component") != component_name:
         errors.append(f"mapping.component {mapping.get('component')!r} does not match ui.name {component_name!r}")
+
+    errors.extend(validate_uniqueness(ui, api, mapping))
 
     components = ui.get("components", []) or []
     component_ids = {item.get("id") for item in components if item.get("id")}

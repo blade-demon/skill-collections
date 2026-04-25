@@ -18,6 +18,7 @@ except ImportError:
 
 
 EVENT_PATTERN = re.compile(r"[a-z]+(?:-[a-z]+)+")
+HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -90,6 +91,108 @@ def normalized_probe(text: str, length: int = 12) -> str:
     return compact[:length]
 
 
+def section_text(markdown: str, heading: str, level: int = 2) -> str:
+    target = "#" * level
+    matches = list(HEADING_PATTERN.finditer(markdown))
+    for index, match in enumerate(matches):
+        if match.group(1) == target and match.group(2).strip() == heading:
+            start = match.end()
+            end = len(markdown)
+            for next_match in matches[index + 1 :]:
+                if len(next_match.group(1)) <= level:
+                    end = next_match.start()
+                    break
+            return markdown[start:end].strip()
+    return ""
+
+
+def extract_numbered_items(markdown_section: str) -> dict[int, str]:
+    items: dict[int, str] = {}
+    current_number: int | None = None
+    current_lines: list[str] = []
+
+    def flush() -> None:
+        if current_number is not None:
+            items[current_number] = " ".join(line.strip() for line in current_lines).strip()
+
+    for line in markdown_section.splitlines():
+        match = re.match(r"^\s*(\d+)\.\s+(.*)$", line)
+        if match:
+            flush()
+            current_number = int(match.group(1))
+            current_lines = [match.group(2)]
+        elif current_number is not None and line.startswith((" ", "\t")):
+            current_lines.append(line)
+    flush()
+    return items
+
+
+def extract_table_rows(markdown_section: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in markdown_section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or not stripped.endswith("|"):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if cells and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            continue
+        rows.append(cells)
+    return rows
+
+
+def collect_state_ids_from_notes(notes_text: str) -> set[str]:
+    rows = extract_table_rows(section_text(notes_text, "状态枚举"))
+    state_ids: set[str] = set()
+    for row in rows[1:]:
+        if not row:
+            continue
+        match = re.search(r"`([^`]+)`", row[0])
+        if match:
+            state_ids.add(match.group(1))
+    return state_ids
+
+
+def collect_tracking_anchor_ids(notes_text: str) -> set[str]:
+    rows = extract_table_rows(section_text(notes_text, "埋点锚点"))
+    anchors: set[str] = set()
+    for row in rows[1:]:
+        for cell in row:
+            anchors.update(EVENT_PATTERN.findall(cell))
+    return anchors
+
+
+def question_number(question: dict[str, str]) -> int | None:
+    question_id = str(question.get("id", ""))
+    match = re.search(r"(\d+)$", question_id)
+    return int(match.group(1)) if match else None
+
+
+def question_is_anchored(question: dict[str, str], numbered_questions: dict[int, str], notes_text: str) -> bool:
+    number = question_number(question)
+    if number is not None and number in numbered_questions:
+        return True
+
+    content = question.get("content", "")
+    probe = normalized_probe(content)
+    normalized_notes = normalized_probe(notes_text, length=len(notes_text))
+    if probe and probe in normalized_notes:
+        return True
+
+    # Fallback: require several meaningful tokens to appear somewhere in the
+    # open-question section. This tolerates copy edits while still catching
+    # genuinely dropped questions.
+    open_question_text = "\n".join(numbered_questions.values())
+    tokens = [
+        token
+        for token in re.split(r"[`\s\"'()（）？?，,。.:：；;、/]+", content)
+        if len(token) >= 4
+    ]
+    if not tokens:
+        return False
+    hits = sum(1 for token in tokens if token in open_question_text)
+    return hits >= min(2, len(tokens))
+
+
 def validate_outputs(
     ui_doc: dict[str, Any],
     api_doc: dict[str, Any],
@@ -108,9 +211,12 @@ def validate_outputs(
         if fragment not in spec_text:
             errors.append(f"spec.md is missing OpenSpec fragment {fragment!r}")
 
+    notes_state_ids = collect_state_ids_from_notes(notes_text)
     for state in ui_doc.get("ui", {}).get("states", []) or []:
         if state.get("required") is True:
             state_id = state.get("id", "")
+            if state_id and state_id not in notes_state_ids:
+                errors.append(f"required state {state_id!r} is not listed in notes.md 状态枚举")
             if state_id and state_id not in spec_text:
                 errors.append(f"required state {state_id!r} is not mentioned in spec.md")
             assertion = state.get("render_assertion", "")
@@ -124,18 +230,17 @@ def validate_outputs(
         if endpoint_id and endpoint_url and endpoint_url not in data_fetching_text:
             errors.append(f"data-fetching.md does not mention endpoint {endpoint_url!r} for request {request.get('id')!r}")
 
+    tracking_anchor_ids = collect_tracking_anchor_ids(notes_text)
     combined_notes_spec = notes_text + "\n" + spec_text
     for event_name in collect_event_names(mapping_doc):
-        if event_name not in combined_notes_spec:
+        if event_name not in tracking_anchor_ids and event_name not in combined_notes_spec:
             errors.append(f"event {event_name!r} is not mentioned in notes.md or spec.md")
 
-    normalized_notes = normalized_probe(notes_text, length=len(notes_text))
+    numbered_questions = extract_numbered_items(section_text(notes_text, "开放问题"))
     for question in collect_open_questions(api_doc, mapping_doc):
-        content = question.get("content", "")
         priority = question.get("priority", "")
-        probe = normalized_probe(content)
-        if priority == "P0" and probe and probe not in normalized_notes:
-            warnings.append(f"P0 open question may be missing from notes.md: {content}")
+        if priority == "P0" and not question_is_anchored(question, numbered_questions, notes_text):
+            warnings.append(f"P0 open question may be missing from notes.md: {question.get('content', '')}")
 
     if "## 待确认项汇总" not in data_fetching_text:
         warnings.append("data-fetching.md is missing a 待确认项汇总 section")

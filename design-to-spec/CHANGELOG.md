@@ -16,6 +16,8 @@
 
 ### Changed
 
+- `scripts/validate-output.py` 增加结构化锚点校验，优先解析 `notes.md` 的「状态枚举」表、「开放问题」编号列表和「埋点锚点」表，减少开放问题改写导致的字符串误报。
+- `scripts/validate-contracts.py` 增加唯一性约束，重复的 `components[].id`、`states[].id`、`api.endpoints[].id`、`requests[].id`、字段名和开放问题 id 会报错。
 - `scripts/validate-contracts.py` 改为先执行 JSON Schema 校验，再执行跨契约引用校验，能更早发现缺字段、字段类型错误、非法枚举值和多余字段。
 - 校验脚本移除 Python 第三方包硬依赖：YAML 读取优先使用 PyYAML，缺失时回退到 Ruby 标准库；JSON Schema 校验由脚本内置 Draft 7 子集校验器完成。
 - `README.md` 和 `SKILL.md` 同步说明 schema 驱动校验与输出产物校验流程。
