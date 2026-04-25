@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "design-to-spec Mapping_Logic",
+  "type": "object",
+  "required": ["mapping"],
+  "additionalProperties": false,
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "required": ["component", "data_fetching", "bindings", "state_machine", "open_questions"],
+      "additionalProperties": false,
+      "properties": {
+        "component": { "type": "string", "minLength": 1 },
+        "data_fetching": {
+          "type": "object",
+          "required": ["requests"],
+          "additionalProperties": true,
+          "properties": {
+            "requests": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "trigger", "endpoint", "call_type", "loading_state", "depends_on"],
+                "additionalProperties": false,
+                "properties": {
+                  "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+                  "trigger": { "type": "string", "minLength": 1 },
+                  "endpoint": { "type": "string" },
+                  "call_type": {
+                    "type": "string",
+                    "enum": ["user_triggered", "on_mount", "polling", "realtime"]
+                  },
+                  "loading_state": { "type": "boolean" },
+                  "depends_on": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["source_ui", "target_api", "direction"],
+                "additionalProperties": false,
+                "properties": {
+                  "source_ui": { "type": "string", "minLength": 1 },
+                  "target_api": { "type": "string", "minLength": 1 },
+                  "direction": { "const": "ui_to_api" },
+                  "transform": { "type": "string" }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["source_api", "target_ui", "direction", "transform"],
+                "additionalProperties": false,
+                "properties": {
+                  "source_api": { "type": "string", "minLength": 1 },
+                  "target_ui": { "type": "string", "minLength": 1 },
+                  "direction": { "const": "api_to_ui" },
+                  "transform": { "type": "string" }
+                }
+              },
+              {
+                "type": "object",
+                "required": ["source_ui", "target_event", "direction", "transform"],
+                "additionalProperties": false,
+                "properties": {
+                  "source_ui": { "type": "string", "minLength": 1 },
+                  "target_event": { "type": "string", "minLength": 1 },
+                  "direction": { "const": "ui_to_event" },
+                  "transform": { "type": "string" }
+                }
+              }
+            ]
+          }
+        },
+        "state_machine": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "event", "to"],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string", "minLength": 1 },
+              "event": { "type": "string", "minLength": 1 },
+              "to": { "type": "string", "minLength": 1 },
+              "render_assertion": { "type": "string" }
+            }
+          }
+        },
+        "open_questions": { "$ref": "#/definitions/openQuestions" }
+      }
+    }
+  },
+  "definitions": {
+    "openQuestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "content", "priority"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "content": { "type": "string", "minLength": 1 },
+          "priority": { "type": "string", "enum": ["P0", "P1", "P2"] }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "design-to-spec UI_Schema",
+  "type": "object",
+  "required": ["ui"],
+  "additionalProperties": false,
+  "properties": {
+    "ui": {
+      "type": "object",
+      "required": ["name", "components", "states", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "parent_id",
+              "type",
+              "role",
+              "label",
+              "interactive",
+              "confidence",
+              "repeat_source",
+              "notes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+              "parent_id": { "type": "string", "minLength": 1 },
+              "type": {
+                "type": "string",
+                "enum": ["Input", "Button", "List", "Card", "Tab", "Badge", "Icon", "Image", "Text"]
+              },
+              "role": {
+                "type": "string",
+                "enum": ["primary", "secondary", "action", "decoration", "container", "data_field"]
+              },
+              "label": { "type": "string" },
+              "interactive": { "type": "boolean" },
+              "confidence": {
+                "type": "string",
+                "enum": ["identified", "inferred", "needs_human_input"]
+              },
+              "repeat_source": { "type": "string" },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "states": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["id", "trigger", "required", "source", "confidence", "render_assertion"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+              "trigger": { "type": "string", "minLength": 1 },
+              "required": { "type": "boolean" },
+              "source": { "type": "string", "enum": ["visible", "inferred", "policy"] },
+              "confidence": {
+                "type": "string",
+                "enum": ["identified", "inferred", "needs_human_input"]
+              },
+              "render_assertion": { "type": "string" }
+            }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "required": ["structure", "notes"],
+          "additionalProperties": false,
+          "properties": {
+            "structure": { "type": "string", "enum": ["vertical", "horizontal", "grid", "overlay"] },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.7.1
+  version: 0.7.2
 description: |
   将 UI 设计稿 + 接口文档转换为结构化规格包，采用四阶段状态机架构：
   视觉提纯（UI_Schema）→ 接口提纯（API_Schema）→ 逻辑映射（Mapping_Logic）→ 规格组装。
@@ -444,6 +444,9 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `templates/data-fetching.md` — 数据获取逻辑模板（阶段四 B）
 - `templates/spec.md` — 新建组件规格模板（阶段四 D，新建时）
 - `templates/spec-modified.md` — 改造组件规格模板（阶段四 D，改造时）
+- `schemas/ui-schema.json` — UI_Schema JSON Schema（校验组件、状态、布局结构）
+- `schemas/api-schema.json` — API_Schema JSON Schema（校验接口、参数、响应字段、开放问题）
+- `schemas/mapping-logic.json` — Mapping_Logic JSON Schema（校验请求、绑定、状态机、开放问题）
 - `examples/today-windvane/` — golden sample（**按需读取特定节，不整文件加载**）：
   - `notes.md` — 仅在风格校准时读「数据契约」或「埋点锚点」节
   - `specs/today-windvane/spec.md` — 仅在校准 Scenario 风格时读前两个 Requirement
@@ -451,7 +454,7 @@ error: api_error（FORBIDDEN 处理待确认 P0）
   - `contracts/ui-schema.yaml` — 阶段一 YAML 契约的填写示例（LLM 内部协议，非用户输出）
   - `contracts/api-schema.yaml` — 阶段二 YAML 契约的填写示例
   - `contracts/mapping-logic.yaml` — 阶段三 YAML 契约的填写示例
-- `scripts/validate-contracts.py` — 校验三份契约的 YAML 格式和跨文件引用关系（阶段四前可运行）
+- `scripts/validate-contracts.py` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
 
 ---
 

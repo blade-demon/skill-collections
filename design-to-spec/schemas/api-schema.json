@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "design-to-spec API_Schema",
+  "type": "object",
+  "required": ["api"],
+  "additionalProperties": false,
+  "properties": {
+    "api": {
+      "type": "object",
+      "required": ["endpoints", "open_questions"],
+      "additionalProperties": false,
+      "properties": {
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "url", "method", "params", "response_fields"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+              "url": { "type": "string", "minLength": 1 },
+              "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+              "params": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "required", "notes"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "required": { "type": "boolean" },
+                    "notes": { "type": "string" }
+                  }
+                }
+              },
+              "response_fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "nullable", "enums", "notes"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "item_type": { "type": "string" },
+                    "nullable": { "type": "boolean" },
+                    "enums": {
+                      "type": "array",
+                      "items": { "type": ["string", "number", "boolean"] }
+                    },
+                    "notes": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "open_questions": { "$ref": "#/definitions/openQuestions" }
+      }
+    }
+  },
+  "definitions": {
+    "openQuestions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "content", "priority"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "content": { "type": "string", "minLength": 1 },
+          "priority": { "type": "string", "enum": ["P0", "P1", "P2"] }
+        }
+      }
+    }
+  }
+}

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Validate design-to-spec YAML contracts.
 
-This checks the cross-file references that commonly drift between UI_Schema,
-API_Schema, and Mapping_Logic before the final spec assembly step.
+This first validates each contract against its JSON Schema, then checks the
+cross-file references that commonly drift between UI_Schema, API_Schema, and
+Mapping_Logic before the final spec assembly step.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,15 @@ except ImportError:
     print("PyYAML is required: python3 -m pip install pyyaml", file=sys.stderr)
     sys.exit(2)
 
+try:
+    from jsonschema import Draft7Validator
+except ImportError:
+    print("jsonschema is required: python3 -m pip install jsonschema", file=sys.stderr)
+    sys.exit(2)
+
+
+SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schemas"
+
 
 def load_yaml(path: Path) -> dict[str, Any]:
     try:
@@ -27,6 +38,31 @@ def load_yaml(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"{path}: top-level YAML must be a mapping")
     return data
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path}: invalid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: top-level JSON must be a mapping")
+    return data
+
+
+def format_schema_path(error_path: Any) -> str:
+    parts = [str(item) for item in error_path]
+    return ".".join(parts) if parts else "<root>"
+
+
+def validate_schema(label: str, document: dict[str, Any], schema_path: Path) -> list[str]:
+    schema = load_json(schema_path)
+    validator = Draft7Validator(schema)
+    errors = sorted(validator.iter_errors(document), key=lambda error: list(error.path))
+    return [
+        f"{label}: schema error at {format_schema_path(error.path)}: {error.message}"
+        for error in errors
+    ]
 
 
 def collect_api_ids(api: dict[str, Any]) -> tuple[set[str], set[str], set[str]]:
@@ -139,13 +175,21 @@ def main() -> int:
     parser.add_argument("--ui", required=True, type=Path, help="Path to ui-schema.yaml")
     parser.add_argument("--api", required=True, type=Path, help="Path to api-schema.yaml")
     parser.add_argument("--mapping", required=True, type=Path, help="Path to mapping-logic.yaml")
+    parser.add_argument("--ui-schema", type=Path, default=SCHEMA_DIR / "ui-schema.json")
+    parser.add_argument("--api-schema", type=Path, default=SCHEMA_DIR / "api-schema.json")
+    parser.add_argument("--mapping-schema", type=Path, default=SCHEMA_DIR / "mapping-logic.json")
     args = parser.parse_args()
 
     try:
         ui_doc = load_yaml(args.ui)
         api_doc = load_yaml(args.api)
         mapping_doc = load_yaml(args.mapping)
-        errors = validate(ui_doc, api_doc, mapping_doc)
+        errors = []
+        errors.extend(validate_schema("ui-schema", ui_doc, args.ui_schema))
+        errors.extend(validate_schema("api-schema", api_doc, args.api_schema))
+        errors.extend(validate_schema("mapping-logic", mapping_doc, args.mapping_schema))
+        if not errors:
+            errors.extend(validate(ui_doc, api_doc, mapping_doc))
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1

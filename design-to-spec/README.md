@@ -2,7 +2,7 @@
 
 > 将 UI 设计稿和接口文档转换成结构化规格包，让后续 AI 或开发者稳定实现。
 
-**当前版本**：`0.7.1`
+**当前版本**：`0.7.2`
 
 `design-to-spec` 采用四阶段状态机：视觉提纯、接口提纯、逻辑映射、规格组装。前三阶段分别生成 YAML 契约，第四阶段只读取契约机械填充模板，不重新看图或重新推断接口。
 
@@ -101,7 +101,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 
 ## 质量检查
 
-阶段四前可运行契约校验脚本：
+阶段四前可运行契约校验脚本。脚本会先读取 `design-to-spec/schemas/*.json` 做结构校验，再检查三份契约之间的引用关系：
 
 ```bash
 python3 design-to-spec/scripts/validate-contracts.py \
@@ -110,8 +110,11 @@ python3 design-to-spec/scripts/validate-contracts.py \
   --mapping design-spec/<component>/contracts/mapping-logic.yaml
 ```
 
+运行环境需要 Python 包 `PyYAML` 和 `jsonschema`。
+
 校验内容包括：
 
+- 契约是否符合对应 JSON Schema
 - YAML 是否可解析
 - `mapping.component` 是否等于 `ui.name`
 - `requests[].endpoint` 是否存在于 `api.endpoints`
