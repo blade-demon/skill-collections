@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,27 +19,40 @@ from typing import Any
 try:
     import yaml
 except ImportError:
-    print("PyYAML is required: python3 -m pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
-
-try:
-    from jsonschema import Draft7Validator
-except ImportError:
-    print("jsonschema is required: python3 -m pip install jsonschema", file=sys.stderr)
-    sys.exit(2)
+    yaml = None
 
 
 SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schemas"
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise ValueError(f"{path}: invalid YAML: {exc}") from exc
+    if yaml is not None:
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{path}: invalid YAML: {exc}") from exc
+    else:
+        data = load_yaml_with_ruby(path)
     if not isinstance(data, dict):
         raise ValueError(f"{path}: top-level YAML must be a mapping")
     return data
+
+
+def load_yaml_with_ruby(path: Path) -> Any:
+    script = "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV[0]))"
+    try:
+        result = subprocess.run(
+            ["ruby", "-e", script, str(path)],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError as exc:
+        raise ValueError(f"{path}: PyYAML is unavailable and Ruby fallback is not installed") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip()
+        raise ValueError(f"{path}: invalid YAML: {detail}") from exc
+    return json.loads(result.stdout)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -57,12 +72,100 @@ def format_schema_path(error_path: Any) -> str:
 
 def validate_schema(label: str, document: dict[str, Any], schema_path: Path) -> list[str]:
     schema = load_json(schema_path)
-    validator = Draft7Validator(schema)
-    errors = sorted(validator.iter_errors(document), key=lambda error: list(error.path))
-    return [
-        f"{label}: schema error at {format_schema_path(error.path)}: {error.message}"
-        for error in errors
-    ]
+    return validate_json_schema(label, document, schema)
+
+
+def validate_json_schema(label: str, document: Any, schema: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+
+    def resolve_ref(ref: str) -> dict[str, Any]:
+        if not ref.startswith("#/"):
+            raise ValueError(f"unsupported JSON Schema ref {ref!r}")
+        node: Any = schema
+        for part in ref[2:].split("/"):
+            node = node[part]
+        if not isinstance(node, dict):
+            raise ValueError(f"JSON Schema ref {ref!r} does not point to an object")
+        return node
+
+    def type_matches(value: Any, expected: str) -> bool:
+        if expected == "object":
+            return isinstance(value, dict)
+        if expected == "array":
+            return isinstance(value, list)
+        if expected == "string":
+            return isinstance(value, str)
+        if expected == "boolean":
+            return isinstance(value, bool)
+        if expected == "number":
+            return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return True
+
+    def check(value: Any, node: dict[str, Any], path: list[Any]) -> None:
+        if "$ref" in node:
+            check(value, resolve_ref(node["$ref"]), path)
+            return
+
+        if "oneOf" in node:
+            matches = []
+            for option in node["oneOf"]:
+                before = len(errors)
+                local_errors: list[str] = []
+                original_errors = errors[:]
+                errors.clear()
+                check(value, option, path)
+                local_errors.extend(errors)
+                errors.clear()
+                errors.extend(original_errors)
+                if not local_errors and len(errors) == before:
+                    matches.append(option)
+            if len(matches) != 1:
+                errors.append(f"{label}: schema error at {format_schema_path(path)}: value must match exactly one schema")
+            return
+
+        expected_type = node.get("type")
+        if isinstance(expected_type, list):
+            if not any(type_matches(value, item) for item in expected_type):
+                errors.append(f"{label}: schema error at {format_schema_path(path)}: expected one of {expected_type}")
+                return
+        elif isinstance(expected_type, str) and not type_matches(value, expected_type):
+            errors.append(f"{label}: schema error at {format_schema_path(path)}: expected {expected_type}")
+            return
+
+        if "const" in node and value != node["const"]:
+            errors.append(f"{label}: schema error at {format_schema_path(path)}: expected {node['const']!r}")
+        if "enum" in node and value not in node["enum"]:
+            errors.append(f"{label}: schema error at {format_schema_path(path)}: unsupported value {value!r}")
+
+        if isinstance(value, str):
+            if len(value) < node.get("minLength", 0):
+                errors.append(f"{label}: schema error at {format_schema_path(path)}: string is too short")
+            if "pattern" in node and not re.search(node["pattern"], value):
+                errors.append(f"{label}: schema error at {format_schema_path(path)}: does not match pattern {node['pattern']!r}")
+
+        if isinstance(value, list):
+            if len(value) < node.get("minItems", 0):
+                errors.append(f"{label}: schema error at {format_schema_path(path)}: array has too few items")
+            item_schema = node.get("items")
+            if isinstance(item_schema, dict):
+                for index, item in enumerate(value):
+                    check(item, item_schema, path + [index])
+
+        if isinstance(value, dict):
+            required = node.get("required", []) or []
+            for key in required:
+                if key not in value:
+                    errors.append(f"{label}: schema error at {format_schema_path(path + [key])}: missing required property")
+            properties = node.get("properties", {}) or {}
+            additional = node.get("additionalProperties", True)
+            for key, item in value.items():
+                if key in properties:
+                    check(item, properties[key], path + [key])
+                elif additional is False:
+                    errors.append(f"{label}: schema error at {format_schema_path(path + [key])}: additional property is not allowed")
+
+    check(document, schema, [])
+    return errors
 
 
 def collect_api_ids(api: dict[str, Any]) -> tuple[set[str], set[str], set[str]]:

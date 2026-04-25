@@ -110,7 +110,7 @@ python3 design-to-spec/scripts/validate-contracts.py \
   --mapping design-spec/<component>/contracts/mapping-logic.yaml
 ```
 
-运行环境需要 Python 包 `PyYAML` 和 `jsonschema`。
+YAML 读取优先使用 Python 包 `PyYAML`；若不可用，脚本会回退到 Ruby 标准库 `YAML`。JSON Schema 校验由脚本内置的 Draft 7 子集校验器完成，不需要安装 `jsonschema`。
 
 校验内容包括：
 

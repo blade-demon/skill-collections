@@ -40,145 +40,14 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 
 ## YAML 契约定义
 
-三份契约是阶段间的唯一通信协议。每个阶段严格按对应模板填写，不增删顶层 key。
+三份契约是阶段间的唯一通信协议。字段级说明、填写规则和示例不要保留在主 skill 中；按需读取：
 
-### UI_Schema 契约
+- `templates/ui-schema.yaml` + `schemas/ui-schema.json` — 阶段一输出参考和机器校验规则
+- `templates/api-schema.yaml` + `schemas/api-schema.json` — 阶段二输出参考和机器校验规则
+- `templates/mapping-logic.yaml` + `schemas/mapping-logic.json` — 阶段三输出参考和机器校验规则
+- `references/contracts.md` — 字段语义、反漂移约束、校验命令
 
-```yaml
-ui:
-  name: ComponentName # 组件名，PascalCase
-  components:
-    - id: searchInput # camelCase，唯一
-      parent_id: root # 父组件 id；顶层写 root
-      type: Input # Input / Button / List / Card / Tab / Badge / Icon / Image / Text
-      role: action # primary / secondary / action / decoration / container / data_field
-      label: 搜索框 # 设计稿中的可见文本（逐字，含省略号）
-      interactive: true # true = 有用户交互；false = 纯展示
-      confidence: identified # identified / inferred / needs_human_input
-      repeat_source: "" # 列表项绑定的数据源，例如 data.results[]；非重复写空字符串
-      notes: placeholder="输入关键词"，占满宽度
-  states:
-    - id: loading
-      trigger: api_call_pending
-      required: true # true = spec.md 必须有 Scenario；false = 只记录可选状态
-      source: policy # visible / inferred / policy
-      confidence: inferred
-      render_assertion: renders loadingState
-    - id: empty
-      trigger: data.results.length === 0
-      required: true
-      source: policy
-      confidence: inferred
-      render_assertion: renders emptyState and hides resultList
-    - id: success
-      trigger: data.results.length > 0
-      required: true
-      source: visible
-      confidence: identified
-      render_assertion: renders resultList with result items
-    - id: error
-      trigger: api_error
-      required: true
-      source: policy
-      confidence: needs_human_input # 设计稿未画时必须标此值
-      render_assertion: renders errorState with retry affordance
-  layout:
-    structure: vertical # vertical / horizontal / grid / overlay
-    notes: 搜索框 + 按钮横排，结果列表垂直滚动
-```
-
-**填写规则**：
-
-- `components` 必须用 `parent_id` 表达层级；列表项用 `repeat_source` 绑定数据源，非重复组件写空字符串
-- `states` 必须包含 `loading / empty / success / error` 四个基础状态，设计稿未画的标 `needs_human_input`，不省略
-- `states.required = true` 的状态必须进入 spec.md；纯展示组件可把请求相关状态标 `required: false`，但仍需写入状态表说明
-- `render_assertion` 必须写成可断言的 DOM/事件结果，供阶段四机械生成 Scenario，禁止阶段四重新猜
-- 复合图片资产（渐变背景 + 堆叠文字 + 规则边界）默认为单一 `Image` 组件（URL 字段），不拆成 rect + text
-
-### API_Schema 契约
-
-```yaml
-api:
-  endpoints:
-    - id: search # 短标识符，camelCase
-      url: /api/v1/search
-      method: GET
-      params:
-        - name: keyword
-          type: string
-          required: true
-          notes: 用户输入的搜索词
-      response_fields:
-        - name: data.results
-          type: array
-          item_type: object
-          nullable: false
-        - name: data.total
-          type: number
-          nullable: false
-        - name: error.code
-          type: string
-          enums: [NETWORK_ERROR, NOT_FOUND, FORBIDDEN]
-          nullable: true
-  open_questions:
-    - id: oq_api_1
-      content: "status 枚举值是否完整？"
-      priority: P0
-```
-
-**填写规则**：
-
-- 过滤掉 Header、鉴权等组件不消费的通用字段；分页游标、排序、筛选、缓存 key 等字段如果影响 UI 或请求状态，必须保留
-- 枚举值必须完整列出；不确定时标 `enums: [UNKNOWN]` 并加入 `api.open_questions`
-- 无接口文档时：`endpoints: []`，所有字段来源降级为 `inferred`
-
-### Mapping_Logic 契约
-
-```yaml
-mapping:
-  component: SearchCard
-  data_fetching:
-    requests:
-      - id: searchRequest # 请求唯一 id
-        trigger: submitBtn.onClick # 触发时机（引用 UI_Schema 的 component id）
-        endpoint: search # 对应 API_Schema 的 endpoint id
-        call_type: user_triggered # user_triggered / on_mount / polling / realtime
-        loading_state: true # 是否需要 loading 中间态
-        depends_on: [] # 依赖的 request id；无依赖写 []
-  bindings:
-    - source_ui: searchInput # UI_Schema component id
-      target_api: keyword # API_Schema param name
-      direction: ui_to_api
-    - source_api: data.results # API_Schema response_field name
-      target_ui: resultList
-      direction: api_to_ui
-      transform: none # none / format / derive（有转换逻辑时写公式）
-    - source_ui: resultItem
-      target_event: tap-result
-      direction: ui_to_event
-      transform: "emit tap-result { id }"
-  state_machine:
-    - from: idle
-      event: submitBtn.onClick
-      to: loading
-      render_assertion: renders loadingState
-    - from: loading
-      event: "api_success && data.results.length > 0"
-      to: success
-      render_assertion: renders resultList with result items
-    - from: loading
-      event: "api_success && data.results.length === 0"
-      to: empty
-      render_assertion: renders emptyState and hides resultList
-    - from: loading
-      event: api_error
-      to: error
-      render_assertion: renders errorState with retry affordance
-  open_questions:
-    - id: oq1
-      content: "error.FORBIDDEN 时是否跳转登录页？"
-      priority: P0 # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认
-```
+仅当你需要确认字段含义、契约约束或校验命令时读取 `references/contracts.md`；常规执行阶段优先读取对应模板和 schema。
 
 ---
 
@@ -437,6 +306,7 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `references/stack-hints/web.md` — 通用 Web 注意事项（**仅阶段一，技术栈匹配时**）
 - `references/scenario-writing-guide.md` — Scenario 写作纪律（**仅阶段四写 spec.md 前**，必读）
 - `references/openspec-format.md` — OpenSpec 格式规则（**仅阶段四写 spec.md 前**）
+- `references/contracts.md` — 三份 YAML 契约字段语义和校验命令（**字段含义不确定时读取**）
 - `templates/ui-schema.yaml` — UI_Schema 契约模板（阶段一输出参考）
 - `templates/api-schema.yaml` — API_Schema 契约模板（阶段二输出参考，含 `api.open_questions`）
 - `templates/mapping-logic.yaml` — Mapping_Logic 契约模板（阶段三输出参考）

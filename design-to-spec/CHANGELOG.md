@@ -12,11 +12,14 @@
 
 - 新增 `schemas/ui-schema.json`、`schemas/api-schema.json`、`schemas/mapping-logic.json`，将三份 YAML 契约的结构约束显式化。
 - 新增 `scripts/validate-output.py`，用于校验最终 `notes.md`、`data-fetching.md`、`spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节。
+- 新增 `references/contracts.md`，集中说明三份 YAML 契约的字段语义、填写纪律和校验命令。
 
 ### Changed
 
 - `scripts/validate-contracts.py` 改为先执行 JSON Schema 校验，再执行跨契约引用校验，能更早发现缺字段、字段类型错误、非法枚举值和多余字段。
+- 校验脚本移除 Python 第三方包硬依赖：YAML 读取优先使用 PyYAML，缺失时回退到 Ruby 标准库；JSON Schema 校验由脚本内置 Draft 7 子集校验器完成。
 - `README.md` 和 `SKILL.md` 同步说明 schema 驱动校验与输出产物校验流程。
+- `SKILL.md` 移除内嵌契约长示例，改为通过模板、schema 和 `references/contracts.md` 渐进披露字段细节。
 
 ---
 

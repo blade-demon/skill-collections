@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -12,21 +14,40 @@ from typing import Any
 try:
     import yaml
 except ImportError:
-    print("PyYAML is required: python3 -m pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
+    yaml = None
 
 
 EVENT_PATTERN = re.compile(r"[a-z]+(?:-[a-z]+)+")
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise ValueError(f"{path}: invalid YAML: {exc}") from exc
+    if yaml is not None:
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            raise ValueError(f"{path}: invalid YAML: {exc}") from exc
+    else:
+        data = load_yaml_with_ruby(path)
     if not isinstance(data, dict):
         raise ValueError(f"{path}: top-level YAML must be a mapping")
     return data
+
+
+def load_yaml_with_ruby(path: Path) -> Any:
+    script = "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV[0]))"
+    try:
+        result = subprocess.run(
+            ["ruby", "-e", script, str(path)],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+    except FileNotFoundError as exc:
+        raise ValueError(f"{path}: PyYAML is unavailable and Ruby fallback is not installed") from exc
+    except subprocess.CalledProcessError as exc:
+        detail = exc.stderr.strip() or exc.stdout.strip()
+        raise ValueError(f"{path}: invalid YAML: {detail}") from exc
+    return json.loads(result.stdout)
 
 
 def read_text(path: Path) -> str:
