@@ -1,0 +1,51 @@
+# UI_Schema 契约模板
+# 阶段一：视觉提纯产物。在内部分析完成后，严格按此模板输出 YAML 代码块。
+# 填写规则：
+#   - components 列出设计稿中所有可见组件，id 用 camelCase
+#   - components 用 parent_id / repeat_source 表达层级和重复结构，供后续机械生成断言
+#   - states 必须包含 loading / empty / success / error 四个基础状态（设计稿未画的标 needs_human_input）
+#   - states.render_assertion 必须写成可断言的 DOM/事件结果，阶段四不再重新推断
+#   - 复合图片资产（渐变背景 + 堆叠文字）默认 type: Image，不拆成 rect + text
+
+ui:
+  name: ComponentName            # PascalCase 组件名
+  components:
+    - id: componentId            # camelCase，全局唯一
+      parent_id: root            # 父组件 id；顶层写 root
+      type: Input                # Input / Button / List / Card / Tab / Badge / Icon / Image / Text
+      role: primary              # primary / secondary / action / decoration / container / data_field
+      label: 可见文本             # 设计稿中的文本（逐字，含省略号）；无文本写 ""
+      interactive: true          # true = 有用户交互；false = 纯展示
+      confidence: identified     # identified / inferred / needs_human_input
+      repeat_source: ""          # 列表项绑定的数据源，例如 data.items[]；非重复写 ""
+      notes: ""                  # 补充说明（尺寸约束、placeholder、颜色等）
+
+  states:
+    - id: loading
+      trigger: api_call_pending
+      required: true             # true = spec.md 必须有 Scenario；false = 只记录为可选状态
+      source: policy             # visible / inferred / policy
+      confidence: inferred       # 设计稿未画时标 needs_human_input
+      render_assertion: "renders loadingState"
+    - id: empty
+      trigger: data.xxx.length === 0
+      required: true
+      source: policy
+      confidence: inferred
+      render_assertion: "renders emptyState and hides contentList"
+    - id: success
+      trigger: data 完整可渲染
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders main content matching the mockup"
+    - id: error
+      trigger: api_error
+      required: true
+      source: policy
+      confidence: needs_human_input
+      render_assertion: "renders errorState with retry affordance"
+
+  layout:
+    structure: vertical          # vertical / horizontal / grid / overlay
+    notes: ""                    # 布局说明（陷阱、约束、响应式规则）

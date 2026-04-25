@@ -74,7 +74,7 @@
         fill="rgba(99,102,241,0.22)" stroke="rgba(99,102,241,0.5)" stroke-width="1"/>
   <text x="97" y="396"
         font-family="system-ui,sans-serif" font-size="12" font-weight="600"
-        fill="#818CF8" text-anchor="middle">v 0.5.1</text>
+        fill="#818CF8" text-anchor="middle">v 0.7.1</text>
 
   <!-- Tagline -->
   <text x="56" y="438"
@@ -347,5 +347,5 @@
   <rect x="0" y="770" width="1864" height="30" fill="rgba(0,0,0,0.3)"/>
   <text x="460" y="791"
         font-family="system-ui,sans-serif" font-size="12"
-        fill="rgba(255,255,255,0.22)">design-to-spec  ·  v0.5.1  ·  Anthropic Claude Code Skill  ·  输出：notes.md + data-fetching.md + spec.md</text>
+        fill="rgba(255,255,255,0.22)">design-to-spec  ·  v0.7.1  ·  Codex Skill  ·  输出：notes.md + data-fetching.md + spec.md</text>
 </svg>

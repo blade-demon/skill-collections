@@ -1,0 +1,58 @@
+# Mapping_Logic 契约模板
+# 阶段三：逻辑映射产物。注入 UI_Schema + API_Schema 作为上下文，在内部分析后输出此 YAML 代码块。
+# 填写规则：
+#   - data_fetching.requests[].endpoint 必须对应 API_Schema 中的 endpoint id
+#   - bindings 中 source_ui / target_ui 引用 UI_Schema 的 component id
+#   - bindings 中 source_api / target_api 引用 API_Schema 的 response_fields.name 或 params.name
+#   - UI 只触发组件事件、不调 API 时，用 direction: ui_to_event + target_event
+#   - state_machine 的 event 字段尽量引用具体字段值（如 data.results.length === 0）
+#   - state_machine.render_assertion 优先引用 UI_Schema.states[].render_assertion，禁止阶段四重新猜 DOM 结果
+#   - open_questions 不确定的内容全部放这里，不要静默猜测
+
+mapping:
+  component: ComponentName       # 与 UI_Schema.ui.name 一致
+
+  data_fetching:
+    requests:
+      - id: mainRequest          # 请求唯一 id
+        trigger: btnId.onClick   # 引用 UI_Schema 的 component id + 事件
+        endpoint: endpointId     # 引用 API_Schema 的 endpoint id
+        call_type: user_triggered # user_triggered / on_mount / polling / realtime
+        loading_state: true      # 是否需要 loading 中间态
+        depends_on: []           # 依赖的 request id；无依赖写 []
+
+  bindings:
+    - source_ui: inputId         # UI → API 方向：用户输入绑定到请求参数
+      target_api: paramName
+      direction: ui_to_api
+    - source_api: data.fieldName # API → UI 方向：响应字段绑定到展示组件
+      target_ui: displayId
+      direction: api_to_ui
+      transform: none            # none / format（如日期格式化）/ derive（写公式）
+    - source_ui: actionId        # UI → Event 方向：组件向父级发出事件，不直接调 API
+      target_event: tap-action
+      direction: ui_to_event
+      transform: "emit tap-action { id }"
+
+  state_machine:
+    - from: idle
+      event: btnId.onClick
+      to: loading
+      render_assertion: "renders loadingState"
+    - from: loading
+      event: "api_success && data.xxx.length > 0"
+      to: success
+      render_assertion: "renders main content matching the mockup"
+    - from: loading
+      event: "api_success && data.xxx.length === 0"
+      to: empty
+      render_assertion: "renders emptyState and hides contentList"
+    - from: loading
+      event: api_error
+      to: error
+      render_assertion: "renders errorState with retry affordance"
+
+  open_questions:
+    - id: oq1
+      content: "具体待确认问题"
+      priority: P0               # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认

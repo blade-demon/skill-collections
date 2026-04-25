@@ -1,0 +1,88 @@
+# API_Schema — today-windvane
+# 阶段二产物：接口提纯。从接口文档提取，过滤掉 Header/鉴权等通用字段。
+# 接口来源：GET /api/v1/today/recommendation（无请求参数，返回当日单条推荐数据）
+
+api:
+  endpoints:
+    - id: getTodayRecommendation
+      url: /api/v1/today/recommendation
+      method: GET
+      params: []                 # 无请求参数；鉴权 token 由全局 request 封装统一处理，不进 Schema
+
+      response_fields:
+        # ── hotspot 对象 ──────────────────────────────────────────
+        - name: hotspot.badgeIconUrl
+          type: string
+          nullable: false
+          enums: []
+          notes: "「热点」徽章图片 CDN URL（PNG/WebP）；组件以 <image> 加载，不自绘文字渐变"
+
+        - name: hotspot.title
+          type: string
+          nullable: false
+          enums: []
+          notes: "热点标题；建议最长 20 字；UI 单行省略"
+
+        - name: hotspot.tags
+          type: array
+          item_type: object
+          nullable: false
+          enums: []
+          notes: "行业标签数组；UI 最多展示 2 条；超出截断"
+
+        - name: hotspot.tags[].name
+          type: string
+          nullable: false
+          enums: []
+          notes: "行业名称；UI 单行省略"
+
+        - name: hotspot.tags[].change
+          type: number
+          nullable: false
+          enums: []
+          notes: "涨跌幅百分比，5.14 表示 +5.14%；可负；UI 自行格式化带符号和两位小数"
+
+        - name: hotspot.tags[].hot
+          type: boolean
+          nullable: true         # 缺省视为 true
+          enums: []
+          notes: "true → 火焰图标显示；false 或缺省 → 隐藏火焰图标"
+
+        - name: hotspot.detailUrl
+          type: string
+          nullable: true
+          enums: []
+          notes: "热点详情页 URL；经 tap-hotspot 事件透传，组件内部不消费"
+
+        # ── fund 对象 ─────────────────────────────────────────────
+        - name: fund.code
+          type: string
+          nullable: false
+          enums: []
+          notes: "基金代码；不展示，作为路由参数和埋点参数"
+
+        - name: fund.name
+          type: string
+          nullable: false
+          enums: []
+          notes: "基金名称；UI 单行省略"
+
+        - name: fund.yearChange
+          type: number
+          nullable: false
+          enums: []
+          notes: "近一年涨幅百分比（可负）；UI 自行格式化为「近一年涨幅 +5.14%」"
+
+        - name: fund.sparklineUrl
+          type: string
+          nullable: true         # 可空，缺失时基金行收缩为单行
+          enums: []
+          notes: "折线图 PNG URL（v1）；v2 预留 sparklinePoints: number[]；契约接受 string | number[] 以保持升级源兼容"
+
+        - name: fund.ctaLabel
+          type: string
+          nullable: true         # 可空，前端默认「买一笔」
+          enums: []
+          notes: "CTA 按钮文案；可空时前端 fallback 为「买一笔」"
+
+  open_questions: []

@@ -95,11 +95,11 @@ Requirement 下只有「正常数据 + 常见变体」，缺了边界和异常�
 
 ## 状态覆盖硬规则
 
-`notes.md` 的「状态枚举」表里每个标 ✅ 的状态，在 `spec.md` 中必须**至少有 1 条对应 Scenario**。
+`notes.md` 的「状态枚举」表里每个 `required: true` 的状态，在 `spec.md` 中必须**至少有 1 条对应 Scenario**。
 
-判定方法：写完 spec.md 后逐行对照状态表，把每个 ✅ 行映射到一条 Scenario 标题。对不上 → 补 Scenario，**不要省**。
+判定方法：写完 spec.md 后逐行对照状态表，把每个 `required: true` 行映射到一条 Scenario 标题。对不上 → 补 Scenario，**不要省**。
 
-**反例**（状态表标了 ✅ `loading` / `empty` / `error`，但 spec 只有 success 路径）：
+**反例**（状态表把 `loading` / `empty` / `error` 标为 `required: true`，但 spec 只有 success 路径）：
 
 ```
 ### Requirement: 卡片渲染热点与基金推荐
@@ -110,9 +110,9 @@ The system SHALL render hotspot row and fund row when data is available.
 - THEN 渲染两行内容
 ```
 
-→ 这是典型的"只覆盖 happy path"。状态表里 ✅ 的 loading/empty/error 三态全部缺席，下游 AI 实现出来 90% 概率没有骨架屏 / 空状态 / 错误兜底。
+→ 这是典型的"只覆盖 happy path"。状态表里 `required: true` 的 loading/empty/error 三态全部缺席，下游 AI 实现出来 90% 概率没有骨架屏 / 空状态 / 错误兜底。
 
-**正例**（每个 ✅ 状态都有对应 Scenario）：
+**正例**（每个 `required: true` 状态都有对应 Scenario）：
 
 ```
 #### Scenario: 数据请求中显示骨架（loading）
@@ -135,7 +135,7 @@ The system SHALL render hotspot row and fund row when data is available.
 - AND 点击「重试」触发 retry 事件
 ```
 
-如果某个 ✅ 状态在设计稿中没有视觉提示，**不要跳过 Scenario**，而是在 `notes.md` 的「开放问题」里登记一条「<state> 的视觉表现待设计签收」，同时在 spec.md 里写一条带 `needs_human_input` 标注的占位 Scenario，等设计补全后填实。
+如果某个 `required: true` 状态在设计稿中没有视觉提示，**不要跳过 Scenario**，而是在 `notes.md` 的「开放问题」里登记一条「<state> 的视觉表现待设计签收」，同时在 spec.md 里写一条带 `needs_human_input` 标注的占位 Scenario，等设计补全后填实。
 
 ## 结构 vs 行为
 
@@ -152,7 +152,7 @@ The system SHALL render hotspot row and fund row when data is available.
 - THEN 至少有一个能断言的产物（DOM、事件 detail、文本、属性值）
 - 同一 Requirement 下没有 fits/overflows 成对出现
 - 同一 Requirement 下至少有一个非-happy-path Scenario（零值、极值、缺字段、异常输入）
-- `notes.md` 状态表里每个标 ✅ 的状态都能在本 Requirement 或同 spec 内的其他 Requirement 中找到对应 Scenario
+- `notes.md` 状态表里每个 `required: true` 的状态都能在本 Requirement 或同 spec 内的其他 Requirement 中找到对应 Scenario
 - 结果描述没有 vibes 词（正确、优雅、合理）和 CSS 属性名
 
 如果某一条过不了自检，**改写而不是扔掉**——扔掉场景会让覆盖面萎缩；改写能把它升级成一条有信息量的规格。

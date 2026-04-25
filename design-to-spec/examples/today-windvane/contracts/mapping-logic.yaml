@@ -1,0 +1,161 @@
+# Mapping_Logic — today-windvane
+# 阶段三产物：逻辑映射。注入 UI_Schema + API_Schema 后，推导交互绑定、状态机、开放问题。
+# 用户阶段三描述摘要：「组件自行调接口，onReady 触发；日级本地缓存；失败后用户手动重试；未登录态 CTA 灰化触发登录流」
+
+mapping:
+  component: TodayWindvane
+
+  data_fetching:
+    requests:
+      - id: todayRecommendationRequest
+        trigger: "cardContainer.onReady"   # 组件挂载时自动触发；本地缓存命中则跳过网络请求
+        endpoint: getTodayRecommendation
+        call_type: on_mount
+        loading_state: true
+        depends_on: []
+    cache:
+      strategy: local_storage
+      ttl: "当日 24:00（key: today_recommendation_YYYY-MM-DD）"
+      stale_behavior: "不展示 stale 标识，按产品约定不暴露噪音"
+
+  bindings:
+    # API → UI（响应字段渲染到组件）
+    - source_api: hotspot.badgeIconUrl
+      target_ui: hotspotBadge
+      direction: api_to_ui
+      transform: none
+
+    - source_api: hotspot.title
+      target_ui: hotspotTitle
+      direction: api_to_ui
+      transform: none
+
+    - source_api: hotspot.tags
+      target_ui: tagsGrid
+      direction: api_to_ui
+      transform: none            # 最多展示 2 条，超出截断由渲染层处理
+
+    - source_api: hotspot.tags[].change
+      target_ui: hotTag          # 每个 hotTag 内的涨跌幅文本
+      direction: api_to_ui
+      transform: "derive: change >= 0 ? '+' + change.toFixed(2) + '%' : change.toFixed(2) + '%'; 颜色令牌 --color-up / --color-down"
+
+    - source_api: hotspot.tags[].hot
+      target_ui: hotTag          # 控制 .flame-icon 显隐
+      direction: api_to_ui
+      transform: "derive: hot ?? true → flameIcon visible/hidden"
+
+    - source_api: hotspot.detailUrl
+      target_ui: hotspotRow      # 不渲染，随 tap-hotspot 事件 detail 透传
+      direction: api_to_ui
+      transform: none
+
+    - source_api: fund.sparklineUrl
+      target_ui: sparkline
+      direction: api_to_ui
+      transform: none            # v1: string URL → <image src>；v2: number[] → warn + 空占位
+
+    - source_api: fund.name
+      target_ui: fundName
+      direction: api_to_ui
+      transform: none
+
+    - source_api: fund.yearChange
+      target_ui: fundYearChange
+      direction: api_to_ui
+      transform: "derive: '近一年涨幅 ' + (change >= 0 ? '+' : '') + change.toFixed(2) + '%'"
+
+    - source_api: fund.ctaLabel
+      target_ui: ctaButton
+      direction: api_to_ui
+      transform: "derive: ctaLabel || '买一笔'"    # nullable fallback
+
+    # UI → 事件（交互触发，不是 API 写入）
+    - source_ui: hotspotRow
+      target_event: tap-hotspot
+      direction: ui_to_event
+      transform: "emit tap-hotspot { hotspot: props.hotspot }"
+
+    - source_ui: ctaButton
+      target_event: tap-buy_or_tap-login
+      direction: ui_to_event
+      transform: "isLoggedIn ? emit tap-buy { fundCode: fund.code } : emit tap-login {}"
+
+    - source_ui: retryButton     # error 态内的重试按钮（组件内部）
+      target_event: tap-retry
+      direction: ui_to_event
+      transform: "重置状态为 loading，重新发起请求；emit tap-retry { errorCode: error.code }"
+
+  state_machine:
+    - from: idle
+      event: "cardContainer.onReady AND 本地缓存未命中"
+      to: loading
+      render_assertion: "renders loadingState skeleton placeholder"
+
+    - from: idle
+      event: "cardContainer.onReady AND 本地缓存命中"
+      to: success
+      render_assertion: "renders hotspotRow, tagsGrid, fundRow, and ctaButton with cached content"
+
+    - from: loading
+      event: "api_success AND hotspot !== null AND fund !== null"
+      to: success
+      render_assertion: "renders hotspotRow, tagsGrid, fundRow, and ctaButton with API content"
+
+    - from: loading
+      event: "api_success AND hotspot === null AND fund === null"
+      to: empty
+      render_assertion: "renders emptyState or hides cardContainer according to product decision"
+
+    - from: loading
+      event: "api_success AND (hotspot.tags.length === 0 OR fund.sparklineUrl === null)"
+      to: partial                # 部分数据弹性，只渲染存在的行
+      render_assertion: "renders available rows and omits missing optional fields"
+
+    - from: loading
+      event: "api_error（网络失败 / 5xx / 4xx）"
+      to: error
+      render_assertion: "renders errorState with retryButton"
+
+    - from: error
+      event: "retryButton.tap"
+      to: loading
+      render_assertion: "renders loadingState skeleton placeholder"
+
+    - from: success
+      event: "props.isLoggedIn === false"
+      to: disabled               # 仅影响 ctaButton，不影响整体卡片状态
+      render_assertion: "renders ctaButton disabled with login-oriented label"
+
+  open_questions:
+    - id: oq1
+      content: "tap-hotspot 导航到何处？详情页 webview 还是外链？影响 detailUrl 字段使用方式。"
+      priority: P0
+
+    - id: oq2
+      content: "整张卡片是否可点击（父级），还是仅 hotspotRow 和 ctaButton 可点击？影响冒泡模型。"
+      priority: P0
+
+    - id: oq3
+      content: "loading 态骨架样式待设计签收（静态占位 / 闪烁动画 / 隐藏直到加载）。"
+      priority: P0
+
+    - id: oq4
+      content: "empty 态（当日无热点编排）：完全隐藏卡片，还是展示占位提示文案？"
+      priority: P1
+
+    - id: oq5
+      content: "error 态视觉样式待设计签收（行内兜底 + 重试按钮的具体布局）。"
+      priority: P0
+
+    - id: oq6
+      content: "卡片宽度：固定宽度还是响应式铺满？视口 < 360rpx 时双列标签是否冲突？"
+      priority: P1
+
+    - id: oq7
+      content: "tap-hotspot / tap-buy 的埋点事件命名由数据团队确认。"
+      priority: P1
+
+    - id: oq8
+      content: "request 封装是否提供 abort 能力？重试时是否需要取消前次在途请求？"
+      priority: P1

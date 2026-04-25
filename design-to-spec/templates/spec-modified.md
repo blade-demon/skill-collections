@@ -5,7 +5,7 @@
 若是首次新建组件，使用 `templates/spec.md`（仅 ## ADDED Requirements）。
 
 写 Scenario 之前先读 references/scenario-writing-guide.md。
-状态覆盖硬规则同样适用：notes.md 状态表里每个 ✅ 状态都要在本文件中找到对应 Scenario。
+状态覆盖硬规则同样适用：notes.md 状态表里每个 `required: true` 状态都要在本文件中找到对应 Scenario。
 -->
 
 > **引用既有 spec**：`<openspec/specs/<capability>/spec.md 或 design-spec/<component>/specs/<capability>/spec.md>`

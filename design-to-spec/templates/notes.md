@@ -45,7 +45,7 @@ interface <ComponentName>Events {
 |-----------|---------|--------------|------------|---------|------|
 | `<fieldName>` | `string \| number \| boolean` | `VAL_A` / `VAL_B` / — | <每个枚举值对应的视觉规则，或「连续值，见备注」> | `api` / `derived` / `prop` | <可空性 / 格式约束 / needs_human_input> |
 
-### Java DTO 草稿（仅当用户在步骤 0 选择「需要」时输出）
+### Java DTO 草稿（仅当用户明确要求时输出）
 
 > 根据推断的 Props 生成后端参考结构。类型映射规则：
 > - 基础类型：`string → String`、`number → Double` 或 `Integer`（看精度）、`boolean → Boolean`、`string[] → List<String>`
@@ -96,24 +96,24 @@ public record <ComponentName>DTO(
 
 ## 状态枚举
 
-枚举此组件所有可观察的运行时状态。**每个标 ✅ 的状态在 `spec.md` 中至少要有 1 条对应 Scenario**；未在 mockup 中体现的状态保留 ✅ 标记并在备注里写「mockup 未提供 → needs_human_input」。
+枚举此组件所有可观察的运行时状态。**每个 `required: true` 的状态在 `spec.md` 中至少要有 1 条对应 Scenario**；未在 mockup 中体现但按组件策略必需的状态保留 `required: true`，并在备注里写「mockup 未提供 → needs_human_input」。
 
-| 状态         | 触发条件                          | UI 表现           | 必需  |
-| ---------- | ----------------------------- | --------------- | --- |
-| `loading`  | 数据请求中 / 首次挂载未拿到数据             | <骨架屏 / spinner / 占位> | ✅   |
-| `empty`    | 数据合法但内容为空（如 `tags: []`）       | <空文案 / 占位插画>    | ✅   |
-| `partial`  | 部分可选字段缺失                      | <降级展示规则>        | 视情况 |
-| `success`  | 完整数据可渲染                       | <主视觉，对应 mockup 默认态> | ✅   |
-| `stale`    | 缓存过期但仍展示旧数据                   | <角标 / 灰化 / 不变化>  | 视情况 |
-| `error`    | 请求失败 / 数据校验失败                 | <错误兜底 / 重试入口>   | ✅   |
-| `offline`  | 网络不可达                         | <离线提示>          | 视情况 |
-| `disabled` | 业务禁用（限购 / 黑名单）                | <CTA 灰化 + 文案替换> | 视情况 |
+| 状态         | 触发条件                          | UI 表现           | required | source | render_assertion |
+| ---------- | ----------------------------- | --------------- | -------- | ------ | ---------------- |
+| `loading`  | 数据请求中 / 首次挂载未拿到数据             | <骨架屏 / spinner / 占位> | true | policy | <renders loadingState> |
+| `empty`    | 数据合法但内容为空（如 `tags: []`）       | <空文案 / 占位插画>    | true | policy | <renders emptyState and hides contentList> |
+| `partial`  | 部分可选字段缺失                      | <降级展示规则>        | false | inferred | <renders partial fallback> |
+| `success`  | 完整数据可渲染                       | <主视觉，对应 mockup 默认态> | true | visible | <renders main content matching the mockup> |
+| `stale`    | 缓存过期但仍展示旧数据                   | <角标 / 灰化 / 不变化>  | false | inferred | <renders stale indicator or keeps prior content> |
+| `error`    | 请求失败 / 数据校验失败                 | <错误兜底 / 重试入口>   | true | policy | <renders errorState with retry affordance> |
+| `offline`  | 网络不可达                         | <离线提示>          | false | inferred | <renders offline notice> |
+| `disabled` | 业务禁用（限购 / 黑名单）                | <CTA 灰化 + 文案替换> | false | inferred | <renders disabled affordance> |
 
 ## 组件分解
 
-| 组件       | 目的     | 复用信号             |
-| -------- | ------ | ---------------- |
-| `<名称>` | <一行目的> | `<复用信号>` |
+| 组件       | parent_id | role | repeat_source | 目的     | 复用信号             |
+| -------- | --------- | ---- | ------------- | ------ | ---------------- |
+| `<名称>` | `<父组件或 root>` | `<primary/action/container>` | `<data.items[] 或空>` | <一行目的> | `<复用信号>` |
 
 ## 布局陷阱
 

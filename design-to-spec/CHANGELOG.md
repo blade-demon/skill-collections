@@ -6,6 +6,46 @@
 
 ---
 
+## [0.7.1] - 2026-04-25
+
+### Added
+
+- 新增 `agents/openai.yaml`，为技能列表提供展示名、短描述、图标和默认调用提示。
+- 新增 `scripts/validate-contracts.py`，用于校验 `UI_Schema`、`API_Schema`、`Mapping_Logic` 的 YAML 格式和跨契约引用关系。
+
+### Changed
+
+- 同步 `README.md` 到 0.7.x 四阶段状态机架构，移除已废弃的「交互式步骤 0」叙事。
+- `UI_Schema` 增加 `parent_id`、`role`、`repeat_source`、`required`、`source`、`render_assertion`，支持层级结构、列表重复结构和机械化 Scenario 组装。
+- `API_Schema` 增加 `api.open_questions`，解决枚举值不确定时无处记录的问题。
+- `Mapping_Logic.data_fetching` 从单请求字段升级为 `requests[]`，支持多接口、依赖请求和聚合场景。
+- `Mapping_Logic.bindings` 增加 `ui_to_event` 方向，用于表达只向父级发出组件事件、不直接调用 API 的交互。
+- 分页、排序、筛选、缓存 key 字段从「默认过滤」调整为「影响 UI 或请求状态时必须保留」。
+- Scenario 生成规则改为优先读取 `state_machine.render_assertion`，缺失时回退到 `UI_Schema.states[].render_assertion`，不再在第四阶段重新猜 DOM 断言。
+
+---
+
+## [0.7.0] - 2026-04-21
+
+### Changed（架构重写）
+
+- **核心架构**：从「8 步散文工作流」升级为「四阶段状态机 + YAML 内部契约」架构
+  - 控制流由确定性代码驱动（WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC），不用 LLM 做路由
+  - 阶段间通信协议统一为 YAML（UI_Schema / API_Schema / Mapping_Logic 三份契约），替代散文式推理输出
+  - 每阶段强制先在 `<thinking>` 中推理，再输出干净 YAML 代码块
+  - 第四阶段（规格组装）纯模板填充，不依赖 LLM 重新推断
+- **YAML 契约定义**：新增三份标准契约模板，明确每个字段的语义和填写规则
+- **用户确认机制**：每阶段 YAML 提取后，将结构化数据转为 Markdown 展示供用户确认，再流转到下一阶段
+- **错误重试**：YAML 解析失败时后台自动重试 2 次，失败后才提示用户（替代之前无重试机制）
+- **数据映射规则**：新增阶段四「数据映射规则」表，明确每个输出字段的来源 YAML 路径，消除歧义
+
+### Removed
+
+- 步骤 0（交互式输入收集）作为独立步骤：信息收集现已拆分到阶段一（UI 确认）和阶段二（API 确认）自然进行
+- 步骤 2（技术栈和上下文解析）、步骤 3（信息分层）、步骤 4（交互推断）等散文步骤：合并到阶段一 YAML 提取的 `<thinking>` 推理协议中
+
+---
+
 ## [0.6.0] - 2026-04-21
 
 ### Added

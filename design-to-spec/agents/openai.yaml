@@ -1,0 +1,9 @@
+interface:
+  display_name: "Design to Spec"
+  short_description: "Turn UI mockups into implementation specs"
+  icon_small: "./icon.png"
+  icon_large: "./preview.png"
+  brand_color: "#1664FF"
+  default_prompt: "Use $design-to-spec to convert this UI design and API contract into notes.md, data-fetching.md, and OpenSpec scenarios."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,193 @@
+# UI_Schema — today-windvane
+# 阶段一产物：视觉提纯。从 input.svg 设计稿中枚举所有可见组件并打置信度标签。
+# 对应输出文件：notes.md §视觉枚举（已合并进「数据契约」和「组件分解」节）
+
+ui:
+  name: TodayWindvane
+  components:
+    - id: cardContainer
+      parent_id: root
+      type: Card
+      role: container
+      label: ""                  # 无可见文本，是整体容器
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 白底圆角卡片，占满宽度，内含两行（hotspotRow + fundRow）
+
+    - id: hotspotBadge
+      parent_id: hotspotRow
+      type: Image
+      role: decoration
+      label: ""                  # 红橙渐变图片资产，文字由设计交付，不是代码绘制
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 左侧堆叠「热点」徽章；32rpx×40rpx；橙红渐变+垂直文字是单一 PNG/WebP 资产，不拆 rect+text
+
+    - id: hotspotTitle
+      parent_id: hotspotRow
+      type: Text
+      role: primary
+      label: "示例热点标题文字…"    # mockup 中可见省略号，单行截断
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 单行 text-overflow ellipsis；中间列 flex:1 需配合 min-width:0
+
+    - id: tagsGrid
+      parent_id: hotspotRow
+      type: List
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: "hotspot.tags[]"
+      notes: "双列固定宽度网格；设计师注释「一行 2，固定宽度」；内含 hotTag × 2"
+
+    - id: hotTag
+      parent_id: tagsGrid
+      type: Badge
+      role: data_field
+      label: "🔥示例行业 +5.14%"   # mockup 逐字（含正负号和百分比）
+      interactive: false
+      confidence: identified
+      repeat_source: "hotspot.tags[]"
+      notes: 火焰图标（hot 字段控制显隐）+ 行业名单行截断 + 涨跌幅两位小数带符号着色
+
+    - id: hotspotChevron
+      parent_id: hotspotRow
+      type: Icon
+      role: decoration
+      label: ">"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 热点行右侧 chevron；整行可点击由 hotspotRow 承载
+
+    - id: hotspotRow
+      parent_id: cardContainer
+      type: Card
+      role: action
+      label: ""
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 顶行整体可点击区域；CTA 的 catchtap 需阻止冒泡到此层
+
+    - id: sparkline
+      parent_id: fundRow
+      type: Image
+      role: data_field
+      label: ""
+      interactive: false
+      confidence: inferred       # 设计稿选定 v1 图片方案，未注明 canvas/代码绘制
+      repeat_source: ""
+      notes: 左侧迷你折线图；v1 为后端预渲染 PNG URL；sparkline 缺失时基金行收缩为单行
+
+    - id: fundName
+      parent_id: fundRow
+      type: Text
+      role: primary
+      label: "示例宽基指数基金 A 类…"  # mockup 可见省略号
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 单行截断；中间列 flex:1 + min-width:0
+
+    - id: fundYearChange
+      parent_id: fundRow
+      type: Text
+      role: secondary
+      label: "近一年涨幅 5.14%"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 百分比带正负号格式化；正绿负红
+
+    - id: ctaButton
+      parent_id: fundRow
+      type: Button
+      role: action
+      label: "买一笔"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 轮廓药丸按钮；未登录态文案改为「登录后购买」，CTA 灰化；需 catchtap 阻止冒泡
+
+    - id: fundRow
+      parent_id: cardContainer
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 底行容器；sparkline + fundName/fundYearChange + ctaButton 横排
+
+    - id: errorState
+      parent_id: cardContainer
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: needs_human_input
+      repeat_source: ""
+      notes: 错误兜底容器，mockup 未提供视觉，待设计签收
+
+    - id: retryButton
+      parent_id: errorState
+      type: Button
+      role: action
+      label: "重试"
+      interactive: true
+      confidence: needs_human_input
+      repeat_source: ""
+      notes: error 态内的手动重试入口，文案和样式待设计签收
+
+  states:
+    - id: loading
+      trigger: "props.loading === true OR data === undefined"
+      required: true
+      source: policy
+      confidence: needs_human_input   # mockup 未提供骨架视觉，待设计签收
+      render_assertion: "renders loadingState skeleton placeholder"
+
+    - id: empty
+      trigger: "hotspot === null AND fund === null"
+      required: true
+      source: policy
+      confidence: needs_human_input   # 完全隐藏 vs 占位提示，待设计签收
+      render_assertion: "renders emptyState or hides cardContainer according to product decision"
+
+    - id: partial
+      trigger: "hotspot.tags.length === 0 OR fund.sparkline 缺失"
+      required: false
+      source: inferred
+      confidence: inferred            # mockup 未画，按「省略缺失行」推断
+      render_assertion: "renders available rows and omits missing optional fields"
+
+    - id: success
+      trigger: "hotspot && fund 均完整"
+      required: true
+      source: visible
+      confidence: identified          # 对应 mockup 默认态
+      render_assertion: "renders hotspotRow, tagsGrid, fundRow, and ctaButton with API content"
+
+    - id: error
+      trigger: "props.error !== null"
+      required: true
+      source: policy
+      confidence: needs_human_input   # mockup 未提供错误兜底视觉，待设计签收
+      render_assertion: "renders errorState with retryButton"
+
+    - id: disabled
+      trigger: "isLoggedIn === false（仅影响 ctaButton）"
+      required: false
+      source: inferred
+      confidence: inferred            # CTA 灰化 + 登录流；mockup 未画
+      render_assertion: "renders ctaButton disabled with login-oriented label"
+
+  layout:
+    structure: vertical
+    notes: "两行垂直堆叠（hotspotRow + fundRow）；卡片宽度待确认（固定 vs 响应式，开放问题 6）"
