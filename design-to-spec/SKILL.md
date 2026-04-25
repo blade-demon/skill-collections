@@ -455,6 +455,7 @@ error: api_error（FORBIDDEN 处理待确认 P0）
   - `contracts/api-schema.yaml` — 阶段二 YAML 契约的填写示例
   - `contracts/mapping-logic.yaml` — 阶段三 YAML 契约的填写示例
 - `scripts/validate-contracts.py` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
+- `scripts/validate-output.py` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
 
 ---
 

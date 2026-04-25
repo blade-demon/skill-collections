@@ -122,6 +122,20 @@ python3 design-to-spec/scripts/validate-contracts.py \
 - `state_machine.to` 是否指向存在的 UI state
 - `required: true` 状态是否具备 `render_assertion`
 
+阶段四后可运行输出校验脚本：
+
+```bash
+python3 design-to-spec/scripts/validate-output.py \
+  --ui design-spec/<component>/contracts/ui-schema.yaml \
+  --api design-spec/<component>/contracts/api-schema.yaml \
+  --mapping design-spec/<component>/contracts/mapping-logic.yaml \
+  --notes design-spec/<component>/notes.md \
+  --data-fetching design-spec/<component>/data-fetching.md \
+  --spec design-spec/<component>/specs/<capability>/spec.md
+```
+
+输出校验会检查 OpenSpec 关键字、`required: true` 状态覆盖、请求 endpoint 是否进入 `data-fetching.md`、`ui_to_event` 事件是否进入 `notes.md` 或 `spec.md`，以及开放问题和待确认章节是否存在。开放问题改写导致的弱匹配默认输出 warning；加 `--strict` 可把 warning 作为错误处理。
+
 ## 下游使用
 
 推荐把整个输出目录交给规划或实现流程，而不是只传单个文件：
