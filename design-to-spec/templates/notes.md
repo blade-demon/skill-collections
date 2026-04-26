@@ -145,6 +145,16 @@ public record <ComponentName>DTO(
 
 将此 `notes.md` 输入 Superpowers `/plan`，传递 `--target <stack>` 和仓库根目录，以便规划器解决「开放问题」并生成实际任务分解。
 
+## Traceability
+
+> 机器校验锚点。润色文案时不要修改 `trace_id`。
+
+| trace_id | kind | source | target | notes |
+| -------- | ---- | ------ | ------ | ----- |
+| `component:<componentId>` | component | `<componentId>` | `<parent_id>` | <type / semantic_type> |
+| `binding:<index>:<direction>` | binding | `<source>` | `<target>` | <transform> |
+| `state:<stateId>` | state | `<stateId>` | `<scope_components 或 component>` | <required> |
+
 ## 埋点锚点
 
 > 本节是下游 `design-to-track` 等埋点 skill 的输入。**不要在这里写完整的事件 schema**，只列出"需要被埋点覆盖的语义事件 + 触发条件"，下游 skill 负责把它转成具体 event name / property 字段。

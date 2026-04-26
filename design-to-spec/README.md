@@ -2,7 +2,7 @@
 
 > 将 UI 设计稿和接口文档转换成结构化规格包，让后续 AI 或开发者稳定实现。
 
-**当前版本**：`0.7.2`
+**当前版本**：`0.9.0`
 
 `design-to-spec` 采用四阶段状态机：视觉提纯、接口提纯、逻辑映射、规格组装。前三阶段分别生成 YAML 契约，第四阶段只读取契约机械填充模板，不重新看图或重新推断接口。
 
@@ -42,14 +42,21 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 
 ```
 <workspace>/design-spec/<component-name>/
+├── contracts/
+│   ├── ui-schema.yaml
+│   ├── api-schema.yaml
+│   └── mapping-logic.yaml
 ├── notes.md
 ├── data-fetching.md
 └── specs/<capability>/spec.md
 ```
 
+- `contracts/`：三阶段 YAML 事实契约，供续跑、校验、规划和实现复查
 - `notes.md`：设计决策、数据契约、状态枚举、组件分解、开放问题、埋点锚点
 - `data-fetching.md`：请求链路、触发条件、分页缓存、错误分级、竞态处理、请求状态机
 - `spec.md`：OpenSpec 行为规格，包含 `Requirement` 和可测试的 `Scenario`
+
+生成器会写入机器可校验的 trace 锚点：`component:<id>`、`binding:<index>:<direction>`、`state:<id>`、`request:<id>`。`validate-output.py --strict` 会在存在 `## Traceability` 时校验这些锚点，防止 markdown 润色时丢掉契约引用。
 
 ## 运行流程
 
@@ -59,6 +66,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 
 - 枚举所有可见元素，保留逐字文本、省略号、数值和单位
 - 用 `parent_id` 表达层级，用 `repeat_source` 表达列表重复结构
+- 用 `semantic_type` 保留复杂控件的真实语义；局部状态用 `scope` / `scope_components` 绑定作用范围
 - 标记每个元素的 `confidence`：`identified`、`inferred`、`needs_human_input`
 - 补全 `loading`、`empty`、`success`、`error` 四个基础状态
 - 为每个状态写 `render_assertion`，供 `spec.md` 机械生成 `THEN`
@@ -69,7 +77,8 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 
 - 只保留组件实际消费的接口、参数和响应字段
 - Header、鉴权等通用字段默认过滤
-- 分页游标、排序、筛选、缓存 key 如果影响 UI 或请求状态，必须保留
+- 请求体、错误结构、分页游标、排序、筛选、缓存 key 如果影响 UI 或请求状态，必须保留
+- `auth_required`、`pagination`、`error_shape`、`cache_key_fields` 用于把登录态、分页、错误兜底和缓存命中规则传给实现者
 - 枚举值必须完整列出；不确定时写 `enums: [UNKNOWN]` 并加入 `api.open_questions`
 
 ### 3. 逻辑映射
@@ -77,6 +86,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 结合 `UI_Schema` 和 `API_Schema`，输出 `Mapping_Logic`：
 
 - `data_fetching.requests[]` 记录一个或多个请求，包括触发时机、endpoint、call type、依赖关系
+- `cache_policy`、`retry_policy`、`concurrency_policy` 记录缓存、重试、abort、去重和过期响应处理
 - `bindings[]` 记录 UI 到 API 参数、API 响应到 UI 元素的绑定
 - `state_machine[]` 记录状态转换，每条转换包含 `event` 和 `render_assertion`
 - 不确定项进入 `mapping.open_questions`，不静默猜测
@@ -89,7 +99,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 - `data-fetching.md` 从请求清单和状态机生成数据获取设计
 - `spec.md` 从 `state_machine.event` 和 `render_assertion` 生成 Scenario
 
-第四阶段不得重新分析图片或接口文档。如果缺少可断言结果，生成 `needs_human_input` 占位 Scenario，并把问题加入开放问题。
+第四阶段默认先运行 `scripts/generate-output.py` 生成基线文件，再做有限人工化修订。修订不得重新分析图片或接口文档；如果缺少可断言结果，生成 `needs_human_input` 占位 Scenario，并把问题加入开放问题。
 
 ## 关键规则
 
@@ -123,6 +133,18 @@ YAML 读取优先使用 Python 包 `PyYAML`；若不可用，脚本会回退到 
 - `state_machine.to` 是否指向存在的 UI state
 - `required: true` 状态是否具备 `render_assertion`
 
+契约校验通过后，可用确定性生成脚本创建输出目录和基线文件：
+
+```bash
+python3 design-to-spec/scripts/generate-output.py \
+  --ui design-spec/<component>/contracts/ui-schema.yaml \
+  --api design-spec/<component>/contracts/api-schema.yaml \
+  --mapping design-spec/<component>/contracts/mapping-logic.yaml \
+  --out-dir design-spec/<component>
+```
+
+生成脚本会保留三份契约到 `contracts/`，并写入 `notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。如果后续手动或由 LLM 修订 markdown，仍需把 `contracts/` 当作唯一事实源。
+
 阶段四后可运行输出校验脚本：
 
 ```bash
@@ -137,6 +159,13 @@ python3 design-to-spec/scripts/validate-output.py \
 
 输出校验会检查 OpenSpec 关键字、`required: true` 状态覆盖、请求 endpoint 是否进入 `data-fetching.md`、`ui_to_event` 事件是否进入 `notes.md` 或 `spec.md`，以及开放问题和待确认章节是否存在。脚本优先解析结构化锚点：`notes.md` 的「状态枚举」表、「开放问题」编号列表和「埋点锚点」表；只有缺少结构化锚点时才退回弱文本匹配。开放问题改写导致的弱匹配默认输出 warning；加 `--strict` 可把 warning 作为错误处理。
 
+当 `notes.md` 包含 `## Traceability` 时，输出校验还会检查：
+
+- 每个 UI component 有 `component:<id>` trace
+- 每个 binding 有 `binding:<index>:<direction>` trace
+- 每个 request 在 `data-fetching.md` 有 `request:<id>` trace
+- 每个 required state 在 `spec.md` 有 `state:<id>` trace
+
 ## 下游使用
 
 推荐把整个输出目录交给规划或实现流程，而不是只传单个文件：
@@ -146,3 +175,16 @@ python3 design-to-spec/scripts/validate-output.py \
 ```
 
 `notes.md` 提供设计和数据上下文，`data-fetching.md` 提供请求实现细节，`spec.md` 提供可测试验收标准。后续 skill 不应重新阅读原始设计稿，而应消费这三份文件作为单一事实源。
+
+## 回归测试
+
+生成链路可用 golden sample 验证：
+
+```bash
+python3 design-to-spec/scripts/test-generate-output.py
+python3 design-to-spec/scripts/test-contract-extensions.py
+python3 design-to-spec/scripts/test-traceability.py
+python3 design-to-spec/scripts/test-package-hygiene.py
+```
+
+这些测试会从 `examples/today-windvane/contracts/*.yaml` 和扩展契约样例生成临时输出，并用 `validate-output.py --strict` 校验结果。

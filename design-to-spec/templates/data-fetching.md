@@ -48,6 +48,8 @@
 | ---------- | ---- | -------- | --------- | ---- | ---- |
 | `<mainRequest>` | `<HTTP 方法> <路径>` | `<on_mount / btn.onClick>` | `<on_mount / user_triggered / polling / realtime>` | `<无 / request id>` | <主数据 / 权限 / 字典 / 聚合> |
 
+> 每行必须保留 trace id：`request:<request id>`。例如 `request:mainRequest`。
+
 ### 请求参数
 
 > 每个 request 单独列参数；只有一个请求时也保留 request id，方便和 `Mapping_Logic.data_fetching.requests[]` 对齐。

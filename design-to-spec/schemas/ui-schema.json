@@ -33,8 +33,30 @@
               "parent_id": { "type": "string", "minLength": 1 },
               "type": {
                 "type": "string",
-                "enum": ["Input", "Button", "List", "Card", "Tab", "Badge", "Icon", "Image", "Text"]
+                "enum": [
+                  "Input",
+                  "Button",
+                  "List",
+                  "Card",
+                  "Tab",
+                  "Badge",
+                  "Icon",
+                  "Image",
+                  "Text",
+                  "Table",
+                  "Form",
+                  "Modal",
+                  "Dropdown",
+                  "Switch",
+                  "Tooltip",
+                  "Chart",
+                  "Avatar",
+                  "Skeleton",
+                  "Toast",
+                  "Custom"
+                ]
               },
+              "semantic_type": { "type": "string" },
               "role": {
                 "type": "string",
                 "enum": ["primary", "secondary", "action", "decoration", "container", "data_field"]
@@ -66,7 +88,15 @@
                 "type": "string",
                 "enum": ["identified", "inferred", "needs_human_input"]
               },
-              "render_assertion": { "type": "string" }
+              "render_assertion": { "type": "string" },
+              "scope": {
+                "type": "string",
+                "enum": ["component", "region", "element", "global"]
+              },
+              "scope_components": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },

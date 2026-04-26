@@ -3,7 +3,9 @@
 # 填写规则：
 #   - components 列出设计稿中所有可见组件，id 用 camelCase
 #   - components 用 parent_id / repeat_source 表达层级和重复结构，供后续机械生成断言
+#   - type 用粗分类；复杂控件用 Custom + semantic_type 保留真实语义（如 data-table / date-range-picker）
 #   - states 必须包含 loading / empty / success / error 四个基础状态（设计稿未画的标 needs_human_input）
+#   - states.scope / scope_components 表达状态作用范围，避免局部 loading/error 被误写成整组件状态
 #   - states.render_assertion 必须写成可断言的 DOM/事件结果，阶段四不再重新推断
 #   - 复合图片资产（渐变背景 + 堆叠文字）默认 type: Image，不拆成 rect + text
 
@@ -12,7 +14,8 @@ ui:
   components:
     - id: componentId            # camelCase，全局唯一
       parent_id: root            # 父组件 id；顶层写 root
-      type: Input                # Input / Button / List / Card / Tab / Badge / Icon / Image / Text
+      type: Input                # Input / Button / List / Card / Tab / Badge / Icon / Image / Text / Table / Form / Modal / Dropdown / Switch / Tooltip / Chart / Avatar / Skeleton / Toast / Custom
+      semantic_type: ""          # 可选，真实业务语义；type=Custom 时必填，例如 data-table / dropdown-filter
       role: primary              # primary / secondary / action / decoration / container / data_field
       label: 可见文本             # 设计稿中的文本（逐字，含省略号）；无文本写 ""
       interactive: true          # true = 有用户交互；false = 纯展示
@@ -27,6 +30,8 @@ ui:
       source: policy             # visible / inferred / policy
       confidence: inferred       # 设计稿未画时标 needs_human_input
       render_assertion: "renders loadingState"
+      scope: component           # component / region / element / global
+      scope_components: []       # 局部状态影响的组件 id；整组件状态写 []
     - id: empty
       trigger: data.xxx.length === 0
       required: true

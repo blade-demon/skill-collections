@@ -6,6 +6,56 @@
 
 ---
 
+## [0.9.0] - 2026-04-26
+
+### Added
+
+- `generate-output.py` 生成 `## Traceability` 表，显式写入 `component:<id>`、`binding:<index>:<direction>`、`state:<id>` 和 `request:<id>` 锚点。
+- `validate-output.py` 在发现 `## Traceability` 时校验 trace 覆盖：component/binding/state/request 都必须能回到契约；required state 必须在 `spec.md` 有 `state:<id>` trace。
+- 新增 `scripts/test-traceability.py`，覆盖 trace 生成和篡改 required state trace 后严格校验失败的场景。
+- 新增 `scripts/test-package-hygiene.py`，校验 agents metadata 资源存在、stack hints 不再引用 `design.md`、包内不存在 `.DS_Store` 实体文件。
+
+### Changed
+
+- `agents/openai.yaml` 的 icon 引用从不存在的 PNG 改为已有 SVG。
+- `references/stack-hints/*.md` 统一引用 `notes.md`，消除旧 `design.md` 命名漂移。
+- `templates/notes.md`、`templates/data-fetching.md`、`templates/spec*.md` 补充 traceability 规则。
+
+### Removed
+
+- 移除 `design-to-spec/examples/today-windvane/.DS_Store` 和本地 `design-to-spec/.DS_Store` 包装噪音。
+
+## [0.8.0] - 2026-04-26
+
+### Added
+
+- UI_Schema 支持更丰富的前端控件类型：`Table`、`Form`、`Modal`、`Dropdown`、`Switch`、`Tooltip`、`Chart`、`Avatar`、`Skeleton`、`Toast`、`Custom`，并新增 `components[].semantic_type` 保留业务语义。
+- UI_Schema `states[]` 新增 `scope` 和 `scope_components`，用于表达局部 loading/error/disabled 等状态作用范围。
+- API_Schema endpoint 新增 `request_body`、`auth_required`、`cache_key_fields`、`pagination`、`status_codes`、`error_shape`，覆盖真实前端请求、分页、错误兜底和鉴权分支。
+- Mapping_Logic `data_fetching` 新增 `cache_policy`、`retry_policy`、`concurrency_policy`，把缓存、重试、abort、去重和过期响应处理结构化。
+- 新增 `scripts/test-contract-extensions.py`，用后台表格查询场景回归验证扩展契约可校验、可生成且不丢关键策略字段。
+
+### Changed
+
+- `validate-contracts.py` 的 `ui_to_api.target_api` 校验现在同时接受 `params[].name` 和 `request_body[].name`。
+- `validate-contracts.py` 会校验 `states[].scope_components[]` 必须引用存在的 UI component。
+- `generate-output.py` 会把 request body、接口元信息、错误结构、状态 scope、组件 semantic type、分页、缓存、重试和并发策略写入 markdown 输出。
+- `README.md`、`SKILL.md`、`templates/*.yaml`、`references/contracts.md` 同步说明扩展字段。
+
+## [0.7.3] - 2026-04-26
+
+### Added
+
+- 新增 `scripts/generate-output.py`，从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`specs/<capability>/spec.md` 基线文件。
+- 新增 `scripts/test-generate-output.py`，使用 `examples/today-windvane/contracts/*.yaml` 回归验证生成脚本，并用 `validate-output.py --strict` 校验生成结果。
+
+### Changed
+
+- `SKILL.md` 的 frontmatter description 改为仅描述触发条件，避免模型把描述当成流程摘要而跳过正文。
+- 输出目录正式包含 `contracts/ui-schema.yaml`、`contracts/api-schema.yaml`、`contracts/mapping-logic.yaml`，前三阶段用户确认后必须立即落盘。
+- 阶段四默认流程调整为：先 `validate-contracts.py`，再 `generate-output.py`，修订 markdown 后运行 `validate-output.py --strict`。
+- `README.md` 与 `references/contracts.md` 补充确定性生成命令和生成后校验流程。
+
 ## [0.7.2] - 2026-04-25
 
 ### Added

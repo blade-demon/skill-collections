@@ -181,6 +181,10 @@ def collect_api_ids(api: dict[str, Any]) -> tuple[set[str], set[str], set[str]]:
             name = param.get("name")
             if name:
                 params.add(name)
+        for body_field in endpoint.get("request_body", []) or []:
+            name = body_field.get("name")
+            if name:
+                params.add(name)
         for field in endpoint.get("response_fields", []) or []:
             name = field.get("name")
             if name:
@@ -279,6 +283,11 @@ def validate(ui_doc: dict[str, Any], api_doc: dict[str, Any], mapping_doc: dict[
         parent_id = item.get("parent_id")
         if parent_id and parent_id != "root" and parent_id not in component_ids:
             errors.append(f"ui.components[{item.get('id')}].parent_id references missing component {parent_id!r}")
+
+    for state in ui.get("states", []) or []:
+        for scoped_component in state.get("scope_components", []) or []:
+            if scoped_component not in component_ids:
+                errors.append(f"ui.states[{state.get('id')}].scope_components references missing component {scoped_component!r}")
 
     endpoint_ids, param_names, response_fields = collect_api_ids(api_doc)
     requests = mapping.get("data_fetching", {}).get("requests", []) or []
