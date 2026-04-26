@@ -14,7 +14,7 @@
         "data_fetching": {
           "type": "object",
           "required": ["requests"],
-          "additionalProperties": true,
+          "additionalProperties": false,
           "properties": {
             "requests": {
               "type": "array",
@@ -36,6 +36,47 @@
                     "items": { "type": "string", "minLength": 1 }
                   }
                 }
+              }
+            },
+            "cache": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "cache_policy": {
+              "type": "object",
+              "required": ["strategy"],
+              "additionalProperties": false,
+              "properties": {
+                "strategy": { "type": "string", "minLength": 1 },
+                "key_fields": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                },
+                "ttl": { "type": "string" },
+                "stale_behavior": { "type": "string" },
+                "notes": { "type": "string" }
+              }
+            },
+            "retry_policy": {
+              "type": "object",
+              "required": ["strategy"],
+              "additionalProperties": false,
+              "properties": {
+                "strategy": { "type": "string", "minLength": 1 },
+                "max_attempts": { "type": "number" },
+                "backoff": { "type": "string" },
+                "notes": { "type": "string" }
+              }
+            },
+            "concurrency_policy": {
+              "type": "object",
+              "required": ["abortable", "stale_response"],
+              "additionalProperties": false,
+              "properties": {
+                "abortable": { "type": "boolean" },
+                "dedupe_key": { "type": "string" },
+                "stale_response": { "type": "string", "enum": ["ignore", "apply_latest", "block_new", "needs_human_input"] },
+                "notes": { "type": "string" }
               }
             }
           }

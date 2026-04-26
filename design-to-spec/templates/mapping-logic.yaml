@@ -3,7 +3,8 @@
 # 填写规则：
 #   - data_fetching.requests[].endpoint 必须对应 API_Schema 中的 endpoint id
 #   - bindings 中 source_ui / target_ui 引用 UI_Schema 的 component id
-#   - bindings 中 source_api / target_api 引用 API_Schema 的 response_fields.name 或 params.name
+#   - bindings 中 source_api / target_api 引用 API_Schema 的 response_fields.name、params.name 或 request_body.name
+#   - cache_policy / retry_policy / concurrency_policy 用于记录真实请求行为，不要散落在 notes 文案里
 #   - UI 只触发组件事件、不调 API 时，用 direction: ui_to_event + target_event
 #   - state_machine 的 event 字段尽量引用具体字段值（如 data.results.length === 0）
 #   - state_machine.render_assertion 优先引用 UI_Schema.states[].render_assertion，禁止阶段四重新猜 DOM 结果
@@ -20,6 +21,22 @@ mapping:
         call_type: user_triggered # user_triggered / on_mount / polling / realtime
         loading_state: true      # 是否需要 loading 中间态
         depends_on: []           # 依赖的 request id；无依赖写 []
+    cache_policy:
+      strategy: none             # none / query_cache / local_storage / swr / custom
+      key_fields: []             # 参与缓存 key 的字段，需能在 API_Schema 中找到
+      ttl: ""                    # 例如 60s / 当日 24:00；无缓存写 ""
+      stale_behavior: ""         # keep_previous_data / show_stale_badge / block_render / ""
+      notes: ""
+    retry_policy:
+      strategy: manual           # none / manual / automatic / custom
+      max_attempts: 1
+      backoff: none              # none / fixed / exponential
+      notes: ""
+    concurrency_policy:
+      abortable: false           # 是否可取消在途请求
+      dedupe_key: ""             # 去重 key；无则写 ""
+      stale_response: ignore     # ignore / apply_latest / block_new / needs_human_input
+      notes: ""
 
   bindings:
     - source_ui: inputId         # UI → API 方向：用户输入绑定到请求参数

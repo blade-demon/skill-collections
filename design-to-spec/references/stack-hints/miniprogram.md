@@ -1,6 +1,6 @@
 # 技术栈提示：微信小程序
 
-当目标技术栈是微信小程序（原生，或使用 `glass-easel` 组件框架或传统 `exparser` 框架）时使用这些注意事项和约定。将它们融入 `design.md` 的"布局陷阱"和"决策"部分 —— 不要融入 `spec.md`，后者保持行为聚焦。
+当目标技术栈是微信小程序（原生，或使用 `glass-easel` 组件框架或传统 `exparser` 框架）时使用这些注意事项和约定。将它们融入 `notes.md` 的"布局陷阱"和"决策"部分 —— 不要融入 `spec.md`，后者保持行为聚焦。
 
 ## 组件模型
 
@@ -12,7 +12,7 @@
 ## 单位和小号
 
 - 使用 `rpx` 进行响应式尺寸（设计设备上 `750rpx === 100vw`）。使用一致的比率转换设计像素值。
-- 对于排版，`px` 或 `rpx` 都可以；团队通常选择一个并坚持下去。在 `design.md` 中明确说明是哪一个。
+- 对于排版，`px` 或 `rpx` 都可以；团队通常选择一个并坚持下去。在 `notes.md` 中明确说明是哪一个。
 - `rpx` 中的固定宽度可以与 `flex-shrink: 0` 组合，当你需要 flex 行内真正锁定的宽度时。
 
 ## 布局陷阱
@@ -27,7 +27,7 @@
 
 - 对于微型价格/趋势图表（sparkline）：优先使用 `<canvas type="2d">`（新 API）而不是传统 canvas。旧 canvas 是浮在 WXML 上方的原生层，会破坏堆叠上下文。
 - 如果后端可以预渲染图表为 PNG，使用 `<image mode="aspectFit">` —— 零运行时成本。
-- 在 `design.md` 中将 canvas 和 image 之间的决定作为明确决策。
+- 在 `notes.md` 中将 canvas 和 image 之间的决定作为明确决策。
 
 ## 事件和点击
 
@@ -38,7 +38,7 @@
 ## 状态管理
 
 - 本地组件状态：`data: {}` + `setData(...)`。避免在低端设备上使用大型 `setData` 有效载荷；优先使用部分键更新（`setData({ 'a.b.c': value })`）。
-- 全局状态：要么是应用级 `globalData`（简单情况），要么是 pub/sub 事件总线。团队经常通过 `mobx-miniprogram-bindings` 添加 MobX。如果组件依赖于共享状态，在 `design.md` 中标记状态策略。
+- 全局状态：要么是应用级 `globalData`（简单情况），要么是 pub/sub 事件总线。团队经常通过 `mobx-miniprogram-bindings` 添加 MobX。如果组件依赖于共享状态，在 `notes.md` 中标记状态策略。
 
 ## 真机注意事项
 
@@ -56,4 +56,4 @@
 - Vant Weapp：使用 `van-` 前缀，文档完善，广泛采用。
 - ColorUI：类 utility 风格，无 JS 运行时。
 
-在 `design.md` 中注明选择的系统，并优先复用其原子组件而不是手写。
+在 `notes.md` 中注明选择的系统，并优先复用其原子组件而不是手写。

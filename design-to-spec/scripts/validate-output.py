@@ -161,6 +161,54 @@ def collect_tracking_anchor_ids(notes_text: str) -> set[str]:
     return anchors
 
 
+def collect_trace_ids(markdown: str) -> set[str]:
+    return set(re.findall(r"`((?:component|binding|state|request):[^`]+)`", markdown))
+
+
+def validate_traceability(
+    ui_doc: dict[str, Any],
+    mapping_doc: dict[str, Any],
+    notes_text: str,
+    data_fetching_text: str,
+    spec_text: str,
+) -> list[str]:
+    errors: list[str] = []
+    trace_section = section_text(notes_text, "Traceability")
+    if not trace_section:
+        return errors
+
+    notes_trace_ids = collect_trace_ids(trace_section)
+    data_fetching_trace_ids = collect_trace_ids(data_fetching_text)
+    spec_trace_ids = collect_trace_ids(spec_text)
+
+    for component in ui_doc.get("ui", {}).get("components", []) or []:
+        component_id = component.get("id")
+        if component_id and f"component:{component_id}" not in notes_trace_ids:
+            errors.append(f"notes.md Traceability is missing component trace component:{component_id}")
+
+    for index, binding in enumerate(mapping_doc.get("mapping", {}).get("bindings", []) or [], start=1):
+        direction = binding.get("direction")
+        trace_id = f"binding:{index}:{direction}"
+        if direction and trace_id not in notes_trace_ids:
+            errors.append(f"notes.md Traceability is missing binding trace {trace_id}")
+
+    for state in ui_doc.get("ui", {}).get("states", []) or []:
+        state_id = state.get("id")
+        trace_id = f"state:{state_id}"
+        if state_id and trace_id not in notes_trace_ids:
+            errors.append(f"notes.md Traceability is missing state trace {trace_id}")
+        if state.get("required") is True and state_id and trace_id not in spec_trace_ids:
+            errors.append(f"spec.md is missing required state trace {trace_id}")
+
+    for request in mapping_doc.get("mapping", {}).get("data_fetching", {}).get("requests", []) or []:
+        request_id = request.get("id")
+        trace_id = f"request:{request_id}"
+        if request_id and trace_id not in data_fetching_trace_ids:
+            errors.append(f"data-fetching.md is missing request trace {trace_id}")
+
+    return errors
+
+
 def question_number(question: dict[str, str]) -> int | None:
     question_id = str(question.get("id", ""))
     match = re.search(r"(\d+)$", question_id)
@@ -248,6 +296,8 @@ def validate_outputs(
         errors.append("notes.md is missing an 开放问题 section")
     if "## 埋点锚点" not in notes_text:
         warnings.append("notes.md is missing an 埋点锚点 section")
+
+    errors.extend(validate_traceability(ui_doc, mapping_doc, notes_text, data_fetching_text, spec_text))
 
     return errors, warnings
 

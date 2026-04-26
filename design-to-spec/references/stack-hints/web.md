@@ -1,6 +1,6 @@
 # 技术栈提示：通用 Web（React / Vue / Svelte / HTML）
 
-当目标技术栈是基于浏览器的 Web 框架时使用这些注意事项和约定。将它们融入 `design.md` —— 不要融入 `spec.md`。
+当目标技术栈是基于浏览器的 Web 框架时使用这些注意事项和约定。将它们融入 `notes.md` —— 不要融入 `spec.md`。
 
 ## 组件模型
 
@@ -8,7 +8,7 @@
 - **Vue**：`<script setup>` SFC。Props 通过 `defineProps`，事件通过 `defineEmits`。在适用的地方使用 `v-model` 进行双向绑定。
 - **Svelte**：props 通过 `export let`，事件通过 `createEventDispatcher`。Store 用于跨组件状态。
 
-在 `design.md` 中将框架名称作为明确决策命名，以便下游工具可以选择正确的脚手架。
+在 `notes.md` 中将框架名称作为明确决策命名，以便下游工具可以选择正确的脚手架。
 
 ## 布局陷阱
 

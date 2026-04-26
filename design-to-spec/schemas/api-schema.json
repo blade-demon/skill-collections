@@ -20,6 +20,28 @@
               "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
               "url": { "type": "string", "minLength": 1 },
               "method": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+              "auth_required": { "type": "boolean" },
+              "cache_key_fields": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "pagination": {
+                "type": "object",
+                "required": ["type"],
+                "additionalProperties": false,
+                "properties": {
+                  "type": { "type": "string", "enum": ["none", "page", "cursor", "offset", "unknown"] },
+                  "request_fields": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "response_fields": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  },
+                  "notes": { "type": "string" }
+                }
+              },
               "params": {
                 "type": "array",
                 "items": {
@@ -30,6 +52,26 @@
                     "name": { "type": "string", "minLength": 1 },
                     "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
                     "required": { "type": "boolean" },
+                    "notes": { "type": "string" }
+                  }
+                }
+              },
+              "request_body": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type", "required", "nullable", "enums", "notes"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "item_type": { "type": "string" },
+                    "required": { "type": "boolean" },
+                    "nullable": { "type": "boolean" },
+                    "enums": {
+                      "type": "array",
+                      "items": { "type": ["string", "number", "boolean"] }
+                    },
                     "notes": { "type": "string" }
                   }
                 }
@@ -49,6 +91,25 @@
                       "type": "array",
                       "items": { "type": ["string", "number", "boolean"] }
                     },
+                    "notes": { "type": "string" }
+                  }
+                }
+              },
+              "status_codes": {
+                "type": "array",
+                "items": { "type": "number" }
+              },
+              "error_shape": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["code", "message_field", "retryable", "ui_state", "notes"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": { "type": "string", "minLength": 1 },
+                    "message_field": { "type": "string" },
+                    "retryable": { "type": "boolean" },
+                    "ui_state": { "type": "string", "minLength": 1 },
                     "notes": { "type": "string" }
                   }
                 }

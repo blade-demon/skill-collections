@@ -17,6 +17,7 @@ The system SHALL <一句话描述主干行为，happy path 直接隐含在这里
 
 - WHEN <具体触发器：用户动作 / 数据形状 / 生命周期事件>
 - THEN <可断言的产物：事件 detail、DOM 节点、textContent、属性值>
+- AND trace id `state:<stateId>`（当 Scenario 覆盖 required state 时必须保留）
 
 #### Scenario: <边界 / 异常 — 至少一个>
 

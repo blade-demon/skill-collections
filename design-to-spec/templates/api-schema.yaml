@@ -3,6 +3,7 @@
 # 填写规则：
 #   - 只保留组件实际消费的字段；Header、鉴权等通用字段默认过滤
 #   - 分页游标、排序、筛选、缓存 key 等字段如果影响 UI 或请求状态，必须保留
+#   - request_body / error_shape / pagination 会直接影响 UI 状态和交互时必须保留
 #   - 枚举值必须完整列出；不确定时写 enums: [UNKNOWN] 并加 api.open_questions
 #   - 无接口文档时：endpoints: []，后续阶段字段来源降级为 inferred
 
@@ -11,11 +12,26 @@ api:
     - id: endpointId             # 短标识符，camelCase，在 Mapping_Logic 中引用
       url: /api/v1/resource
       method: GET                # GET / POST / PUT / DELETE / PATCH
+      auth_required: false       # 鉴权会影响 UI 分支时必须填写 true
+      cache_key_fields: []       # 参与缓存 key 的 params/request_body 字段，例如 [keyword, cursor]
+      pagination:
+        type: none               # none / page / cursor / offset / unknown
+        request_fields: []       # 例如 [cursor, limit]
+        response_fields: []      # 例如 [data.nextCursor, data.hasMore]
+        notes: ""
       params:
         - name: paramName
           type: string           # string / number / boolean / array / object
           required: true
           notes: ""              # 参数含义或约束
+      request_body:
+        - name: bodyFieldName
+          type: string           # string / number / boolean / array / object
+          item_type: ""          # 仅 type=array 时填写
+          required: false
+          nullable: true
+          enums: []              # 枚举值列表；非枚举写 []
+          notes: ""              # 字段含义或约束
       response_fields:
         - name: data.fieldName   # 点号路径，例如 data.results / data.items[].id
           type: string           # string / number / boolean / array / object
@@ -23,6 +39,13 @@ api:
           nullable: false
           enums: []              # 枚举值列表，例如 [ACTIVE, SUSPENDED, CLOSED]；非枚举写 []
           notes: ""              # 字段含义、格式约束、单位
+      status_codes: []           # 影响 UI 的 HTTP 状态码，例如 [401, 403, 429]
+      error_shape:
+        - code: ERROR_CODE
+          message_field: error.message
+          retryable: true
+          ui_state: error
+          notes: ""              # 对应 UI 降级或重试策略
   open_questions:
     - id: oq_api_1
       content: "具体待确认问题，例如：status 枚举值是否完整"

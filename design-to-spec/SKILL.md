@@ -1,16 +1,8 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.7.2
-description: |
-  将 UI 设计稿 + 接口文档转换为结构化规格包，采用四阶段状态机架构：
-  视觉提纯（UI_Schema）→ 接口提纯（API_Schema）→ 逻辑映射（Mapping_Logic）→ 规格组装。
-  每阶段输出 YAML 契约作为内部通信协议，精确传递事实；第四阶段纯模板填充，不依赖 LLM 重新推断。
-  最终输出：notes.md（设计决策 + 数据契约）、data-fetching.md（数据获取逻辑）、spec.md（OpenSpec 行为规格）。
-
-  触发条件：用户提供 UI 图片，讨论实现规格、组件拆分、接口映射或 OpenSpec 生成。
-  触发词：「设计稿」「mockup」「wireframe」「UI 图」「帮我把这张图做成组件」「from this screenshot, plan the implementation」。
-  不触发：纯美学反馈（"好看吗"）、像素级 CSS 提取、没有实现意图的浏览性讨论。
+  version: 0.9.0
+description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
 # design-to-spec — OpenSpec 智能向导
@@ -22,7 +14,7 @@ description: |
 ```
 WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
        ↓                 ↓                   ↓                    ↓
- UI_Schema.yaml    API_Schema.yaml   Mapping_Logic.yaml    3 份输出文件
+ UI_Schema.yaml    API_Schema.yaml   Mapping_Logic.yaml    contracts/ + 3 份输出文件
 ```
 
 **控制流规则**：阶段顺序不可跳过；每阶段先做内部分析（不向用户展示），再输出干净的 YAML 代码块；第四阶段读取三份 YAML 机械填充模板，不重新分析图片或文档。
@@ -31,6 +23,10 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 
 ```
 <workspace>/design-spec/<component-name>/
+├── contracts/
+│   ├── ui-schema.yaml      — 阶段一事实契约
+│   ├── api-schema.yaml     — 阶段二事实契约
+│   └── mapping-logic.yaml  — 阶段三事实契约
 ├── notes.md            — 设计决策 + 数据契约 + 开放问题 + 计划提示
 ├── data-fetching.md    — 数据获取逻辑设计（实现开发者直接入口）
 └── specs/<cap>/spec.md — OpenSpec 行为规格（Requirements + Scenarios）
@@ -62,6 +58,7 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 3. 建立层次结构：容器 → 区域 → 行 → 原子；识别复用原子候选（出现 ≥ 2 次或有通用特征）
 4. 为每个可能交互的元素打置信度标签：`identified`（affordance 直接可见）/ `inferred`（惯例推断）/ `needs_human_input`（真正模糊）
 5. 强制补全四个基础状态（loading / empty / success / error），设计稿未画的一律标 `needs_human_input`
+6. 为复杂控件保留真实语义：基础 `type` 不够时用 `type: Custom` + `semantic_type`；局部状态必须填写 `scope` / `scope_components`
 
 **输出协议**：内部分析完成后，输出：
 
@@ -90,7 +87,9 @@ ui:
 
 等待用户确认 → 状态流转至 `WAITING_FOR_API`。
 
-**若无接口文档**：询问是否纯展示组件（数据全由父组件传入），若是以 `API_Schema = {endpoints: []}` 直接进入阶段三。
+**落盘规则**：用户确认后，立即写入 `<workspace>/design-spec/<component-name>/contracts/ui-schema.yaml`。后续阶段只读取该文件或其内存副本，不重新分析原始设计稿。
+
+**若无接口文档**：询问是否纯展示组件（数据全由父组件传入），若是以 `API_Schema = {endpoints: []}` 直接进入阶段三，并立即写入 `<workspace>/design-spec/<component-name>/contracts/api-schema.yaml`。
 
 ---
 
@@ -108,10 +107,11 @@ ui:
 **内部分析协议**：执行以下分析，不向用户展示推理过程：
 
 1. 识别核心接口 URL + HTTP 方法（过滤掉 Header、鉴权等通用字段）
-2. 提取入参（字段名 / 类型 / 必填性）
+2. 提取入参和请求体（字段名 / 类型 / 必填性 / 可空性 / 枚举）
 3. 提取出参（字段名 / 类型 / 可空性 / 枚举值），枚举值必须完整列出
 4. 与 UI_Schema 做 diff：接口有但 UI 不消费的字段不放入 API_Schema
-5. 标记不确定的枚举值为 `[UNKNOWN]` 并加入 `api.open_questions`
+5. 保留影响 UI 的 `auth_required`、`cache_key_fields`、`pagination`、`status_codes`、`error_shape`
+6. 标记不确定的枚举值为 `[UNKNOWN]` 并加入 `api.open_questions`
 
 **输出协议**：
 
@@ -136,6 +136,8 @@ api:
 
 等待用户确认 → 状态流转至 `WAITING_FOR_MAPPING`。
 
+**落盘规则**：用户确认后，立即写入 `<workspace>/design-spec/<component-name>/contracts/api-schema.yaml`。若无接口文档，也必须落盘 `api.endpoints: []` 和 `api.open_questions`，不要省略此文件。
+
 ---
 
 ## 阶段三：逻辑映射（WAITING_FOR_MAPPING）
@@ -147,9 +149,9 @@ api:
 **内部分析协议**：注入前两阶段 YAML 上下文，执行以下分析，不向用户展示推理过程：
 
 1. 逐一处理 `interactive: true` 的组件：触发哪些 request？每个 request 对应哪个 endpoint？传入哪些参数？
-2. 建立绑定表：UI 字段 → API 参数；API 响应 → UI 展示；UI 操作 → 组件事件（标注是否有转换逻辑）
+2. 建立绑定表：UI 字段 → API 参数 / request body；API 响应 → UI 展示；UI 操作 → 组件事件（标注是否有转换逻辑）
 3. 遍历 UI_Schema.states，为每个状态推导状态机转换（尽量引用具体字段值如 `data.results.length === 0`）
-4. 提取用户描述中的触发时机、错误处理、缓存、分页等信号
+4. 提取用户描述中的触发时机、错误处理、缓存、分页、重试、并发/abort 等信号，写入 `cache_policy` / `retry_policy` / `concurrency_policy`
 5. 不确定项打入 `open_questions`，不猜测
 
 **输出协议**：
@@ -168,11 +170,30 @@ mapping:
 
 等待用户确认 → 状态流转至 `GENERATING_SPEC`。
 
+**落盘规则**：用户确认后，立即写入 `<workspace>/design-spec/<component-name>/contracts/mapping-logic.yaml`。阶段四必须从 `contracts/` 目录读取三份契约。
+
 ---
 
 ## 阶段四：规格组装（GENERATING_SPEC）
 
 **此阶段不使用 LLM 进行新的推断。** 仅读取三份 YAML 契约，机械填充模板。
+
+**默认生成路径**：先运行契约校验，再运行确定性生成脚本生成基线文件：
+
+```bash
+python3 design-to-spec/scripts/validate-contracts.py \
+  --ui <out>/contracts/ui-schema.yaml \
+  --api <out>/contracts/api-schema.yaml \
+  --mapping <out>/contracts/mapping-logic.yaml
+
+python3 design-to-spec/scripts/generate-output.py \
+  --ui <out>/contracts/ui-schema.yaml \
+  --api <out>/contracts/api-schema.yaml \
+  --mapping <out>/contracts/mapping-logic.yaml \
+  --out-dir <out>
+```
+
+脚本会写入 `contracts/*.yaml`、`notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。LLM 只允许在脚本产物基础上补充人类可读措辞、开放问题摘要和项目上下文；不得新增契约中没有的接口、状态、字段或交互。修订后必须运行 `scripts/validate-output.py --strict`。
 
 ### 4.1 变更类型判定（代码逻辑，不依赖 LLM）
 
@@ -195,8 +216,9 @@ Glob 检查是否存在同名组件文件或已有 spec
 | 状态枚举触发条件             | `Mapping_Logic.state_machine`（逐条读取 event 值）                                                                                |
 | 状态可断言结果               | `Mapping_Logic.state_machine.render_assertion`，缺失时回退到 `UI_Schema.states[].render_assertion`                                |
 | 开放问题                     | `API_Schema.open_questions` + `Mapping_Logic.open_questions`（直接搬运，不二次加工）                                              |
-| 数据获取请求                 | `Mapping_Logic.data_fetching.requests[]`（endpoint + trigger + call_type + depends_on）                                           |
-| 组件分解表                   | `UI_Schema.components`（id + parent_id + type + role + interactive + repeat_source）                                              |
+| 数据获取请求                 | `Mapping_Logic.data_fetching.requests[]` + cache/retry/concurrency policy                                                        |
+| API 元信息                   | `API_Schema.request_body` + `pagination` + `error_shape` + `cache_key_fields` + `auth_required`                                  |
+| 组件分解表                   | `UI_Schema.components`（id + parent_id + type + semantic_type + role + interactive + repeat_source）                             |
 
 ### 4.3 Scenario 生成规则
 
@@ -217,7 +239,7 @@ Glob 检查是否存在同名组件文件或已有 spec
 
 每阶段写完立即调用写文件工具，然后压缩为锚点保留在 context：
 
-**阶段 A** — 写 `notes.md` §为什么 + §决策 + §数据契约 + §数据获取方式
+**阶段 A** — 运行 `scripts/generate-output.py` 写入三份基线输出；如需增强文案，再修订 `notes.md` §为什么 + §决策 + §数据契约 + §数据获取方式
 → 写入后提炼「数据锚点」（≤ 8 行）；释放：原始 API 文档、UI_Schema / API_Schema 完整 YAML
 
 **阶段 B** — 写 `data-fetching.md`（基于数据锚点，不重读 notes.md）
@@ -268,19 +290,20 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 
 ## 输出呈现
 
-三份文件写完后输出摘要：
+契约和三份文件写完后输出摘要：
 
 ```
+📁 contracts/        — UI/API/Mapping 三份事实契约
 📄 notes.md          — 设计决策 + 数据契约 + 开放问题
 📄 data-fetching.md  — 数据获取逻辑（实现开发者直接入口）
 📄 specs/.../spec.md — OpenSpec 行为规格
 
 ⚠️ 关键待确认：{API_Schema.open_questions + Mapping_Logic.open_questions 中 P0 条目，≤ 2 条}
 
-建议下一步：将 notes.md + data-fetching.md 输入 /plan，传入 --target <stack>
+建议下一步：将整个 design-spec/<component>/ 目录输入 /plan，传入 --target <stack>
 ```
 
-显式告知用户：生成文件是协作草稿，`⚠️ 待确认` 和 `needs_human_input` 是期待人类编辑的锚点。
+显式告知用户：`contracts/` 是事实源；生成的 Markdown 是协作草稿，`⚠️ 待确认` 和 `needs_human_input` 是期待人类编辑的锚点。
 
 ---
 
@@ -325,7 +348,9 @@ error: api_error（FORBIDDEN 处理待确认 P0）
   - `contracts/api-schema.yaml` — 阶段二 YAML 契约的填写示例
   - `contracts/mapping-logic.yaml` — 阶段三 YAML 契约的填写示例
 - `scripts/validate-contracts.py` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
+- `scripts/generate-output.py` — 从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`spec.md` 基线（阶段四默认入口）
 - `scripts/validate-output.py` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
+- `scripts/test-generate-output.py` — 使用 golden sample 回归验证生成脚本和输出校验链路
 
 ---
 
@@ -354,6 +379,13 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 
 - 所有 `tap-` / `view-` 前缀事件在表中至少出现 1 行
 - 不埋点的显式标 `not-tracked`，不要漏行
+
+**Traceability**
+
+- `notes.md`：必须包含 `## Traceability`，列出 `component:<id>`、`binding:<index>:<direction>`、`state:<id>`
+- `data-fetching.md`：每个 request 必须包含 `request:<id>`
+- `spec.md`：每个 `required: true` 状态对应 Scenario 必须包含 `state:<id>` trace
+- `scripts/validate-output.py --strict` 会校验上述 trace；不要手动删除
 
 ---
 

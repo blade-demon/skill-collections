@@ -26,6 +26,7 @@ The system SHALL <修改后的主干行为>.
 
 - WHEN <可能更新的触发器>
 - THEN <可能更新的可断言产物>
+- AND trace id `state:<stateId>`（当 Scenario 覆盖 required state 时必须保留）
 
 #### Scenario: <新增的边界 Scenario — 标题新写>
 
