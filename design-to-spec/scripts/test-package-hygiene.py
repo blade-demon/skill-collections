@@ -43,6 +43,13 @@ class PackageHygieneTest(unittest.TestCase):
         ]
         self.assertEqual(existing, [], f"tracked .DS_Store files still exist:\n{existing}")
 
+    def test_stage_one_confirmation_requires_ascii_preview_only(self) -> None:
+        skill_text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("ASCII 图表", skill_text)
+        self.assertIn("components[].parent_id", skill_text)
+        self.assertNotIn("```mermaid", skill_text)
+        self.assertNotIn("graph TD", skill_text)
+
 
 if __name__ == "__main__":
     unittest.main()
