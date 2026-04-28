@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.9.0
+  version: 0.9.2
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -71,19 +71,37 @@ ui:
   layout: { ... }
 ```
 
-**用户确认**：将 YAML 转换为 Markdown 展示：
+**用户确认**：将 YAML 转换为 Markdown 展示，必须先给用户一个 ASCII 图表预览，再给结构化清单。可视化预览不得替代 YAML 契约；它只是帮助用户快速确认层级、交互和不确定点。
 
-```
+展示规则：
+
+- ASCII 图表必须提供：从 `components[].parent_id` 生成 `text` 代码块，用缩进表达父子层级，节点文案格式为 `id [type]`。
+- 图表只使用普通 ASCII 字符连接层级，例如 `|--`、`` `-- ``、`|`、空格；不要使用需要额外渲染能力的图表语法。
+- 用 `*` 标 interactive，用 `?` 标 `needs_human_input`；节点数量 > 12 时只展示到区域/行级，并把剩余原子组件折叠为 `...`。
+- 清单中按容器/区域/原子分组，不要只输出平铺列表；状态覆盖和待确认项保留在图表之后。
+- ASCII 图表只能来自阶段一 YAML，不允许重新看图新增组件。
+
+````
 ✅ 识别到以下 UI 组件：
-- searchInput (Input) — 搜索输入框，interactive
-- submitBtn (Button, primary) — 搜索提交，interactive
+
+```text
+SearchPanel [Container]
+|-- * searchInput [Input] - 搜索输入框
+|-- * submitBtn [Button primary] - 搜索提交
+`-- ? errorState [Toast] - 错误态视觉待确认
+```
+
+组件清单：
+- 容器: SearchPanel
+- 交互: searchInput(Input), submitBtn(Button primary)
+- 待确认: errorState(Toast)
 
 状态覆盖：loading(inferred) / empty(inferred) / success(identified) / error(⚠️ needs_human_input)
 
 ⚠️ 待确认：error 态的视觉设计未在设计稿中体现，实现前需补充。
 
 是否无误并继续第二步？
-```
+````
 
 等待用户确认 → 状态流转至 `WAITING_FOR_API`。
 
