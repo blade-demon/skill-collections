@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.9.2
+  version: 0.9.4
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -44,6 +44,26 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 - `references/contracts.md` — 字段语义、反漂移约束、校验命令
 
 仅当你需要确认字段含义、契约约束或校验命令时读取 `references/contracts.md`；常规执行阶段优先读取对应模板和 schema。
+
+---
+
+## 启动话术
+
+**触发时机**：skill 首次被调用、用户提供了设计稿、尚未开始阶段一内部分析前，先原文输出以下文本块，再进入分析。续跑场景（用户提供了 `contracts/` 路径跳过前三阶段）不输出。
+
+```
+📐 design-to-spec 启动
+─────────────────────────────────────────
+流程：4 个阶段，每阶段你确认后才进入下一步
+
+✓ 设计稿        已收到，开始分析
+? 接口文档      阶段二时粘贴（没有也可以继续）
+? 交互说明      阶段三时用一两句话描述
+
+输出位置：design-spec/<组件名>/
+中途中断：contracts/ 已落盘，新会话可从任意阶段接续
+─────────────────────────────────────────
+```
 
 ---
 
