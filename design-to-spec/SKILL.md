@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.9.4
+  version: 0.9.5
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -102,6 +102,8 @@ ui:
 - ASCII 图表只能来自阶段一 YAML，不允许重新看图新增组件。
 
 ````
+━━ 阶段 1 / 4：视觉提纯 ━━
+
 ✅ 识别到以下 UI 组件：
 
 ```text
@@ -120,7 +122,8 @@ SearchPanel [Container]
 
 ⚠️ 待确认：error 态的视觉设计未在设计稿中体现，实现前需补充。
 
-是否无误并继续第二步？
+确认后进入阶段二（接口提纯）。
+如有遗漏，直接说：还有 [位置] 的 [组件类型]，我会更新后再继续。
 ````
 
 等待用户确认 → 状态流转至 `WAITING_FOR_API`。
@@ -163,13 +166,18 @@ api:
 **用户确认**：
 
 ```
+━━ 阶段 2 / 4：接口提纯 ━━
+
 ✅ 识别到以下接口：
 - GET /api/v1/search?keyword=...
   入参: keyword(string, required)
   出参: data.results(array), data.total(number)
   错误码: NETWORK_ERROR | NOT_FOUND | FORBIDDEN
 
-是否无误并继续第三步？
+确认后进入阶段三（逻辑映射）。
+如需调整：
+- 字段过多 → 回复"只保留 [字段A / 字段B]，其余删除"
+- 字段缺失 → 回复"补一个字段 [name]([type])"
 ```
 
 等待用户确认 → 状态流转至 `WAITING_FOR_MAPPING`。
@@ -204,7 +212,24 @@ mapping:
   open_questions: [...]
 ```
 
-**用户确认**：展示状态机转换表和字段绑定表，询问是否无误。
+**用户确认**：
+
+```
+━━ 阶段 3 / 4：逻辑映射 ━━
+
+✅ 状态机转换：
+- idle → loading：submitBtn.onClick
+- loading → success：api_success && data.results.length > 0
+- loading → empty：api_success && data.results.length === 0
+- loading → error：api_error
+
+✅ 字段绑定：
+- searchInput.value → GET /search.keyword (ui_to_api)
+- data.results → resultList.items (api_to_ui)
+
+确认后进入阶段四（自动生成规格文件）。
+如需补充：直接说"还有一种情况：[条件] 时 [行为]"
+```
 
 等待用户确认 → 状态流转至 `GENERATING_SPEC`。
 
@@ -215,6 +240,13 @@ mapping:
 ## 阶段四：规格组装（GENERATING_SPEC）
 
 **此阶段不使用 LLM 进行新的推断。** 仅读取三份 YAML 契约，机械填充模板。
+
+**进入阶段四时先输出状态行**：
+
+```
+━━ 阶段 4 / 4：规格组装（自动生成中）━━
+开始读取三份契约并生成 notes.md / data-fetching.md / spec.md...
+```
 
 **默认生成路径**：先运行契约校验，再运行确定性生成脚本生成基线文件：
 
@@ -345,6 +377,8 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 契约和三份文件写完后输出摘要：
 
 ```
+━━ ✅ 完成（4 / 4）━━
+
 📁 contracts/        — UI/API/Mapping 三份事实契约
 📄 notes.md          — 设计决策 + 数据契约 + 开放问题
 📄 data-fetching.md  — 数据获取逻辑（实现开发者直接入口）
