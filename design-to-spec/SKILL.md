@@ -302,7 +302,21 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 1. 不向用户暴露错误细节
 2. 携带错误信息重新请求一次：「你生成的 YAML 格式有误：{error}，请只修复 YAML 代码块后重新输出」
 3. 最多重试 2 次
-4. 2 次失败后才提示用户：「YAML 解析失败，请检查输入格式是否标准，或手动描述关键字段」
+4. 2 次失败后才提示用户：
+
+   > ⚠️ YAML 生成连续失败，请用自然语言描述以下信息，我来重新提取：
+   > 组件名 / 主要交互是什么 / 接口数量和主要字段
+
+**运行时常见问题——出现时主动输出以下提示，不要等用户翻文档：**
+
+| 触发条件 | 输出给用户的补救提示 |
+|---|---|
+| 阶段一确认后用户说"漏了某个元素" | `直接告诉我：还有 [位置] 的 [组件类型]，我会更新 ui-schema 后继续。` |
+| 阶段二提取了用户不需要的字段 | `回复：只保留 [字段A / 字段B / 字段C]，其余删除。` |
+| 阶段三状态机缺少某条转换 | `回复补充条件，例如："还有一种情况：data.results.length > 100 时显示分页提示"` |
+| spec.md 的 Scenario THEN 子句太空泛 | `⚠️ render_assertion 缺失导致 THEN 无法断言。请在 contracts/ui-schema.yaml 的对应 state 下补写 render_assertion（如 renders .empty-state），然后重跑 generate-output.py。` |
+| validate-output 报 trace 锚点缺失 | `⚠️ trace 锚点（state:<id> / component:<id>）被误删。请把对应锚点加回 notes.md 或 spec.md，它们是机器校验用的，不是装饰。` |
+| context 不足（门控触发或会话无响应） | `⚠️ context 不足，已停止生成。三份契约已落盘。请开新会话并发送：把 design-spec/<组件名>/contracts/ 目录路径告诉我，我从阶段四接续。` |
 
 ---
 
