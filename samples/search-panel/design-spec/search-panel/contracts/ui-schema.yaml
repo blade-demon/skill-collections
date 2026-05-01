@@ -1,0 +1,236 @@
+# UI_Schema — SearchPanel
+# 阶段一产物：从 inputs/design.svg 视觉提纯。
+
+ui:
+  name: SearchPanel
+  components:
+    - id: searchPanel
+      parent_id: root
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 顶层卡片容器；白底圆角 12，宽度自适应；包含输入区和结果区两段，由 1px 分隔线区隔
+
+    - id: searchInput
+      parent_id: searchPanel
+      type: Input
+      role: primary
+      label: "搜索关键词"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 主输入框；placeholder「搜索关键词」；focus 时蓝色描边；长度 1-32，超长依赖后端校验
+
+    - id: submitBtn
+      parent_id: searchPanel
+      type: Button
+      role: action
+      label: "搜"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 蓝色主按钮；keyword 为空时灰化不响应；loading 态半透明并显示加载圆环
+
+    - id: validationHint
+      parent_id: searchPanel
+      type: Text
+      role: secondary
+      label: ""
+      interactive: false
+      confidence: needs_human_input
+      repeat_source: ""
+      notes: INVALID_KEYWORD 时显示的红字提示；位置/字号/颜色 mockup 未画，待设计签收
+
+    - id: resultsRegion
+      parent_id: searchPanel
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 结果区容器；不同状态切换不同子树（guideText / skeletonRow / resultList / emptyIcon+emptyText / errorIcon+errorText+retryButton）
+
+    - id: guideText
+      parent_id: resultsRegion
+      type: Text
+      role: secondary
+      label: "请输入关键词后点击搜索"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: idle 态居中引导文案
+
+    - id: skeletonRow
+      parent_id: resultsRegion
+      type: Skeleton
+      role: decoration
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: "[1, 2, 3]"
+      notes: loading 态占位条；2 行（标题 14px + 摘要 10px），3 项重复
+
+    - id: resultCount
+      parent_id: resultsRegion
+      type: Text
+      role: secondary
+      label: "共 N 条结果"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: success 态顶部计数；文案模板「共 {data.total} 条结果」
+
+    - id: resultList
+      parent_id: resultsRegion
+      type: List
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: "data.results[]"
+      notes: success 态结果列表；按 results 数组重复渲染 resultItem
+
+    - id: resultItem
+      parent_id: resultList
+      type: Card
+      role: data_field
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: "data.results[]"
+      notes: 单条结果容器；包含 title + summary；底部 1px 浅灰分隔线（最后一条无）
+
+    - id: resultTitle
+      parent_id: resultItem
+      type: Text
+      role: primary
+      label: "useEffect 入门指南"
+      interactive: false
+      confidence: identified
+      repeat_source: "data.results[]"
+      notes: 单行截断（text-overflow:ellipsis）；12px 500 weight；来自 data.results[].title
+
+    - id: resultSummary
+      parent_id: resultItem
+      type: Text
+      role: secondary
+      label: "React 副作用钩子的使用…"
+      interactive: false
+      confidence: identified
+      repeat_source: "data.results[]"
+      notes: 单行截断；11px 灰色；来自 data.results[].summary；summary 为 null 时整行隐藏
+
+    - id: emptyIcon
+      parent_id: resultsRegion
+      type: Icon
+      role: decoration
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: empty 态放大镜图标；居中；灰色描边
+
+    - id: emptyText
+      parent_id: resultsRegion
+      type: Text
+      role: secondary
+      label: "未找到相关结果"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: empty 态文案；居中；灰色
+
+    - id: errorIcon
+      parent_id: resultsRegion
+      type: Icon
+      role: decoration
+      label: "!"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: error 态红色感叹号图标；圆形红底白字
+
+    - id: errorText
+      parent_id: resultsRegion
+      type: Text
+      role: primary
+      label: "网络异常，请重试"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: error 态文案；不同 error code 对应不同文案（NETWORK_ERROR / RATE_LIMITED / INTERNAL_ERROR）
+
+    - id: retryButton
+      parent_id: resultsRegion
+      type: Button
+      role: action
+      label: "重试"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: error 态重试按钮；轮廓蓝按钮；点击后用最近一次 keyword 重新发请求
+
+  states:
+    - id: idle
+      trigger: "组件初始挂载，未提交过任何搜索"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders searchInput, submitBtn, guideText; hides resultList, emptyIcon, errorIcon, retryButton"
+
+    - id: loading
+      trigger: "用户点击 submitBtn 后，请求未返回前"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders 3 skeletonRow placeholders; submitBtn 半透明禁用并显示加载圆环"
+
+    - id: success
+      trigger: "api_success AND data.results.length > 0"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders resultCount with data.total, resultList with data.results[].title and .summary"
+
+    - id: empty
+      trigger: "api_success AND data.results.length === 0"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders emptyIcon and emptyText; hides resultList"
+
+    - id: error
+      trigger: "api_error with code in (NETWORK_ERROR, RATE_LIMITED, INTERNAL_ERROR)"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders errorIcon, errorText (text varies per code), and retryButton"
+
+    - id: invalidKeyword
+      trigger: "api_error with code === INVALID_KEYWORD"
+      required: true
+      source: policy
+      confidence: needs_human_input
+      scope: element
+      scope_components:
+        - validationHint
+        - searchInput
+      render_assertion: "renders validationHint with backend message under searchInput; resultsRegion stays in idle"
+
+    - id: disabled
+      trigger: "searchInput.value.trim().length === 0"
+      required: false
+      source: inferred
+      confidence: identified
+      scope: element
+      scope_components:
+        - submitBtn
+      render_assertion: "renders submitBtn greyed out and non-responsive"
+
+  layout:
+    structure: vertical
+    notes: "卡片内部垂直堆叠：searchInput + submitBtn 横排（输入区） → 1px 分隔线 → resultsRegion（结果区，根据状态切换不同子树）；validationHint 在 INVALID_KEYWORD 时插入到 searchInput 下方"

@@ -15,6 +15,15 @@
 - 新增 `ONBOARDING.md`（顶层）：3 分钟新人引导文档。覆盖"是不是我的菜"决策、谁该用 / 不该用（强调 UI 单元 = 组件 / 页面 / 模块，多页面流程拆多次跑）、3 个具体痛点、产物清单、30 秒安装、第一次跑（today-windvane sample）、按需求分流的下一步导航表、6 个常见疑问。补齐文档梯度（README → ONBOARDING → operator-guide → SKILL.md / contracts.md）的 Tier 2 缺口。
 - README 顶部分流指引调整：`第一次来？读 ONBOARDING.md` 与 `要拿真实设计稿动手？读 operator-guide.md` 拆成两行，避免新人和上手者读同一份文档。
 - `references/operator-guide.md` 顶部读者预设从"第一次使用此 skill"调整为"已经决定要用、准备动手"，并指向 ONBOARDING 作为前置入口；"组件"措辞统一为"UI 单元（组件 / 页面 / 模块）"。
+- ONBOARDING §7「第一次跑」新增到 `samples/search-panel/` 的入口指引，区分"回归 sample"（仅 contracts + 输出）与"手动验证 sample"（完整 inputs → spec → 实现）。
+
+### Added (repo-level, outside `design-to-spec/`)
+
+- 仓库根新增 npm workspaces：`design-to-spec` + `samples/*`。根 `package.json` 提供 `npm run test:skill` / `build:samples` / `check` 编排。
+- 根 `README.md` 解释 skill vs samples 的分工，给出快速导航表。
+- 根 `docs/repo-workflow.md` 说明两类"examples"的区别（golden 回归 vs 手动验证）、samples 的 inputs → spec → impl 工作流、未来扩展（多 skill / tools / packages）的延后策略。
+- 根 `docs/sample-authoring.md` 给 sample 作者：何时该做新 sample、目录契约、authoring 顺序、`walkthrough.md` 模板、PR checklist、anti-patterns。
+- 第一个手动验证 sample `samples/search-panel/`：`inputs/`（design.svg + api.md + interaction-notes.md）+ `design-spec/search-panel/`（contracts + 三份 markdown，已通过 `--strict` 校验）+ `src/`（vite + vanilla JS 实现，匹配 spec 的状态机和 binding）+ `walkthrough.md`（≤200 行的四阶段过程记录）。
 - 新增第二份 golden sample `examples/price-card/`：props-only 形态，与 `today-windvane`（自取数据卡片）形态互补。覆盖 4 个状态（success / discount / partial / disabled）、空 `api.endpoints` / 空 `bindings` / 空 `data_fetching.requests` 退化路径，验证 operator-guide §4 的 props-only 模式可端到端跑通。生成的 `notes.md`、`data-fetching.md`、`spec.md` 均通过 `validate-output.js --strict`。
 - 新增 `scripts/tests/price-card.test.js`：5 个回归用例覆盖 props-only 全链路（contracts 校验 → 生成 → strict 输出校验）+ 信号短语断言（"无直接请求"、"数据由父组件或宿主上下文传入"）+ 4 个 required state 的 trace 锚点 + 组件级 trace 锚点。`npm test` 现共 38 项全过。
 
