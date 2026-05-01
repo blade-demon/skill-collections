@@ -1,0 +1,161 @@
+# UI_Schema — PriceCard
+# 阶段一产物：视觉提纯。从 input.svg 4 个状态面板枚举所有可见组件。
+# 这是 props-only sample —— 组件不调接口，所有数据通过父组件 props 传入。
+
+ui:
+  name: PriceCard
+  components:
+    - id: cardContainer
+      parent_id: root
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 白底圆角卡片，180×200，整张卡片是顶层容器；不可点击，按钮等交互由父组件处理
+
+    - id: stateBadge
+      parent_id: cardContainer
+      type: Badge
+      role: decoration
+      label: "success"
+      interactive: false
+      confidence: inferred
+      repeat_source: ""
+      notes: 卡片左上角的状态徽章（success/discount/partial/disabled）；颜色 + 文案随 props 变化；mockup 上显示是为了让评审者识别状态，生产环境可能不渲染
+
+    - id: productImage
+      parent_id: cardContainer
+      type: Image
+      role: decoration
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 100×60 商品占位图；URL 由 props.imageUrl 传入；缺失时使用占位灰图
+
+    - id: currencySymbol
+      parent_id: cardContainer
+      type: Text
+      role: secondary
+      label: "¥"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 货币符号；由 props.currency 决定（CNY=¥ / USD=$ / EUR=€）；与 amountText 紧贴
+
+    - id: amountText
+      parent_id: cardContainer
+      type: Text
+      role: primary
+      label: "299"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 主价格数字；28px bold；折扣态时颜色变红；disabled 态时变浅灰；由 props.amount 渲染
+
+    - id: originalPriceText
+      parent_id: cardContainer
+      type: Text
+      role: secondary
+      label: "¥299"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 划线原价；text-decoration:line-through；仅在 props.originalPrice 存在时渲染；右对齐紧挨 amountText
+
+    - id: discountBadge
+      parent_id: cardContainer
+      type: Badge
+      role: data_field
+      label: "-33%"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 折扣百分比徽章；红橙渐变；仅在 props.discountPercent 存在时渲染；显示格式 "-{n}%"
+
+    - id: subLabel
+      parent_id: cardContainer
+      type: Text
+      role: secondary
+      label: "有库存 · 直接购买"
+      interactive: false
+      confidence: inferred
+      repeat_source: ""
+      notes: 副标签文案；不同状态文案不同（success="有库存 · 直接购买"，partial="活动价（无折扣 %）"）；具体文案由父组件传入或使用默认；mockup 中 discount 态未显示此文案，按 inferred 处理
+
+    - id: stockOutOverlay
+      parent_id: cardContainer
+      type: Card
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 缺货遮罩条；仅在 props.hasStock === false 时渲染；半透明黑底覆盖价格区，居中显示"已售罄"
+
+    - id: stockOutLabel
+      parent_id: stockOutOverlay
+      type: Text
+      role: primary
+      label: "已售罄"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 缺货遮罩内的文案；白色加粗 14px；文案固定为「已售罄」
+
+  states:
+    - id: loading
+      trigger: "props 未就绪 / props === undefined"
+      required: false
+      source: policy
+      confidence: needs_human_input
+      render_assertion: "renders skeleton placeholder or hides cardContainer"
+
+    - id: empty
+      trigger: "props.amount === 0 OR props.amount === null"
+      required: false
+      source: policy
+      confidence: needs_human_input
+      render_assertion: "renders empty state per parent decision"
+
+    - id: success
+      trigger: "props.amount > 0 AND props.hasStock === true AND props.originalPrice === null"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders currencySymbol, amountText, subLabel; hides originalPriceText, discountBadge, stockOutOverlay"
+
+    - id: discount
+      trigger: "props.amount > 0 AND props.hasStock === true AND props.originalPrice !== null AND props.discountPercent !== null"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders amountText in red, originalPriceText with strikethrough, discountBadge with -{n}%"
+
+    - id: partial
+      trigger: "props.amount > 0 AND props.hasStock === true AND props.originalPrice !== null AND props.discountPercent === null"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders amountText, originalPriceText with strikethrough; hides discountBadge"
+
+    - id: error
+      trigger: "props.amount < 0 OR props.currency 不在支持列表"
+      required: false
+      source: policy
+      confidence: needs_human_input
+      render_assertion: "renders error placeholder or warns parent"
+
+    - id: disabled
+      trigger: "props.hasStock === false"
+      required: true
+      source: visible
+      confidence: identified
+      scope: component
+      render_assertion: "renders stockOutOverlay with stockOutLabel; greys out amountText and currencySymbol"
+
+  layout:
+    structure: vertical
+    notes: "卡片内部垂直堆叠：stateBadge（左上） → productImage（顶部居中） → 价格区（currencySymbol + amountText + originalPriceText 横排） → discountBadge / subLabel（条件渲染） → stockOutOverlay（绝对定位覆盖价格区，仅 disabled 态出现）"

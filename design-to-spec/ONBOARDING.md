@@ -98,6 +98,13 @@ node scripts/generate-output.js \
 - 再看 **`data-fetching.md`**——这是给前端开发者用的"请求实现细节"
 - 最后看 **`notes.md`** 的「开放问题」节——这是 P0/P1 待确认锚点，coding 前必须关闭
 
+**想看不同形态的 sample？** 内置两份对照：
+
+| Sample | 形态 | 看什么 |
+|---|---|---|
+| `examples/today-windvane/` | 自取数据卡片 | 完整的接口 + 状态机 + 错误码 + 分页 |
+| `examples/price-card/` | props-only 纯展示组件 | 退化路径：`api.endpoints` 空、`bindings` 空、状态由 props 驱动 |
+
 看完心里有数后，再用自己的设计稿跑一次（去 [operator-guide](./references/operator-guide.md) §1 找最简指令）。
 
 ---
@@ -122,7 +129,7 @@ node scripts/generate-output.js \
 ## 9. 常见疑问
 
 **Q：没接口文档行不行？**
-行。阶段二可以跳过或写"预期接口"，缺失字段会自动进 `api.open_questions`，等接口出来后改 YAML 重跑即可。详见 [operator-guide §4](./references/operator-guide.md)。
+行。阶段二可以跳过或写"预期接口"，缺失字段会自动进 `api.open_questions`，等接口出来后改 YAML 重跑即可。详见 [operator-guide §4](./references/operator-guide.md)，可参考 `examples/price-card/`（props-only 纯展示组件，`api.endpoints: []`）。
 
 **Q：多张设计稿（loading / empty / error 各一张）怎么传？**
 同一次会话一起传，告诉 skill 每张代表什么状态。详见 [operator-guide §2](./references/operator-guide.md)。

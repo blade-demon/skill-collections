@@ -1,0 +1,60 @@
+# Mapping_Logic — PriceCard
+# 阶段三产物：逻辑映射。
+#
+# props-only sample：
+# - data_fetching.requests = [] —— 不发任何请求
+# - bindings = [] —— 当前 schema 的三种 direction（ui_to_api / api_to_ui / ui_to_event）
+#   都假设有 API 或事件出口；纯 props-to-UI 渲染映射记录在 ui-schema 的 components[].notes 中
+# - state_machine 的 transitions 基于 props 变化（父组件 re-render）
+
+mapping:
+  component: PriceCard
+  data_fetching:
+    requests: []
+  bindings: []
+  state_machine:
+    # success → 折扣态：父组件下发 originalPrice + discountPercent
+    - from: success
+      event: "props.originalPrice !== null AND props.discountPercent !== null"
+      to: discount
+    # success → 含原价无折扣百分比
+    - from: success
+      event: "props.originalPrice !== null AND props.discountPercent === null"
+      to: partial
+    # success → 缺货
+    - from: success
+      event: "props.hasStock === false"
+      to: disabled
+    # discount → partial（折扣百分比被移除但原价保留）
+    - from: discount
+      event: "props.discountPercent === null"
+      to: partial
+    # discount → 缺货
+    - from: discount
+      event: "props.hasStock === false"
+      to: disabled
+    # partial → 折扣态（补上折扣百分比）
+    - from: partial
+      event: "props.discountPercent !== null"
+      to: discount
+    # partial → 缺货
+    - from: partial
+      event: "props.hasStock === false"
+      to: disabled
+    # 缺货 → 恢复有库存（父组件库存接口轮询补货）
+    - from: disabled
+      event: "props.hasStock === true"
+      to: success
+
+  open_questions:
+    - id: mapping-q1
+      content: "schema 当前三种 binding direction 都假设有 API 或事件出口。props-only 组件的 props→UI 映射目前只能写在 components[].notes 里，建议在 v0.13+ 引入 props_to_ui direction 或专门的 props 字典节。"
+      priority: P2
+
+    - id: mapping-q2
+      content: "props.discountPercent 的合法范围是 (0, 100) 还是 [0, 100]？为 0 时是否仍渲染徽章？需产品确认。"
+      priority: P1
+
+    - id: mapping-q3
+      content: "props.amount === 0 时进入 empty 还是 success？mockup 未画 empty 视觉，需设计签收。"
+      priority: P1

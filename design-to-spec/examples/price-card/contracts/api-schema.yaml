@@ -1,0 +1,13 @@
+# API_Schema — PriceCard
+# 阶段二产物：接口提纯。
+#
+# props-only sample：组件不调任何接口，所有数据由父组件以 props 传入。
+# api.endpoints 必须为空数组；这是退化路径，不是漏写。
+# 字段层面的"接口"由 mapping-logic.yaml 中的 bindings 表达为 props.* 来源。
+
+api:
+  endpoints: []
+  open_questions:
+    - id: api-q1
+      content: "未来如果 PriceCard 需要自己拉取价格（例如做促销活动倒计时），是否新增 GET /api/v1/price/:id 接口？目前 props-only 是按当前业务约定。"
+      priority: P2
