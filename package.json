@@ -1,0 +1,19 @@
+{
+  "name": "skill-collections",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo for Anthropic-style skills and hands-on samples that exercise them.",
+  "workspaces": [
+    "design-to-spec",
+    "samples/*"
+  ],
+  "scripts": {
+    "test:skill": "npm test --workspace design-to-spec",
+    "build:samples": "npm run build --workspaces --if-present",
+    "lint:samples": "npm run lint --workspaces --if-present",
+    "check": "npm run test:skill && npm run lint:samples && npm run build:samples"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

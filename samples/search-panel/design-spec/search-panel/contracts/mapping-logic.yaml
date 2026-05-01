@@ -1,0 +1,111 @@
+# Mapping_Logic — SearchPanel
+# 阶段三产物：从 inputs/interaction-notes.md 逻辑映射。
+
+mapping:
+  component: SearchPanel
+  data_fetching:
+    requests:
+      - id: searchRequest
+        trigger: "submitBtn.onClick OR searchInput.onEnterKey"
+        endpoint: searchAll
+        call_type: user_triggered
+        loading_state: true
+        depends_on: []
+    cache_policy:
+      strategy: none
+      notes: "每次提交都重新请求；不做客户端缓存"
+    retry_policy:
+      strategy: auto_on_rate_limited
+      max_attempts: 1
+      backoff: "fixed 5s"
+      notes: "仅 RATE_LIMITED 错误码触发自动重试 1 次；其他错误码由用户手动点 retryButton"
+    concurrency_policy:
+      abortable: true
+      stale_response: ignore
+      notes: "loading 中改 keyword 再次提交应 abort 上一次请求；旧请求若在 abort 后才到达必须丢弃，不渲染"
+
+  bindings:
+    - direction: ui_to_api
+      source_ui: searchInput
+      target_api: keyword
+      transform: "trim() && length 1-32"
+    - direction: ui_to_api
+      source_ui: searchInput
+      target_api: page
+      transform: "constant 1 (v1 不分页)"
+    - direction: api_to_ui
+      source_api: data.total
+      target_ui: resultCount
+      transform: "format as 「共 {total} 条结果」"
+    - direction: api_to_ui
+      source_api: data.results
+      target_ui: resultList
+      transform: "iterate; each item maps to resultItem child"
+    - direction: api_to_ui
+      source_api: data.results[].title
+      target_ui: resultTitle
+      transform: ""
+    - direction: api_to_ui
+      source_api: data.results[].summary
+      target_ui: resultSummary
+      transform: "if null then hide resultSummary"
+    - direction: ui_to_event
+      source_ui: submitBtn
+      target_event: tap-search-submit
+      transform: "{ keyword: searchInput.value, keyword_length: searchInput.value.length }"
+    - direction: ui_to_event
+      source_ui: retryButton
+      target_event: tap-search-retry
+      transform: "{ keyword: lastSubmittedKeyword, error_code: lastErrorCode }"
+
+  state_machine:
+    - from: idle
+      event: "submitBtn.onClick AND searchInput.value.trim().length > 0"
+      to: loading
+      render_assertion: "renders 3 skeletonRow placeholders; submitBtn 半透明禁用"
+    - from: loading
+      event: "api_success AND data.results.length > 0"
+      to: success
+      render_assertion: "renders resultCount with data.total, resultList with data.results[].title and .summary"
+    - from: loading
+      event: "api_success AND data.results.length === 0"
+      to: empty
+      render_assertion: "renders emptyIcon and emptyText '未找到相关结果'; hides resultList"
+    - from: loading
+      event: "api_error AND code in (NETWORK_ERROR, RATE_LIMITED, INTERNAL_ERROR)"
+      to: error
+      render_assertion: "renders errorIcon, errorText, retryButton; text varies per code"
+    - from: loading
+      event: "api_error AND code === INVALID_KEYWORD"
+      to: invalidKeyword
+      render_assertion: "renders validationHint with backend message; resultsRegion stays in idle layout"
+    - from: loading
+      event: "api_error AND code === FORBIDDEN"
+      to: idle
+      render_assertion: "navigates to /login (not visible in component); searchInput keeps value while in flight"
+    - from: error
+      event: "retryButton.onClick"
+      to: loading
+      render_assertion: "renders 3 skeletonRow placeholders; submitBtn 半透明禁用"
+    - from: success
+      event: "submitBtn.onClick AND searchInput.value 已变更"
+      to: loading
+      render_assertion: "abort previous request; renders skeletonRow placeholders"
+    - from: invalidKeyword
+      event: "submitBtn.onClick"
+      to: loading
+      render_assertion: "renders skeletonRow placeholders; clears validationHint"
+
+  open_questions:
+    - id: mapping-q1
+      priority: P0
+      content: "INVALID_KEYWORD 红字提示的样式（位置/字号/颜色）设计稿未画，待设计签收（也登记在 ui.validationHint.confidence: needs_human_input）"
+    - id: mapping-q2
+      priority: P1
+      content: "RATE_LIMITED 5s 自动重试是否需要倒计时可视化（进度条 / 数字）？产品待定"
+    - id: mapping-q3
+      priority: P1
+      content: "FORBIDDEN 跳登录后回来是否保留 keyword？产品 vs 安全权衡待定（关联 api.open_questions[api-q2]）"
+    - id: mapping-q4
+      priority: P2
+      content: "tap-search-submit 在 keyword 为空时按钮置灰不响应，是否需要单独埋点 tap-search-submit-disabled 来追踪误点？数据团队待评估"

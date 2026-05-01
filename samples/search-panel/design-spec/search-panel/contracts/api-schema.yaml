@@ -1,0 +1,113 @@
+# API_Schema — SearchPanel
+# 阶段二产物：从 inputs/api.md 接口提纯。
+
+api:
+  endpoints:
+    - id: searchAll
+      url: /api/v1/search
+      method: GET
+      auth_required: true
+      cache_key_fields:
+        - keyword
+        - page
+      pagination:
+        type: page
+        request_fields:
+          - page
+          - page_size
+        response_fields:
+          - total
+          - page
+          - page_size
+        notes: "v1 仅展示第 1 页；total 用于显示「共 N 条结果」；分页 UI 留给 v2"
+      params:
+        - name: keyword
+          type: string
+          required: true
+          notes: "长度 1-32；前后空格自动 trim"
+        - name: page
+          type: number
+          required: false
+          notes: "1-based 页码；默认 1"
+        - name: page_size
+          type: number
+          required: false
+          notes: "每页条数；默认 10，最大 50"
+      response_fields:
+        - name: data.results
+          type: array
+          item_type: object
+          nullable: false
+          enums: []
+          notes: "命中条目列表；可能为空数组（empty 态）"
+        - name: data.results[].id
+          type: string
+          nullable: false
+          enums: []
+          notes: "条目唯一 ID"
+        - name: data.results[].title
+          type: string
+          nullable: false
+          enums: []
+          notes: "条目标题；前端单行截断"
+        - name: data.results[].summary
+          type: string
+          nullable: true
+          enums: []
+          notes: "条目摘要；可能为空字符串或 null；为 null 时整行隐藏"
+        - name: data.results[].score
+          type: number
+          nullable: false
+          enums: []
+          notes: "0.0-1.0 相关性评分；UI v1 不展示，未来用于排序"
+        - name: data.total
+          type: number
+          nullable: false
+          enums: []
+          notes: "命中总数；用于显示「共 N 条结果」"
+        - name: data.page
+          type: number
+          nullable: false
+          enums: []
+          notes: "当前页码"
+        - name: data.page_size
+          type: number
+          nullable: false
+          enums: []
+          notes: "每页条数"
+      status_codes:
+        - 200
+      error_shape:
+        - code: INVALID_KEYWORD
+          message_field: message
+          retryable: false
+          ui_state: invalidKeyword
+          notes: "关键词为空或超长；UI 在 searchInput 下方红字显示后端 message"
+        - code: RATE_LIMITED
+          message_field: message
+          retryable: true
+          ui_state: error
+          notes: "触发限流；顶部 Toast 提示 + 5s 后自动重试 1 次"
+        - code: NETWORK_ERROR
+          message_field: message
+          retryable: true
+          ui_state: error
+          notes: "网络层失败（HTTP 5xx / 超时 / 断网）；error 态 + 重试按钮"
+        - code: FORBIDDEN
+          message_field: message
+          retryable: false
+          ui_state: error
+          notes: "未登录或 token 过期；前端跳转 /login，不进 error 态"
+        - code: INTERNAL_ERROR
+          message_field: message
+          retryable: false
+          ui_state: error
+          notes: "服务端未分类错误；error 态 + 「服务异常，请联系管理员」文案 + 重试按钮"
+
+  open_questions:
+    - id: api-q1
+      priority: P1
+      content: "data.results[].score 字段当前 UI 不展示，是否在 v1 就保留以便未来排序？或按 YAGNI 在 v2 再加？"
+    - id: api-q2
+      priority: P2
+      content: "FORBIDDEN 跳登录后是否应当通过 query 携带原 keyword（用户登录回来后重填）？产品诉求待确认（interaction-notes 待确认 3）"

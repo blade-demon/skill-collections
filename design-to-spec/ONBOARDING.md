@@ -98,12 +98,18 @@ node scripts/generate-output.js \
 - 再看 **`data-fetching.md`**——这是给前端开发者用的"请求实现细节"
 - 最后看 **`notes.md`** 的「开放问题」节——这是 P0/P1 待确认锚点，coding 前必须关闭
 
-**想看不同形态的 sample？** 内置两份对照：
+**想看不同形态的 sample？** 内置两份回归对照（仅 contracts + 输出）：
 
 | Sample | 形态 | 看什么 |
 |---|---|---|
 | `examples/today-windvane/` | 自取数据卡片 | 完整的接口 + 状态机 + 错误码 + 分页 |
 | `examples/price-card/` | props-only 纯展示组件 | 退化路径：`api.endpoints` 空、`bindings` 空、状态由 props 驱动 |
+
+**想看完整的 inputs → spec → 实现 全流程？** 上一层有手动验证 sample（含 `inputs/` 原始材料 + `walkthrough.md` 过程记录 + `src/` 可运行代码）：
+
+| Sample | 看什么 |
+|---|---|
+| `../samples/search-panel/` | 完整四阶段：从 design.svg + api.md + interaction-notes.md 到 vite 跑得起来的实现 |
 
 看完心里有数后，再用自己的设计稿跑一次（去 [operator-guide](./references/operator-guide.md) §1 找最简指令）。
 
