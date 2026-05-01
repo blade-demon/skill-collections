@@ -81,6 +81,69 @@
 - `state_machine.to` 必须引用 `UI_Schema.states[].id`。
 - 两处都没有 `render_assertion` 时，不要重新看图补猜；增加 P0 开放问题，并生成 `needs_human_input` 占位 Scenario。
 
+## `needs_human_input` 与 `open_questions` 使用规则
+
+两个机制服务同一个目的（不让 LLM 静默猜测），但作用层次不同。**两者通常成对出现，不是互斥关系。**
+
+### 一句话区分
+
+| 机制 | 是什么 | 答的是 |
+|---|---|---|
+| `confidence: needs_human_input` | 字段级标签，钉在某个具体 component / state / 枚举值上 | 「**哪里**不确定」 |
+| `<schema>.open_questions[]` | 列表级数据结构，含 id + content + priority | 「**要决定什么**，谁来定」 |
+
+### 何时用哪个
+
+**用 `needs_human_input`（字段标签）当：**
+
+- 某个具体实体（component / state / enum 值）的视觉表现或语义解释真正模糊
+- 在 `identified` / `inferred` 之间无法诚实选一个（例：mockup 没画 error 态视觉 → `error.confidence: needs_human_input`）
+- 该字段是契约完整性必须的，不能省略
+
+**用 `open_questions`（列表条目）当：**
+
+- 一个跨字段的决策需要人类拍板（例：FORBIDDEN 错误码是跳登录还是 toast）
+- 接口枚举不完整、字段可空性冲突、分页语义不明（→ `api.open_questions`）
+- 交互、缓存、重试、跨组件协作等逻辑未知项（→ `mapping.open_questions`）
+- 跨组件契约需要登记的耦合（参见 operator-guide §5.4）
+
+### 配对规则（强制）
+
+1. **每个 `needs_human_input` 字段必须对应一条 `open_questions` 条目**。字段标签是「这里有问题」，列表条目是「问题是什么、谁负责、什么时候定」。光有标签没有问题等于把决策悬空。
+2. **`required: true` 的 state 缺 `render_assertion` 时**：必须增加一条 P0 `open_questions`，并由 `generate-output.js` 在 spec.md 生成 `needs_human_input` 占位 Scenario。
+3. **API 枚举值不全时**：response_field 的 `enums` 写 `[UNKNOWN]`，并在 `api.open_questions` 加一条记录该字段哪些值待确认。
+
+### 优先级语义
+
+| 优先级 | 含义 | 处理时机 |
+|---|---|---|
+| `P0` | 阻塞 coding。未关闭不能进入实现阶段 | 评审会必须解决 |
+| `P1` | 阻塞具体场景或特性，但不阻塞主流程 coding | 编码中或评审后跟进 |
+| `P2` | 优化项，不影响交付 | 待办池，不绑时间 |
+
+### 反模式
+
+- ❌ 给字段打 `needs_human_input` 但不开对应 `open_questions` 条目：标签悬空
+- ❌ 把"显然能推断"的字段标 `needs_human_input`：应该用 `confidence: inferred`
+- ❌ 用一条 `open_questions` 包裹多个独立决策：拆成多条，每条单独有 owner 和优先级
+- ❌ 阶段四生成 spec.md 时遇到 `needs_human_input` 静默写一条乐观的 Scenario：必须生成 `needs_human_input` 占位 Scenario，文字明确指出「待确认」
+- ❌ 把跨组件协作问题写在某一个组件的 `mapping.open_questions` 里然后期望另一个组件也看到：跨组件契约需要在两个组件的 mapping 里**都**登记（参见 operator-guide §5.4）
+
+### 在 `notes.md` / `spec.md` 中的最终落地
+
+- `notes.md` 的「开放问题」节：从 `api.open_questions` + `mapping.open_questions` 直接搬运，不加工
+- `notes.md` 的「置信度地图」节：列出所有 `needs_human_input` 字段及其对应 open_question id，建立交叉引用
+- `spec.md`：每个 `required: true` 状态如果 render_assertion 缺失，自动生成带 `needs_human_input` 注释的占位 Scenario
+- 最终摘要的「⚠️ 关键待确认」：聚合所有 P0 条目，≤ 2 条直接展示，超量给数量提示
+
+### 评审退出标准
+
+进入 coding 前必须满足：
+
+- 所有 P0 `open_questions` 已认领到 owner（产品 / 设计 / 后端 / 测试 / 数据中的某一方）
+- 所有 `needs_human_input` 字段对应的 P0 条目已关闭，字段值已更新为 `identified` 或 `inferred`
+- P1 / P2 可保留进入 coding，但需在 review-checklist 中显式跟踪（参见 roadmap.md V0.13+ 的角色门禁机制）
+
 ## 校验命令
 
 阶段四前运行契约校验：

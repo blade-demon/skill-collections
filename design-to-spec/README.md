@@ -4,7 +4,9 @@
 
 **当前版本**：`0.10.0`
 
-> **第一次使用？** 先读 [references/operator-guide.md](references/operator-guide.md)（零基础操作手册，含多视觉稿、context 受限、跨组件复用等实战策略）。本 README 偏参考手册，原理与校验规则为主。
+> **第一次来？** 先读 [ONBOARDING.md](ONBOARDING.md)（3 分钟决定要不要用 + 30 秒安装 + 第一次跑通）。
+> **要拿真实设计稿动手？** 读 [references/operator-guide.md](references/operator-guide.md)（零基础操作手册，含多视觉稿、context 受限、跨组件复用等实战策略）。
+> 本 README 偏参考手册，原理与校验规则为主。
 
 `design-to-spec` 采用四阶段状态机：视觉提纯、接口提纯、逻辑映射、规格组装。前三阶段分别生成 YAML 契约，第四阶段只读取契约机械填充模板，不重新看图或重新推断接口。
 

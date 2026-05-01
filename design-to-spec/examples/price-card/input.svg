@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PriceCard 示例输入 mockup —— props-only sample。
+  4 个面板对应 4 个状态：success / discount / partial / disabled。
+  完全虚构，零版权风险。作为 design-to-spec skill 的样例输入。
+  真实项目中此位置通常是 Figma 导出的 PNG 或手绘截图。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 832 320" width="832" height="320"
+     font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+
+  <!-- 页面背景 -->
+  <rect width="832" height="320" fill="#F4F5F7"/>
+
+  <!-- 顶部说明 -->
+  <text x="24" y="32" font-size="14" font-weight="600" fill="#1D2129">PriceCard — 4 状态（props-only sample）</text>
+  <text x="24" y="52" font-size="11" fill="#86909C">props: amount, currency, originalPrice?, discountPercent?, hasStock</text>
+
+  <defs>
+    <linearGradient id="discountBadgeGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F53F3F"/>
+      <stop offset="100%" stop-color="#FF7D00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ============================== -->
+  <!-- Card 1: success（仅现价，有库存） -->
+  <!-- ============================== -->
+  <g transform="translate(24, 80)">
+    <rect width="180" height="200" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <!-- 状态标签 -->
+    <rect x="12" y="12" width="48" height="20" rx="10" ry="10" fill="#E8F3FF"/>
+    <text x="36" y="26" font-size="11" font-weight="500" fill="#1664FF" text-anchor="middle">success</text>
+
+    <!-- 商品占位图 -->
+    <rect x="40" y="48" width="100" height="60" rx="6" ry="6" fill="#F4F5F7"/>
+    <text x="90" y="83" font-size="11" fill="#C9CDD4" text-anchor="middle">[商品图]</text>
+
+    <!-- 价格区 -->
+    <text x="90" y="140" font-size="13" font-weight="400" fill="#1D2129" text-anchor="middle">¥</text>
+    <text x="105" y="148" font-size="28" font-weight="700" fill="#1D2129" text-anchor="start">299</text>
+
+    <!-- 副标签 -->
+    <text x="90" y="178" font-size="11" fill="#86909C" text-anchor="middle">有库存 · 直接购买</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 2: discount（含原价 + 折扣徽章） -->
+  <!-- ============================== -->
+  <g transform="translate(216, 80)">
+    <rect width="180" height="200" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <!-- 状态标签 -->
+    <rect x="12" y="12" width="60" height="20" rx="10" ry="10" fill="#FFECE8"/>
+    <text x="42" y="26" font-size="11" font-weight="500" fill="#F53F3F" text-anchor="middle">discount</text>
+
+    <!-- 商品占位图 -->
+    <rect x="40" y="48" width="100" height="60" rx="6" ry="6" fill="#F4F5F7"/>
+    <text x="90" y="83" font-size="11" fill="#C9CDD4" text-anchor="middle">[商品图]</text>
+
+    <!-- 价格区（折扣价 + 原价划线） -->
+    <text x="60" y="140" font-size="13" font-weight="400" fill="#F53F3F" text-anchor="middle">¥</text>
+    <text x="72" y="148" font-size="28" font-weight="700" fill="#F53F3F" text-anchor="start">199</text>
+    <text x="125" y="146" font-size="12" fill="#86909C" text-decoration="line-through" text-anchor="start">¥299</text>
+
+    <!-- 折扣徽章 -->
+    <rect x="60" y="162" width="60" height="20" rx="4" ry="4" fill="url(#discountBadgeGradient)"/>
+    <text x="90" y="176" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">-33%</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 3: original-only（仅原价划线，无折扣徽章） -->
+  <!-- ============================== -->
+  <g transform="translate(408, 80)">
+    <rect width="180" height="200" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <!-- 状态标签 -->
+    <rect x="12" y="12" width="80" height="20" rx="10" ry="10" fill="#FFF7E8"/>
+    <text x="52" y="26" font-size="11" font-weight="500" fill="#FF7D00" text-anchor="middle">partial</text>
+
+    <!-- 商品占位图 -->
+    <rect x="40" y="48" width="100" height="60" rx="6" ry="6" fill="#F4F5F7"/>
+    <text x="90" y="83" font-size="11" fill="#C9CDD4" text-anchor="middle">[商品图]</text>
+
+    <!-- 价格区（仅折扣价 + 原价划线，无 % 徽章） -->
+    <text x="60" y="140" font-size="13" font-weight="400" fill="#1D2129" text-anchor="middle">¥</text>
+    <text x="72" y="148" font-size="28" font-weight="700" fill="#1D2129" text-anchor="start">199</text>
+    <text x="125" y="146" font-size="12" fill="#86909C" text-decoration="line-through" text-anchor="start">¥299</text>
+
+    <!-- 副标签：折扣 % 缺失的解释 -->
+    <text x="90" y="178" font-size="11" fill="#86909C" text-anchor="middle">活动价（无折扣 %）</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 4: disabled（缺货遮罩） -->
+  <!-- ============================== -->
+  <g transform="translate(600, 80)">
+    <rect width="180" height="200" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <!-- 状态标签 -->
+    <rect x="12" y="12" width="60" height="20" rx="10" ry="10" fill="#F2F3F5"/>
+    <text x="42" y="26" font-size="11" font-weight="500" fill="#86909C" text-anchor="middle">disabled</text>
+
+    <!-- 商品占位图（灰化） -->
+    <rect x="40" y="48" width="100" height="60" rx="6" ry="6" fill="#F4F5F7" opacity="0.5"/>
+    <text x="90" y="83" font-size="11" fill="#C9CDD4" text-anchor="middle">[商品图]</text>
+
+    <!-- 价格区（灰化） -->
+    <text x="60" y="140" font-size="13" font-weight="400" fill="#C9CDD4" text-anchor="middle">¥</text>
+    <text x="72" y="148" font-size="28" font-weight="700" fill="#C9CDD4" text-anchor="start">299</text>
+
+    <!-- 缺货遮罩条 -->
+    <rect x="0" y="120" width="180" height="40" fill="rgba(29, 33, 41, 0.7)"/>
+    <text x="90" y="146" font-size="14" font-weight="600" fill="#FFFFFF" text-anchor="middle">已售罄</text>
+  </g>
+
+  <!-- 底部 props 输入对照表 -->
+  <text x="24" y="304" font-size="11" fill="#4E5969">
+    左→右 props 输入：
+    <tspan fill="#1664FF">{299, "CNY", null, null, true}</tspan>
+    <tspan fill="#86909C"> · </tspan>
+    <tspan fill="#F53F3F">{199, "CNY", 299, 33, true}</tspan>
+    <tspan fill="#86909C"> · </tspan>
+    <tspan fill="#FF7D00">{199, "CNY", 299, null, true}</tspan>
+    <tspan fill="#86909C"> · </tspan>
+    <tspan fill="#86909C">{299, "CNY", null, null, false}</tspan>
+  </text>
+</svg>
