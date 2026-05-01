@@ -11,6 +11,7 @@
 ### Added
 
 - 新增 `scripts/tests/validate-contracts.test.js`：24 个错误路径回归用例，覆盖 cross-reference（component / state / endpoint / request / binding / state_machine 引用错误，required state 缺 render_assertion，render_assertion fallback 缺失）、唯一性（重复 component / state / endpoint / request / response_field id）和 JSON Schema（缺必填、类型错配、enum / pattern / oneOf 违反）三类。配合现有 9 个 happy-path 测试，`npm test` 共 33 项全过。
+- `references/contracts.md` 新增「`needs_human_input` 与 `open_questions` 使用规则」节：明确两者不是互斥而是配对、决策树（何时用哪个）、强制配对规则、P0/P1/P2 优先级语义、5 条反模式、在 notes.md/spec.md 的最终落地、进入 coding 前的评审退出标准。闭合 v0.10 验收最后一项文档项。
 
 ## [0.10.0] - 2026-05-01
 
