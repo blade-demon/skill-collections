@@ -6,6 +6,12 @@
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- 新增 `scripts/tests/validate-contracts.test.js`：24 个错误路径回归用例，覆盖 cross-reference（component / state / endpoint / request / binding / state_machine 引用错误，required state 缺 render_assertion，render_assertion fallback 缺失）、唯一性（重复 component / state / endpoint / request / response_field id）和 JSON Schema（缺必填、类型错配、enum / pattern / oneOf 违反）三类。配合现有 9 个 happy-path 测试，`npm test` 共 33 项全过。
+
 ## [0.10.0] - 2026-05-01
 
 ### Changed（运行时迁移）
