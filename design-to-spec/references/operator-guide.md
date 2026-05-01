@@ -63,8 +63,8 @@ skill 输出**阶段三（逻辑映射）**：状态机转换表 + 字段绑定�
 skill 会运行两个脚本（不需要你手动跑，但你会看到命令在跑）：
 
 ```bash
-python3 design-to-spec/scripts/validate-contracts.py ...
-python3 design-to-spec/scripts/generate-output.py ...
+node design-to-spec/scripts/validate-contracts.js ...
+node design-to-spec/scripts/generate-output.js ...
 ```
 
 跑完你会得到：
@@ -164,7 +164,7 @@ design-spec/SearchPanel/
 
 **做法**：
 
-1. **优先信任脚本**：让 skill 直接调用 `scripts/generate-output.py`，脚本是确定性的、不消耗推理 token。
+1. **优先信任脚本**：让 skill 直接调用 `scripts/generate-output.js`，脚本是确定性的、不消耗推理 token。
 2. 脚本跑完拿到基线文件后，再让 LLM 做局部润色（比如改 `notes.md` 的开放问题措辞）。
 3. 如果连脚本都跑不动了：**开新会话**。把三份 `contracts/*.yaml` 路径告诉新会话，跳过阶段一二三，直接执行阶段四。
 
@@ -356,7 +356,7 @@ Step 4: 把整个 design-spec/（含 _shared/）交给 /plan
 1. **看一眼 `notes.md` 的"开放问题"段**：里面是 skill 标记的 `needs_human_input`，需要你或 PM/设计师逐条回答后回填。
 2. **跑一次输出校验**（skill 会自动跑，但手动复跑能确认 markdown 没改坏）：
    ```bash
-   python3 design-to-spec/scripts/validate-output.py --strict \
+   node design-to-spec/scripts/validate-output.js --strict \
      --ui design-spec/<component>/contracts/ui-schema.yaml \
      --api design-spec/<component>/contracts/api-schema.yaml \
      --mapping design-spec/<component>/contracts/mapping-logic.yaml \

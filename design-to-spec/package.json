@@ -1,0 +1,21 @@
+{
+  "name": "design-to-spec",
+  "version": "0.10.0",
+  "description": "Deterministic generators and validators for the design-to-spec skill.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true,
+  "bin": {
+    "d2s-validate-contracts": "./scripts/validate-contracts.js",
+    "d2s-generate-output": "./scripts/generate-output.js",
+    "d2s-validate-output": "./scripts/validate-output.js"
+  },
+  "scripts": {
+    "test": "node --test scripts/tests/*.test.js"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

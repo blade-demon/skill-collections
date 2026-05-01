@@ -1,19 +1,10 @@
-#!/usr/bin/env python3
-"""Regression tests for richer real-world frontend contract shapes."""
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { makeTmpDir, runNodeScript } from "./helpers.js";
 
-from __future__ import annotations
-
-import subprocess
-import sys
-import tempfile
-import unittest
-from pathlib import Path
-
-
-SKILL_DIR = Path(__file__).resolve().parent.parent
-
-
-UI_CONTRACT = """\
+const UI_CONTRACT = `\
 ui:
   name: AdminOrdersTable
   components:
@@ -73,10 +64,9 @@ ui:
   layout:
     structure: grid
     notes: Table fills available container width.
-"""
+`;
 
-
-API_CONTRACT = """\
+const API_CONTRACT = `\
 api:
   endpoints:
     - id: searchOrders
@@ -126,10 +116,9 @@ api:
           ui_state: error
           notes: User can retry later
   open_questions: []
-"""
+`;
 
-
-MAPPING_CONTRACT = """\
+const MAPPING_CONTRACT = `\
 mapping:
   component: AdminOrdersTable
   data_fetching:
@@ -179,88 +168,65 @@ mapping:
       to: error
       render_assertion: renders table error row with retry button
   open_questions: []
-"""
+`;
 
+test("rich frontend contracts validate and generate policy details", () => {
+  const tmp = makeTmpDir();
+  const ui = resolve(tmp, "ui-schema.yaml");
+  const api = resolve(tmp, "api-schema.yaml");
+  const mapping = resolve(tmp, "mapping-logic.yaml");
+  const outDir = resolve(tmp, "out");
 
-class ContractExtensionsTest(unittest.TestCase):
-    def test_rich_frontend_contracts_validate_and_generate_policy_details(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            tmp = Path(tmp_dir)
-            ui = tmp / "ui-schema.yaml"
-            api = tmp / "api-schema.yaml"
-            mapping = tmp / "mapping-logic.yaml"
-            out_dir = tmp / "out"
-            ui.write_text(UI_CONTRACT, encoding="utf-8")
-            api.write_text(API_CONTRACT, encoding="utf-8")
-            mapping.write_text(MAPPING_CONTRACT, encoding="utf-8")
+  writeFileSync(ui, UI_CONTRACT, "utf8");
+  writeFileSync(api, API_CONTRACT, "utf8");
+  writeFileSync(mapping, MAPPING_CONTRACT, "utf8");
 
-            validate = subprocess.run(
-                [
-                    sys.executable,
-                    str(SKILL_DIR / "scripts" / "validate-contracts.py"),
-                    "--ui",
-                    str(ui),
-                    "--api",
-                    str(api),
-                    "--mapping",
-                    str(mapping),
-                ],
-                text=True,
-                capture_output=True,
-            )
-            self.assertEqual(validate.returncode, 0, validate.stderr + validate.stdout)
+  const validate = runNodeScript("validate-contracts.js", [
+    "--ui",
+    ui,
+    "--api",
+    api,
+    "--mapping",
+    mapping,
+  ]);
+  assert.equal(validate.status, 0, validate.stderr + validate.stdout);
 
-            generate = subprocess.run(
-                [
-                    sys.executable,
-                    str(SKILL_DIR / "scripts" / "generate-output.py"),
-                    "--ui",
-                    str(ui),
-                    "--api",
-                    str(api),
-                    "--mapping",
-                    str(mapping),
-                    "--out-dir",
-                    str(out_dir),
-                ],
-                text=True,
-                capture_output=True,
-            )
-            self.assertEqual(generate.returncode, 0, generate.stderr + generate.stdout)
+  const generate = runNodeScript("generate-output.js", [
+    "--ui",
+    ui,
+    "--api",
+    api,
+    "--mapping",
+    mapping,
+    "--out-dir",
+    outDir,
+  ]);
+  assert.equal(generate.status, 0, generate.stderr + generate.stdout);
 
-            notes_text = (out_dir / "notes.md").read_text(encoding="utf-8")
-            data_fetching_text = (out_dir / "data-fetching.md").read_text(encoding="utf-8")
-            self.assertIn("dropdown-filter", notes_text)
-            self.assertIn("scope_components", notes_text)
-            self.assertIn("request_body", notes_text)
-            self.assertIn("RATE_LIMITED", notes_text)
-            self.assertIn("cursor", data_fetching_text)
-            self.assertIn("query_cache", data_fetching_text)
-            self.assertIn("abortable", data_fetching_text)
+  const notesText = readFileSync(resolve(outDir, "notes.md"), "utf8");
+  const dataFetchingText = readFileSync(resolve(outDir, "data-fetching.md"), "utf8");
+  assert.ok(notesText.includes("dropdown-filter"));
+  assert.ok(notesText.includes("scope_components"));
+  assert.ok(notesText.includes("request_body"));
+  assert.ok(notesText.includes("RATE_LIMITED"));
+  assert.ok(dataFetchingText.includes("cursor"));
+  assert.ok(dataFetchingText.includes("query_cache"));
+  assert.ok(dataFetchingText.includes("abortable"));
 
-            output_validate = subprocess.run(
-                [
-                    sys.executable,
-                    str(SKILL_DIR / "scripts" / "validate-output.py"),
-                    "--strict",
-                    "--ui",
-                    str(out_dir / "contracts" / "ui-schema.yaml"),
-                    "--api",
-                    str(out_dir / "contracts" / "api-schema.yaml"),
-                    "--mapping",
-                    str(out_dir / "contracts" / "mapping-logic.yaml"),
-                    "--notes",
-                    str(out_dir / "notes.md"),
-                    "--data-fetching",
-                    str(out_dir / "data-fetching.md"),
-                    "--spec",
-                    str(out_dir / "specs" / "admin-orders-table" / "spec.md"),
-                ],
-                text=True,
-                capture_output=True,
-            )
-            self.assertEqual(output_validate.returncode, 0, output_validate.stderr + output_validate.stdout)
-
-
-if __name__ == "__main__":
-    unittest.main()
+  const outputValidate = runNodeScript("validate-output.js", [
+    "--strict",
+    "--ui",
+    resolve(outDir, "contracts", "ui-schema.yaml"),
+    "--api",
+    resolve(outDir, "contracts", "api-schema.yaml"),
+    "--mapping",
+    resolve(outDir, "contracts", "mapping-logic.yaml"),
+    "--notes",
+    resolve(outDir, "notes.md"),
+    "--data-fetching",
+    resolve(outDir, "data-fetching.md"),
+    "--spec",
+    resolve(outDir, "specs", "admin-orders-table", "spec.md"),
+  ]);
+  assert.equal(outputValidate.status, 0, outputValidate.stderr + outputValidate.stdout);
+});
