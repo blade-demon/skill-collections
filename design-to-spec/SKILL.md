@@ -1,7 +1,7 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.9.5
+  version: 0.10.0
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -251,19 +251,19 @@ mapping:
 **默认生成路径**：先运行契约校验，再运行确定性生成脚本生成基线文件：
 
 ```bash
-python3 design-to-spec/scripts/validate-contracts.py \
+node design-to-spec/scripts/validate-contracts.js \
   --ui <out>/contracts/ui-schema.yaml \
   --api <out>/contracts/api-schema.yaml \
   --mapping <out>/contracts/mapping-logic.yaml
 
-python3 design-to-spec/scripts/generate-output.py \
+node design-to-spec/scripts/generate-output.js \
   --ui <out>/contracts/ui-schema.yaml \
   --api <out>/contracts/api-schema.yaml \
   --mapping <out>/contracts/mapping-logic.yaml \
   --out-dir <out>
 ```
 
-脚本会写入 `contracts/*.yaml`、`notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。LLM 只允许在脚本产物基础上补充人类可读措辞、开放问题摘要和项目上下文；不得新增契约中没有的接口、状态、字段或交互。修订后必须运行 `scripts/validate-output.py --strict`。
+脚本会写入 `contracts/*.yaml`、`notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。LLM 只允许在脚本产物基础上补充人类可读措辞、开放问题摘要和项目上下文；不得新增契约中没有的接口、状态、字段或交互。修订后必须运行 `scripts/validate-output.js --strict`。
 
 ### 4.1 变更类型判定（代码逻辑，不依赖 LLM）
 
@@ -309,7 +309,7 @@ Glob 检查是否存在同名组件文件或已有 spec
 
 每阶段写完立即调用写文件工具，然后压缩为锚点保留在 context：
 
-**阶段 A** — 运行 `scripts/generate-output.py` 写入三份基线输出；如需增强文案，再修订 `notes.md` §为什么 + §决策 + §数据契约 + §数据获取方式
+**阶段 A** — 运行 `scripts/generate-output.js` 写入三份基线输出；如需增强文案，再修订 `notes.md` §为什么 + §决策 + §数据契约 + §数据获取方式
 → 写入后提炼「数据锚点」（≤ 8 行）；释放：原始 API 文档、UI_Schema / API_Schema 完整 YAML
 
 **阶段 B** — 写 `data-fetching.md`（基于数据锚点，不重读 notes.md）
@@ -366,7 +366,7 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 | 阶段一确认后用户说"漏了某个元素" | `直接告诉我：还有 [位置] 的 [组件类型]，我会更新 ui-schema 后继续。` |
 | 阶段二提取了用户不需要的字段 | `回复：只保留 [字段A / 字段B / 字段C]，其余删除。` |
 | 阶段三状态机缺少某条转换 | `回复补充条件，例如："还有一种情况：data.results.length > 100 时显示分页提示"` |
-| spec.md 的 Scenario THEN 子句太空泛 | `⚠️ render_assertion 缺失导致 THEN 无法断言。请在 contracts/ui-schema.yaml 的对应 state 下补写 render_assertion（如 renders .empty-state），然后重跑 generate-output.py。` |
+| spec.md 的 Scenario THEN 子句太空泛 | `⚠️ render_assertion 缺失导致 THEN 无法断言。请在 contracts/ui-schema.yaml 的对应 state 下补写 render_assertion（如 renders .empty-state），然后重跑 generate-output.js。` |
 | validate-output 报 trace 锚点缺失 | `⚠️ trace 锚点（state:<id> / component:<id>）被误删。请把对应锚点加回 notes.md 或 spec.md，它们是机器校验用的，不是装饰。` |
 | context 不足（门控触发或会话无响应） | `⚠️ context 不足，已停止生成。三份契约已落盘。请开新会话并发送：把 design-spec/<组件名>/contracts/ 目录路径告诉我，我从阶段四接续。` |
 
@@ -433,10 +433,10 @@ error: api_error（FORBIDDEN 处理待确认 P0）
   - `contracts/ui-schema.yaml` — 阶段一 YAML 契约的填写示例（LLM 内部协议，非用户输出）
   - `contracts/api-schema.yaml` — 阶段二 YAML 契约的填写示例
   - `contracts/mapping-logic.yaml` — 阶段三 YAML 契约的填写示例
-- `scripts/validate-contracts.py` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
-- `scripts/generate-output.py` — 从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`spec.md` 基线（阶段四默认入口）
-- `scripts/validate-output.py` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
-- `scripts/test-generate-output.py` — 使用 golden sample 回归验证生成脚本和输出校验链路
+- `scripts/validate-contracts.js` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
+- `scripts/generate-output.js` — 从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`spec.md` 基线（阶段四默认入口）
+- `scripts/validate-output.js` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
+- `scripts/tests/generate-output.test.js` — 使用 golden sample 回归验证生成脚本和输出校验链路
 
 ---
 
@@ -471,7 +471,7 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `notes.md`：必须包含 `## Traceability`，列出 `component:<id>`、`binding:<index>:<direction>`、`state:<id>`
 - `data-fetching.md`：每个 request 必须包含 `request:<id>`
 - `spec.md`：每个 `required: true` 状态对应 Scenario 必须包含 `state:<id>` trace
-- `scripts/validate-output.py --strict` 会校验上述 trace；不要手动删除
+- `scripts/validate-output.js --strict` 会校验上述 trace；不要手动删除
 
 ---
 

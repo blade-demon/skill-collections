@@ -86,7 +86,7 @@
 阶段四前运行契约校验：
 
 ```bash
-python3 design-to-spec/scripts/validate-contracts.py \
+node design-to-spec/scripts/validate-contracts.js \
   --ui <path>/contracts/ui-schema.yaml \
   --api <path>/contracts/api-schema.yaml \
   --mapping <path>/contracts/mapping-logic.yaml
@@ -95,14 +95,14 @@ python3 design-to-spec/scripts/validate-contracts.py \
 契约校验通过后运行确定性生成：
 
 ```bash
-python3 design-to-spec/scripts/generate-output.py \
+node design-to-spec/scripts/generate-output.js \
   --ui <path>/contracts/ui-schema.yaml \
   --api <path>/contracts/api-schema.yaml \
   --mapping <path>/contracts/mapping-logic.yaml \
   --out-dir <path>
 ```
 
-`generate-output.py` 会把三份 YAML 复制到 `<path>/contracts/`，并生成 `notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。生成后的 markdown 可以润色，但不得引入契约外的接口、字段、状态或交互。
+`generate-output.js` 会把三份 YAML 复制到 `<path>/contracts/`，并生成 `notes.md`、`data-fetching.md`、`specs/<capability>/spec.md`。生成后的 markdown 可以润色，但不得引入契约外的接口、字段、状态或交互。
 
 生成器会写入 trace 锚点：
 
@@ -111,12 +111,12 @@ python3 design-to-spec/scripts/generate-output.py \
 - `state:<id>`：状态追踪，required state 必须进入 `spec.md`
 - `request:<id>`：请求追踪，必须进入 `data-fetching.md`
 
-如果 `notes.md` 有 `## Traceability`，`validate-output.py --strict` 会校验这些锚点。润色 markdown 时可以改文案，但不要改 trace id。
+如果 `notes.md` 有 `## Traceability`，`validate-output.js --strict` 会校验这些锚点。润色 markdown 时可以改文案，但不要改 trace id。
 
 阶段四后运行输出校验：
 
 ```bash
-python3 design-to-spec/scripts/validate-output.py \
+node design-to-spec/scripts/validate-output.js \
   --ui <path>/contracts/ui-schema.yaml \
   --api <path>/contracts/api-schema.yaml \
   --mapping <path>/contracts/mapping-logic.yaml \

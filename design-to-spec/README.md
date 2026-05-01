@@ -2,7 +2,7 @@
 
 > 将 UI 设计稿和接口文档转换成结构化规格包，让后续 AI 或开发者稳定实现。
 
-**当前版本**：`0.9.2`
+**当前版本**：`0.10.0`
 
 > **第一次使用？** 先读 [references/operator-guide.md](references/operator-guide.md)（零基础操作手册，含多视觉稿、context 受限、跨组件复用等实战策略）。本 README 偏参考手册，原理与校验规则为主。
 
@@ -58,7 +58,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 - `data-fetching.md`：请求链路、触发条件、分页缓存、错误分级、竞态处理、请求状态机
 - `spec.md`：OpenSpec 行为规格，包含 `Requirement` 和可测试的 `Scenario`
 
-生成器会写入机器可校验的 trace 锚点：`component:<id>`、`binding:<index>:<direction>`、`state:<id>`、`request:<id>`。`validate-output.py --strict` 会在存在 `## Traceability` 时校验这些锚点，防止 markdown 润色时丢掉契约引用。
+生成器会写入机器可校验的 trace 锚点：`component:<id>`、`binding:<index>:<direction>`、`state:<id>`、`request:<id>`。`validate-output.js --strict` 会在存在 `## Traceability` 时校验这些锚点，防止 markdown 润色时丢掉契约引用。
 
 ## 运行流程
 
@@ -103,7 +103,7 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 - `data-fetching.md` 从请求清单和状态机生成数据获取设计
 - `spec.md` 从 `state_machine.event` 和 `render_assertion` 生成 Scenario
 
-第四阶段默认先运行 `scripts/generate-output.py` 生成基线文件，再做有限人工化修订。修订不得重新分析图片或接口文档；如果缺少可断言结果，生成 `needs_human_input` 占位 Scenario，并把问题加入开放问题。
+第四阶段默认先运行 `scripts/generate-output.js` 生成基线文件，再做有限人工化修订。修订不得重新分析图片或接口文档；如果缺少可断言结果，生成 `needs_human_input` 占位 Scenario，并把问题加入开放问题。
 
 ## 关键规则
 
@@ -118,13 +118,13 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 阶段四前可运行契约校验脚本。脚本会先读取 `design-to-spec/schemas/*.json` 做结构校验，再检查三份契约之间的引用关系：
 
 ```bash
-python3 design-to-spec/scripts/validate-contracts.py \
+node design-to-spec/scripts/validate-contracts.js \
   --ui design-spec/<component>/contracts/ui-schema.yaml \
   --api design-spec/<component>/contracts/api-schema.yaml \
   --mapping design-spec/<component>/contracts/mapping-logic.yaml
 ```
 
-YAML 读取优先使用 Python 包 `PyYAML`；若不可用，脚本会回退到 Ruby 标准库 `YAML`。JSON Schema 校验由脚本内置的 Draft 7 子集校验器完成，不需要安装 `jsonschema`。
+环境要求：Node.js ≥ 18。在 `design-to-spec/` 下首次执行前运行 `npm install` 安装唯一的运行时依赖 `js-yaml`。JSON Schema 校验由脚本内置的 Draft 7 子集校验器完成，不需要其他第三方依赖。
 
 校验内容包括：
 
@@ -140,7 +140,7 @@ YAML 读取优先使用 Python 包 `PyYAML`；若不可用，脚本会回退到 
 契约校验通过后，可用确定性生成脚本创建输出目录和基线文件：
 
 ```bash
-python3 design-to-spec/scripts/generate-output.py \
+node design-to-spec/scripts/generate-output.js \
   --ui design-spec/<component>/contracts/ui-schema.yaml \
   --api design-spec/<component>/contracts/api-schema.yaml \
   --mapping design-spec/<component>/contracts/mapping-logic.yaml \
@@ -152,7 +152,7 @@ python3 design-to-spec/scripts/generate-output.py \
 阶段四后可运行输出校验脚本：
 
 ```bash
-python3 design-to-spec/scripts/validate-output.py \
+node design-to-spec/scripts/validate-output.js \
   --ui design-spec/<component>/contracts/ui-schema.yaml \
   --api design-spec/<component>/contracts/api-schema.yaml \
   --mapping design-spec/<component>/contracts/mapping-logic.yaml \
@@ -182,13 +182,10 @@ python3 design-to-spec/scripts/validate-output.py \
 
 ## 回归测试
 
-生成链路可用 golden sample 验证：
+生成链路可用 golden sample 验证。在 `design-to-spec/` 目录下：
 
 ```bash
-python3 design-to-spec/scripts/test-generate-output.py
-python3 design-to-spec/scripts/test-contract-extensions.py
-python3 design-to-spec/scripts/test-traceability.py
-python3 design-to-spec/scripts/test-package-hygiene.py
+npm test
 ```
 
-这些测试会从 `examples/today-windvane/contracts/*.yaml` 和扩展契约样例生成临时输出，并用 `validate-output.py --strict` 校验结果。
+会一次跑完 `scripts/tests/*.test.js`：覆盖生成结果、trace 锚点、扩展契约和包裹完整性 4 个回归套件，从 `examples/today-windvane/contracts/*.yaml` 和扩展契约样例生成临时输出，并用 `validate-output.js --strict` 校验结果。

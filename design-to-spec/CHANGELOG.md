@@ -6,6 +6,35 @@
 
 ---
 
+## [0.10.0] - 2026-05-01
+
+### Changed（运行时迁移）
+
+- **从 Python 完全迁移到 Node.js**：三个生产脚本（`validate-contracts`、`generate-output`、`validate-output`）和 4 个回归测试全部改写为 Node.js (ESM)，金样输出经字节级 parity 比对一致。
+- 新增 `design-to-spec/package.json`，依赖收敛为单一运行时包 `js-yaml`；JSON Schema 校验沿用脚本内置的 Draft-7 子集校验器。
+- 测试切换为内置 `node:test`，全部用 `npm test` 一键运行；不再需要装 PyYAML / Ruby fallback。
+- SKILL.md / README / contracts.md / operator-guide 中所有 `python3 ... .py` 命令替换为 `node ... .js`；环境要求章节改为 Node.js ≥ 18。
+- frontmatter `version` 从 `0.9.5` 升至 `0.10.0`（运行时变更属于 minor 版本切换）。
+
+### Removed
+
+- 删除 `design-to-spec/scripts/*.py`（3 个生产脚本 + 4 个测试脚本，共约 2058 行 Python）。
+- 删除 PyYAML 依赖和 Ruby YAML fallback（subprocess 调用），简化 YAML 加载路径。
+- 删除 `python3` 在 Windows 上经常找不到的兼容性烦恼。
+
+### Migration
+
+旧的 Python 命令仍在 git 历史中可查；用户的 muscle memory 命令需做以下替换：
+
+| 旧 | 新 |
+|---|---|
+| `python3 design-to-spec/scripts/validate-contracts.py ...` | `node design-to-spec/scripts/validate-contracts.js ...` |
+| `python3 design-to-spec/scripts/generate-output.py ...` | `node design-to-spec/scripts/generate-output.js ...` |
+| `python3 design-to-spec/scripts/validate-output.py ...` | `node design-to-spec/scripts/validate-output.js ...` |
+| `python3 design-to-spec/scripts/test-*.py` | `cd design-to-spec && npm test` |
+
+CLI 标志（`--ui`、`--api`、`--mapping`、`--out-dir`、`--strict`、`--notes`、`--data-fetching`、`--spec`）名字、退出码和错误消息格式与原 Python 实现保持一致。
+
 ## [0.9.5] - 2026-04-30
 
 ### Changed
