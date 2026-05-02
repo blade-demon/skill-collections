@@ -107,9 +107,10 @@ node scripts/generate-output.js \
 
 **想看完整的 inputs → spec → 实现 全流程？** 上一层有手动验证 sample（含 `inputs/` 原始材料 + `walkthrough.md` 过程记录 + `src/` 可运行代码）：
 
-| Sample | 看什么 |
-|---|---|
-| `../samples/search-panel/` | 完整四阶段：从 design.svg + api.md + interaction-notes.md 到 vite 跑得起来的实现 |
+| Sample | 形态 | 看什么 |
+|---|---|---|
+| `../samples/search-panel/` | GET + 列表 | 主导 binding 是 `api_to_ui`；状态机焦点在数据获取 + abort + retry |
+| `../samples/feedback-form/` | POST + 表单 | 主导 binding 是 `ui_to_api`；多字段双层校验；request_body / element-scoped invalid 状态 |
 
 看完心里有数后，再用自己的设计稿跑一次（去 [operator-guide](./references/operator-guide.md) §1 找最简指令）。
 

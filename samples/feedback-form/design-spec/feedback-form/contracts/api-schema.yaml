@@ -1,0 +1,84 @@
+# API_Schema — FeedbackForm
+# 阶段二产物：从 inputs/api.md 接口提纯。
+
+api:
+  endpoints:
+    - id: submitFeedback
+      url: /api/v1/feedback
+      method: POST
+      auth_required: true
+      pagination:
+        type: none
+        notes: "写操作，无分页"
+      params: []
+      request_body:
+        - name: rating
+          type: number
+          required: true
+          nullable: false
+          enums:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+          notes: "整数 1-5 星；1=非常差，5=非常好"
+        - name: comment
+          type: string
+          required: true
+          nullable: false
+          enums: []
+          notes: "trim 后长度 5-500；前端校验 + 后端兜底"
+        - name: email
+          type: string
+          required: false
+          nullable: true
+          enums: []
+          notes: "可选；为空时省略；非空时必须匹配邮箱 regex（前端 + 后端双层校验）"
+      response_fields:
+        - name: data.feedback_id
+          type: string
+          nullable: false
+          enums: []
+          notes: "后端生成的反馈 ID；前端在 success 态显示「参考编号 #{id}」"
+        - name: data.submitted_at
+          type: string
+          nullable: false
+          enums: []
+          notes: "ISO 8601 时间戳；UI 不展示，仅用于客户端日志"
+      status_codes:
+        - 200
+      error_shape:
+        - code: VALIDATION_FAILED
+          message_field: message
+          retryable: false
+          ui_state: validationFailed
+          notes: "字段级校验失败；data.field_errors 是 {field: message} 映射；UI 在对应字段下显示红字 + 顶部错误条"
+        - code: RATE_LIMITED
+          message_field: message
+          retryable: true
+          ui_state: rateLimited
+          notes: "提交过于频繁；submitBtn 禁用 30s（带倒计时数字 — 待确认 1）"
+        - code: NETWORK_ERROR
+          message_field: message
+          retryable: true
+          ui_state: error
+          notes: "网络层失败；顶部错误条 + 字段值保留；按钮恢复可点"
+        - code: FORBIDDEN
+          message_field: message
+          retryable: false
+          ui_state: error
+          notes: "未登录或 token 过期；前端跳 /login，不展示错误条"
+        - code: INTERNAL_ERROR
+          message_field: message
+          retryable: false
+          ui_state: error
+          notes: "服务端未分类错误；顶部错误条文案 '服务暂时不可用'"
+
+  open_questions:
+    - id: api-q1
+      priority: P2
+      content: "VALIDATION_FAILED 的 data.field_errors 当前 schema 描述为 {field: string}，但前端展示需要的是逐字段处理。后端是否能保证 field 名与前端字段名一致（rating / comment / email）？"
+    - id: api-q2
+      priority: P2
+      content: "data.submitted_at 当前 UI 不展示，是否在 v1 schema 中保留？同 search-panel.api-q1 风格选择 '保留 + 标注'"

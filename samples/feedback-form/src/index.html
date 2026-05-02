@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FeedbackForm — sample impl</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>FeedbackForm</h1>
+      <p>本页是 design-spec/feedback-form/specs/feedback-form/spec.md 的最小实现。</p>
+      <div class="mock-controls">
+        <span class="mock-controls__label">本地 mock 响应：</span>
+        <select id="mock-mode" data-trace="mock-controls">
+          <option value="success">success（默认）</option>
+          <option value="validation-failed">VALIDATION_FAILED（后端字段错误）</option>
+          <option value="rate-limited">RATE_LIMITED（30s 倒计时）</option>
+          <option value="network-error">NETWORK_ERROR</option>
+          <option value="forbidden">FORBIDDEN（控制台模拟跳登录）</option>
+          <option value="internal-error">INTERNAL_ERROR</option>
+        </select>
+      </div>
+    </header>
+
+    <main>
+      <!-- component:feedbackForm -->
+      <div id="feedback-form" class="feedback-form" data-state="idle"></div>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

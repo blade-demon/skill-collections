@@ -1,0 +1,16 @@
+{
+  "name": "@skill-collections/sample-feedback-form",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hands-on sample exercising design-to-spec on a feedback-form UI unit (POST + request_body, field-level validation).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "echo \"(lint not configured)\""
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

@@ -24,6 +24,8 @@
 - 根 `docs/repo-workflow.md` 说明两类"examples"的区别（golden 回归 vs 手动验证）、samples 的 inputs → spec → impl 工作流、未来扩展（多 skill / tools / packages）的延后策略。
 - 根 `docs/sample-authoring.md` 给 sample 作者：何时该做新 sample、目录契约、authoring 顺序、`walkthrough.md` 模板、PR checklist、anti-patterns。
 - 第一个手动验证 sample `samples/search-panel/`：`inputs/`（design.svg + api.md + interaction-notes.md）+ `design-spec/search-panel/`（contracts + 三份 markdown，已通过 `--strict` 校验）+ `src/`（vite + vanilla JS 实现，匹配 spec 的状态机和 binding）+ `walkthrough.md`（≤200 行的四阶段过程记录）。
+- 第二个手动验证 sample `samples/feedback-form/`，与 search-panel 形态互补：POST + 表单 / 主导 binding 是 `ui_to_api` / 多字段双层校验 / request_body 首次落地 / element-scoped invalid 状态（emailInvalid + commentInvalid + rateLimited）/ success 态完全替换表单。`walkthrough.md` 重点写"与 search-panel 的差异"而非重复整个流程。同样通过 `validate-contracts` + `--strict`。
+- ONBOARDING §7 sample 对照表加入 feedback-form 行，注明两个 sample 的形态差异（GET vs POST、api_to_ui vs ui_to_api 主导）。
 - 新增第二份 golden sample `examples/price-card/`：props-only 形态，与 `today-windvane`（自取数据卡片）形态互补。覆盖 4 个状态（success / discount / partial / disabled）、空 `api.endpoints` / 空 `bindings` / 空 `data_fetching.requests` 退化路径，验证 operator-guide §4 的 props-only 模式可端到端跑通。生成的 `notes.md`、`data-fetching.md`、`spec.md` 均通过 `validate-output.js --strict`。
 - 新增 `scripts/tests/price-card.test.js`：5 个回归用例覆盖 props-only 全链路（contracts 校验 → 生成 → strict 输出校验）+ 信号短语断言（"无直接请求"、"数据由父组件或宿主上下文传入"）+ 4 个 required state 的 trace 锚点 + 组件级 trace 锚点。`npm test` 现共 38 项全过。
 
