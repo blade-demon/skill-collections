@@ -1,0 +1,249 @@
+# UI_Schema — FeedbackForm
+# 阶段一产物：从 inputs/design.svg 视觉提纯。
+
+ui:
+  name: FeedbackForm
+  components:
+    - id: feedbackForm
+      parent_id: root
+      type: Form
+      role: container
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 顶层表单容器；包含 errorBanner（条件）+ formTitle + 3 字段区 + submitBtn
+
+    - id: errorBanner
+      parent_id: feedbackForm
+      type: Toast
+      role: secondary
+      label: "提交失败：网络异常"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 顶部红色条；error 态出现；文案根据 errorCode 切换
+
+    - id: formTitle
+      parent_id: feedbackForm
+      type: Text
+      role: primary
+      label: "分享你的反馈"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 表单标题；600 weight 13px
+
+    - id: ratingGroup
+      parent_id: feedbackForm
+      type: Custom
+      semantic_type: rating-stars
+      role: container
+      label: ""
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 5 星评分组；点击同一颗第二次可取消；hover 高亮（hover 不进契约）；rating > 0 才视为有值
+
+    - id: ratingLabel
+      parent_id: ratingGroup
+      type: Text
+      role: secondary
+      label: "评分 *"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 字段标签；红色星号表示必填
+
+    - id: commentField
+      parent_id: feedbackForm
+      type: Input
+      semantic_type: textarea
+      role: primary
+      label: ""
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 多行 textarea；placeholder「告诉我们您的想法…」；trim 后 5-500 长度
+
+    - id: commentLabel
+      parent_id: commentField
+      type: Text
+      role: secondary
+      label: "评论 *"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 字段标签；红色星号
+
+    - id: commentHint
+      parent_id: commentField
+      type: Text
+      role: secondary
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 字段下方的红字提示；commentField blur 后长度不足时显示
+
+    - id: emailField
+      parent_id: feedbackForm
+      type: Input
+      role: primary
+      label: ""
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 单行邮箱输入；placeholder「name@example.com」；可选字段；blur 后做前端 regex 校验
+
+    - id: emailLabel
+      parent_id: emailField
+      type: Text
+      role: secondary
+      label: "邮箱（可选）"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 字段标签；不带必填星号
+
+    - id: emailHint
+      parent_id: emailField
+      type: Text
+      role: secondary
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: 字段下方的红字提示；emailField blur 后非空且格式错误时显示
+
+    - id: submitBtn
+      parent_id: feedbackForm
+      type: Button
+      role: action
+      label: "提交反馈"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: 主提交按钮；rating + comment 满足前端校验时才 enabled；submitting 态半透明 + 加载圆环；rate_limited 后倒计时显示在按钮上（待确认 1）
+
+    - id: successIcon
+      parent_id: feedbackForm
+      type: Icon
+      role: decoration
+      label: ""
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: success 态绿色对勾图标；圆形浅绿底
+
+    - id: successTitle
+      parent_id: feedbackForm
+      type: Text
+      role: primary
+      label: "感谢您的反馈！"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: success 态标题文案
+
+    - id: successBody
+      parent_id: feedbackForm
+      type: Text
+      role: secondary
+      label: "我们已收到您的意见"
+      interactive: false
+      confidence: identified
+      repeat_source: ""
+      notes: success 态副文案
+
+    - id: feedbackIdText
+      parent_id: feedbackForm
+      type: Text
+      role: secondary
+      label: "参考编号 #FB-3142"
+      interactive: false
+      confidence: needs_human_input
+      repeat_source: ""
+      notes: success 态显示 data.feedback_id；样式（是否可复制 / 字号 / 颜色）待设计签收
+
+    - id: resetButton
+      parent_id: feedbackForm
+      type: Button
+      role: action
+      label: "再提交一条"
+      interactive: true
+      confidence: identified
+      repeat_source: ""
+      notes: success 态按钮；点击后清空所有字段并回到 idle
+
+  states:
+    - id: idle
+      trigger: "表单初始挂载，或 success 后用户点击 resetButton，或 error 态用户编辑字段"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders ratingGroup, commentField, emailField, submitBtn (disabled until valid); hides errorBanner, successIcon"
+
+    - id: submitting
+      trigger: "用户点击 submitBtn 后，请求未返回前"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders submitBtn 半透明 with 加载圆环; ratingGroup, commentField, emailField disabled"
+
+    - id: success
+      trigger: "api_success（code === 0）"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders successIcon, successTitle '感谢您的反馈！', successBody, feedbackIdText with data.feedback_id, resetButton; hides ratingGroup, commentField, emailField, submitBtn"
+
+    - id: error
+      trigger: "api_error with code in (NETWORK_ERROR, INTERNAL_ERROR)"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders errorBanner with code-specific text; preserves field values; submitBtn re-enabled"
+
+    - id: validationFailed
+      trigger: "api_error with code === VALIDATION_FAILED"
+      required: true
+      source: visible
+      confidence: identified
+      render_assertion: "renders errorBanner with backend message; per-field hints filled from data.field_errors; submitBtn re-enabled"
+
+    - id: rateLimited
+      trigger: "api_error with code === RATE_LIMITED"
+      required: false
+      source: policy
+      confidence: needs_human_input
+      scope: element
+      scope_components:
+        - submitBtn
+      render_assertion: "renders submitBtn disabled with 30s countdown text; toast 「提交过于频繁，请 30 秒后再试」 dismissed automatically"
+
+    - id: emailInvalid
+      trigger: "emailField.onBlur AND emailField.value !== '' AND email regex fails"
+      required: true
+      source: visible
+      confidence: identified
+      scope: element
+      scope_components:
+        - emailField
+        - emailHint
+      render_assertion: "renders emailField with red border; renders emailHint '邮箱格式不正确'"
+
+    - id: commentInvalid
+      trigger: "commentField.onBlur AND commentField.value.trim().length < 5"
+      required: true
+      source: visible
+      confidence: identified
+      scope: element
+      scope_components:
+        - commentField
+        - commentHint
+      render_assertion: "renders commentField with red border; renders commentHint '评论至少 5 个字符'"
+
+  layout:
+    structure: vertical
+    notes: "卡片内部垂直堆叠：errorBanner（条件）→ formTitle → ratingGroup → commentField（含 commentLabel + commentHint）→ emailField（含 emailLabel + emailHint）→ submitBtn；success 态替换为 successIcon + successTitle + successBody + feedbackIdText + resetButton"

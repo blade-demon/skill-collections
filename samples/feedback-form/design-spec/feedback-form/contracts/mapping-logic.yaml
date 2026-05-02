@@ -1,0 +1,121 @@
+# Mapping_Logic — FeedbackForm
+# 阶段三产物：从 inputs/interaction-notes.md 逻辑映射。
+
+mapping:
+  component: FeedbackForm
+  data_fetching:
+    requests:
+      - id: submitRequest
+        trigger: "submitBtn.onClick AND 前端校验全部通过"
+        endpoint: submitFeedback
+        call_type: user_triggered
+        loading_state: true
+        depends_on: []
+    cache_policy:
+      strategy: none
+      notes: "写操作不缓存"
+    retry_policy:
+      strategy: none
+      notes: "不自动重试；NETWORK_ERROR / INTERNAL_ERROR 由用户手动再次点击；RATE_LIMITED 走倒计时禁用，30s 后允许"
+    concurrency_policy:
+      abortable: true
+      stale_response: ignore
+      notes: "submitting 态按钮禁用，物理上不会重复触发；组件 unmount 时 abort 当前请求"
+
+  bindings:
+    - direction: ui_to_api
+      source_ui: ratingGroup
+      target_api: rating
+      transform: "1-5 integer; 0 means unset (前端校验拦截)"
+    - direction: ui_to_api
+      source_ui: commentField
+      target_api: comment
+      transform: "trim() before submit; length 5-500"
+    - direction: ui_to_api
+      source_ui: emailField
+      target_api: email
+      transform: "trim() before submit; if empty omit field; non-empty must match email regex"
+    - direction: api_to_ui
+      source_api: data.feedback_id
+      target_ui: feedbackIdText
+      transform: "format as '参考编号 #{feedback_id}'"
+    - direction: ui_to_event
+      source_ui: submitBtn
+      target_event: tap-feedback-submit
+      transform: "{ rating, comment_length: comment.length, email_provided: email !== '' }"
+    - direction: ui_to_event
+      source_ui: resetButton
+      target_event: tap-feedback-reset
+      transform: "{ feedback_id: lastFeedbackId }"
+
+  state_machine:
+    - from: idle
+      event: "submitBtn.onClick AND rating > 0 AND comment.trim().length >= 5 AND (email === '' OR email regex pass)"
+      to: submitting
+      render_assertion: "renders submitBtn 半透明 with 加载圆环; ratingGroup, commentField, emailField disabled"
+    - from: submitting
+      event: "api_success（code === 0）"
+      to: success
+      render_assertion: "renders successIcon, successTitle, successBody, feedbackIdText with data.feedback_id, resetButton; hides form fields"
+    - from: submitting
+      event: "api_error AND code === VALIDATION_FAILED"
+      to: validationFailed
+      render_assertion: "renders errorBanner with message; per-field hints filled from data.field_errors; submitBtn re-enabled; field values preserved"
+    - from: submitting
+      event: "api_error AND code === RATE_LIMITED"
+      to: rateLimited
+      render_assertion: "renders submitBtn disabled with 30s countdown text; toast 「提交过于频繁，请 30 秒后再试」"
+    - from: submitting
+      event: "api_error AND code in (NETWORK_ERROR, INTERNAL_ERROR)"
+      to: error
+      render_assertion: "renders errorBanner; field values preserved; submitBtn re-enabled"
+    - from: submitting
+      event: "api_error AND code === FORBIDDEN"
+      to: idle
+      render_assertion: "navigates to /login (not visible in component)"
+    - from: validationFailed
+      event: "user edits any field"
+      to: idle
+      render_assertion: "clears errorBanner and per-field hints; submitBtn enabled if前端校验全过"
+    - from: error
+      event: "submitBtn.onClick AND 前端校验通过"
+      to: submitting
+      render_assertion: "clears errorBanner; renders submitBtn 加载状态"
+    - from: rateLimited
+      event: "30s countdown elapsed"
+      to: idle
+      render_assertion: "renders submitBtn enabled again; clears countdown text"
+    - from: success
+      event: "resetButton.onClick"
+      to: idle
+      render_assertion: "clears all field values; renders empty form"
+    - from: idle
+      event: "emailField.onBlur AND emailField.value !== '' AND email regex fails"
+      to: emailInvalid
+      render_assertion: "renders emailField with red border; renders emailHint '邮箱格式不正确'"
+    - from: idle
+      event: "commentField.onBlur AND commentField.value.trim().length < 5"
+      to: commentInvalid
+      render_assertion: "renders commentField with red border; renders commentHint '评论至少 5 个字符'"
+    - from: emailInvalid
+      event: "emailField.onInput"
+      to: idle
+      render_assertion: "clears emailHint and red border; submitBtn re-evaluates 前端校验"
+    - from: commentInvalid
+      event: "commentField.onInput"
+      to: idle
+      render_assertion: "clears commentHint and red border"
+
+  open_questions:
+    - id: mapping-q1
+      priority: P1
+      content: "RATE_LIMITED 30s 倒计时的视觉（按钮上数字 / 进度条 / 灰化无提示）；同 search-panel.mapping-q2 风格"
+    - id: mapping-q2
+      priority: P1
+      content: "feedbackIdText 是否需要支持点击复制？「参考编号」一般要可被用户记下来，但 mockup 按普通副文案画的，待设计签收"
+    - id: mapping-q3
+      priority: P2
+      content: "是否需要提交确认弹窗？产品方未明确表态；倾向不做以减少摩擦，但若反馈是公开可见（如评论区）可能需要"
+    - id: mapping-q4
+      priority: P2
+      content: "rating 取消（点击同一颗第二次回到 0）的语义是否需要在 spec.md 里有 Scenario？目前隐含在 ratingGroup 内部不构成顶层状态转换"

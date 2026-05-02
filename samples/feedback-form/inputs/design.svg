@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  feedback-form sample 输入 mockup —— 评分 + 评论 + 邮箱（可选）。
+  4 个面板对应运行时四态：idle / submitting / success / error。
+  完全虚构，零版权风险。
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 832 480" width="832" height="480"
+     font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif">
+
+  <rect width="832" height="480" fill="#F4F5F7"/>
+
+  <text x="24" y="32" font-size="14" font-weight="600" fill="#1D2129">FeedbackForm — 4 状态运行时视图</text>
+  <text x="24" y="52" font-size="11" fill="#86909C">3 字段（rating 必填 / comment 必填 / email 可选）；submit 触发 POST /api/v1/feedback</text>
+
+  <!-- ============================== -->
+  <!-- Card 1: idle（初始空表单） -->
+  <!-- ============================== -->
+  <g transform="translate(24, 80)">
+    <rect width="180" height="380" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <rect x="12" y="12" width="40" height="20" rx="10" ry="10" fill="#F2F3F5"/>
+    <text x="32" y="26" font-size="11" font-weight="500" fill="#86909C" text-anchor="middle">idle</text>
+
+    <!-- 表单标题 -->
+    <text x="12" y="56" font-size="13" font-weight="600" fill="#1D2129">分享你的反馈</text>
+
+    <!-- rating label -->
+    <text x="12" y="86" font-size="11" fill="#1D2129">评分 <tspan fill="#F53F3F">*</tspan></text>
+    <!-- 5 颗星（空心） -->
+    <g transform="translate(12, 96)">
+      <path d="M8 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+      <path d="M28 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+      <path d="M48 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+      <path d="M68 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+      <path d="M88 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+    </g>
+
+    <!-- comment label + textarea -->
+    <text x="12" y="148" font-size="11" fill="#1D2129">评论 <tspan fill="#F53F3F">*</tspan></text>
+    <rect x="12" y="156" width="156" height="80" rx="6" ry="6" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+    <text x="20" y="174" font-size="11" fill="#C9CDD4">告诉我们您的想法…</text>
+
+    <!-- email label + input -->
+    <text x="12" y="262" font-size="11" fill="#1D2129">邮箱（可选）</text>
+    <rect x="12" y="270" width="156" height="32" rx="6" ry="6" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+    <text x="20" y="290" font-size="11" fill="#C9CDD4">name@example.com</text>
+
+    <!-- submit button (灰化,因为表单未填) -->
+    <rect x="12" y="324" width="156" height="36" rx="6" ry="6" fill="#C9CDD4"/>
+    <text x="90" y="346" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">提交反馈</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 2: submitting（请求中） -->
+  <!-- ============================== -->
+  <g transform="translate(216, 80)">
+    <rect width="180" height="380" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <rect x="12" y="12" width="80" height="20" rx="10" ry="10" fill="#E8F3FF"/>
+    <text x="52" y="26" font-size="11" font-weight="500" fill="#1664FF" text-anchor="middle">submitting</text>
+
+    <text x="12" y="56" font-size="13" font-weight="600" fill="#1D2129">分享你的反馈</text>
+
+    <text x="12" y="86" font-size="11" fill="#1D2129">评分 <tspan fill="#F53F3F">*</tspan></text>
+    <!-- 4 颗实心星 -->
+    <g transform="translate(12, 96)">
+      <path d="M8 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M28 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M48 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M68 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M88 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+    </g>
+
+    <text x="12" y="148" font-size="11" fill="#1D2129">评论 <tspan fill="#F53F3F">*</tspan></text>
+    <rect x="12" y="156" width="156" height="80" rx="6" ry="6" fill="#F4F5F7" stroke="#E5E6EB" stroke-width="1"/>
+    <text x="20" y="174" font-size="11" fill="#1D2129">UI 流畅度还不错，但是…</text>
+    <text x="20" y="190" font-size="11" fill="#1D2129">提交后没有进度提示</text>
+
+    <text x="12" y="262" font-size="11" fill="#1D2129">邮箱（可选）</text>
+    <rect x="12" y="270" width="156" height="32" rx="6" ry="6" fill="#F4F5F7" stroke="#E5E6EB" stroke-width="1"/>
+    <text x="20" y="290" font-size="11" fill="#1D2129">jane@example.com</text>
+
+    <!-- submit (loading) -->
+    <rect x="12" y="324" width="156" height="36" rx="6" ry="6" fill="#1664FF" opacity="0.6"/>
+    <circle cx="90" cy="342" r="7" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-dasharray="3 3"/>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 3: success（提交成功） -->
+  <!-- ============================== -->
+  <g transform="translate(408, 80)">
+    <rect width="180" height="380" rx="12" ry="12" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+
+    <rect x="12" y="12" width="60" height="20" rx="10" ry="10" fill="#E8F8E8"/>
+    <text x="42" y="26" font-size="11" font-weight="500" fill="#00B42A" text-anchor="middle">success</text>
+
+    <!-- success 态：图标 + 文案 + 再次提交按钮 -->
+    <circle cx="90" cy="160" r="32" fill="#E8F8E8"/>
+    <path d="M76 160 L86 170 L106 150" fill="none" stroke="#00B42A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <text x="90" y="220" font-size="14" font-weight="600" fill="#1D2129" text-anchor="middle">感谢您的反馈！</text>
+    <text x="90" y="244" font-size="11" fill="#86909C" text-anchor="middle">我们已收到您的意见</text>
+    <text x="90" y="260" font-size="11" fill="#86909C" text-anchor="middle">参考编号 #FB-3142</text>
+
+    <!-- 再写一条按钮 -->
+    <rect x="32" y="300" width="116" height="32" rx="6" ry="6" fill="#FFFFFF" stroke="#1664FF" stroke-width="1"/>
+    <text x="90" y="320" font-size="12" font-weight="500" fill="#1664FF" text-anchor="middle">再提交一条</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- Card 4: error（带 invalidEmail 字段错误状态） -->
+  <!-- ============================== -->
+  <g transform="translate(600, 80)">
+    <rect width="180" height="380" rx="12" ry="12" fill="#FFFFFF" stroke="#FFE3DB" stroke-width="1"/>
+
+    <rect x="12" y="12" width="48" height="20" rx="10" ry="10" fill="#FFECE8"/>
+    <text x="36" y="26" font-size="11" font-weight="500" fill="#F53F3F" text-anchor="middle">error</text>
+
+    <text x="12" y="56" font-size="13" font-weight="600" fill="#1D2129">分享你的反馈</text>
+
+    <text x="12" y="86" font-size="11" fill="#1D2129">评分 <tspan fill="#F53F3F">*</tspan></text>
+    <g transform="translate(12, 96)">
+      <path d="M8 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M28 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M48 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="#FF7D00"/>
+      <path d="M68 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+      <path d="M88 2 l2 5 5 0 -4 3 1.5 5 -4.5 -3 -4.5 3 1.5 -5 -4 -3 5 0 z" fill="none" stroke="#C9CDD4" stroke-width="1"/>
+    </g>
+
+    <text x="12" y="148" font-size="11" fill="#1D2129">评论 <tspan fill="#F53F3F">*</tspan></text>
+    <rect x="12" y="156" width="156" height="56" rx="6" ry="6" fill="#FFFFFF" stroke="#E5E6EB" stroke-width="1"/>
+    <text x="20" y="174" font-size="11" fill="#1D2129">UI 流畅度还不错</text>
+
+    <!-- email with invalid 状态 -->
+    <text x="12" y="240" font-size="11" fill="#1D2129">邮箱（可选）</text>
+    <rect x="12" y="248" width="156" height="32" rx="6" ry="6" fill="#FFFFFF" stroke="#F53F3F" stroke-width="1.5"/>
+    <text x="20" y="268" font-size="11" fill="#1D2129">jane@</text>
+    <!-- 字段级红字提示 -->
+    <text x="12" y="296" font-size="10" fill="#F53F3F">邮箱格式不正确</text>
+
+    <!-- 顶部错误条（提交失败） -->
+    <rect x="12" y="44" width="156" height="0" fill="none"/>
+
+    <!-- submit (可点) -->
+    <rect x="12" y="312" width="156" height="36" rx="6" ry="6" fill="#1664FF"/>
+    <text x="90" y="334" font-size="12" font-weight="600" fill="#FFFFFF" text-anchor="middle">提交反馈</text>
+
+    <!-- 顶部错误条 -->
+    <rect x="12" y="44" width="156" height="20" rx="4" ry="4" fill="#FFECE8"/>
+    <text x="90" y="58" font-size="10" fill="#F53F3F" text-anchor="middle">提交失败：网络异常</text>
+  </g>
+
+  <text x="24" y="476" font-size="11" fill="#4E5969">3 字段校验：rating 必选 + comment 必填 + email 可选但格式必须正确；submitBtn disabled 直到 rating 和 comment 都有值</text>
+</svg>
