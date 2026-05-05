@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+# design-to-spec — Husky pre-commit hook 模板
+#
+# 安装：
+#   1) npm install -D husky
+#   2) npx husky init           # 创建 .husky/ 目录
+#   3) cp design-to-spec/templates/ci/pre-commit.husky .husky/pre-commit
+#   4) chmod +x .husky/pre-commit
+#
+# 行为：
+# - 只对本次 commit 改动涉及的 design-spec/<component>/ 目录跑校验，避免全量扫描。
+# - contracts/ 任一文件改动 → 跑 validate-contracts.js
+# - notes.md / data-fetching.md / spec.md 改动 → 加跑 validate-output.js --strict
+# - 失败时 commit 中断；可用 git commit --no-verify 紧急绕过（不推荐）
+#
+# 设计原则：
+# - 不重跑没动过的目录：commit 速度优先
+# - 不调 npm run smoke：smoke 应在 push 前或 CI 跑，pre-commit 留给最便宜的事实校验
+
+set -e
+
+changed=$(git diff --cached --name-only --diff-filter=ACMR | grep '^design-spec/' || true)
+[ -z "$changed" ] && exit 0
+
+# 提取被改动的 design-spec/<component>/ 目录（去重）
+dirs=$(echo "$changed" | awk -F/ '{print $1"/"$2}' | sort -u)
+
+fail=0
+for dir in $dirs; do
+  name=$(basename "$dir")
+  ui="$dir/contracts/ui-schema.yaml"
+  api="$dir/contracts/api-schema.yaml"
+  mapping="$dir/contracts/mapping-logic.yaml"
+
+  [ -f "$ui" ] && [ -f "$api" ] && [ -f "$mapping" ] || {
+    echo "skip $name (incomplete contracts/)"
+    continue
+  }
+
+  echo "==> $name: validate-contracts"
+  node design-to-spec/scripts/validate-contracts.js \
+    --ui "$ui" --api "$api" --mapping "$mapping" || fail=1
+
+  spec=$(find "$dir/specs" -name spec.md -print -quit 2>/dev/null || true)
+  if [ -n "$spec" ] && [ -f "$dir/notes.md" ] && [ -f "$dir/data-fetching.md" ]; then
+    echo "==> $name: validate-output --strict"
+    node design-to-spec/scripts/validate-output.js --strict \
+      --ui "$ui" --api "$api" --mapping "$mapping" \
+      --notes "$dir/notes.md" --data-fetching "$dir/data-fetching.md" --spec "$spec" || fail=1
+  fi
+done
+
+exit $fail

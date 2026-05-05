@@ -489,7 +489,12 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `scripts/validate-contracts.js` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
 - `scripts/generate-output.js` — 从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`spec.md` 基线（阶段四默认入口）
 - `scripts/validate-output.js` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
+- `scripts/smoke.js` — 1 秒级环境冒烟（金样跑通 validate → generate → validate --strict 全链路）；通过 `npm run smoke` 触发；**仅当用户问"环境对不对"或升级后需要验证基础链路时引导运行**
 - `scripts/tests/generate-output.test.js` — 使用 golden sample 回归验证生成脚本和输出校验链路
+- `references/ci-integration.md` — CI / pre-commit 集成指南（GitHub Actions / husky / lefthook 选型与安装）；**用户问"怎么把校验跑进 CI"或"pre-commit 怎么配"时读取**
+- `references/reviewer-guide.md` — PM / QA / 后端 / 数据四视角的评审签收 checklist；**用户问"非作者怎么 review"或要分发产出给跨角色看时读取**
+- `templates/ci/github-actions.yml` / `templates/ci/pre-commit.husky` / `templates/ci/lefthook.yml` — CI / pre-commit 模板（复制到项目对应位置即可）
+- `docs/case-study-feedback-form.md` — 基于 `samples/feedback-form/` 的 before/after 工作量对比；**用户问"用 vs 不用 design-to-spec 差别多大"或要向同事讲解推广时读取**
 
 ---
 

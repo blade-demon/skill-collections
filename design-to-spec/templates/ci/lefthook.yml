@@ -1,0 +1,57 @@
+# design-to-spec — lefthook 集成模板
+#
+# 复制到仓库根 lefthook.yml（或合并到现有 lefthook.yml）
+#
+# 安装：
+#   npm install -D lefthook && npx lefthook install
+#
+# 设计与 husky 模板一致：
+# - pre-commit 只校验本次 staged 的 design-spec/<component>/ 目录（contracts + 可选输出）
+# - pre-push 跑完整 smoke：design-to-spec npm test
+# - 任一失败 → 阻断；用 LEFTHOOK=0 git commit 临时绕过（不推荐）
+
+pre-commit:
+  parallel: true
+  commands:
+    design-spec-contracts:
+      glob: "design-spec/*/contracts/*.yaml"
+      run: |
+        set -e
+        # 取本次 staged 改动里的 design-spec 顶级目录
+        dirs=$(echo "{staged_files}" | tr ' ' '\n' | awk -F/ '/^design-spec\// {print $1"/"$2}' | sort -u)
+        for dir in $dirs; do
+          ui="$dir/contracts/ui-schema.yaml"
+          api="$dir/contracts/api-schema.yaml"
+          mapping="$dir/contracts/mapping-logic.yaml"
+          [ -f "$ui" ] && [ -f "$api" ] && [ -f "$mapping" ] || continue
+          echo "==> $(basename $dir): validate-contracts"
+          node design-to-spec/scripts/validate-contracts.js \
+            --ui "$ui" --api "$api" --mapping "$mapping"
+        done
+
+    design-spec-output:
+      glob:
+        - "design-spec/*/notes.md"
+        - "design-spec/*/data-fetching.md"
+        - "design-spec/*/specs/**/spec.md"
+      run: |
+        set -e
+        dirs=$(echo "{staged_files}" | tr ' ' '\n' | awk -F/ '/^design-spec\// {print $1"/"$2}' | sort -u)
+        for dir in $dirs; do
+          ui="$dir/contracts/ui-schema.yaml"
+          api="$dir/contracts/api-schema.yaml"
+          mapping="$dir/contracts/mapping-logic.yaml"
+          notes="$dir/notes.md"
+          fetch="$dir/data-fetching.md"
+          spec=$(find "$dir/specs" -name spec.md -print -quit 2>/dev/null || true)
+          [ -n "$spec" ] && [ -f "$notes" ] && [ -f "$fetch" ] || continue
+          echo "==> $(basename $dir): validate-output --strict"
+          node design-to-spec/scripts/validate-output.js --strict \
+            --ui "$ui" --api "$api" --mapping "$mapping" \
+            --notes "$notes" --data-fetching "$fetch" --spec "$spec"
+        done
+
+pre-push:
+  commands:
+    skill-smoke:
+      run: npm run -w design-to-spec smoke

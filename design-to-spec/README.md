@@ -12,6 +12,9 @@
 > **要拿真实设计稿动手？** 读 [references/operator-guide.md](references/operator-guide.md)（零基础操作手册，含多视觉稿、context 受限、跨组件复用等实战策略）。
 > **跑不通 / 看到生词？** 直接查 [references/troubleshooting.md](references/troubleshooting.md)（按症状 grep）和 [references/glossary.md](references/glossary.md)（术语速查）。
 > **要把 skill 接入项目级配置？** 复制 [templates/agents-snippet.md](templates/agents-snippet.md) 或 [templates/claude-md-snippet.md](templates/claude-md-snippet.md) 到项目根。
+> **要把校验跑进 CI / pre-commit？** 读 [references/ci-integration.md](references/ci-integration.md)，模板在 [templates/ci/](templates/ci/)。
+> **要给 PM / QA / 后端讲怎么 review？** 读 [references/reviewer-guide.md](references/reviewer-guide.md)（四视角签收 checklist）。
+> **想看真实需求"用 vs 不用"工作量差多少？** 读 [docs/case-study-feedback-form.md](docs/case-study-feedback-form.md)。
 > 本 README 偏参考手册，原理与校验规则为主。
 
 `design-to-spec` 采用四阶段状态机：视觉提纯、接口提纯、逻辑映射、规格组装。前三阶段分别生成 YAML 契约，第四阶段只读取契约机械填充模板，不重新看图或重新推断接口。
@@ -197,3 +200,38 @@ npm test
 ```
 
 会一次跑完 `scripts/tests/*.test.js`：覆盖生成结果、trace 锚点、扩展契约和包裹完整性 4 个回归套件，从 `examples/today-windvane/contracts/*.yaml` 和扩展契约样例生成临时输出，并用 `validate-output.js --strict` 校验结果。
+
+环境冒烟：
+
+```bash
+npm run smoke
+```
+
+跑一遍最常用路径（用 `today-windvane` 金样跑 validate-contracts → generate-output → validate-output --strict），1 秒内输出 ✅/❌。装好后用这条命令验证环境，比 `npm test` 更快、信号更明确。
+
+## 升级前必读
+
+`design-to-spec` 遵循 [语义化版本](https://semver.org/lang/zh-CN/)：
+
+- **major（X.0.0）**：YAML 契约 schema 不向后兼容、CLI 标志或退出码改变、产出文件结构改变。升级前必读 CHANGELOG `## Migration` 段。
+- **minor（0.X.0）**：新增字段 / 新增可选 CLI 标志 / 新文档资源；现有契约不动即可继续工作。
+- **patch（0.0.X）**：bug 修复、文档补强、模板措辞调整、新增 reference / template 文件。
+
+每次升级建议按下面三步走：
+
+1. **读 CHANGELOG `## [新版本]` 的 `### Breaking`、`### Migration`、`### Removed` 子段**——三段都是空也要确认（能 grep `### Breaking` 看到字面"无"）；以下 4 张表凡是出现的项必须当成 P0 处理：CLI 标志删除 / schema 必填字段新增 / 输出目录结构变化 / 校验脚本默认行为变化。
+2. **重跑 `npm install` + `npm run smoke`**：验证依赖和环境。失败先看 [troubleshooting.md](./references/troubleshooting.md) §安装环境，再开 issue。
+3. **重跑你已有的 `design-spec/<component>/` 校验**：
+
+   ```bash
+   for d in design-spec/*/; do
+     node design-to-spec/scripts/validate-contracts.js \
+       --ui $d/contracts/ui-schema.yaml \
+       --api $d/contracts/api-schema.yaml \
+       --mapping $d/contracts/mapping-logic.yaml || echo "FAIL: $d"
+   done
+   ```
+
+   有 contracts 校验失败的目录 → 按 CHANGELOG 的 `### Migration` 改 yaml；有 markdown `--strict` 失败 → 重跑 `generate-output.js` 让产物对齐新 schema（永远不要手改 markdown 绕过）。
+
+`### Breaking` / `### Migration` 子段约定见 [CHANGELOG.md](./CHANGELOG.md) 顶部说明。每个版本即使没有破坏性变更，作者也会显式写「无」，保证读者只看一处就能判断是否安全升级。

@@ -171,6 +171,10 @@ node scripts/generate-output.js \
 | 跑不通 / 看到报错 | [references/troubleshooting.md](./references/troubleshooting.md)（按症状 grep） |
 | 看到生词 / 不懂的术语 | [references/glossary.md](./references/glossary.md)（一句话定义 + 例子） |
 | 把 skill 接入项目级配置 | [templates/agents-snippet.md](./templates/agents-snippet.md) / [templates/claude-md-snippet.md](./templates/claude-md-snippet.md) |
+| 把校验接入 CI / pre-commit | [references/ci-integration.md](./references/ci-integration.md)（GitHub Actions / husky / lefthook 三选一） |
+| 给 PM / QA / 后端讲怎么 review | [references/reviewer-guide.md](./references/reviewer-guide.md)（四视角签收 checklist） |
+| 用 vs 不用 design-to-spec 工作量差多少 | [docs/case-study-feedback-form.md](./docs/case-study-feedback-form.md)（before/after 真实对比） |
+| 升级新版本前必须确认什么 | [README.md §升级前必读](./README.md) |
 | 工具的工作原理和 4 阶段架构 | [SKILL.md](./SKILL.md) |
 | 这工具未来还会做什么 | [docs/roadmap.md](./docs/roadmap.md) |
 
