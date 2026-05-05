@@ -4,11 +4,58 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，版本管理遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 子段约定
+
+每个版本（包括 `[Unreleased]`）必须显式包含以下三个 **升级影响** 子段，即使内容是「无」：
+
+- `### Breaking` — 不向后兼容的 schema / CLI / 产出结构变化。**为空写「无」**，不允许省略。
+- `### Migration` — 旧版本升级到本版本的迁移步骤；与 Breaking 配对。无破坏性变更时也写「无」。
+- `### Removed` — 删除的脚本、文件、字段、CLI 标志。
+
+升级者只需 grep 这三段即可判断是否安全升级。其余子段（`### Added` / `### Changed` / `### Fixed` / `### Deprecated`）按 Keep a Changelog 标准用法。
+
 ---
 
 ## [Unreleased]
 
-### Added
+### Breaking
+
+无。
+
+### Migration
+
+无。
+
+### Removed
+
+无。
+
+### Added — 分发与上手 P2（沉淀经验、降低协作摩擦）
+
+- 新增 `templates/ci/github-actions.yml` + `templates/ci/pre-commit.husky` + `templates/ci/lefthook.yml`：三种主流 CI / pre-commit 集成模板，复制即用。GitHub Actions 在 PR 触发，遍历 `design-spec/*/` 跑 validate-contracts + validate-output --strict；husky / lefthook 只对本次 staged 改动的目录跑校验，不全量。lefthook pre-push 阶段额外跑 `npm run smoke`。
+- 新增 `references/ci-integration.md`：CI 集成指南。三种形态选型表（GitHub Actions / husky / lefthook 何时用）+ 各自的复制安装命令 + 常见失败的恢复路径（contracts 校验失败 / 输出 --strict 失败）+ 几条选型上的取舍说明（为什么 pre-commit 不跑 npm test、为什么 CI 不重跑 generator）。
+- 新增 `references/reviewer-guide.md`：评审指南。分 PM / QA / 后端 / 数据四视角的签收 checklist，明确每个角色优先读哪些文件、不需读哪些、必须回退给作者重做的信号；附通用反模式表 + 进入 coding 前的 6 项退出标准。配合 v0.12 真实项目盲测的"非作者消费"目标。
+- 新增 `docs/case-study-feedback-form.md`：基于 `samples/feedback-form/` 的 before/after 工作量对比。传统工作流 9.5–12h（评审会 + 联调 + 埋点回补 + 修复回归散在多个时间节点）vs design-to-spec 工作流 4.75–6.25h（一次 1h skill 对话把扯皮前移）；附诚实记录的"没解决的问题"（学习曲线、设计稿质量、ROI 边界）。
+- 新增 `scripts/smoke.js` + `npm run smoke` 命令：1 秒级环境冒烟测试。用 `today-windvane` 金样跑 validate-contracts → generate-output（写到临时目录）→ validate-output --strict 全链路；任一失败退出 1 + 报错，全部通过输出 ✅ + 总耗时（实测约 410ms）。比 `npm test`（33 项回归套件）更快、信号更明确，适合装好后第一时间验证环境，或在 lefthook pre-push / CI 早期阶段做"环境健康检查"。
+- README 末尾新增 `## 升级前必读` 节：三类版本（major / minor / patch）的升级影响对照、每次升级的三步走（grep CHANGELOG Breaking → 重跑 smoke → 重跑已有 design-spec 校验）+ 一段批量校验脚本，避免同事升级后不知道该确认什么。
+- CHANGELOG 顶部新增 `## 子段约定` 节：每个版本（含 [Unreleased]）必须显式包含 `### Breaking` / `### Migration` / `### Removed` 三个子段，为空也写「无」。升级者只需 grep 这三段即可判断是否安全升级。
+- ONBOARDING §9 下一步导航表新增 4 行：升级前必读 / 看跨角色评审清单 / 看真实需求工作量对比 / CI 集成。
+- README 顶部分流指引新增 3 行，分别指向 ci-integration、reviewer-guide、case-study-feedback-form。
+- SKILL.md §捆绑资源 节登记 5 份新文档（ci-integration / reviewer-guide / case-study-feedback-form / 三份 ci 模板 / smoke.js），标注"何时读取"触发条件。
+- `package.json.version` 从 `0.10.0` 同步到 `0.10.1`，与 SKILL.md frontmatter 对齐。
+
+### Added — 分发与上手 P1（降低同事接入心智成本）
+
+- 新增 `references/troubleshooting.md`：故障排查手册，10 大类 22 条按「症状 → 原因 → 解决命令」三栏组织，覆盖安装环境、4 阶段每段的常见错（漏组件、字段过多、binding 引用错、render_assertion 缺失、trace 锚点丢失、YAML 重试失败、context 不足、跨组件不一致、skill 没触发等）。同事卡住时直接 grep 首行报错即可定位，不再依赖去 SKILL.md / operator-guide.md 翻找。
+- 新增 `references/glossary.md`：术语速查表。按字母顺序排列，每条「一句话定义 + 具体例子 + 出现位置」，覆盖核心概念（contract / deterministic generation / golden sample / harness / OpenSpec / state machine / trace anchor）、契约字段（confidence / interactive / parent_id / render_assertion / repeat_source / role / scope / semantic_type / auth_required / cache_key_fields / error_shape / pagination / binding direction / call_type / concurrency_policy / transform）、流程术语（4 阶段状态、open_questions 优先级、阶段四 A/B/C/D 子阶段）、易混淆对照（needs_human_input vs open_questions / examples vs samples / validate-contracts vs validate-output）。
+- 新增 `templates/agents-snippet.md` 和 `templates/claude-md-snippet.md`：项目级配置可复制片段。`cat templates/agents-snippet.md >> AGENTS.md`（OpenCode）或 `cat templates/claude-md-snippet.md >> CLAUDE.md`（Claude Code）一行接入；包含项目上下文 yaml、触发示例、提交前必跑校验、关键纪律和故障排查导航。从 SKILL.md §OpenCode 环境配置 节嵌入式段落沉淀出来，避免同事手动选段复制。
+- 新增 `docs/architecture.svg`：架构总览图。横向布局展示「输入 → 4 阶段（前 3 蓝/LLM 推断 + 第 4 橙/确定性脚本）→ 3 份 YAML 契约（紫）→ 3 份产物 → 5 类下游消费者（绿，前端/后端/测试/PM/CI）」，含用户确认门标注。嵌入到 README 和 ONBOARDING 顶部，作为"一图秒懂"的视觉锚点。
+- ONBOARDING §9 下一步导航表新增 4 行：跑不通查 troubleshooting / 看到生词查 glossary / 接入项目级配置查两份 templates snippet。
+- README 顶部分流指引新增两行，分别指向 troubleshooting + glossary 和两份 snippet 模板。
+- SKILL.md §捆绑资源 节登记 4 份新文档（troubleshooting / glossary / 两份 snippet / architecture.svg），标注各自的"何时读取"触发条件，确保 LLM 在对应场景能找到。
+- frontmatter `version` 从 `0.10.0` 升至 `0.10.1`（文档与上手资源补强，不改运行时行为）。
+
+### Added — 此前条目
 
 - 新增 `scripts/tests/validate-contracts.test.js`：24 个错误路径回归用例，覆盖 cross-reference（component / state / endpoint / request / binding / state_machine 引用错误，required state 缺 render_assertion，render_assertion fallback 缺失）、唯一性（重复 component / state / endpoint / request / response_field id）和 JSON Schema（缺必填、类型错配、enum / pattern / oneOf 违反）三类。配合现有 9 个 happy-path 测试，`npm test` 共 33 项全过。
 - `references/contracts.md` 新增「`needs_human_input` 与 `open_questions` 使用规则」节：明确两者不是互斥而是配对、决策树（何时用哪个）、强制配对规则、P0/P1/P2 优先级语义、5 条反模式、在 notes.md/spec.md 的最终落地、进入 coding 前的评审退出标准。闭合 v0.10 验收最后一项文档项。

@@ -1,0 +1,88 @@
+# design-to-spec — GitHub Actions 集成模板
+#
+# 复制到 .github/workflows/design-spec-check.yml
+#
+# 触发：所有 PR 中只要 design-spec/ 或 design-to-spec/ 有改动就跑校验。
+# 行为：跑 validate-contracts.js 校验所有 contracts/，再跑 validate-output.js --strict
+#       校验三份产物。任一失败 → CI 红，PR 不可合并。
+#
+# 前置：
+# - 仓库根有 design-to-spec/ 目录（git submodule / subtree / monorepo workspace 任一形态）
+# - 或者 design-to-spec 通过 npm workspace 链接到 node_modules/.bin
+#
+# 假设：所有规格放在 design-spec/<component>/，每个目录有
+#   contracts/{ui-schema,api-schema,mapping-logic}.yaml
+#   notes.md / data-fetching.md / specs/<cap>/spec.md
+
+name: design-spec-check
+
+on:
+  pull_request:
+    paths:
+      - "design-spec/**"
+      - "design-to-spec/**"
+      - ".github/workflows/design-spec-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "design-spec/**"
+      - "design-to-spec/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate all design specs
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          fail=0
+          for dir in design-spec/*/; do
+            name="$(basename "$dir")"
+            ui="$dir/contracts/ui-schema.yaml"
+            api="$dir/contracts/api-schema.yaml"
+            mapping="$dir/contracts/mapping-logic.yaml"
+
+            if [[ ! -f "$ui" || ! -f "$api" || ! -f "$mapping" ]]; then
+              echo "::warning ::skipping $name (incomplete contracts/)"
+              continue
+            fi
+
+            echo "==> $name: validate-contracts"
+            node design-to-spec/scripts/validate-contracts.js \
+              --ui "$ui" --api "$api" --mapping "$mapping" \
+              || { echo "::error ::$name contracts invalid"; fail=1; continue; }
+
+            spec="$(find "$dir/specs" -name spec.md -print -quit 2>/dev/null || true)"
+            notes="$dir/notes.md"
+            fetch="$dir/data-fetching.md"
+
+            if [[ -z "$spec" || ! -f "$notes" || ! -f "$fetch" ]]; then
+              echo "::warning ::$name has contracts but missing generated outputs; skipping --strict check"
+              continue
+            fi
+
+            echo "==> $name: validate-output --strict"
+            node design-to-spec/scripts/validate-output.js --strict \
+              --ui "$ui" --api "$api" --mapping "$mapping" \
+              --notes "$notes" --data-fetching "$fetch" --spec "$spec" \
+              || { echo "::error ::$name output invalid"; fail=1; }
+          done
+
+          exit "$fail"
+
+      - name: Run skill regression suite
+        if: hashFiles('design-to-spec/scripts/tests/*.test.js') != ''
+        run: npm test --workspace design-to-spec

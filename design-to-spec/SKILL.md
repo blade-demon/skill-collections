@@ -1,7 +1,10 @@
 ---
 name: design-to-spec
 metadata:
-  version: 0.10.0
+  version: 0.10.1
+  compatibility:
+    - opencode      # 原生支持：question tool / Plan mode / AGENTS.md / SQLite 会话持久化
+    - claude-code   # 原生支持：AskUserQuestion / 文件读写
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -64,6 +67,49 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 中途中断：contracts/ 已落盘，新会话可从任意阶段接续
 ─────────────────────────────────────────
 ```
+
+---
+
+## OpenCode 环境配置（首次使用时设置，后续自动生效）
+
+### AGENTS.md — 持久化项目上下文
+
+将以下片段加入项目根目录的 `AGENTS.md`，之后每次运行 design-to-spec 时阶段一不再重复询问技术栈、设计系统和组件路径：
+
+```markdown
+## design-to-spec 项目上下文
+
+- tech_stack: miniprogram       # miniprogram / react / vue / flutter / agnostic
+- design_system: none           # tdesign / nutui / vant / antd / shadcn / none
+- output_dir: design-spec       # 生成文件的根目录（相对项目根）
+- components_dir: src/components # 现有原子组件目录，阶段一自动 Glob 发现可复用组件
+- openspec_dir: openspec        # OpenSpec 规格目录
+```
+
+skill 读取优先级：AGENTS.md 声明 > 用户对话中提供 > 阶段一默认询问。
+
+### Plan mode 使用建议
+
+OpenCode 支持通过 Tab 键切换 Plan / Execute 模式。建议按以下模式运行：
+
+| 阶段 | 模式 | 原因 |
+|---|---|---|
+| 阶段一（视觉提纯）| **Plan** | 纯分析，不写文件 |
+| 阶段二（接口提纯）| **Plan** | 纯分析，不写文件 |
+| 阶段三（逻辑映射）| **Plan** | 纯分析，不写文件 |
+| 阶段四（规格组装）| **Execute** | 需要写入 contracts/ 和三份输出文件 |
+
+三个分析阶段在 Plan mode 下运行，确认后切换到 Execute 进行阶段四的文件写入。
+
+### 会话中断恢复
+
+OpenCode 会话通过 SQLite 持久化，关闭终端后重新打开仍可恢复上下文。如果阶段四中途中断，只需在新会话中发送：
+
+```
+design-spec/<组件名>/contracts/ 目录已有三份契约，请从阶段四接续
+```
+
+skill 会跳过阶段一到三，直接读取已落盘的契约文件进入阶段四。
 
 ---
 
@@ -339,6 +385,8 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 
 ### 4.5 上下文预算门控
 
+> **OpenCode 说明**：OpenCode 在 context 达到模型窗口 95% 时自动压缩，无需手动干预。以下门控是额外的安全网，在自动压缩前主动收窄输出范围，避免关键节点被截断。
+
 | 剩余 context | 策略                                                                      |
 | ------------ | ------------------------------------------------------------------------- |
 | < 30K        | 跳过 annotated SVG                                                        |
@@ -416,6 +464,11 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `references/scenario-writing-guide.md` — Scenario 写作纪律（**仅阶段四写 spec.md 前**，必读）
 - `references/openspec-format.md` — OpenSpec 格式规则（**仅阶段四写 spec.md 前**）
 - `references/contracts.md` — 三份 YAML 契约字段语义和校验命令（**字段含义不确定时读取**）
+- `references/troubleshooting.md` — 故障排查表（**脚本报错或运行时异常时读取**）
+- `references/glossary.md` — 术语速查表（**用户问"X 是什么"或解释字段时读取**）
+- `templates/agents-snippet.md` — AGENTS.md 可复制片段（**OpenCode / OpenAI Codex 用户接入时引用**）
+- `templates/claude-md-snippet.md` — CLAUDE.md 可复制片段（**Claude Code 用户接入时引用**）
+- `docs/architecture.svg` — 架构总览图（**用户要求"整体看一眼"时引用**）
 - `templates/ui-schema.yaml` — UI_Schema 契约模板（阶段一输出参考）
 - `templates/api-schema.yaml` — API_Schema 契约模板（阶段二输出参考，含 `api.open_questions`）
 - `templates/mapping-logic.yaml` — Mapping_Logic 契约模板（阶段三输出参考）
@@ -436,7 +489,12 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 - `scripts/validate-contracts.js` — 先按 JSON Schema 校验三份契约结构，再校验跨文件引用关系（阶段四前可运行）
 - `scripts/generate-output.js` — 从三份 YAML 契约确定性生成 `contracts/`、`notes.md`、`data-fetching.md`、`spec.md` 基线（阶段四默认入口）
 - `scripts/validate-output.js` — 校验 `notes.md` / `data-fetching.md` / `spec.md` 是否覆盖契约中的必需状态、请求 endpoint、事件名和关键章节（阶段四后可运行）
+- `scripts/smoke.js` — 1 秒级环境冒烟（金样跑通 validate → generate → validate --strict 全链路）；通过 `npm run smoke` 触发；**仅当用户问"环境对不对"或升级后需要验证基础链路时引导运行**
 - `scripts/tests/generate-output.test.js` — 使用 golden sample 回归验证生成脚本和输出校验链路
+- `references/ci-integration.md` — CI / pre-commit 集成指南（GitHub Actions / husky / lefthook 选型与安装）；**用户问"怎么把校验跑进 CI"或"pre-commit 怎么配"时读取**
+- `references/reviewer-guide.md` — PM / QA / 后端 / 数据四视角的评审签收 checklist；**用户问"非作者怎么 review"或要分发产出给跨角色看时读取**
+- `templates/ci/github-actions.yml` / `templates/ci/pre-commit.husky` / `templates/ci/lefthook.yml` — CI / pre-commit 模板（复制到项目对应位置即可）
+- `docs/case-study-feedback-form.md` — 基于 `samples/feedback-form/` 的 before/after 工作量对比；**用户问"用 vs 不用 design-to-spec 差别多大"或要向同事讲解推广时读取**
 
 ---
 
