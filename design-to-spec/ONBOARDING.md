@@ -2,6 +2,8 @@
 
 > 3 分钟读完。读完你能判断 ① 这个工具是不是你想要的 ② 接下来去哪。
 
+![架构总览](docs/architecture.svg)
+
 ---
 
 ## 1. 这是什么
@@ -68,19 +70,53 @@ design-spec/<component-name>/
 
 ---
 
-## 6. 30 秒安装
+## 6. 接入到我的项目
+
+skill 由两部分组成，分布位置不同：
+
+- **协议文档**（`SKILL.md` + `templates/` + `references/`）—— 给 LLM 看，要让你的 harness（Claude Code / OpenCode / Cursor 等）能加载到
+- **校验脚本**（`scripts/*.js` + `package.json`）—— Node 跑，要 `npm install` 装在能找到的目录
+
+**最简单的路径**：把整个 `design-to-spec/` 目录放进项目内一个固定位置，让两部分共址。下面三种放法选一种：
+
+| 分发方式 | 命令 | 适合 | 升级 |
+|---|---|---|---|
+| **直接复制** | `cp -r /path/to/design-to-spec ./tools/design-to-spec` | 个人试用、临时项目 | 手动重新 cp |
+| **git submodule** | `git submodule add <repo-url> tools/design-to-spec` | 多人协作、想跟随上游版本 | `git submodule update --remote` |
+| **monorepo workspace** | 在根 `package.json` 加 `"workspaces": ["tools/design-to-spec"]` | 已是 monorepo | 跟随主仓库 |
+
+**推荐 git submodule**：版本固定在某个 commit、升级显式可控、新同事 `git clone --recurse-submodules` 一步到位。
+
+放好后让 harness 知道 SKILL.md 在哪。不同 harness 配法不同，挑你用的看：
+
+| Harness | 配置方式 |
+|---|---|
+| Claude Code | 把 skill 目录放在 `.claude/skills/design-to-spec/` 自动加载 |
+| OpenCode | 加到项目根 `AGENTS.md`（详见 [install-by-harness.md](./references/install-by-harness.md)） |
+| Cursor | 把 SKILL.md 拷到 `.cursor/rules/design-to-spec.mdc` |
+| Cline / Continue / 其他 | 见 [install-by-harness.md](./references/install-by-harness.md) |
+
+**完整接入矩阵**：[references/install-by-harness.md](./references/install-by-harness.md)（含每种 harness 的 smoke-test 提示词和已知坑）。
+
+---
+
+## 7. 30 秒安装
+
+定好位置后，装脚本依赖：
 
 ```bash
-cd <你的项目>/design-to-spec
+cd <你的项目>/tools/design-to-spec   # 或 .claude/skills/design-to-spec，看你 §6 选的路径
 npm install
 npm test          # 预期：33 项全过
 ```
 
-如果 `npm test` 没全过，环境出问题了，先解决再继续。
+如果 `npm test` 没全过，环境出问题了，先解决再继续（Node ≥ 18，`node -v` 检查）。
+
+接下来在你的 harness 里发一条冒烟测试消息，验证 SKILL.md 真的被加载（每种 harness 的具体提示词见 [install-by-harness.md](./references/install-by-harness.md)）。看到第一行 `📐 design-to-spec 启动` 就说明接入成功。
 
 ---
 
-## 7. 第一次跑
+## 8. 第一次跑
 
 用内置的 `today-windvane` sample 跑一遍，看看产出长什么样：
 
@@ -112,28 +148,35 @@ node scripts/generate-output.js \
 | `../samples/search-panel/` | GET + 列表 | 主导 binding 是 `api_to_ui`；状态机焦点在数据获取 + abort + retry |
 | `../samples/feedback-form/` | POST + 表单 | 主导 binding 是 `ui_to_api`；多字段双层校验；request_body / element-scoped invalid 状态 |
 
+**想看真实对话长什么样？** [`examples/transcript-search-panel.md`](./examples/transcript-search-panel.md) 是一份完整对话录——基于 search-panel sample 反向整理，包含用户漏识别后的纠错、阶段三补埋点、阶段四自动生成全过程。比 walkthrough（推导视角）更接近你实际会看到的会话。
+
 看完心里有数后，再用自己的设计稿跑一次（去 [operator-guide](./references/operator-guide.md) §1 找最简指令）。
 
 ---
 
-## 8. 下一步去哪
+## 9. 下一步去哪
 
 按你现在想做的事选：
 
 | 我现在想…… | 去读 |
 |---|---|
 | 真的拿一个自己的设计稿跑一次 | [operator-guide.md §1 五分钟最小例子](./references/operator-guide.md) |
+| 看一份真实对话长什么样（照抄就行）| [examples/transcript-search-panel.md](./examples/transcript-search-panel.md) |
+| 把 skill 接进我用的 IDE / harness | [references/install-by-harness.md](./references/install-by-harness.md) |
 | 多张设计稿 / 多个页面怎么处理 | [operator-guide.md §2 多视觉稿场景](./references/operator-guide.md) |
 | 没接口文档 / 接口未定 | [operator-guide.md §4 没有接口文档怎么办](./references/operator-guide.md) |
 | context 不够用了 | [operator-guide.md §3](./references/operator-guide.md) |
 | 多组件项目怎么做不漂移 | [operator-guide.md §5 跨组件复用](./references/operator-guide.md) |
 | 字段含义、契约约束、校验规则 | [references/contracts.md](./references/contracts.md) |
+| 跑不通 / 看到报错 | [references/troubleshooting.md](./references/troubleshooting.md)（按症状 grep） |
+| 看到生词 / 不懂的术语 | [references/glossary.md](./references/glossary.md)（一句话定义 + 例子） |
+| 把 skill 接入项目级配置 | [templates/agents-snippet.md](./templates/agents-snippet.md) / [templates/claude-md-snippet.md](./templates/claude-md-snippet.md) |
 | 工具的工作原理和 4 阶段架构 | [SKILL.md](./SKILL.md) |
 | 这工具未来还会做什么 | [docs/roadmap.md](./docs/roadmap.md) |
 
 ---
 
-## 9. 常见疑问
+## 10. 常见疑问
 
 **Q：没接口文档行不行？**
 行。阶段二可以跳过或写"预期接口"，缺失字段会自动进 `api.open_questions`，等接口出来后改 YAML 重跑即可。详见 [operator-guide §4](./references/operator-guide.md)，可参考 `examples/price-card/`（props-only 纯展示组件，`api.endpoints: []`）。

@@ -2,10 +2,16 @@
 
 > 将 UI 设计稿和接口文档转换成结构化规格包，让后续 AI 或开发者稳定实现。
 
-**当前版本**：`0.10.0`
+**当前版本**：`0.10.1`
 
-> **第一次来？** 先读 [ONBOARDING.md](ONBOARDING.md)（3 分钟决定要不要用 + 30 秒安装 + 第一次跑通）。
+![架构总览](docs/architecture.svg)
+
+> **第一次来？** 先读 [ONBOARDING.md](ONBOARDING.md)（3 分钟决定要不要用 + 接入到项目 + 第一次跑通）。
+> **想直接看一份真实对话长什么样？** 读 [examples/transcript-search-panel.md](examples/transcript-search-panel.md)（用户视角的完整 4 阶段对话回放）。
+> **要把 skill 接进 Claude Code / OpenCode / Cursor 等？** 读 [references/install-by-harness.md](references/install-by-harness.md)（兼容性矩阵 + 每种 harness 的安装命令和冒烟测试）。
 > **要拿真实设计稿动手？** 读 [references/operator-guide.md](references/operator-guide.md)（零基础操作手册，含多视觉稿、context 受限、跨组件复用等实战策略）。
+> **跑不通 / 看到生词？** 直接查 [references/troubleshooting.md](references/troubleshooting.md)（按症状 grep）和 [references/glossary.md](references/glossary.md)（术语速查）。
+> **要把 skill 接入项目级配置？** 复制 [templates/agents-snippet.md](templates/agents-snippet.md) 或 [templates/claude-md-snippet.md](templates/claude-md-snippet.md) 到项目根。
 > 本 README 偏参考手册，原理与校验规则为主。
 
 `design-to-spec` 采用四阶段状态机：视觉提纯、接口提纯、逻辑映射、规格组装。前三阶段分别生成 YAML 契约，第四阶段只读取契约机械填充模板，不重新看图或重新推断接口。

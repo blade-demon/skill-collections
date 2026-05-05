@@ -1,0 +1,266 @@
+# 故障排查手册
+
+> 卡住时直接 grep 这份文档。每条故障按「症状 → 原因 → 解决命令 / 修复路径」三栏组织。
+>
+> **找不到症状？** 先用 `node scripts/validate-contracts.js …` 或 `node scripts/validate-output.js --strict …` 跑一遍，把首行错误粘到这里搜。
+
+---
+
+## 1. 安装与环境
+
+### 1.1 `npm test` 失败：`Cannot find module 'js-yaml'`
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 跑 `npm test` 报 `Cannot find module 'js-yaml'` 或类似 ESM import 错误 |
+| 原因 | 没装依赖，或在错误目录跑 |
+| 解决 | `cd design-to-spec && npm install`（仓库根的 `npm install` 也可，已配 workspaces） |
+
+### 1.2 `node` 报 `SyntaxError: Cannot use import statement outside a module`
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 直接跑 `scripts/*.js` 报语法错误 |
+| 原因 | Node 版本 < 18，不支持 `package.json` 的 `"type": "module"` ESM 模式 |
+| 解决 | `node --version` 确认 ≥ 18；nvm 用户：`nvm install 18 && nvm use 18` |
+
+### 1.3 `npm test` 在 Windows 上找不到测试
+
+| 项 | 内容 |
+|---|---|
+| 症状 | `node --test scripts/tests/*.test.js` 在 Windows 报 `*` 未展开 |
+| 原因 | Windows cmd 不展开 glob |
+| 解决 | 用 PowerShell / Git Bash / WSL；或在 `package.json` 把 `test` 改成显式列出：`node --test scripts/tests/generate-output.test.js scripts/tests/...` |
+
+---
+
+## 2. 阶段一：视觉提纯报错
+
+### 2.1 漏掉了某个组件
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段一确认时发现 ASCII 图表里少了某个元素 |
+| 原因 | 图片复杂度高、元素被遮挡或对比度低 |
+| 解决 | 直接回复：`还有 [位置] 的 [组件类型]，比如"右上角的关闭按钮 Icon"`。skill 会增量更新 `ui-schema` 后重新展示 |
+
+### 2.2 ASCII 图表里出现奇怪字符
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 图表里出现 `├──`、`└──` 之类的 Unicode 框线字符 |
+| 原因 | 旧版 skill 使用 Mermaid / Unicode；当前版本只能用 ASCII（`\|--`、`` `-- ``） |
+| 解决 | 升级到 0.10+；或回复 `请用纯 ASCII 字符重画`。详见 SKILL.md §阶段一 展示规则 |
+
+### 2.3 多张图被当作多个独立组件
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 你传了 4 张同组件不同状态的图，skill 在 `ui.components` 里建了 4 个根容器 |
+| 原因 | 第一条消息没说明每张图代表什么 |
+| 解决 | 回复 `这 4 张是同组件的 success / loading / empty / error 状态，请合并到 states[]`，skill 会重写 ui-schema。下次开新会话时一开始就声明，参考 `operator-guide.md §2.3` |
+
+---
+
+## 3. 阶段二：接口提纯报错
+
+### 3.1 提取了一堆我不需要的字段
+
+| 项 | 内容 |
+|---|---|
+| 症状 | API_Schema 出来的 `response_fields` 比 UI 实际消费的多很多 |
+| 原因 | 接口文档有大量字段、skill 没做足够的 UI ↔ API diff |
+| 解决 | 回复 `只保留 [字段A / 字段B / 字段C]，其余删除`。skill 会重写 api-schema |
+
+### 3.2 枚举值不全 / 标了 `[UNKNOWN]`
+
+| 项 | 内容 |
+|---|---|
+| 症状 | `enums: [UNKNOWN]`，对应 `api.open_questions` 多了一条 P0/P1 |
+| 原因 | 接口文档里没列全枚举（这是正常的，不是错误） |
+| 解决 | 找后端确认枚举完整列表 → 直接编辑 `contracts/api-schema.yaml` 把 `[UNKNOWN]` 替换成实际值，删除对应 open_question，重跑 `generate-output.js` |
+
+### 3.3 没接口文档但 skill 一直问
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段二 skill 反复问"请粘贴接口文档" |
+| 原因 | 没明确告知"这是纯展示组件" |
+| 解决 | 回复 `这是纯展示组件，数据全由父组件传入，请把 api.endpoints 设为空并继续`。参考 `examples/price-card/`（props-only 全链路示例） |
+
+---
+
+## 4. 阶段三：逻辑映射报错
+
+### 4.1 状态机缺一条转换
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段三确认时发现 `state_machine` 缺了某条转换（例：缺一个分页边界） |
+| 原因 | 阶段三的自然语言描述不够具体 |
+| 解决 | 回复 `还有一种情况：data.results.length > 100 时显示"加载更多"按钮，状态进入 success_with_pagination` |
+
+### 4.2 binding 引用了不存在的字段
+
+| 项 | 内容 |
+|---|---|
+| 症状 | `validate-contracts.js` 报 `binding[2].source_api 'data.foo' not found in any endpoint` |
+| 原因 | mapping-logic 里写的字段名不在 api-schema 的 `response_fields` 中 |
+| 解决 | ① 检查 api-schema 是否漏了该字段；② 检查 mapping-logic 里字段名拼写。两份文件的字段名必须**逐字一致**（含点号路径） |
+
+---
+
+## 5. 阶段四：脚本报错
+
+### 5.1 `validate-contracts.js` 报 `required state X is missing render_assertion`
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 校验失败，指出某个 `required: true` 状态缺 `render_assertion` |
+| 原因 | UI_Schema 该 state 没填 render_assertion，且 mapping-logic 的 state_machine 也没给它定义可断言结果 |
+| 解决 | 二选一：① 在 `contracts/ui-schema.yaml` 的 state 下补 `render_assertion: "renders .empty-state"`；② 在 `contracts/mapping-logic.yaml` 对应转换补 `render_assertion`。任一处填好即可 |
+
+### 5.2 `validate-output.js --strict` 报 trace 锚点缺失
+
+| 项 | 内容 |
+|---|---|
+| 症状 | `state:<id> trace missing in spec.md` 或 `request:<id> trace missing in data-fetching.md` |
+| 原因 | 润色 markdown 时把 `<!-- trace: state:loading -->` 之类的注释删掉了 |
+| 解决 | 找到对应章节加回锚点；或重跑 `generate-output.js` 重生成基线后**只改文案**不改 trace 行 |
+
+### 5.3 `validate-output.js` warning：开放问题改写后弱匹配
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 非 `--strict` 模式输出 warning："open question id `oq1` not found in notes.md" |
+| 原因 | 你在 notes.md 里把 P0 问题的措辞改了，但没保留 `oq1` 的 id 锚点 |
+| 解决 | 在 notes.md 「开放问题」节每条前面保留 `[oq1]` 之类的 id 标记；或加 `--strict` 让 warning 升级成错误，强制规范 |
+
+### 5.4 `generate-output.js` 报 `mapping.component != ui.name`
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 校验失败，指出 mapping-logic 的 `component` 和 ui-schema 的 `ui.name` 不一致 |
+| 原因 | 两份契约的组件名字段写错或大小写不同 |
+| 解决 | 统一为 PascalCase 组件名；优先以 `ui.name` 为准修改 mapping-logic |
+
+### 5.5 生成的 `spec.md` 里 `THEN` 子句空泛 / 是「正确显示」
+
+| 项 | 内容 |
+|---|---|
+| 症状 | Scenario 的 `THEN` 写着「应正确显示」「优雅降级」 |
+| 原因 | UI_Schema 和 Mapping_Logic 两处都没写 `render_assertion`，触发了 `needs_human_input` 占位 Scenario |
+| 解决 | 在对应 state 补 `render_assertion: "renders .empty-state"`，重跑 generate-output。**不要手动改 spec.md** —— 它会被下次生成覆盖 |
+
+---
+
+## 6. YAML 生成失败
+
+### 6.1 LLM 输出的 YAML 解析失败
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段一/二/三 skill 生成 YAML 后，校验报 `YAMLException: bad indentation` |
+| 原因 | 模型偶发幻觉 / 缩进混用 tab+space |
+| 解决 | skill 内置 2 次自动重试。第 3 次失败后 skill 会主动让你用自然语言描述：「组件名 / 主要交互 / 接口字段」三项 |
+
+### 6.2 连续 2 次 YAML 重试都失败
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 看到提示「⚠️ YAML 生成连续失败，请用自然语言描述」 |
+| 原因 | 上下文超长 / 模型温度过高 / 输入图片描述歧义大 |
+| 解决 | 按提示用自然语言重新描述；或开新会话减少 context；或换更稳定的模型（Sonnet 4.5+） |
+
+---
+
+## 7. Context 紧张
+
+### 7.1 收到 "context 不足，已停止生成"
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段四中途停止，提示「已停止生成。三份契约已落盘」 |
+| 原因 | 触发了 SKILL.md §4.5 的 < 10K 安全网 |
+| 解决 | 开新会话，发：`design-spec/<组件名>/contracts/ 目录已有三份契约，请从阶段四接续`。skill 会跳过前三阶段直接读契约 |
+
+### 7.2 阶段一就告警 context 不够
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 第一阶段就触发 < 30K 门控 |
+| 原因 | 设计稿图片太多 / 项目 CLAUDE.md / AGENTS.md 太长 / 历史 context 没清 |
+| 解决 | ① 拆成多次会话，每次只跑一个 UI 单元；② 精简 AGENTS.md（用 `templates/agents-snippet.md` 的最小版本）；③ 换更大窗口模型 |
+
+---
+
+## 8. 跨组件 / 多次复跑
+
+### 8.1 第二个组件的字段名和第一个不一致
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 同一接口字段，组件 A 写 `data.userId`，组件 B 写 `data.user_id` |
+| 原因 | 不同会话独立分析接口文档，未共享术语表 |
+| 解决 | 把第一个组件的 `contracts/api-schema.yaml` 作为后续组件阶段二的输入参考；或维护项目级术语表（参考 operator-guide §5.5） |
+
+### 8.2 改了 contracts/yaml 但 markdown 没更新
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 直接编辑了 `contracts/*.yaml`，但 `notes.md` / `spec.md` 还是旧的 |
+| 原因 | 没重跑生成脚本 |
+| 解决 | `node design-to-spec/scripts/generate-output.js --ui … --api … --mapping … --out-dir …`。**契约是事实源，markdown 是产物，永远从契约改** |
+
+---
+
+## 9. 触发不到 skill
+
+### 9.1 Claude Code / OpenCode 里 skill 不被调用
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 发送「帮我把这个设计稿做成规格」，模型直接开始描述图片，没进入四阶段流程 |
+| 原因 | skill 没安装到位 / description 不匹配 / harness 没启用 skills |
+| 解决 | ① 确认 SKILL.md 在 harness 识别的 skills 目录中（Claude Code: `~/.claude/skills/` 或项目 `.claude/skills/`）；② 发送的提示中包含「设计稿 / mockup / wireframe / 规格 / OpenSpec / 组件分解」等触发词；③ 检查 harness 是否启用了 skills 功能 |
+
+### 9.2 skill 进入了，但跳过了 ASCII 图表预览
+
+| 项 | 内容 |
+|---|---|
+| 症状 | 阶段一直接给 YAML，没给确认摘要 |
+| 原因 | 模型没遵循"先输出确认 Markdown"的指令 |
+| 解决 | 回复 `请按 SKILL.md §阶段一 展示规则，先给 ASCII 图表 + 组件清单确认`。这是稳定提示，下次会跑通 |
+
+---
+
+## 10. 实在排查不出来：最小复现
+
+如果以上都不匹配，按这个流程做最小复现：
+
+1. 跑内置 sample 看是否正常：
+   ```bash
+   node scripts/generate-output.js \
+     --ui examples/today-windvane/contracts/ui-schema.yaml \
+     --api examples/today-windvane/contracts/api-schema.yaml \
+     --mapping examples/today-windvane/contracts/mapping-logic.yaml \
+     --out-dir /tmp/d2s-smoke
+   ```
+   - sample 跑不通 → 环境问题，回 §1
+   - sample 能跑 → 你的契约有问题，跳到下一步
+
+2. 把你的三份 yaml 单独丢给 validate：
+   ```bash
+   node scripts/validate-contracts.js --ui … --api … --mapping … 2>&1 | head -20
+   ```
+   把首行错误信息粘到本文档 grep。
+
+3. 仍无解 → 提 issue 时附：① Node 版本；② skill 版本（`SKILL.md` frontmatter 的 `version`）；③ 三份 contracts/yaml；④ 完整报错（不是截图，是文本）。
+
+---
+
+## 相关文档
+
+- `references/contracts.md` — 字段语义、约束、`needs_human_input` vs `open_questions` 区别
+- `references/operator-guide.md` — 真实场景操作策略（多视觉稿、context 受限、跨组件复用）
+- `SKILL.md §错误处理与重试` — skill 内部的运行时容错策略
