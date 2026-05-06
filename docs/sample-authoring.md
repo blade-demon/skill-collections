@@ -1,14 +1,14 @@
 # Authoring a New Sample
 
-> How to go from "I have a UI unit I want to demonstrate" to a complete `samples/<name>/` directory that other people can read, run, and learn from.
+> How to go from "I have a UI unit I want to demonstrate" to a complete `samples/<skill-name>/<sample-name>/` directory that other people can read, run, and learn from.
 
-This guide assumes you've read [`repo-workflow.md`](./repo-workflow.md) and understand the difference between **golden regression samples** (in `design-to-spec/examples/`) and **hands-on samples** (in `samples/`). This guide is only about the latter.
+This guide assumes you've read [`repo-workflow.md`](./repo-workflow.md) and understand the difference between **golden regression samples** (for example `skills/design-to-spec/examples/`) and **hands-on samples** (for example `samples/design-to-spec/search-panel/`). This guide is only about the latter.
 
 ---
 
 ## 1. Decide whether a new sample is warranted
 
-Before adding `samples/<name>/`, answer:
+Before adding `samples/<skill-name>/<sample-name>/`, answer:
 
 - **Is it a different shape from existing samples?** Existing: `search-panel` (input + submit + result list). A new sample is justified if it exercises something the existing ones do not, e.g.:
   - Different binding direction emphasis (props-only, ui_to_event-heavy, ui_to_api-heavy)
@@ -30,7 +30,7 @@ Reject reasons (don't ship the sample):
 Every sample has exactly this structure:
 
 ```
-samples/<sample-name>/
+samples/<skill-name>/<sample-name>/
 ├── README.md           # 1-page: what's the goal, what does it teach, how to run
 ├── package.json        # Workspace member; declare deps, build/lint scripts
 ├── inputs/             # Raw materials (immutable once committed)
@@ -86,7 +86,7 @@ This is where most reader value comes from. Specifically:
 ### `design.svg` (or `design.png`)
 
 - Show **all states** in one image (success / loading / empty / error / partial / disabled — whichever apply).
-- Use the same visual style as `design-to-spec/examples/today-windvane/input.svg` for consistency:
+- Use the same visual style as `skills/design-to-spec/examples/today-windvane/input.svg` for consistency:
   - Background `#F4F5F7`
   - Card background `#FFFFFF`, stroke `#E5E6EB`, `rx="12"`
   - Primary text `#1D2129`, secondary `#86909C`
@@ -123,25 +123,25 @@ After `inputs/` is ready:
 
 ```bash
 # From the repo root
-cd samples/<sample-name>
+cd samples/design-to-spec/<sample-name>
 
 # (Manually walk through the four-stage skill flow with an LLM session.
-#  See design-to-spec/ONBOARDING.md §7 for the command form.)
+#  See skills/design-to-spec/ONBOARDING.md §7 for the command form.)
 
 # After the LLM has written contracts/*.yaml, generate the markdown:
-node ../../design-to-spec/scripts/generate-output.js \
+node ../../../skills/design-to-spec/scripts/generate-output.js \
   --ui design-spec/<unit>/contracts/ui-schema.yaml \
   --api design-spec/<unit>/contracts/api-schema.yaml \
   --mapping design-spec/<unit>/contracts/mapping-logic.yaml \
   --out-dir design-spec/<unit>
 
 # Validate
-node ../../design-to-spec/scripts/validate-contracts.js \
+node ../../../skills/design-to-spec/scripts/validate-contracts.js \
   --ui design-spec/<unit>/contracts/ui-schema.yaml \
   --api design-spec/<unit>/contracts/api-schema.yaml \
   --mapping design-spec/<unit>/contracts/mapping-logic.yaml
 
-node ../../design-to-spec/scripts/validate-output.js --strict \
+node ../../../skills/design-to-spec/scripts/validate-output.js --strict \
   --ui design-spec/<unit>/contracts/ui-schema.yaml \
   --api design-spec/<unit>/contracts/api-schema.yaml \
   --mapping design-spec/<unit>/contracts/mapping-logic.yaml \
@@ -198,7 +198,7 @@ Notes / surprises:
 - [P1] ...
 ```
 
-If the sample exposes a real skill-level gap (like `price-card` did with the missing `props_to_ui` direction), highlight it in walkthrough.md and add it to `design-to-spec/docs/future-tracking-stage.md` or open an issue.
+If the sample exposes a real skill-level gap (like `price-card` did with the missing `props_to_ui` direction), highlight it in walkthrough.md and add it to `skills/design-to-spec/references/future-tracking-stage.md` or open an issue.
 
 ---
 
@@ -221,7 +221,7 @@ Tooling choice for `src/`:
 
 ## 8. Sample-level test (optional)
 
-If your sample exposes a skill-level invariant worth pinning, add a test under `design-to-spec/scripts/tests/`. Pattern: see `scripts/tests/price-card.test.js`.
+If your sample exposes a skill-level invariant worth pinning, add a test under `skills/design-to-spec/scripts/tests/`. Pattern: see `skills/design-to-spec/scripts/tests/price-card.test.js`.
 
 Don't add per-sample tests for the implementation itself unless the sample is specifically about testing patterns.
 
@@ -235,7 +235,7 @@ Before opening a PR for a new sample:
 - [ ] `design-spec/` exists and validates clean
 - [ ] `src/` builds (if it has a build) and runs locally
 - [ ] `walkthrough.md` is written and ≤ 200 lines
-- [ ] `samples/<name>/README.md` explains the goal in 1 paragraph
+- [ ] `samples/<skill-name>/<sample-name>/README.md` explains the goal in 1 paragraph
 - [ ] Top-level `npm run check` passes
 - [ ] Either added a regression test or documented why none was needed
 - [ ] No proprietary content, no copyrighted images, no real customer data

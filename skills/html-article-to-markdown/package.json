@@ -1,0 +1,45 @@
+{
+  "name": "html-article-to-markdown",
+  "version": "0.1.0",
+  "description": "Convert saved HTML article packages into self-contained Markdown with local image assets.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "keywords": [
+    "markdown",
+    "html",
+    "article",
+    "wechat",
+    "images",
+    "codex-skill"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "tests",
+    "assets",
+    "logo.png",
+    "SKILL.md",
+    "README.md",
+    "CHANGELOG.md",
+    "agents",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "npm run build && node --test \"dist/tests/*.test.js\"",
+    "convert": "npm run build --silent && node dist/bin/html-article-to-markdown.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,7 @@
+interface:
+  display_name: "HTML Article to Markdown"
+  short_description: "Convert saved HTML articles into polished Markdown"
+  icon_large: "../logo.png"
+  default_prompt: "Use $html-article-to-markdown to convert this saved HTML article folder into shareable Markdown, copy usable assets, fix image references, and verify the output."
+policy:
+  allow_implicit_invocation: true

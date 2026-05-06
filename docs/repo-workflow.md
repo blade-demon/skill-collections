@@ -1,30 +1,108 @@
 # Repo Workflow
 
-This file explains how `skill-collections` is organized and how skill development, sample authoring, and validation fit together.
+This file explains how `skill-collections` is organized and how skill development, sample authoring, fixtures, and validation fit together.
 
-> **Audience**: contributors / maintainers. End users who only want to use the skill should start at [`design-to-spec/ONBOARDING.md`](../design-to-spec/ONBOARDING.md).
+> **Audience**: contributors / maintainers. End users who only want to use a skill should start at the relevant skill README or onboarding guide.
 
 ---
 
-## 1. Two kinds of "examples"
+## 1. Repo layout
+
+```
+skill-collections/
+├── README.md                       # Top-level orientation
+├── package.json                    # npm workspace declaration
+├── package-lock.json               # Root workspace lockfile
+├── .gitignore                      # Shared local/build artifact ignores
+│
+├── skills/                         # Installable/copyable skills
+│   ├── design-to-spec/
+│   │   ├── SKILL.md
+│   │   ├── ONBOARDING.md
+│   │   ├── README.md
+│   │   ├── CHANGELOG.md
+│   │   ├── package.json            # js-yaml + node:test
+│   │   ├── agents/
+│   │   ├── assets/
+│   │   ├── scripts/                # validate-contracts / generate-output / validate-output
+│   │   ├── schemas/
+│   │   ├── templates/
+│   │   ├── references/
+│   │   └── examples/               # Golden regression samples
+│   └── html-article-to-markdown/
+│       ├── SKILL.md
+│       ├── README.md
+│       ├── CHANGELOG.md
+│       ├── package.json
+│       ├── agents/
+│       ├── assets/
+│       ├── bin/
+│       ├── src/
+│       ├── tests/
+│       └── tools/
+│
+├── samples/                        # Hands-on workspaces grouped by skill
+│   └── design-to-spec/
+│       ├── search-panel/
+│       └── feedback-form/
+│
+├── fixtures/                       # Shared test/demo app fixtures
+└── docs/                           # Top-level cross-cutting documentation
+    ├── repo-workflow.md
+    └── sample-authoring.md
+```
+
+The top-level split is intentional:
+
+- `skills/<skill-name>/` contains a skill that can be installed, copied, tested, and versioned as a coherent unit.
+- `samples/<skill-name>/<sample-name>/` contains hands-on workspaces that demonstrate a specific skill against realistic inputs.
+- `fixtures/` contains reusable app fixtures used for testing or demonstrations, not skill source.
+- `docs/` contains repo-level policy and contributor guides only.
+
+---
+
+## 2. Skill directory contract
+
+Each skill should keep its own human docs, runtime code, tests, and assets together:
+
+```
+skills/<skill-name>/
+├── SKILL.md          # Skill definition loaded by agent harnesses
+├── README.md         # Human entry point
+├── CHANGELOG.md      # Version history
+├── agents/           # Agent/harness configuration
+├── assets/           # Icons, previews, screenshots
+├── src/ or scripts/  # Core implementation
+├── schemas/          # JSON Schema or equivalent contracts, if applicable
+├── templates/        # Output templates, if applicable
+├── references/       # Long-form reference docs loaded on demand
+├── examples/         # Golden samples / regression fixtures, if applicable
+└── tests/            # Automated test suite, if applicable
+```
+
+Not every skill needs every folder. Add a folder only when the skill actually has that kind of artifact.
+
+---
+
+## 3. Two kinds of design-to-spec examples
 
 The repo deliberately separates two concepts that are easy to conflate:
 
 | | Golden regression samples | Hands-on samples |
 |---|---|---|
-| **Lives in** | `design-to-spec/examples/` | `samples/` |
-| **Purpose** | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs → spec → implementation workflow |
+| **Lives in** | `skills/design-to-spec/examples/` | `samples/design-to-spec/<name>/` |
+| **Purpose** | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
 | **Audience** | The skill's own tests | Skill users / reviewers / readers |
-| **Owned by** | `design-to-spec` maintainers | Sample authors (everyone) |
-| **Editable?** | No (test scripts assert byte-equal output) | Yes; samples evolve over time |
-| **Contains** | Just `contracts/` + generated markdown | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
+| **Owned by** | `design-to-spec` maintainers | Sample authors |
+| **Editable?** | No; test scripts assert exact output | Yes; samples evolve over time |
+| **Contains** | Contracts + generated markdown | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
 | **Failure means** | The skill regressed | The sample drifted from its spec |
 
 Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
 
 ---
 
-## 2. The flow a hands-on sample exercises
+## 4. The hands-on sample flow
 
 ```
 ┌──────────────────────────┐
@@ -41,7 +119,7 @@ Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
                │
                ▼
 ┌──────────────────────────┐
-│  design-spec/<unit>/     │   skill output (deterministic)
+│  design-spec/<unit>/     │   skill output
 │  ├── contracts/*.yaml    │
 │  ├── notes.md            │
 │  ├── data-fetching.md    │
@@ -50,71 +128,34 @@ Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
              │
              ▼
 ┌──────────────────────────┐
-│  src/                    │   implementation, only consumes
-│  ├── index.html          │   design-spec/ — never re-reads
-│  ├── main.js             │   inputs/ directly
+│  src/                    │   implementation
+│  ├── index.html          │   consumes design-spec/
+│  ├── main.js             │   never reads inputs/ directly
 │  └── style.css           │
 └──────────────────────────┘
 ```
 
-`walkthrough.md` is the **narrative layer** glueing these stages together: what each stage looked like, what choices were made, what `open_questions` remained.
+`walkthrough.md` is the narrative layer gluing these stages together: what each stage looked like, what choices were made, and what `open_questions` remained.
 
 ---
 
-## 3. Repo layout
+## 5. Common operations
 
-```
-skill-collections/
-├── README.md                       # Top-level orientation
-├── package.json                    # npm workspaces declaration
-├── .gitignore                      # Includes node_modules / dist / .vite etc.
-│
-├── design-to-spec/                 # The skill (workspace 1)
-│   ├── SKILL.md
-│   ├── ONBOARDING.md
-│   ├── README.md
-│   ├── CHANGELOG.md
-│   ├── package.json                # js-yaml + node:test
-│   ├── scripts/                    # validate-contracts / generate-output / validate-output
-│   ├── schemas/                    # JSON Schema for the three contracts
-│   ├── templates/                  # YAML + markdown templates
-│   ├── references/                 # Operator guide, contracts reference
-│   ├── docs/                       # Skill-internal: roadmap, frozen tracking design
-│   └── examples/                   # GOLDEN REGRESSION SAMPLES (today-windvane, price-card)
-│
-├── samples/                        # Hands-on workspaces (workspace 2..N)
-│   └── search-panel/
-│       ├── README.md               # What this sample teaches
-│       ├── package.json            # Per-sample build/lint scripts
-│       ├── inputs/                 # Raw material (designs, API doc, interaction notes)
-│       ├── design-spec/            # Generated by running the skill
-│       ├── src/                    # Implementation built from design-spec/
-│       └── walkthrough.md          # Process narrative
-│
-└── docs/                           # Top-level (cross-cutting) documentation
-    ├── repo-workflow.md            # This file
-    └── sample-authoring.md         # How to add a new sample
-```
-
----
-
-## 4. Common operations
-
-### Run the skill's regression suite
+### Run skill tests
 
 ```bash
-npm run test:skill
+npm run test:skills
 ```
 
-Runs `node --test` inside `design-to-spec/`. Should always be green on `master`. Currently 38 tests covering happy-path golden output + 24 error-detection cases.
+Runs the current skill test suites from the repo root. `npm run test:skill` is kept as a compatibility alias.
 
-### Build all samples that have a build script
+### Build all samples
 
 ```bash
 npm run build:samples
 ```
 
-`--workspaces --if-present` means a sample without `build` is silently skipped.
+Runs sample builds for the workspaces under `samples/<skill>/<sample>/`.
 
 ### Pre-merge full check
 
@@ -122,45 +163,39 @@ npm run build:samples
 npm run check
 ```
 
-Runs in order: skill tests → sample lints → sample builds. Fail-fast.
+Runs in order: skill tests -> sample lints -> sample builds. Fail fast.
 
 ### Work on a single sample
 
 ```bash
-cd samples/search-panel
-npm install     # samples have their own dependencies
-npm run dev     # if defined; e.g. vite dev server
+cd samples/design-to-spec/search-panel
+npm install
+npm run dev
 ```
 
 ---
 
-## 5. Adding a new skill (future)
+## 6. Runtime and lockfile policy
 
-When a second skill is added, the directory layout becomes:
-
-```
-skill-collections/
-├── design-to-spec/        ← move to skills/design-to-spec/ at this point
-├── new-skill/             ← move to skills/new-skill/
-├── samples/
-└── docs/
-```
-
-The `skills/` namespace is **deferred** until that day. Doing it preemptively means ~30 doc-link rewrites for zero current benefit. See [`design-to-spec/docs/roadmap.md`](../design-to-spec/docs/roadmap.md) §V0.15 for the rationale.
+- The root workspace uses Node.js >= 20 because `skills/html-article-to-markdown` requires Node 20.
+- Individual skills may declare a lower compatible engine when they can run standalone, such as `skills/design-to-spec` requiring Node >= 18.
+- Keep the root `package-lock.json` for workspace development.
+- Keep per-skill `package-lock.json` files when the skill is intended to be copied or installed standalone.
+- Do not commit `node_modules/`, `dist/`, `.vite/`, build outputs, or nested `.git/` directories.
 
 ---
 
-## 6. Adding tooling (future)
+## 7. Adding tooling later
 
-Two folders that **don't exist yet** but might:
+Two folders that don't exist yet but might:
 
-- `tools/` — repo-level scripts that operate across multiple samples (e.g. `new-sample.mjs` generator). Create only when ≥ 3 samples exist and obvious shared automation appears.
-- `packages/` — extracted shared code. Create only when 2+ samples actually share code; otherwise duplication is fine.
+- `tools/` - repo-level scripts that operate across multiple skills or samples, such as a `new-sample.mjs` generator.
+- `packages/` - extracted shared code used by multiple skills or samples.
 
-Both are explicitly **not built up front** to avoid YAGNI.
+Create either only after the duplication is real. Until then, local code inside each skill is easier to reason about.
 
 ---
 
-## 7. CI
+## 8. CI
 
-Currently no GitHub Actions workflow. Per [roadmap](../design-to-spec/docs/roadmap.md), CI is deferred until either ≥ 3 contributors regularly push or `master` gets broken by an unreviewed merge. For now, `npm run check` locally before pushing is the discipline.
+There is currently no GitHub Actions workflow. For now, run `npm run check` locally before pushing. If multiple contributors start pushing regularly or `main` is broken by unverified merges, promote the local check into CI.
