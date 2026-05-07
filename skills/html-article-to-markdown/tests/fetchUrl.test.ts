@@ -47,6 +47,11 @@ test("--wait-mode flag is captured", () => {
   assert.equal(result.waitMode, true);
 });
 
+test("--embed-images-base64 flag is captured", () => {
+  const result = parseArgs(["--url", "https://x.com", "--out-dir", "o", "--embed-images-base64"]);
+  assert.equal(result.options.embedImagesBase64, true);
+});
+
 test("invalid --fetch-timeout rejects", () => {
   assert.throws(
     () => parseArgs(["--url", "https://x.com", "--out-dir", "o", "--fetch-timeout", "abc"]),

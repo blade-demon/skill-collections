@@ -5,6 +5,7 @@ export function formatVerification(report: VerificationReport): string {
     "verification:",
     `  raw_dependencies: ${report.rawDependencies.length}`,
     `  local_images: ${report.localImages}`,
+    `  embedded_images: ${report.embeddedImages}`,
     `  remote_images: ${report.remoteImages}`,
     `  missing_local_images: ${report.missingLocalImages.length}`,
   ];

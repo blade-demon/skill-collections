@@ -97,6 +97,29 @@ test("buildMarkdown copies local images with byte-derived extensions", async () 
   await readFile(join(root, "out", "assets", "sample", "01-diagram.png"));
 });
 
+test("buildMarkdown can embed local images as base64 data URLs", async () => {
+  const root = await createTempRoot();
+  const assetRoot = join(root, "article_files");
+  const imageData = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(16)]);
+  await mkdir(assetRoot);
+  await writeFile(join(assetRoot, "image"), imageData);
+  const htmlPath = await writeArticle(root, '<img alt="Diagram" src="article_files/image">');
+
+  const outFile = await buildMarkdown({
+    htmlPath,
+    outDir: join(root, "out"),
+    assetSlug: "sample",
+    bodyId: "js_content",
+    dropFooterPromo: false,
+    embedImagesBase64: true,
+  });
+
+  const markdown = await readFile(outFile, "utf8");
+  assert.ok(markdown.includes(`![Diagram](data:image/png;base64,${imageData.toString("base64")})`));
+  assert.doesNotMatch(markdown, /assets\/sample/);
+  await assert.rejects(() => readFile(join(root, "out", "assets", "sample", "01-diagram.png")));
+});
+
 test("buildMarkdown can preserve explicit image display size with HTML img output", async () => {
   const root = await createTempRoot();
   const assetRoot = join(root, "article_files");

@@ -9,6 +9,7 @@ export interface ConvertOptions {
   localizeRemoteImages?: boolean;
   screenshotOnDownloadFail?: boolean;
   allowRemoteImages?: boolean;
+  embedImagesBase64?: boolean;
   preserveImageSize?: boolean;
   imageTimeoutMs?: number;
   screenshotter?: Screenshotter;

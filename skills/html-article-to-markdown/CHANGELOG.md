@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 - 2026-05-07
+
+### Features
+- Add `--embed-images-base64` to embed recovered local, remote, and screenshot fallback images directly in Markdown.
+- Add `embedded_images` verification reporting and allow intentional data images when base64 embedding is enabled.
+
+### Documentation
+- Document base64 image embedding for both local HTML and remote URL conversion modes.
+- Add a feature image for inline base64 output and refresh verification artwork with the new embedded image metric.
+
 ## 0.2.0 - 2026-05-06
 
 ### Features

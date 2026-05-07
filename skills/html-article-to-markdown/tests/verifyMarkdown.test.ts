@@ -42,6 +42,24 @@ test("remote images are verification errors unless explicitly allowed", async ()
   assert.equal(hasVerificationErrors(report, { allowRemoteImages: true }), false);
 });
 
+test("embedded base64 images are verification errors unless explicitly allowed", async () => {
+  const root = await mkdtemp(join(tmpdir(), "html-article-verify-"));
+  const mdPath = join(root, "article.md");
+  await writeFile(
+    mdPath,
+    "![embedded](data:image/png;base64,QUJD)\n" + '<img src="data:image/png;base64,REVG" alt="inline">\n',
+    "utf8",
+  );
+
+  const report = await verifyMarkdown(mdPath);
+
+  assert.equal(report.embeddedImages, 2);
+  assert.deepEqual(report.rawDependencies, []);
+  assert.equal(hasVerificationErrors(report, { allowRemoteImages: false }), true);
+  assert.equal(hasVerificationErrors(report, { allowRemoteImages: false, allowDataImages: true }), false);
+  assert.match(formatVerification(report), /embedded_images: 2/);
+});
+
 test("verifyMarkdown checks HTML img tags emitted for preserved image sizes", async () => {
   const root = await mkdtemp(join(tmpdir(), "html-article-verify-"));
   await mkdir(join(root, "assets"));

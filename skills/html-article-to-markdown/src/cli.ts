@@ -31,6 +31,7 @@ function usage(): string {
     "  --drop-footer-promo",
     "  --verify",
     "  --allow-remote-images               Allow final Markdown to keep remote image URLs",
+    "  --embed-images-base64               Embed recovered images as base64 data URLs in Markdown",
     "  --preserve-image-size               Emit HTML img tags with explicit size metadata",
     "  --no-localize-remote-images          Skip HTTP downloads for remote images",
     "  --no-screenshot-on-download-fail     Skip browser screenshot fallback",
@@ -107,6 +108,8 @@ export function parseArgs(argv: string[]): ParsedArgs {
       verify = true;
     } else if (arg === "--allow-remote-images") {
       options.allowRemoteImages = true;
+    } else if (arg === "--embed-images-base64") {
+      options.embedImagesBase64 = true;
     } else if (arg === "--preserve-image-size") {
       options.preserveImageSize = true;
     } else if (arg === "--no-localize-remote-images") {
@@ -176,7 +179,12 @@ export async function runCli(argv: string[]): Promise<number> {
     if (parsed.verify) {
       const report = await verifyMarkdown(outFile);
       console.log(formatVerification(report));
-      if (hasVerificationErrors(report, { allowRemoteImages: parsed.options.allowRemoteImages ?? false })) {
+      if (
+        hasVerificationErrors(report, {
+          allowRemoteImages: parsed.options.allowRemoteImages ?? false,
+          allowDataImages: parsed.options.embedImagesBase64 ?? false,
+        })
+      ) {
         return 1;
       }
     }

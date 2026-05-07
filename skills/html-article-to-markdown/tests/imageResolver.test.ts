@@ -40,6 +40,29 @@ test("buildMarkdown downloads remote data-src images into local assets", async (
   await readFile(join(root, "out", "assets", "remote-images", "01-remote.png"));
 });
 
+test("buildMarkdown can embed downloaded remote images as base64 data URLs", async () => {
+  const { root, htmlPath } = await createRemoteArticleRoot(
+    '<img alt="Remote" src="data:image/svg+xml;base64,placeholder" data-src="https://example.com/640?wx_fmt=png">',
+  );
+
+  const outFile = await buildMarkdown({
+    htmlPath,
+    outDir: join(root, "out"),
+    assetSlug: "remote-images",
+    embedImagesBase64: true,
+    remoteDownloader: async (url) => {
+      assert.equal(url, "https://example.com/640?wx_fmt=png");
+      return { ok: true, data: pngBytes, contentType: "image/png" };
+    },
+    screenshotOnDownloadFail: false,
+  });
+
+  const markdown = await readFile(outFile, "utf8");
+  assert.ok(markdown.includes(`![Remote](data:image/png;base64,${Buffer.from(pngBytes).toString("base64")})`));
+  assert.doesNotMatch(markdown, /assets\/remote-images/);
+  await assert.rejects(() => readFile(join(root, "out", "assets", "remote-images", "01-remote.png")));
+});
+
 test("buildMarkdown screenshots remote images after download failure", async () => {
   const { root, htmlPath } = await createRemoteArticleRoot('<img alt="Blocked" src="https://example.com/blocked.png">');
 
@@ -57,6 +80,27 @@ test("buildMarkdown screenshots remote images after download failure", async () 
   const markdown = await readFile(outFile, "utf8");
   assert.match(markdown, /!\[Blocked]\(assets\/remote-images\/01-blocked\.png\)/);
   await readFile(join(root, "out", "assets", "remote-images", "01-blocked.png"));
+});
+
+test("buildMarkdown can embed screenshot fallback images as base64 data URLs", async () => {
+  const { root, htmlPath } = await createRemoteArticleRoot('<img alt="Blocked" src="https://example.com/blocked.png">');
+
+  const outFile = await buildMarkdown({
+    htmlPath,
+    outDir: join(root, "out"),
+    assetSlug: "remote-images",
+    embedImagesBase64: true,
+    remoteDownloader: async () => ({ ok: false, error: "HTTP 403 Forbidden" }),
+    screenshotter: async ({ targetPath }) => {
+      await writeFile(targetPath, pngBytes);
+      return { ok: true };
+    },
+  });
+
+  const markdown = await readFile(outFile, "utf8");
+  assert.ok(markdown.includes(`![Blocked](data:image/png;base64,${Buffer.from(pngBytes).toString("base64")})`));
+  assert.doesNotMatch(markdown, /assets\/remote-images/);
+  await assert.rejects(() => readFile(join(root, "out", "assets", "remote-images", "01-blocked.png")));
 });
 
 test("buildMarkdown fails when remote image cannot be downloaded or screenshotted", async () => {

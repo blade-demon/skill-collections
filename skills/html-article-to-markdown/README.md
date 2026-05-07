@@ -1,6 +1,6 @@
 # html-article-to-markdown
 
-把离线保存的 HTML 文章整理成可分享的 Markdown 文档，重点处理微信公众号文章这类 `html + *_files` 离线包。
+把离线保存的 HTML 文章整理成可分享的 Markdown 文档，重点处理微信公众号文章这类 `html + *_files` 离线包；也支持直接抓取远程 URL，并可选择把图片复制到 assets 目录或以内联 base64 写入 Markdown。
 
 这个目录同时包含几类内容：
 
@@ -17,6 +17,7 @@
 - 正文图片经常是懒加载，`src` 是 1px 占位图，真实图片在 `data-src`。
 - 离线包里的图片常常没有扩展名，例如 `640`、`640(1)`，Markdown 渲染器容易识别失败。
 - 资源路径如果仍指向 `00_raw` 或原始 `_files` 目录，成品文档移动后图片会断。
+- 有些使用场景希望 Markdown 单文件分发，不能额外携带 assets 目录。
 - 自动转换后的列表和段落经常空行混乱，不适合直接阅读。
 
 这个 skill 的目标是生成“精加工产物”：正文清爽、图片可渲染、路径自包含，后续可以直接分享或继续编辑。
@@ -56,7 +57,7 @@ TypeScript 实现用项目内的轻量 tokenizer 把常见 HTML 结构映射成 
 本地图片：
 
 - 只有当 `src` 明确解析为本地相对文件时才本地化，例如 `./..._files/...` 或 `..._files/...`。
-- 复制到输出目录下的 `assets/<asset-slug>/`。
+- 默认复制到输出目录下的 `assets/<asset-slug>/`。
 - 通过文件头识别真实类型，并补上 `.webp`、`.png`、`.jpg` 等扩展名。
 - Markdown 使用相对路径，例如：
 
@@ -75,6 +76,13 @@ TypeScript 实现用项目内的轻量 tokenizer 把常见 HTML 结构映射成 
 ![图 4](https://example.com/image/640?wx_fmt=png&from=appmsg)
 ```
 
+内联 base64 模式：
+
+- 传 `--embed-images-base64` 后，本地图片、远程下载图片、截图 fallback 图片都会写成 `data:image/...;base64,...`。
+- 该模式不把图片放进 `assets/<asset-slug>/`，适合需要单个 Markdown 文件携带图片的场景。
+- 同时传 `--preserve-image-size` 时，仍会输出 HTML `<img>`，只是 `src` 会变成 data URL。
+- 生成时可以继续加 `--verify`；base64 图片会计入 `embedded_images`，不会被当作错误。
+
 重要规则：
 
 - 不要用远程 URL 的 basename 去匹配本地文件。例如微信图片常以 `/640?...` 结尾，但这不代表它就是离线目录里的 `640`。
@@ -86,11 +94,12 @@ TypeScript 实现用项目内的轻量 tokenizer 把常见 HTML 结构映射成 
 
 - `00_raw`
 - 原始 `*_files`
-- `data:image`
+- 非图片正文里的 `data:image` 占位内容
 
 可分享文章应该只引用：
 
 - 输出目录内的 `assets/<asset-slug>/...`
+- 或在 `--embed-images-base64` 下使用的 `data:image/...;base64,...`
 - 或在显式 `--allow-remote-images` 下保留的远程图片 URL
 
 CLI 会清理标题中的路径非法字符，只把安全化后的标题用于 `.md` 文件名；Markdown 内部的文章标题保持原文。
@@ -133,6 +142,17 @@ npm run convert -- \
   --verify
 ```
 
+把图片作为 base64 内联到 Markdown：
+
+```bash
+npm run convert -- \
+  --html "raw/articles/example-article.html" \
+  --out-dir "output/articles" \
+  --asset-slug "example-article" \
+  --embed-images-base64 \
+  --verify
+```
+
 ### 远程 URL 模式
 
 除了本地离线包，也可以直接传一个 URL，CLI 会用 Playwright 启动 Chromium 渲染页面、自动滚动触发懒加载、把 `data-src` 提升为 `src`、把相对 URL 转成绝对 URL，然后展开 Shadow DOM。最终把渲染后的 `<body>` 内容包装到 `<div id="js_content">` 里写到一个临时 HTML 文件，再走和本地 HTML 完全一致的转换流程。
@@ -144,6 +164,17 @@ npm run convert -- \
   --url "https://example.com/article" \
   --out-dir "output/articles" \
   --asset-slug "example-article" \
+  --verify
+```
+
+远程 URL + 图片内联 base64：
+
+```bash
+npm run convert -- \
+  --url "https://example.com/article" \
+  --out-dir "output/articles" \
+  --asset-slug "example-article" \
+  --embed-images-base64 \
   --verify
 ```
 
@@ -198,6 +229,8 @@ output/articles/
         └── ...
 ```
 
+如果使用 `--embed-images-base64`，图片会直接写入 `.md`，通常不会生成 `assets/<asset-slug>/` 图片目录。
+
 输出的 Markdown 顶部会尽量包含：
 
 ```markdown
@@ -216,16 +249,18 @@ output/articles/
 verification:
   raw_dependencies: 0
   local_images: 8
+  embedded_images: 0
   remote_images: 0
   missing_local_images: 0
 ```
 
-如果仍有 `00_raw`、`_files`、`data:image`、远程图片或缺失本地图片，`--verify` 会以非零状态退出。只有显式传 `--allow-remote-images` 时，远程图片才不会让验证失败。
+如果仍有 `00_raw`、`_files`、正文残留的 `data:image`、远程图片或缺失本地图片，`--verify` 会以非零状态退出。只有显式传 `--allow-remote-images` 时，远程图片才不会让验证失败；只有使用 `--embed-images-base64` 时，图片引用里的 `data:image/...;base64,...` 才会被允许。
 
 图片相关选项：
 
 ```bash
 --allow-remote-images
+--embed-images-base64
 --preserve-image-size
 --no-localize-remote-images
 --no-screenshot-on-download-fail
@@ -247,8 +282,10 @@ verification:
 检查是否还依赖 raw 目录或占位图：
 
 ```bash
-rg -n "00_raw|_files|data:image|https?://" "output/articles/Article Title.md"
+rg -n "00_raw|_files|https?://" "output/articles/Article Title.md"
 ```
+
+未使用 `--embed-images-base64` 时，也可以额外检查 `data:image`。
 
 检查本地图片是否存在：优先使用生成时的 `--verify` 报告，它会同时检查 Markdown 图片和 HTML `<img>`。
 

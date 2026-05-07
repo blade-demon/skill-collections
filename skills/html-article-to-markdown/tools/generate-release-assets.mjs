@@ -304,6 +304,43 @@ function featureMocks() {
         </div>`,
     },
     {
+      file: "assets/feature-06-inline-base64.png",
+      title: "图片内联 Base64",
+      eyebrow: "单文件 Markdown",
+      subtitle:
+        "本地 HTML 和远程 URL 都可把恢复后的图片写入 Markdown，无需携带 assets 目录。",
+      mock: `<div class="panel" style="left:10px; top:52px; width:372px; height:410px;">
+          <div class="panel-head"><span class="mini-title">输入来源</span></div>
+          <div style="padding:26px; display:grid; gap:18px;">
+            <div style="height:106px; border:1px solid #e4ebf4; border-radius:18px; background:#fbfdff; padding:20px;">
+              <div class="pill">--html</div>
+              <div class="code" style="font-size:20px; margin-top:14px;">article.html</div>
+            </div>
+            <div style="height:106px; border:1px solid #e4ebf4; border-radius:18px; background:#fbfdff; padding:20px;">
+              <div class="pill" style="background:#e9fbf8; color:${palette.teal};">--url</div>
+              <div class="code" style="font-size:20px; margin-top:14px;">https://...</div>
+            </div>
+            <div style="height:70px; border-radius:16px; background:#fff7e8; color:#9a6817; display:grid; place-items:center; font-weight:900; font-size:22px;">--embed-images-base64</div>
+          </div>
+        </div>
+        <div class="arrow" style="left:348px; top:192px;">→</div>
+        <div class="panel" style="left:512px; top:28px; width:508px; height:508px;">
+          <div class="panel-head"><span class="mini-title">Article.md</span></div>
+          <div class="code" style="padding:28px; font-size:20px; white-space:pre-wrap;"># 文章标题
+
+![cover](data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAA...)
+
+verification:
+  embedded_images: 8
+  remote_images: 0</div>
+          <div style="position:absolute; right:26px; bottom:24px; width:192px; height:74px; border:2px dashed #d9e2ef; border-radius:18px; color:#94a3b8; display:grid; place-items:center; font-weight:900; font-size:24px; transform:rotate(-2deg);">
+            no assets/
+            <div style="position:absolute; width:210px; height:5px; border-radius:999px; background:${palette.red}; transform:rotate(-18deg); opacity:.86;"></div>
+          </div>
+        </div>`,
+    },
+    {
       file: "assets/feature-04-strict-verification.png",
       title: "严格结果校验",
       eyebrow: "放心分享",
@@ -314,10 +351,11 @@ function featureMocks() {
           <div class="code" style="padding:34px; font-size:25px;">verification:
   raw 依赖: 0
   本地图片: 8
+  内联图片: 8
   远程图片: 0
   缺失图片: 0</div>
           <div style="position:absolute; right:34px; bottom:34px; display:grid; grid-template-columns:repeat(2, 154px); gap:14px;">
-            ${["raw 清理完成", "8 张本地图", "0 张远程图", "0 张缺失图"].map((label) => `<div style="height:58px; border-radius:16px; background:#edfdf9; color:#0a8d7e; display:grid; place-items:center; font-weight:800; font-size:20px;">${label}</div>`).join("")}
+            ${["raw 清理完成", "8 张本地图", "8 张内联图", "0 张缺失图"].map((label) => `<div style="height:58px; border-radius:16px; background:#edfdf9; color:#0a8d7e; display:grid; place-items:center; font-weight:800; font-size:20px;">${label}</div>`).join("")}
           </div>
         </div>`,
     },

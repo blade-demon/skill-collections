@@ -1,6 +1,6 @@
 ---
 name: html-article-to-markdown
-description: Use when converting saved HTML articles, especially WeChat or 微信公众号 offline HTML folders, into polished shareable Markdown with cleaned article structure, recovered lazy-loaded images, copied local assets, fixed image paths, and verification that the final article no longer depends on raw capture folders.
+description: Use when converting saved HTML articles, especially WeChat or 微信公众号 offline HTML folders, into polished shareable Markdown with cleaned article structure, recovered lazy-loaded images, copied local assets or embedded base64 images, fixed image paths, and verification that the final article no longer depends on raw capture folders.
 ---
 
 # HTML Article To Markdown
@@ -39,9 +39,10 @@ Turn a saved article HTML package into a clean Markdown article that can be shar
    - Download remote article images into the destination asset folder by default. Remote URLs are acquisition sources, not final Markdown image references.
    - If direct download fails, use the browser screenshot fallback when available and save the screenshot as a local `.png`.
    - Use simple relative paths such as `assets/article-slug/01-image.webp`.
+   - If the user asks for a single Markdown file with inline images, pass `--embed-images-base64`; local images, downloaded remote images, and screenshot fallback images will be emitted as `data:image/...;base64,...` instead of files under `assets/`.
    - If the user asks to preserve image display size, pass `--preserve-image-size`; this emits HTML `<img>` tags and preserves explicit `width`, `height`, and size-related inline styles from the source `<img>`.
    - Keep a remote image URL in the final Markdown only when the user explicitly allows it with `--allow-remote-images`.
-   - Verify every local image reference exists relative to the final `.md`.
+   - Verify every local image reference exists relative to the final `.md`; in base64 mode, verify that embedded images are counted as `embedded_images`.
 
 5. Place the refined output.
    - Write the polished Markdown into the requested destination, not the raw capture folder.
@@ -51,8 +52,9 @@ Turn a saved article HTML package into a clean Markdown article that can be shar
 
 6. Verify before finishing.
    - Prefer running the CLI with `--verify` so it reports raw dependencies, local image count, remote image count, and missing local image paths.
-   - If checking manually, search final Markdown for raw dependencies: `00_raw`, `_files`, `data:image`.
+   - If checking manually, search final Markdown for raw dependencies: `00_raw`, `_files`, and unintended `data:image` placeholders. Do not treat intentional `data:image/...;base64,...` image references as raw dependencies when `--embed-images-base64` was requested.
    - Missing local image count must be zero.
+   - Embedded image count may be nonzero only when `--embed-images-base64` was requested.
    - Remote image count must be zero unless `--allow-remote-images` was explicitly requested.
    - Preview representative sections with `sed` or equivalent to catch list spacing, broken headings, and leftover promo text.
 
@@ -78,6 +80,17 @@ npm run convert -- \
   --verify
 ```
 
+To embed images directly into the Markdown instead of writing an `assets/` folder, add the same flag in either local or URL mode:
+
+```bash
+npm run convert -- \
+  --html "path/to/article.html" \
+  --out-dir "path/to/destination" \
+  --asset-slug "article-slug" \
+  --embed-images-base64 \
+  --verify
+```
+
 Optional flags:
 
 - `--url <url>` fetches and renders a remote article via Playwright instead of reading a local file. Mutually exclusive with `--html`.
@@ -87,6 +100,7 @@ Optional flags:
 - `--drop-footer-promo` removes common WeChat account-card footer fragments.
 - `--verify` prints raw dependency and image integrity checks, and exits non-zero if raw dependencies, remote images, or missing local images remain.
 - `--allow-remote-images` permits final Markdown to keep remote image URLs when download and screenshot recovery fail.
+- `--embed-images-base64` writes recovered images as inline `data:image/...;base64,...` URLs instead of files under `assets/`.
 - `--preserve-image-size` emits HTML `<img>` tags with explicit source image size metadata when available.
 - `--no-screenshot-on-download-fail` disables browser screenshot recovery.
 - `--image-timeout 20000` changes per-image download and screenshot timeout in milliseconds.

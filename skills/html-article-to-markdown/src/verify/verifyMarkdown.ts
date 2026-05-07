@@ -4,6 +4,7 @@ import { join } from "node:path";
 export interface VerificationReport {
   rawDependencies: string[];
   localImages: number;
+  embeddedImages: number;
   remoteImages: number;
   remoteImageUrls: string[];
   missingLocalImages: string[];
@@ -11,6 +12,7 @@ export interface VerificationReport {
 
 export interface VerificationPolicy {
   allowRemoteImages: boolean;
+  allowDataImages?: boolean;
 }
 
 export function markdownImageUrls(markdown: string): string[] {
@@ -29,20 +31,28 @@ export function markdownImageUrls(markdown: string): string[] {
 export async function verifyMarkdown(mdPath: string): Promise<VerificationReport> {
   const markdown = await readFile(mdPath, "utf8");
   const rawDependencies: string[] = [];
-  for (const match of markdown.matchAll(/00_raw|_files|data:image/g)) {
+  for (const match of markdown.matchAll(/00_raw|_files/g)) {
     const value = match[0];
     if (!rawDependencies.includes(value)) {
       rawDependencies.push(value);
     }
   }
+  if (/data:image/i.test(stripImageReferences(markdown))) {
+    rawDependencies.push("data:image");
+  }
 
   let localImages = 0;
+  let embeddedImages = 0;
   const remoteImageUrls: string[] = [];
   const missingLocalImages: string[] = [];
 
   for (const url of markdownImageUrls(markdown)) {
     if (/^https?:\/\//i.test(url)) {
       remoteImageUrls.push(url);
+      continue;
+    }
+    if (/^data:image\//i.test(url)) {
+      embeddedImages += 1;
       continue;
     }
     if (/^data:/i.test(url)) {
@@ -65,6 +75,7 @@ export async function verifyMarkdown(mdPath: string): Promise<VerificationReport
   return {
     rawDependencies,
     localImages,
+    embeddedImages,
     remoteImages: remoteImageUrls.length,
     remoteImageUrls,
     missingLocalImages,
@@ -75,6 +86,13 @@ export function hasVerificationErrors(report: VerificationReport, policy: Verifi
   return (
     report.rawDependencies.length > 0 ||
     report.missingLocalImages.length > 0 ||
+    (!policy.allowDataImages && report.embeddedImages > 0) ||
     (!policy.allowRemoteImages && report.remoteImages > 0)
   );
+}
+
+function stripImageReferences(markdown: string): string {
+  return markdown
+    .replace(/!\[[^\]]*]\((<[^>]+>|[^)\n]+)\)/g, "")
+    .replace(/<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi, "");
 }

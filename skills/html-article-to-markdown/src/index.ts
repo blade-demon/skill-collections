@@ -31,7 +31,9 @@ export async function buildMarkdown(options: ConvertOptions): Promise<string> {
   const metadata = extractMetadata(html, options.htmlPath);
   const assetSlug = options.assetSlug || slugify(metadata.title || "article");
   const assetDir = join(options.outDir, "assets", assetSlug);
-  await mkdir(assetDir, { recursive: true });
+  if (!options.embedImagesBase64) {
+    await mkdir(assetDir, { recursive: true });
+  }
 
   const imageResolver = new DefaultImageResolver({
     htmlPath: options.htmlPath,
@@ -40,6 +42,7 @@ export async function buildMarkdown(options: ConvertOptions): Promise<string> {
     localizeRemoteImages: options.localizeRemoteImages ?? true,
     screenshotOnDownloadFail: options.screenshotOnDownloadFail ?? true,
     allowRemoteImages: options.allowRemoteImages ?? false,
+    embedImagesBase64: options.embedImagesBase64 ?? false,
     preserveImageSize: options.preserveImageSize ?? false,
     timeoutMs: options.imageTimeoutMs ?? 20_000,
     screenshotter: options.screenshotter,
