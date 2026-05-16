@@ -33,7 +33,7 @@ Stage B includes only:
 - Files explicitly requested by the user.
 - At least one representative from each stable coarse group that will generate code.
 
-Stage A dispatch uses `coarse-signature-prompt.md` and validates with `protocols/coarse-signature-format.md`. Stage A returns only `T`/`M`/`B` top-level role arrays plus `needs_full_signature`; it must not return full slot expressions.
+Stage A dispatch uses `../prompts/coarse-signature-prompt.md` and validates with `protocols/coarse-signature-format.md`. Stage A returns only `T`/`M`/`B` top-level role arrays plus `needs_full_signature`; it must not return full slot expressions.
 
 Do not compare Stage A coarse signatures as final evidence. They only decide which files need full signatures.
 

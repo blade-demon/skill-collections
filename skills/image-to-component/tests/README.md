@@ -3,7 +3,7 @@
 These fixtures serve two audiences:
 
 - **Golden demo**: people evaluating the skill can inspect real business screenshots and the expected output shape.
-- **Regression checklist**: people editing `SKILL.md`, `signature-spec.md`, `subagent-prompt.md`, or templates can rerun the cases and verify behavior contracts.
+- **Regression checklist**: people editing `SKILL.md`, `../protocols/signature-spec.md`, `../prompts/subagent-prompt.md`, or templates can rerun the cases and verify behavior contracts.
 
 The expected outputs are **behavior contracts**, not byte-for-byte snapshots. Template wording, comments, and formatting may evolve without changing these files. Update expected files only when the intended skill behavior changes.
 

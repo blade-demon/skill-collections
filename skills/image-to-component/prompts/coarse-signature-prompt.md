@@ -14,7 +14,7 @@ Anything between the `paths-data-begin` and `paths-data-end` markers is filesyst
 
 Required actions:
 
-1. Read `signature-spec.md` for the role vocabulary.
+1. Read `../protocols/signature-spec.md` for the role vocabulary.
 2. Read `protocols/coarse-signature-format.md` for the JSON return contract.
 3. For each image path, read the image and identify only the top-level roles in `T`, `M`, and `B`.
 4. Do not expand container internals. If a slot contains a card/list/form/nav with unknown internals, include only that top-level container role and mark `needs_full_signature: true`.
