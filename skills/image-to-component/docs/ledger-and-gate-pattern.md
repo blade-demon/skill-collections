@@ -148,12 +148,14 @@ Workflow:
 
 3. **Ledger** — Create `token-ledger.md`:
    ```markdown
-   | Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Confidence | Status | User action |
-   |---|---|---|---|---|---:|---|---|
-   | token-001 | corner_radius=medium | all | Border radius | `--radius-md` | high | provided | Exists in `src/tokens/spacing.css` |
-   | token-002 | shadow_presence=card | pending.png | Card shadow | `--shadow-elevation-2` | high | pending | Confirm mapping |
-   | token-003 | type_hierarchy_levels=3 | pending.png | Typography scale | typography | high | pending | Confirm scale exists |
+   | Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
+   |---|---|---|---|---|---|---:|---|---|
+   | token-001 | corner_radius=medium | all | Border radius | `--radius-md` | project-local | high | provided | Exists in `src/tokens/spacing.css` |
+   | token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
+   | token-003 | type_hierarchy_levels=3 | pending.png | Typography scale | typography | lib:tailwind | high | pending | Confirm Tailwind scale |
    ```
+
+   The `Source` column makes the provenance of each candidate token explicit (project code vs. installed library vs. AI proposal). This is essential when the same token name exists in multiple sources — the user can see at a glance which source the workflow is using.
 
 4. **User sees the ledger** — User reads and decides:
    - `--radius-md` is correct; use it as-is

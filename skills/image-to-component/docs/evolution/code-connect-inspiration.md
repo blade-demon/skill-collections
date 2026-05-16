@@ -120,6 +120,8 @@ token-ledger 的列设计直接对应这个双轨思想：
 | **建议轨** | `figma.string("Label")` 这段声明 | `Suggested token name` + `Confidence` | AI 提议的映射候选 + 置信度 |
 | **状态轨** | 文件存在 + 工具校验通过 | `Status` + `User action` | 该映射当前是否生效、用户需做什么 |
 
+> 上面的示例为教学简化版本，省略了真实 ledger 的其他列。实际 token-ledger 还有一个 `Source` 列（值如 `project-local`、`lib:antd`、`proposed`），用于表达**来源/出处**——这是双轨之外的第三维度（provenance），但不影响双轨概念本身。完整列定义见 `workflows/style-connect.md`。
+
 ### 关键洞察：为什么必须分开
 
 如果只有"建议名"一列（合并轨），就会变成：

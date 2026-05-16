@@ -28,10 +28,10 @@ Result: Confirmed token bindings for code generation
 Shows all detected style traits and their mapping status:
 
 ```markdown
-| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Confidence | Status | User action |
-|---|---|---|---|---|---:|---|---|
-| token-001 | corner_radius=medium | pending.png | Medium border radius | `--radius-md` | high | provided | Exists in project |
-| token-002 | shadow_presence=card | pending.png | Card shadow | `--shadow-elevation-2` | high | pending | Confirm mapping |
+| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
+|---|---|---|---|---|---|---:|---|---|
+| token-001 | corner_radius=medium | pending.png | Medium border radius | `--radius-md` | project-local | high | provided | Exists in project |
+| token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
 ```
 
 ### Column Meanings
@@ -43,9 +43,22 @@ Shows all detected style traits and their mapping status:
 | Source image(s) | Which screenshot(s) have this trait | `pending.png, used.png` |
 | Visual trait | What the hint describes | "Medium border radius on cards" |
 | Suggested token name | AI's proposed token name | `--radius-md` |
+| **Source** | Where the token is defined | `project-local`, `lib:antd`, `proposed`, `inferred` |
 | Confidence | How certain the mapping is | `high`, `medium`, `low`, `none` |
 | Status | Current decision state | `pending`, `provided`, `create`, etc. |
 | User action | What the user should do | "Confirm this mapping" |
+
+### Source Column (Quick Decoder)
+
+| Value | Meaning |
+|---|---|
+| `project-local` | Defined in your own code (`src/tokens/*`, project CSS vars, custom Tailwind config) — **highest priority** |
+| `lib:<name>` | Defined in a declared library (`lib:antd`, `lib:mui`, `lib:chakra`, `lib:shadcn`, `lib:tailwind`) |
+| `css-var-runtime` | Found as a CSS custom property somewhere in project files, no clear owner |
+| `proposed` | No matching token found; AI proposed a new name (for `status: create`) |
+| `inferred` | Pure guess from style hint, no source supports it (for `status: hardcoded`) |
+
+The library list and priority order come from `.image-to-component.rules.md` (set during init).
 
 ## Status Values Explained
 
@@ -103,14 +116,16 @@ pending.png: shadow_presence=card, type_hierarchy_levels=3
 expired.png: shadow_presence=elevated, type_hierarchy_levels=3
 ```
 
+**Project libraries (from rules file):** `[antd, tailwind]` (priority order)
+
 **Style Connect builds token-ledger:**
 ```markdown
-| Token ID | Hint source | Source image(s) | Visual trait | Suggested name | Confidence | Status | User action |
-| token-001 | corner_radius=medium | all | Border radius | `--radius-md` | high | provided | Exists in project |
-| token-002 | shadow_presence=card | pending.png | Card shadow | `--shadow-elevation-2` | high | pending | Confirm |
-| token-003 | shadow_presence=elevated | expired.png | Modal shadow | `--shadow-elevation-3` | medium | pending | Confirm or choose `--elevation-4` |
-| token-004 | type_hierarchy_levels=3 | all | Typography scale | `typography` | high | pending | Confirm scale exists |
-| token-005 | primary_action_count=1 | all | Primary color | `--color-primary` | high | provided | Exists in project |
+| Token ID | Hint source | Source image(s) | Visual trait | Suggested name | Source | Confidence | Status | User action |
+| token-001 | corner_radius=medium | all | Border radius | `--radius-md` | project-local | high | provided | Exists in `src/tokens/spacing.css` (also in lib:antd, using project-local by priority) |
+| token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
+| token-003 | shadow_presence=elevated | expired.png | Modal shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify; antd has 3 elevation levels |
+| token-004 | type_hierarchy_levels=3 | all | Typography scale | `text-base / text-xl / text-2xl` | lib:tailwind | high | pending | Confirm Tailwind scale |
+| token-005 | primary_action_count=1 | all | Primary color | `--color-primary` | project-local | high | provided | Exists in `src/tokens/color.css` |
 ```
 
 **User chooses Option B:**
@@ -194,6 +209,15 @@ color: #ff6b6b;                        /* TODO: extract to token --color-warning
 
 ### "Token extraction looks wrong"
 → Check that `protocols/style-context-spec.md` matches your project's style traits
+
+### "I want to use library X but it's not in my detected list"
+→ Edit `.image-to-component.rules.md` `Component Libraries` section; rerun Style Connect
+
+### "The wrong source won when there's a conflict"
+→ Reorder the `Component Libraries` list in the rules file. First entry has highest priority among libraries; project-local always wins overall.
+
+### "My internal company design system isn't recognized"
+→ List it as `Other` during init; it will be recorded but without an adapter (tokens from that library will not be auto-discovered until `protocols/library-adapters.md` supports custom adapters)
 
 ## File References
 
