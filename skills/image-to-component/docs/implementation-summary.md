@@ -110,14 +110,14 @@ Ensures code generation respects Style Connect decisions and doesn't invent toke
 The token-ledger table captures:
 
 ```markdown
-| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Confidence | Status | User action |
-|---|---|---|---|---|---:|---|---|
-| token-001 | corner_radius=medium | all images | Border radius | `--radius-md` | high | provided | Exists in project |
-| token-002 | shadow_presence=card | pending.png | Card shadow | `--shadow-elevation-2` | high | pending | Confirm or choose alternative |
-| token-003 | type_hierarchy_levels=3 | pending.png | Font scale | typography | high | pending | Confirm typography tokens exist |
+| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
+|---|---|---|---|---|---|---:|---|---|
+| token-001 | corner_radius=medium | all images | Border radius | `--radius-md` | project-local | high | provided | Exists in project |
+| token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
+| token-003 | type_hierarchy_levels=3 | pending.png | Font scale | typography | lib:tailwind | high | pending | Confirm Tailwind scale |
 ```
 
-Each row represents a detected style trait and its mapping status.
+Each row represents a detected style trait and its mapping status. The `Source` column captures provenance (project code, installed library, AI proposal) — see the Iteration 2 section below for the full story.
 
 ## Decision-Gate Format
 
@@ -217,5 +217,36 @@ The pattern ensures that:
 
 ---
 
+## Follow-up: Token Source Awareness (Iteration 2)
+
+After the initial implementation, the token-ledger was extended to track the **source** of each candidate token (project-local vs. installed component library vs. AI-proposed). This brings the skill closer to the way real projects are organized — tokens often come from a mix of the project's own design tokens and the component library (antd, MUI, Chakra, shadcn, Tailwind, Radix) that the project depends on.
+
+### Changes (Iteration 2)
+
+1. **`workflows/init-project-rules.md`**
+   - Scan Strategy now detects component libraries from `package.json` and the shadcn `components.json` marker.
+   - New "Component Library Confirmation" section: auto-detect first, then ask the user to confirm or edit; cold-start menu shown only when nothing is detected.
+   - New `Component Libraries` section in the rules-file output template, placed between Style Stack and Class Name Helper.
+   - Library list order = priority order; project-local always wins overall; library list ordered by `dependencies` → `devDependencies` → project-file markers, preserving package.json declaration order.
+   - Conflict-handling rule for "package.json shows library X but user picks None".
+
+2. **`workflows/style-connect.md`**
+   - Token Discovery now reads `Component Libraries` from the rules file and runs the matching adapter from a new inline "Library Adapters" table.
+   - Built-in adapters: `antd`, `mui`, `chakra`, `shadcn`, `tailwind`, `radix` (Radix has no design tokens; matched but recorded as `inferred`).
+   - Token-ledger gains a `Source` column with allowed values: `project-local`, `lib:<name>`, `css-var-runtime`, `proposed`, `inferred`.
+   - Priority resolution: when the same token name exists in multiple sources, the highest-priority source wins; the row's `User action` column mentions the lower-priority duplicates for transparency.
+   - Future hook: workflow notes that if `protocols/library-adapters.md` exists, it overrides the inline adapter table — the planned extension point for user-defined adapters.
+
+3. **Docs updates**
+   - `docs/style-connect-quick-reference.md` — new Source column in the example, new "Source Column (Quick Decoder)" table, new troubleshooting entries for library-related issues.
+   - `docs/ledger-and-gate-pattern.md` — Token Ledger example now includes the Source column with a short explanation of why provenance matters.
+
+### Deferred to Iteration 3
+
+- Extract Library Adapters into `protocols/library-adapters.md` (the future-hook target). Defer until inline adapter count exceeds ~8 or user-defined adapters are needed.
+- Support for user-supplied custom adapters (e.g., internal company design systems). Today such libraries can be listed as "Other" during init; tokens from them appear as `Source: inferred`.
+
+---
+
 **Implementation Date:** May 16, 2026  
-**Status:** Complete and ready for use in the image-to-component skill workflow
+**Status:** Iteration 2 complete (Source-aware ledger + library detection in init). Iteration 3 (`protocols/library-adapters.md` extraction) deferred until needed.
