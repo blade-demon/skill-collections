@@ -29,6 +29,7 @@ Load supporting docs only when their trigger applies:
 | Manual structural review | `workflows/manual-review-exit.md` |
 | Candidate group conflicts | `workflows/candidate-group-conflicts.md` |
 | Image Connect reuse/extend/create mapping | `workflows/image-connect.md` |
+| Style Connect token mapping and ledger | `workflows/style-connect.md` |
 | Prop modeling | `workflows/prop-modeling.md` |
 | Asset and icon hard rules | `workflows/asset-handling.md` |
 | Code generation and templates | `workflows/code-generation.md` |
@@ -36,7 +37,7 @@ Load supporting docs only when their trigger applies:
 | Signature coverage table | `workflows/coverage-table.md` |
 | Optional render verification | `workflows/render-verification.md` |
 
-Always use `signature-spec.md` for grammar and role vocabulary. Read `examples/golden-cases.md` when manual review triggers or when comparing 4+ signatures with mixed leaf additions/removals.
+Always use `protocols/signature-spec.md` for grammar and role vocabulary. Read `examples/golden-cases.md` when manual review triggers or when comparing 4+ signatures with mixed leaf additions/removals.
 
 ## Step Skeleton
 
@@ -58,11 +59,11 @@ Run `ls <directory>` or equivalent. Use `workflows/large-directory.md` for image
 
 ### Step 4 — Dispatch Subagents
 
-For Stage A large-directory scans, dispatch `coarse-signature-prompt.md` and validate with `protocols/coarse-signature-format.md`.
+For Stage A large-directory scans, dispatch `prompts/coarse-signature-prompt.md` and validate with `protocols/coarse-signature-format.md`.
 
-For every full-signature batch, dispatch `subagent-prompt.md` and validate with `protocols/subagent-return-format.md`. Assign stable batch ids and place them inside the dispatcher-instructions fence.
+For every full-signature batch, dispatch `prompts/subagent-prompt.md` and validate with `protocols/subagent-return-format.md`. Assign stable batch ids and place them inside the dispatcher-instructions fence.
 
-If style hints were enabled, dispatch `style-context-prompt.md` over the same batches and validate with `protocols/style-context-spec.md`. Style hints must remain separate from structural signatures.
+If style hints were enabled, dispatch `prompts/style-context-prompt.md` over the same batches and validate with `protocols/style-context-spec.md`. Style hints must remain separate from structural signatures.
 
 If subagent dispatch is unavailable, run `workflows/degraded-mode.md`.
 
@@ -80,6 +81,10 @@ Run `workflows/structural-comparison.md`. Use `workflows/manual-review-exit.md` 
 
 Run `workflows/image-connect.md`. Output the reuse/extend/create candidate table and wait for user confirmation before prop modeling.
 
+### Step 6.7 — Style Connect (Optional)
+
+Only run this step if style hints were enabled in Step 1. Run `workflows/style-connect.md`. Output the token-ledger table and wait for user confirmation of token mappings before code generation. If style hints were not enabled, skip to Step 7.
+
 ### Step 7 — Define Props
 
 Run `workflows/prop-modeling.md`, then `workflows/asset-handling.md` for every `media` node or unknown icon.
@@ -90,7 +95,7 @@ Run `workflows/code-generation.md`. Read exactly one template from `templates/` 
 
 ### Step 9 — Output Or Write Files
 
-Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, and include `asset-ledger.md` when pending assets exist.
+Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, include `asset-ledger.md` when pending assets exist, and include `token-ledger.md` when pending token decisions exist.
 
 ### Step 10 — Optional Render Verification
 
@@ -112,3 +117,6 @@ Only in write-file mode, run `workflows/render-verification.md` when a Storybook
 | Add new icon packages | Obey `.image-to-component.rules.md`; default is only `@iconify/react` |
 | Split props into status-specific objects | Keep flat discriminator props |
 | Mix TS syntax in JS output | Match the selected language |
+| Hardcode style values without ledger | Use `workflows/style-connect.md` and token-ledger when style hints enabled |
+| Invent new tokens without user approval | Require Style Connect decision-gate before code generation |
+| Skip style-connect gate and guess tokens | Run `workflows/style-connect.md` and wait for confirmation A/B/C |

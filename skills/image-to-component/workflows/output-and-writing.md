@@ -12,6 +12,7 @@ Rules:
 - Mark which files vary by `status`/`step` and which are static.
 - Mention reused components from Image Connect as imports, not generated files.
 - If `asset-handling.md` produced pending assets, include `asset-ledger.md`.
+- If `style-connect.md` produced pending token decisions, include `token-ledger.md`.
 
 ## Coverage Table
 
@@ -43,5 +44,5 @@ Only in write-file mode, run `render-verification.md` when the project has Story
 
 Exit with either:
 
-- Chat-rendered directory tree, coverage table, asset ledger, and skeleton code; or
-- Written files, coverage table, asset ledger path, and optional render verification report.
+- Chat-rendered directory tree, coverage table, asset ledger (if pending), token ledger (if pending), and skeleton code; or
+- Written files, coverage table, asset ledger path (if pending), token ledger path (if pending), and optional render verification report.

@@ -17,6 +17,22 @@ Use this after prop modeling.
 - Vue: use native array/object bindings unless the project already uses a helper.
 - Do not hand-build long conditional class strings.
 
+## Token Usage (From Style Connect)
+
+If Style Connect (Step 6.7) was run and produced a token-ledger:
+
+- **Provided tokens** (status: `provided` or `reused`) — Reference them directly in generated code.
+  - CSS: `color: var(--token-name);`
+  - SCSS: `color: $token-name;`
+  - Tailwind: Use the token class if the project exposes tokens as classes.
+- **Create tokens** (status: `create`) — Add a TODO comment and inline the value, or create placeholder CSS variables.
+  - `color: var(--new-token-name); /* TODO: define this token in design system */`
+- **Hardcoded tokens** (status: `hardcoded`) — Use TODO comments to mark for future extraction.
+  - `color: #ff6b6b; /* TODO: extract to token --color-warning */`
+- **Skipped tokens** (status: `skip`) — Omit the style entirely; rely on browser defaults or inherited styles.
+
+When a token status is not yet fully resolved at code generation time, check the token-ledger row and follow its `User action` column guidance.
+
 ## Template Selection
 
 Read exactly one template based on Step 1 choices:
