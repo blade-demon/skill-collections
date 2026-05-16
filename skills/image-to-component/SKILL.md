@@ -77,27 +77,27 @@ Before Step 6, run `workflows/summarize-signatures.md` to output a natural-langu
 
 Run `workflows/structural-comparison.md`. Use `workflows/manual-review-exit.md` for ambiguous structural variants and `workflows/candidate-group-conflicts.md` for conflicting multi-image groups.
 
-### Step 6.5 — Image Connect
+### Step 7 — Image Connect
 
 Run `workflows/image-connect.md`. Output the reuse/extend/create candidate table and wait for user confirmation before prop modeling.
 
-### Step 6.7 — Style Connect (Optional)
+### Step 8 — Style Connect (Optional)
 
-Only run this step if style hints were enabled in Step 1. Run `workflows/style-connect.md`. Output the token-ledger table and wait for user confirmation of token mappings before code generation. If style hints were not enabled, skip to Step 7.
+Only run this step if style hints were enabled in Step 1. Run `workflows/style-connect.md`. Output the token-ledger table and wait for user confirmation of token mappings before code generation. If style hints were not enabled, skip to Step 9.
 
-### Step 7 — Define Props
+### Step 9 — Define Props
 
 Run `workflows/prop-modeling.md`, then `workflows/asset-handling.md` for every `media` node or unknown icon.
 
-### Step 8 — Generate Code Skeleton
+### Step 10 — Generate Code Skeleton
 
 Run `workflows/code-generation.md`. Read exactly one template from `templates/` based on Step 1 choices. Unsupported frameworks use `workflows/degraded-mode.md`.
 
-### Step 9 — Output Or Write Files
+### Step 11 — Output Or Write Files
 
 Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, include `asset-ledger.md` when pending assets exist, and include `token-ledger.md` when pending token decisions exist.
 
-### Step 10 — Optional Render Verification
+### Step 12 — Optional Render Verification
 
 Only in write-file mode, run `workflows/render-verification.md` when a Storybook or safe Vite preview route exists and the user did not ask to skip verification.
 

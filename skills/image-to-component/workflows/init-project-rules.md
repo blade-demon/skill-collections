@@ -30,7 +30,7 @@ Use `rg`/`rg --files` where available. Keep the scan shallow enough to avoid tur
 
 ## Component Library Detection And Confirmation
 
-After Scan Strategy completes, resolve the project's component libraries before writing the rules file. Style Connect (Step 6.7) needs this list to pick the right Library Adapter for token discovery.
+After Scan Strategy completes, resolve the project's component libraries before writing the rules file. Style Connect (Step 8) needs this list to pick the right Library Adapter for token discovery.
 
 ### Standardized Library Names
 

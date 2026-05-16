@@ -26,23 +26,23 @@ This document summarizes the implementation of the **Ledger + Decision-Gate** pa
 - User confirmation of token decisions via decision-gate
 
 **Integration:**
-- Runs as **Step 6.7** (optional, only if style hints enabled in Step 1)
-- Positioned after Image Connect (Step 6.5)
-- Before code generation (Step 8)
+- Runs as **Step 8** (optional, only if style hints enabled in Step 1)
+- Positioned after Image Connect (Step 7)
+- Before code generation (Step 10)
 
 ### 2. Updated Main Workflow (`SKILL.md`)
 
 **Changes:**
 - Added routing map entry for `workflows/style-connect.md`
-- Added Step 6.7: "Style Connect (Optional)" to the step skeleton
-- Updated Step 9 output requirements to include `token-ledger.md` when pending
+- Added Step 8: "Style Connect (Optional)" to the step skeleton
+- Updated Step 11 output requirements to include `token-ledger.md` when pending
 - Added 3 new common mistakes related to style token handling:
   - Don't hardcode style values without a ledger
   - Don't invent new tokens without user approval
   - Don't skip the style-connect decision-gate
 
 **Key principle:**
-> "If style hints were enabled in Step 1, run Style Connect in Step 6.7 to map traits to tokens. If not enabled, skip to Step 7."
+> "If style hints were enabled in Step 1, run Style Connect in Step 8 to map traits to tokens. If not enabled, skip to Step 9."
 
 ### 3. Updated Code Generation (`workflows/code-generation.md`)
 
@@ -154,7 +154,7 @@ The token-ledger pattern parallels the existing **asset-ledger** pattern:
 |---|---|---|
 | What it captures | Media/icon assets without reliable sources | Style traits without clear token mappings |
 | Table columns | Asset ID, source images, intended use, placeholder, user action, status | Token ID, hint source, source images, visual trait, suggested name, confidence, user action, status |
-| Decision-gate | Happens during asset-handling (Step 7) | Happens during style-connect (Step 6.7) |
+| Decision-gate | Happens during asset-handling (Step 9) | Happens during style-connect (Step 8) |
 | Code generation | Uses confirmed asset references | Uses confirmed token references |
 | Status values | pending, provided, reused | pending, provided, reused, create, hardcoded, skip |
 
@@ -166,19 +166,19 @@ Both serve the same purpose: **make uncertainty visible, require approval, preve
 
 If style hints are disabled:
 - No style-context subagent dispatch in Step 4
-- No Style Connect workflow in Step 6.7
+- No Style Connect workflow in Step 8
 - Code generation skips token mapping entirely
 - Default: hardcoded styles (or CSS follows template defaults)
 
 If style hints are enabled:
 - style-context-prompt.md subagent extracts hints in Step 4
-- Style Connect workflow runs in Step 6.7
+- Style Connect workflow runs in Step 8
 - Decision-gate requires user confirmation
 - Code generation uses confirmed token mappings
 
 ## Files Modified
 
-1. **SKILL.md** — Added Step 6.7, updated routing map, added common mistakes
+1. **SKILL.md** — Added Step 8, updated routing map, added common mistakes
 2. **workflows/code-generation.md** — Added "Token Usage" section
 3. **workflows/output-and-writing.md** — Updated directory tree and exit rules
 4. **workflows/style-connect.md** — NEW (8119 bytes)

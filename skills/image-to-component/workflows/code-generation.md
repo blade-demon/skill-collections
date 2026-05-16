@@ -19,7 +19,7 @@ Use this after prop modeling.
 
 ## Token Usage (From Style Connect)
 
-If Style Connect (Step 6.7) was run and produced a token-ledger:
+If Style Connect (Step 8) was run and produced a token-ledger:
 
 - **Provided tokens** (status: `provided` or `reused`) — Reference them directly in generated code.
   - CSS: `color: var(--token-name);`

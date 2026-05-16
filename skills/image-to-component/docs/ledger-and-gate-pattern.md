@@ -37,8 +37,8 @@ A **decision-gate** is a confirmation checkpoint where the user explicitly appro
 
 Decision-gates in the skill:
 
-- **Image Connect (Step 6.5)** — User approves reuse/extend/create decisions for components.
-- **Style Connect (Step 6.7)** — User approves token mappings and decides what to do with unresolved traits.
+- **Image Connect (Step 7)** — User approves reuse/extend/create decisions for components.
+- **Style Connect (Step 8)** — User approves token mappings and decides what to do with unresolved traits.
 
 Each decision-gate asks the user to choose from explicit options (A/B/C):
 
@@ -265,9 +265,9 @@ Each ledger row carries a `Status` that describes the decision state:
 
 The ledger + gate pattern is used in:
 
-- **Image Connect (Step 6.5)** — reuse/extend/create decisions for components
-- **Style Connect (Step 6.7)** — token mapping decisions for styles
-- **Asset Handling (Step 7)** — asset identification and placeholder decisions
+- **Image Connect (Step 7)** — reuse/extend/create decisions for components
+- **Style Connect (Step 8)** — token mapping decisions for styles
+- **Asset Handling (Step 9)** — asset identification and placeholder decisions
 
 Future extensions could use the same pattern for:
 - Animation token mapping
