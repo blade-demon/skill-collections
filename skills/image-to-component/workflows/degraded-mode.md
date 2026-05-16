@@ -24,7 +24,7 @@ C. Cancel the skill - exit cleanly with no output.
 
 When the user chooses an unsupported framework:
 - Do not generate React or Vue code.
-- Output the Step 9 directory tree as a structural suggestion only.
+- Output the Step 11 directory tree as a structural suggestion only.
 - Output component trees derived from signatures.
 - State that runnable code generation is unsupported for the chosen framework.
 - Suggest hand-migrating the structure into the target framework.

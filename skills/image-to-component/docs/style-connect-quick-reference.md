@@ -1,15 +1,15 @@
 # Style Connect Quick Reference
 
-A cheat sheet for using the Style Connect workflow (Step 6.7) in image-to-component.
+A cheat sheet for using the Style Connect workflow (Step 8) in image-to-component.
 
 ## When Does Style Connect Run?
 
 | Scenario | What happens |
 |---|---|
-| ✅ Step 1: Style hints **enabled** | Style Connect runs in Step 6.7 after Image Connect |
+| ✅ Step 1: Style hints **enabled** | Style Connect runs in Step 8 after Image Connect |
 | ❌ Step 1: Style hints **disabled** | Style Connect skipped; code generation uses CSS defaults |
 
-## Step 6.7: Style Connect Workflow
+## Step 8: Style Connect Workflow
 
 ```
 Input:  Style hints extracted in Step 4 (corner_radius, shadow, typography, etc.)
@@ -229,4 +229,4 @@ color: #ff6b6b;                        /* TODO: extract to token --color-warning
 
 ---
 
-**Remember:** Style Connect runs in **Step 6.7** (optional, only if style hints enabled in Step 1).
+**Remember:** Style Connect runs in **Step 8** (optional, only if style hints enabled in Step 1).

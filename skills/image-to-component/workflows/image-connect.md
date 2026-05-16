@@ -1,6 +1,6 @@
 # Image Connect Workflow
 
-Image Connect runs after structural comparison (Step 6) and before prop definition (Step 7). It decides whether generated regions should reuse, extend, or create components by comparing structured signatures against `.image-to-component.rules.md` and existing source files.
+Image Connect runs after structural comparison (Step 6) and before prop definition (Step 9). It decides whether generated regions should reuse, extend, or create components by comparing structured signatures against `.image-to-component.rules.md` and existing source files.
 
 ## Inputs
 
@@ -101,7 +101,7 @@ Lower coverage when required props cannot be inferred, the component forces unre
 
 ## Candidate Table Format
 
-Before Step 7, output a table and wait for confirmation:
+Before Step 9, output a table and wait for confirmation:
 
 ```markdown
 Image Connect candidates:
@@ -132,21 +132,21 @@ User choice handling:
 
 | Choice | Action |
 |---|---|
-| A | Record the decisions and continue to Step 7. |
+| A | Record the decisions and continue to Step 9. |
 | B | Apply the user's row-level changes, update the decision table, and ask for confirmation again if any decision is ambiguous. |
-| C | Record that Image Connect was skipped; mark every generated region as `create`; continue to Step 7. |
+| C | Record that Image Connect was skipped; mark every generated region as `create`; continue to Step 9. |
 
 If a decision is `extend`, ask for confirmation before editing the existing component unless the user already asked for direct file changes and the change is within the assigned output scope. If extension would modify files outside the allowed scope, stop and report the blocker.
 
-## Feeding Step 7 And Step 8
+## Feeding Step 9 And Step 10
 
 Image Connect decisions constrain later steps:
 
-- Step 7 prop definition must include only props needed by created/extended generated components and must adapt to reused components' existing public APIs.
+- Step 9 prop definition must include only props needed by created/extended generated components and must adapt to reused components' existing public APIs.
 - Reused components are imported, not regenerated.
 - Extended components keep their existing API compatible; only additive optional props or variants are allowed unless the user explicitly approves a breaking change.
 - Created components follow `.image-to-component.rules.md` for directory, style stack, `cn` helper, icon source, accessibility, and test command.
-- Step 8 split planning must show reused, extended, and created files separately.
-- Step 8 code generation must preserve existing component ownership boundaries and avoid reverse dependencies from shared/base components into generated domain components.
+- Step 10 split planning must show reused, extended, and created files separately.
+- Step 10 code generation must preserve existing component ownership boundaries and avoid reverse dependencies from shared/base components into generated domain components.
 
-If Image Connect changes the intended directory tree from Step 9, update the tree before writing or outputting files so it matches the confirmed decisions.
+If Image Connect changes the intended directory tree from Step 11, update the tree before writing or outputting files so it matches the confirmed decisions.

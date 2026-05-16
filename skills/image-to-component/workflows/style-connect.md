@@ -1,6 +1,6 @@
 # Style Connect Workflow
 
-Style Connect runs after structural comparison (Step 6) and before code generation (Step 8). It maps detected visual traits to existing design tokens, captures unresolved mappings in a ledger, and requires explicit user confirmation before committing token bindings to code.
+Style Connect runs after structural comparison (Step 6) and before code generation (Step 10). It maps detected visual traits to existing design tokens, captures unresolved mappings in a ledger, and requires explicit user confirmation before committing token bindings to code.
 
 **Prerequisite:** Style hints must be extracted in Step 4 via `../prompts/style-context-prompt.md` when enabled. Style Connect bridges extracted hints and project tokens.
 
@@ -139,16 +139,16 @@ User choice handling:
 
 | Choice | Action |
 |---|---|
-| A | Apply default resolution strategy (described above). Update token ledger. Continue to Step 8. |
+| A | Apply default resolution strategy (described above). Update token ledger. Continue to Step 10. |
 | B | Apply row-level user changes. Ask for clarification if any row remains ambiguous. Reshow decision-gate if clarification needed. |
-| C | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to Step 8. |
+| C | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to Step 10. |
 
 If a token decision is `create`, ask:
 - Should the new token be added to `.image-to-component.rules.md` for future runs?
 - What should the new token file location be (if a token file structure exists)?
 - Do not actually write token files; just record the decision for code generation.
 
-## Feeding Step 8 (Code Generation)
+## Feeding Step 10 (Code Generation)
 
 Style Connect decisions constrain code generation:
 
@@ -194,4 +194,4 @@ Exit when every detected style trait is:
 - Hardcoded with a TODO comment (status: `hardcoded`), or
 - Explicitly skipped (status: `skip`).
 
-Pass the confirmed token-ledger to Step 8 code generation.
+Pass the confirmed token-ledger to Step 10 code generation.
