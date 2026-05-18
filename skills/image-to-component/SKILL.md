@@ -32,12 +32,26 @@ Load supporting docs only when their trigger applies:
 | Style Connect token mapping and ledger | `workflows/style-connect.md` |
 | Prop modeling | `workflows/prop-modeling.md` |
 | Asset and icon hard rules | `workflows/asset-handling.md` |
-| Code generation and templates | `workflows/code-generation.md` |
+| Code generation and templates | `workflows/code-generation.md` — calls `scripts/generate-skeleton` |
 | Output and file writing | `workflows/output-and-writing.md` |
+| Scripts package | `scripts/` — validate-signature, validate-coarse, coverage-table, generate-skeleton |
 | Signature coverage table | `workflows/coverage-table.md` |
 | Optional render verification | `workflows/render-verification.md` |
 
 Always use `protocols/signature-spec.md` for grammar and role vocabulary. Read `examples/golden-cases.md` when manual review triggers or when comparing 4+ signatures with mixed leaf additions/removals.
+
+## Scripts
+
+Run all commands from `skills/image-to-component/scripts/`. Requires Node.js 20+ and `npm install` once on first use.
+
+| Script | Usage |
+|---|---|
+| Validate full signature batch | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
+| Validate coarse signature batch | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png` |
+| Generate coverage table | `echo '<json>' \| npm run coverage-table` |
+| Generate component skeleton | `echo '<json>' \| npm run generate-skeleton` |
+
+Output format: `validate-*` scripts print `{"valid":true}` or `{"valid":false,"errors":[...]}` and exit non-zero on failure. `coverage-table` prints a markdown table. `generate-skeleton` prints a `[{path,content}]` JSON array.
 
 ## Step Skeleton
 
@@ -69,6 +83,12 @@ If subagent dispatch is unavailable, run `workflows/degraded-mode.md`.
 
 ### Step 5 — Validate And Summarize Signatures
 
+> **Script:** After receiving subagent JSON, run validation from `skills/image-to-component/scripts/`:
+> ```bash
+> echo '<subagent return JSON>' | npm run validate-signature -- --batch batch-1 --expected-files file1.png file2.png
+> ```
+> A non-zero exit means validation failed; the printed `errors` array describes what to fix. For Stage A coarse batches, use `npm run validate-coarse` instead.
+
 Validate all subagent JSON before comparison. On first validation failure, run `workflows/diagnostic-redispatch.md`; never resend an unchanged prompt. On second failure, ask for corrected JSON, skip the batch, or stop.
 
 Before Step 6, run `workflows/summarize-signatures.md` to output a natural-language structure summary and mechanical JSX component tree for each image. Do not show raw signature JSON unless debugging validation. Do not add visual information the signature does not carry.
@@ -91,9 +111,21 @@ Run `workflows/prop-modeling.md`, then `workflows/asset-handling.md` for every `
 
 ### Step 10 — Generate Code Skeleton
 
-Run `workflows/code-generation.md`. Read exactly one template from `templates/` based on Step 1 choices. Unsupported frameworks use `workflows/degraded-mode.md`.
+Run `workflows/code-generation.md` to build a `SkeletonConfig` JSON object from the component tree and prop definitions established in Step 9. Then run:
+
+```bash
+echo '<SkeletonConfig JSON>' | npm run generate-skeleton
+```
+
+The output is a `[{path, content}]` JSON array. Use this array as the file list in Step 11. Do not read `templates/` — those files have been removed.
 
 ### Step 11 — Output Or Write Files
+
+> **Script:** Build a `CoverageInput` JSON object (entries with signaturePath, files, components, status, optional note), then run:
+> ```bash
+> echo '<CoverageInput JSON>' | npm run coverage-table
+> ```
+> Paste the output markdown directly into the response.
 
 Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, include `asset-ledger.md` when pending assets exist, and include `token-ledger.md` when pending token decisions exist.
 

@@ -86,21 +86,9 @@ Required note relationships:
 - If `signature.O` is not `"-"`, `notes.overlay_type` must be one of `modal`, `drawer`, `toast`, or `sheet`.
 - If `signature.F` is not `"-"`, `notes.float_anchor` must be one of `br`, `bl`, `tr`, or `tl`.
 
-## Validation Checklist
+## Validation
 
-Validate each returned object before using it:
-
-- The return is parseable JSON and the entire output is the JSON object.
-- No markdown fences, headings, progress markers, comments, or prose appear before or after the JSON.
-- `batch` exactly matches the dispatched batch id.
-- `images.length` equals the number of paths in the batch.
-- Every `filename` is a basename from the batch path list.
-- Every batch filename appears exactly once.
-- `signature` has exactly `T`, `M`, `B`, `O`, `F`.
-- Every signature value is a string and passes the slot-expression validation from `signature-spec.md`.
-- `F` is either `"-"` or one top-level role expression allowed for floating anchors.
-- `notes` contains only allowlisted keys and allowed values.
-- Required note relationships for `O` and `F` are satisfied.
+The dispatcher validates your return by running `scripts/src/validate-signature.ts` via `npm run validate-signature`. You do not need to self-validate — just ensure your output is bare JSON (no markdown fences, no prose) and that every field described above is present and correct.
 
 ## Failure and Re-Dispatch Rules
 

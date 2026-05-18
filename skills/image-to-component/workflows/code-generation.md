@@ -1,3 +1,27 @@
+> **Code generation is script-driven.** Build a `SkeletonConfig` JSON object from the component tree and prop definitions from Step 9, then run:
+>
+> ```bash
+> echo '<SkeletonConfig JSON>' | npm run generate-skeleton
+> ```
+>
+> The output is a `[{path, content}]` JSON array. Use this array as the file list for Step 11. Do **not** read `templates/` — those files have been removed.
+>
+> **SkeletonConfig shape:**
+> ```json
+> {
+>   "framework": "react|vue3|vue2",
+>   "lang": "ts|js",
+>   "style": "css-modules|bem",
+>   "rootComponent": {
+>     "name": "ComponentName",
+>     "element": "article",
+>     "discriminator": { "propName": "status", "type": "Status", "variants": ["a","b"] },
+>     "props": [{ "name": "title", "type": "string", "required": true }],
+>     "children": [{ "name": "Header", "element": "header", "props": [], "children": [] }]
+>   }
+> }
+> ```
+
 # Code Generation Workflow
 
 Use this after prop modeling.

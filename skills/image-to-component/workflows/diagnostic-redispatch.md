@@ -2,6 +2,14 @@
 
 Use this workflow before any re-dispatch after the first signature validation failure.
 
+> **Validation is script-driven.** Before manually inspecting returned JSON, run:
+>
+> ```bash
+> echo '<subagent return JSON>' | npm run validate-signature -- --batch <batch-id> --expected-files <file1> <file2>
+> ```
+>
+> The script exits with code 1 and prints `{ "valid": false, "errors": [...] }` when the return is invalid. Use the printed `errors` array as the concrete validation errors to inject into the re-dispatch fence.
+
 ## Trigger
 
 The first returned signature for a batch fails validation.
