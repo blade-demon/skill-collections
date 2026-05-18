@@ -51,15 +51,7 @@ Allowed `reason` values:
 
 ## Validation
 
-- Output is parseable JSON and contains no prose.
-- `batch` matches the dispatched Stage A batch id.
-- `images.length` matches the batch path count.
-- Every filename is a basename from the batch.
-- `coarse_signature` has exactly `T`, `M`, `B`.
-- Every slot value is an array of allowed top-level roles.
-- No role contains operators such as `->`, `+`, `(`, or `)`.
-- `needs_full_signature` is boolean.
-- `reason` is one of the allowlisted strings.
+The dispatcher validates your return by running `scripts/src/validate-coarse.ts` via `npm run validate-coarse`. Just ensure your output is bare JSON with all fields present.
 
 ## Stage B Selection
 

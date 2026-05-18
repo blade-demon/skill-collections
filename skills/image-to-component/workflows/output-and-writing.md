@@ -1,3 +1,19 @@
+> **Coverage table is script-driven.** Build a `CoverageInput` JSON object, then run:
+>
+> ```bash
+> echo '<CoverageInput JSON>' | npm run coverage-table
+> ```
+>
+> **CoverageInput shape:**
+> ```json
+> {
+>   "entries": [
+>     { "signaturePath": "T", "files": ["Header.tsx"], "components": ["Header"], "status": "covered" },
+>     { "signaturePath": "O.modal", "files": [], "components": [], "status": "pending", "note": "out of scope" }
+>   ]
+> }
+> ```
+
 # Output And Writing Workflow
 
 Use this after code generation planning.
