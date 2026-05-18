@@ -1,0 +1,22 @@
+{
+  "name": "image-to-component-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate-signature": "tsx src/validate-signature.ts",
+    "validate-coarse": "tsx src/validate-coarse.ts",
+    "coverage-table": "tsx src/generate-coverage-table.ts",
+    "generate-skeleton": "tsx src/generate-skeleton.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}
