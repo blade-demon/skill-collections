@@ -1,4 +1,4 @@
-> **Code generation is script-driven.** Build a `SkeletonConfig` JSON object from the component tree and prop definitions from Step 9, then run:
+> **Code generation is script-driven.** Build a `SkeletonConfig` JSON object from the component tree and prop definitions from Step 9, plus `stylePlan` from Step 8 when style hints were enabled, then run:
 >
 > ```bash
 > echo '<SkeletonConfig JSON>' | npm run generate-skeleton
@@ -18,6 +18,17 @@
 >     "discriminator": { "propName": "status", "type": "Status", "variants": ["a","b"] },
 >     "props": [{ "name": "title", "type": "string", "required": true }],
 >     "children": [{ "name": "Header", "element": "header", "props": [], "children": [] }]
+>   },
+>   "stylePlan": {
+>     "rules": [
+>       {
+>         "component": "ComponentName",
+>         "declarations": [
+>           { "property": "display", "value": "grid", "source": "inferred" },
+>           { "property": "gap", "value": "var(--space-md)", "source": "token-ledger" }
+>         ]
+>       }
+>     ]
 >   }
 > }
 > ```
@@ -56,6 +67,17 @@ If Style Connect (Step 8) was run and produced a token-ledger:
 - **Skipped tokens** (status: `skip`) — Omit the style entirely; rely on browser defaults or inherited styles.
 
 When a token status is not yet fully resolved at code generation time, check the token-ledger row and follow its `User action` column guidance.
+
+## Style Plan Usage
+
+If `workflows/style-plan.md` produced `SkeletonConfig.stylePlan`, include it in the JSON passed to `generate-skeleton`.
+
+React generation consumes `stylePlan` now:
+
+- CSS Modules: writes declarations into root and child `.module.css` files.
+- BEM: generates and imports root and child `.css` files only for components with style rules.
+
+Vue generation may ignore `stylePlan` until Vue style support is implemented. Do not claim Vue style generation unless tests cover it.
 
 ## Template Selection
 

@@ -57,9 +57,9 @@ Mappable hint types:
 | Hint | Possible token mappings | How to match |
 |---|---|---|
 | `corner_radius` (enum: `none`, `small`, `medium`, `large`) | Border radius tokens | Match radius scale level |
-| `shadow_presence` (enum: `none`, `subtle`, `card`, `elevated`) | Shadow/elevation tokens | Match shadow depth category |
+| `shadow_presence` (enum: `none`, `card`, `modal`, `overlay`) | Shadow/elevation tokens | Match shadow depth category |
 | `type_hierarchy_levels` (int 1-5) | Typography scale tokens | Confirm font sizes/weights available |
-| `density` (enum: `compact`, `normal`, `spacious`) | Spacing/padding tokens | Implies base spacing scale |
+| `density` (enum: `compact`, `normal`, `loose`) | Spacing/padding tokens | Implies base spacing scale |
 | `is_mobile_viewport` (boolean) | Responsive breakpoint tokens | Signals mobile-first design |
 | `primary_action_count` (int) | Action button color/style tokens | Indicates color palette usage |
 
@@ -139,22 +139,22 @@ User choice handling:
 
 | Choice | Action |
 |---|---|
-| A | Apply default resolution strategy (described above). Update token ledger. Continue to Step 10. |
+| A | Apply default resolution strategy (described above). Update token ledger. Continue to `workflows/style-plan.md`, then Step 10. |
 | B | Apply row-level user changes. Ask for clarification if any row remains ambiguous. Reshow decision-gate if clarification needed. |
-| C | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to Step 10. |
+| C | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to `workflows/style-plan.md`, then Step 10. |
 
 If a token decision is `create`, ask:
 - Should the new token be added to `.image-to-component.rules.md` for future runs?
 - What should the new token file location be (if a token file structure exists)?
 - Do not actually write token files; just record the decision for code generation.
 
-## Feeding Step 10 (Code Generation)
+## Feeding Style Plan And Step 10
 
-Style Connect decisions constrain code generation:
+Style Connect decisions constrain `workflows/style-plan.md`, which then feeds Step 10 code generation:
 
 - **Mapped tokens** → generate CSS variable references or token import statements.
 - **Pending unresolved tokens** → generate placeholder comments with suggested token names.
-- **Hardcoded with TODO** → inline style values with `// TODO: extract to token <name>` comments.
+- **Hardcoded with TODO** → CSS declarations with comments such as `/* TODO: extract to token <name> */`.
 - **Skipped** → omit style from code; rely on browser defaults or inherited styles.
 
 If the code generation needs to reference token values (for CSS generation), use the token-ledger to identify which tokens are confirmed vs. placeholder.
@@ -166,7 +166,7 @@ Input (from Step 4 style hints):
 ```
 pending.png: corner_radius=medium, shadow_presence=card, type_hierarchy_levels=3
 used.png: corner_radius=medium, primary_action_count=1
-expired.png: corner_radius=medium, shadow_presence=elevated, type_hierarchy_levels=3
+expired.png: corner_radius=medium, shadow_presence=modal, type_hierarchy_levels=3
 ```
 
 Project context (from `.image-to-component.rules.md`):
@@ -180,7 +180,7 @@ Output (token-ledger.md after mapping):
 |---|---|---|---|---|---|---:|---|---|
 | token-001 | corner_radius=medium | all 3 images | Medium border radius on cards | `--radius-md` | project-local | high | provided | Exists: `--radius-md` in `src/tokens/spacing.css` (also defined in lib:antd as `--ant-border-radius`, using project-local by priority) |
 | token-002 | shadow_presence=card | pending.png, used.png | Card elevation shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm: matches antd default theme `--ant-box-shadow` |
-| token-003 | shadow_presence=elevated | expired.png | Elevated modal shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify: could also use a stronger elevation; antd has 3 levels |
+| token-003 | shadow_presence=modal | expired.png | Modal-depth shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify: could also use a stronger elevation; antd has 3 levels |
 | token-004 | type_hierarchy_levels=3 | pending.png, expired.png | Typography scale (h1, body, caption) | typography | lib:tailwind | high | pending | Confirm: uses Tailwind `text-2xl`, `text-base`, `text-xs` from resolved config |
 | token-005 | primary_action_count=1 | used.png | Primary action button color | `--color-primary` | project-local | high | provided | Exists: `--color-primary` in `src/tokens/color.css` |
 ```
@@ -194,4 +194,4 @@ Exit when every detected style trait is:
 - Hardcoded with a TODO comment (status: `hardcoded`), or
 - Explicitly skipped (status: `skip`).
 
-Pass the confirmed token-ledger to Step 10 code generation.
+Pass the confirmed token-ledger to `workflows/style-plan.md`, then include the resulting `stylePlan` in Step 10 code generation.

@@ -62,6 +62,49 @@ describe('generateReact TSX CSS Modules', () => {
     expect(index).toBeDefined()
     expect(index!.content).toContain('RiskPage')
   })
+
+  it('writes style plan declarations into CSS module files', () => {
+    const styledConfig: SkeletonConfig = {
+      ...baseConfig,
+      stylePlan: {
+        rules: [
+          {
+            component: 'RiskPage',
+            declarations: [
+              { property: 'display', value: 'grid', source: 'inferred' },
+              { property: 'gap', value: 'var(--space-md)', source: 'token-ledger', comment: 'Confirmed spacing token' },
+            ],
+            variants: [
+              {
+                name: 'high',
+                declarations: [
+                  { property: 'box-shadow', value: 'var(--shadow-card)', source: 'token-ledger' },
+                ],
+              },
+            ],
+          },
+          {
+            component: 'Header',
+            declarations: [
+              { property: 'padding', value: 'var(--space-sm)', source: 'token-ledger' },
+            ],
+          },
+        ],
+      },
+    }
+    const styledFiles = generateReact(styledConfig)
+
+    const rootCss = styledFiles.find(f => f.path === 'RiskPage.module.css')
+    const headerCss = styledFiles.find(f => f.path === 'components/Header.module.css')
+
+    expect(rootCss!.content).toContain('.root {')
+    expect(rootCss!.content).toContain('display: grid;')
+    expect(rootCss!.content).toContain('gap: var(--space-md); /* Confirmed spacing token */')
+    expect(rootCss!.content).toContain('.high {')
+    expect(rootCss!.content).toContain('box-shadow: var(--shadow-card);')
+    expect(headerCss!.content).toContain('.header {')
+    expect(headerCss!.content).toContain('padding: var(--space-sm);')
+  })
 })
 
 describe('generateReact JSX CSS Modules', () => {
@@ -94,6 +137,41 @@ describe('generateReact TSX BEM', () => {
   it('uses BEM class names in root', () => {
     const root = files.find(f => f.path === 'RiskPage.tsx')
     expect(root!.content).toContain('risk-page')
+  })
+
+  it('generates and imports BEM CSS files from style plan declarations', () => {
+    const styledConfig: SkeletonConfig = {
+      ...baseConfig,
+      style: 'bem',
+      stylePlan: {
+        rules: [
+          {
+            component: 'RiskPage',
+            declarations: [
+              { property: 'display', value: 'flex', source: 'inferred' },
+            ],
+          },
+          {
+            component: 'ActionBar',
+            declarations: [
+              { property: 'justify-content', value: 'flex-end', source: 'inferred' },
+            ],
+          },
+        ],
+      },
+    }
+    const styledFiles = generateReact(styledConfig)
+    const root = styledFiles.find(f => f.path === 'RiskPage.tsx')
+    const action = styledFiles.find(f => f.path === 'components/ActionBar.tsx')
+    const rootCss = styledFiles.find(f => f.path === 'RiskPage.css')
+    const actionCss = styledFiles.find(f => f.path === 'components/ActionBar.css')
+
+    expect(root!.content).toContain("import './RiskPage.css'")
+    expect(action!.content).toContain("import './ActionBar.css'")
+    expect(rootCss!.content).toContain('.risk-page {')
+    expect(rootCss!.content).toContain('display: flex;')
+    expect(actionCss!.content).toContain('.action-bar {')
+    expect(actionCss!.content).toContain('justify-content: flex-end;')
   })
 })
 

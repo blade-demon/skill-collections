@@ -1,6 +1,6 @@
 ---
 name: image-to-component
-description: Use when the user points to a directory of UI screenshots or design mockup images and wants component skeleton code generated. Triggers when images show app screens, pages, or UI states. Generates React, Vue 3, or Vue 2 skeletons with TypeScript or JavaScript using BEM or CSS Modules.
+description: Use when the user points to a directory of UI screenshots or design mockup images and wants structure-first component skeletons, state comparison, prop modeling, or screenshot-derived variants. Use design-source workflows instead when Sketch, Figma, or MasterGo source data is available for high-fidelity styling.
 ---
 
 # image-to-component
@@ -8,6 +8,8 @@ description: Use when the user points to a directory of UI screenshots or design
 ## Overview
 
 Convert a directory of UI screenshots into typed component skeletons. The critical step is **structural comparison first**: multiple screenshots often represent one component in different states, not multiple components.
+
+This is a **screenshot-to-skeleton** workflow. It can infer structure, variants, props, and asset needs from pixels, but screenshots do not reliably contain source-level style data such as design tokens, layer names, component instances, exportable vectors, or layout constraints. For high-fidelity generation from structured design data, route to a design-source workflow such as `mastergo-to-component`, future `figma-to-component`, or future `sketch-to-component`.
 
 **Hard context boundary:** the main agent must never read image files directly. Image reading happens only inside signature subagents, coarse-signature subagents, or optional style-context subagents. If subagent dispatch is unavailable, use `workflows/degraded-mode.md`.
 
@@ -30,6 +32,7 @@ Load supporting docs only when their trigger applies:
 | Candidate group conflicts | `workflows/candidate-group-conflicts.md` |
 | Image Connect reuse/extend/create mapping | `workflows/image-connect.md` |
 | Style Connect token mapping and ledger | `workflows/style-connect.md` |
+| Style Plan CSS generation input | `workflows/style-plan.md` |
 | Prop modeling | `workflows/prop-modeling.md` |
 | Asset and icon hard rules | `workflows/asset-handling.md` |
 | Code generation and templates | `workflows/code-generation.md` — calls `scripts/generate-skeleton` |
@@ -62,6 +65,8 @@ Resolve the target project root. If `.image-to-component.rules.md` is missing, r
 ### Step 1 — Gather Context
 
 Confirm framework, output mode, language, style stack, and whether optional style hints are enabled. Recommended defaults are React, chat output, TypeScript, CSS Modules, and style hints disabled. Do not assume missing answers.
+
+If the user has Sketch, Figma, or MasterGo source data and asks for accurate styling, pause and route to the design-source pipeline instead of continuing with screenshot inference. Continue here only when the available input is screenshots/images or when the user explicitly wants a lower-fidelity skeleton.
 
 ### Step 2 — Capture User Intent
 
@@ -105,13 +110,15 @@ Run `workflows/image-connect.md`. Output the reuse/extend/create candidate table
 
 Only run this step if style hints were enabled in Step 1. Run `workflows/style-connect.md`. Output the token-ledger table and wait for user confirmation of token mappings before code generation. If style hints were not enabled, skip to Step 9.
 
+After token decisions are confirmed, run `workflows/style-plan.md` to create the `SkeletonConfig.stylePlan` object. The generator consumes `stylePlan` to write CSS module or BEM CSS files. If style hints were skipped, omit `stylePlan`.
+
 ### Step 9 — Define Props
 
 Run `workflows/prop-modeling.md`, then `workflows/asset-handling.md` for every `media` node or unknown icon.
 
 ### Step 10 — Generate Code Skeleton
 
-Run `workflows/code-generation.md` to build a `SkeletonConfig` JSON object from the component tree and prop definitions established in Step 9. Then run:
+Run `workflows/code-generation.md` to build a `SkeletonConfig` JSON object from the component tree and prop definitions established in Step 9, plus `stylePlan` from Step 8 when available. Then run:
 
 ```bash
 echo '<SkeletonConfig JSON>' | npm run generate-skeleton
@@ -137,6 +144,7 @@ Only in write-file mode, run `workflows/render-verification.md` when a Storybook
 
 | Mistake | Fix |
 |---|---|
+| Promise high-fidelity styling from screenshots | Explain the screenshot limitation and route to a design-source workflow when source data exists |
 | Skip `.image-to-component.rules.md` | Run init first when missing |
 | Parse free-text signatures | Require JSON from `protocols/subagent-return-format.md` |
 | Treat Stage A coarse signatures as final | Use them only to select Stage B files |

@@ -6,6 +6,8 @@ Monorepo containing **AI skills** and **hands-on samples** that exercise them.
 skill-collections/
 ├── skills/
 │   ├── design-to-spec/          # UI 设计稿 → 实现规格包
+│   ├── image-to-component/      # 截图/图片 → 结构优先组件骨架
+│   ├── mastergo-to-component/   # MasterGo DSL → 预览确认 → React 组件包（设计中）
 │   └── html-article-to-markdown/ # HTML 文章 → 清洁 Markdown
 ├── samples/                     # 按 skill 分组的实战工作区
 │   └── design-to-spec/
@@ -22,6 +24,8 @@ skill-collections/
 | 了解 `design-to-spec` 能做什么 | [`skills/design-to-spec/ONBOARDING.md`](./skills/design-to-spec/ONBOARDING.md) |
 | 在真实设计稿上运行 design-to-spec | [`skills/design-to-spec/references/operator-guide.md`](./skills/design-to-spec/references/operator-guide.md) |
 | 了解 HTML → Markdown 转换 skill | [`skills/html-article-to-markdown/README.md`](./skills/html-article-to-markdown/README.md) |
+| 了解截图流和设计源流的边界 | [`docs/design-source-to-component-architecture.md`](./docs/design-source-to-component-architecture.md) |
+| 查看 MasterGo → Component 架构草案 | [`skills/mastergo-to-component/docs/architecture-design.md`](./skills/mastergo-to-component/docs/architecture-design.md) |
 | 完整的 inputs → spec → 实现全流程 | [`samples/design-to-spec/search-panel/`](./samples/design-to-spec/search-panel/) |
 | 了解 monorepo 组织方式 | [`docs/repo-workflow.md`](./docs/repo-workflow.md) |
 | 编写新 sample | [`docs/sample-authoring.md`](./docs/sample-authoring.md) |
@@ -70,5 +74,7 @@ npm run check
 ## Status
 
 - `design-to-spec` 处于 v0.10.x（Node.js 运行时，四阶段状态机，golden samples，38 个回归测试）。详见 [`skills/design-to-spec/CHANGELOG.md`](./skills/design-to-spec/CHANGELOG.md)。
+- `image-to-component` 定位为截图/图片输入的结构优先 skeleton workflow，不承诺设计源级样式保真。
+- `mastergo-to-component` 处于架构设计阶段，作为第一条设计源 provider 路线，目标是 MasterGo DSL → Stable Design IR → HTML preview → React + TypeScript + BEM CSS。
 - `html-article-to-markdown` 处于早期阶段（TypeScript CLI，WeChat HTML 转 Markdown）。详见 [`skills/html-article-to-markdown/README.md`](./skills/html-article-to-markdown/README.md)。
 - 实战样本：`search-panel`（进行中，V0.11）。路线图见 [`skills/design-to-spec/references/roadmap.md`](./skills/design-to-spec/references/roadmap.md)。

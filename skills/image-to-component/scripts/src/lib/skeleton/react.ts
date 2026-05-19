@@ -1,4 +1,4 @@
-import type { SkeletonConfig, ComponentNode, GeneratedFile } from '../../types.js'
+import type { SkeletonConfig, ComponentNode, GeneratedFile, StylePlan, ComponentStyleRule, StyleDeclaration } from '../../types.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -11,6 +11,65 @@ function toScreamingSnake(name: string): string {
   return name
     .replace(/([A-Z])/g, (_, c, i) => (i === 0 ? c : '_' + c))
     .toUpperCase()
+}
+
+function cssModuleClassName(node: ComponentNode, isRoot: boolean): string {
+  if (isRoot && node.discriminator) return 'root'
+  return toKebab(node.name).replace(/-/g, '_') || node.name.toLowerCase()
+}
+
+function bemClassName(node: ComponentNode): string {
+  return toKebab(node.name)
+}
+
+function styleRuleFor(stylePlan: StylePlan | undefined, component: string): ComponentStyleRule | undefined {
+  return stylePlan?.rules.find(rule => rule.component === component)
+}
+
+function hasStyleRule(stylePlan: StylePlan | undefined, component: string): boolean {
+  const rule = styleRuleFor(stylePlan, component)
+  return Boolean(rule && ((rule.declarations ?? []).length > 0 || (rule.variants ?? []).length > 0))
+}
+
+function safeCssComment(comment: string): string {
+  return comment.replace(/\*\//g, '* /')
+}
+
+function formatDeclarations(declarations: StyleDeclaration[]): string[] {
+  return declarations.map(declaration => {
+    const comment = declaration.comment ? ` /* ${safeCssComment(declaration.comment)} */` : ''
+    return `  ${declaration.property}: ${declaration.value};${comment}`
+  })
+}
+
+function formatCssRule(selector: string, declarations: StyleDeclaration[]): string[] {
+  const lines: string[] = []
+  lines.push(`${selector} {`)
+  lines.push(...formatDeclarations(declarations))
+  lines.push(`}`)
+  return lines
+}
+
+function generateCssContent(node: ComponentNode, stylePlan: StylePlan | undefined, options: { modules: boolean, root: boolean }): string {
+  const rule = styleRuleFor(stylePlan, node.name)
+  if (!rule) return ''
+
+  const lines: string[] = []
+  const baseSelector = options.modules
+    ? `.${cssModuleClassName(node, options.root)}`
+    : `.${bemClassName(node)}`
+
+  lines.push(...formatCssRule(baseSelector, rule.declarations ?? []))
+
+  for (const variant of rule.variants ?? []) {
+    if (lines.length > 0) lines.push('')
+    const selector = options.modules
+      ? `.${variant.name}`
+      : `.${bemClassName(node)}--${variant.name}`
+    lines.push(...formatCssRule(selector, variant.declarations))
+  }
+
+  return lines.join('\n') + '\n'
 }
 
 // ── cn helper ─────────────────────────────────────────────────────────────────
@@ -121,13 +180,16 @@ function genRootTsxCssModules(node: ComponentNode): string {
   return lines.join('\n')
 }
 
-function genRootTsxBem(node: ComponentNode): string {
+function genRootTsxBem(node: ComponentNode, stylePlan?: StylePlan): string {
   const { name, element, discriminator, props, children } = node
   const kebab = toKebab(name)
 
   const lines: string[] = []
 
   // Imports
+  if (hasStyleRule(stylePlan, name)) {
+    lines.push(`import './${name}.css'`)
+  }
   lines.push(`import { cn } from './utils/cn'`)
   if (discriminator) {
     lines.push(`import type { ${discriminator.type} } from './types'`)
@@ -249,13 +311,16 @@ function genRootJsxCssModules(node: ComponentNode): string {
   return lines.join('\n')
 }
 
-function genRootJsxBem(node: ComponentNode): string {
+function genRootJsxBem(node: ComponentNode, stylePlan?: StylePlan): string {
   const { name, element, discriminator, props, children } = node
   const kebab = toKebab(name)
 
   const lines: string[] = []
 
   // Imports
+  if (hasStyleRule(stylePlan, name)) {
+    lines.push(`import './${name}.css'`)
+  }
   lines.push(`import { cn } from './utils/cn'`)
   for (const child of children) {
     lines.push(`import { ${child.name} } from './components/${child.name}'`)
@@ -333,10 +398,15 @@ function genChildTsxCssModules(node: ComponentNode): string {
   return lines.join('\n')
 }
 
-function genChildTsxBem(node: ComponentNode): string {
+function genChildTsxBem(node: ComponentNode, stylePlan?: StylePlan): string {
   const { name, element, props } = node
   const kebab = toKebab(name)
   const lines: string[] = []
+
+  if (hasStyleRule(stylePlan, name)) {
+    lines.push(`import './${name}.css'`)
+    lines.push('')
+  }
 
   lines.push(`interface ${name}Props {`)
   for (const prop of props) {
@@ -388,10 +458,15 @@ function genChildJsxCssModules(node: ComponentNode): string {
   return lines.join('\n')
 }
 
-function genChildJsxBem(node: ComponentNode): string {
+function genChildJsxBem(node: ComponentNode, stylePlan?: StylePlan): string {
   const { name, element, props } = node
   const kebab = toKebab(name)
   const lines: string[] = []
+
+  if (hasStyleRule(stylePlan, name)) {
+    lines.push(`import './${name}.css'`)
+    lines.push('')
+  }
 
   const allProps = props.map(p => p.name)
   if (allProps.length > 0) {
@@ -435,7 +510,7 @@ function genIndexJs(node: ComponentNode): string {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function generateReact(config: SkeletonConfig): GeneratedFile[] {
-  const { lang, style, rootComponent } = config
+  const { lang, style, rootComponent, stylePlan } = config
   const isTs = lang === 'ts'
   const isCssModules = style === 'css-modules'
   const ext = isTs ? 'tsx' : 'jsx'
@@ -446,17 +521,19 @@ export function generateReact(config: SkeletonConfig): GeneratedFile[] {
   if (isTs && isCssModules) {
     rootContent = genRootTsxCssModules(rootComponent)
   } else if (isTs && !isCssModules) {
-    rootContent = genRootTsxBem(rootComponent)
+    rootContent = genRootTsxBem(rootComponent, stylePlan)
   } else if (!isTs && isCssModules) {
     rootContent = genRootJsxCssModules(rootComponent)
   } else {
-    rootContent = genRootJsxBem(rootComponent)
+    rootContent = genRootJsxBem(rootComponent, stylePlan)
   }
   files.push({ path: `${rootComponent.name}.${ext}`, content: rootContent })
 
   // Root CSS module
   if (isCssModules) {
-    files.push({ path: `${rootComponent.name}.module.css`, content: '' })
+    files.push({ path: `${rootComponent.name}.module.css`, content: generateCssContent(rootComponent, stylePlan, { modules: true, root: true }) })
+  } else if (hasStyleRule(stylePlan, rootComponent.name)) {
+    files.push({ path: `${rootComponent.name}.css`, content: generateCssContent(rootComponent, stylePlan, { modules: false, root: true }) })
   }
 
   // types.ts (TS only, when discriminator present)
@@ -476,16 +553,18 @@ export function generateReact(config: SkeletonConfig): GeneratedFile[] {
     if (isTs && isCssModules) {
       childContent = genChildTsxCssModules(child)
     } else if (isTs && !isCssModules) {
-      childContent = genChildTsxBem(child)
+      childContent = genChildTsxBem(child, stylePlan)
     } else if (!isTs && isCssModules) {
       childContent = genChildJsxCssModules(child)
     } else {
-      childContent = genChildJsxBem(child)
+      childContent = genChildJsxBem(child, stylePlan)
     }
     files.push({ path: `components/${child.name}.${ext}`, content: childContent })
 
     if (isCssModules) {
-      files.push({ path: `components/${child.name}.module.css`, content: '' })
+      files.push({ path: `components/${child.name}.module.css`, content: generateCssContent(child, stylePlan, { modules: true, root: false }) })
+    } else if (hasStyleRule(stylePlan, child.name)) {
+      files.push({ path: `components/${child.name}.css`, content: generateCssContent(child, stylePlan, { modules: false, root: false }) })
     }
   }
 
