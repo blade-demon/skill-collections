@@ -53,4 +53,69 @@ describe('SkeletonConfigSchema', () => {
     }
     expect(() => SkeletonConfigSchema.parse(input)).not.toThrow()
   })
+
+  it('accepts a style plan for generated CSS declarations', () => {
+    const input = {
+      framework: 'react',
+      lang: 'ts',
+      style: 'bem',
+      rootComponent: {
+        name: 'MyPage',
+        props: [],
+        children: [],
+      },
+      stylePlan: {
+        rules: [
+          {
+            component: 'MyPage',
+            declarations: [
+              { property: 'display', value: 'flex', source: 'inferred' },
+              { property: '--card-gap', value: 'var(--space-md)', source: 'token' },
+              { property: '-webkit-line-clamp', value: '2', source: 'hardcoded' },
+              { property: 'gap', value: 'var(--space-md)', source: 'token-ledger', comment: 'Confirmed in token-ledger.md' },
+            ],
+            variants: [
+              {
+                name: 'high-risk',
+                declarations: [{ property: 'box-shadow', value: 'var(--shadow-card)', source: 'provided' }],
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    const parsed = SkeletonConfigSchema.parse(input)
+    expect(parsed.stylePlan?.rules[0].declarations).toHaveLength(4)
+    expect(parsed.stylePlan?.rules[0].variants).toHaveLength(1)
+  })
+
+  it('rejects unsafe style plan variant names', () => {
+    const input = {
+      framework: 'react',
+      lang: 'ts',
+      style: 'bem',
+      rootComponent: {
+        name: 'MyPage',
+        props: [],
+        children: [],
+      },
+      stylePlan: {
+        rules: [
+          {
+            component: 'MyPage',
+            declarations: [],
+            variants: [
+              {
+                name: 'high risk',
+                declarations: [{ property: 'display', value: 'grid', source: 'inferred' }],
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    expect(() => SkeletonConfigSchema.parse(input)).toThrow()
+  })
 })

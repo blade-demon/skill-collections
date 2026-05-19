@@ -107,6 +107,30 @@ export const DiscriminatorDefSchema = z.object({
   variants: z.array(z.string()).min(2),
 })
 
+// ── Style Plan ───────────────────────────────────────────────────────────────
+
+export const StyleDeclarationSchema = z.object({
+  property: z.string().regex(/^(?:[a-z][a-z0-9-]*|--[a-z0-9-]+|-[a-z]+-[a-z0-9-]+)$/),
+  value: z.string().min(1),
+  source: z.enum(['inferred','token-ledger','token','hardcoded','provided','reused','create']).default('inferred'),
+  comment: z.string().optional(),
+}).strict()
+
+export const StyleVariantRuleSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9-]*$/),
+  declarations: z.array(StyleDeclarationSchema).default([]),
+}).strict()
+
+export const ComponentStyleRuleSchema = z.object({
+  component: z.string().regex(/^[A-Z]/),
+  declarations: z.array(StyleDeclarationSchema).default([]),
+  variants: z.array(StyleVariantRuleSchema).default([]),
+}).strict()
+
+export const StylePlanSchema = z.object({
+  rules: z.array(ComponentStyleRuleSchema).default([]),
+}).strict()
+
 // ComponentNode interface is the output shape (after defaults are applied)
 export interface ComponentNode {
   name: string
@@ -140,11 +164,15 @@ export const SkeletonConfigSchema = z.object({
   lang: z.enum(['ts','js']),
   style: z.enum(['css-modules','bem']),
   rootComponent: ComponentNodeSchema,
+  stylePlan: StylePlanSchema.optional(),
 })
 
 export type SkeletonConfig = z.infer<typeof SkeletonConfigSchema>
 export type PropDef = z.infer<typeof PropDefSchema>
 export type DiscriminatorDef = z.infer<typeof DiscriminatorDefSchema>
+export type StylePlan = z.infer<typeof StylePlanSchema>
+export type ComponentStyleRule = z.infer<typeof ComponentStyleRuleSchema>
+export type StyleDeclaration = z.infer<typeof StyleDeclarationSchema>
 
 export interface GeneratedFile {
   path: string

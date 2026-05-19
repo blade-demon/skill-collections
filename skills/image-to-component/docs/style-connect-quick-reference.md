@@ -113,7 +113,7 @@ Tell me which token IDs should be:
 ```
 All: corner_radius=medium, primary_action_count=1
 pending.png: shadow_presence=card, type_hierarchy_levels=3
-expired.png: shadow_presence=elevated, type_hierarchy_levels=3
+expired.png: shadow_presence=modal, type_hierarchy_levels=3
 ```
 
 **Project libraries (from rules file):** `[antd, tailwind]` (priority order)
@@ -123,7 +123,7 @@ expired.png: shadow_presence=elevated, type_hierarchy_levels=3
 | Token ID | Hint source | Source image(s) | Visual trait | Suggested name | Source | Confidence | Status | User action |
 | token-001 | corner_radius=medium | all | Border radius | `--radius-md` | project-local | high | provided | Exists in `src/tokens/spacing.css` (also in lib:antd, using project-local by priority) |
 | token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
-| token-003 | shadow_presence=elevated | expired.png | Modal shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify; antd has 3 elevation levels |
+| token-003 | shadow_presence=modal | expired.png | Modal shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify; antd has 3 elevation levels |
 | token-004 | type_hierarchy_levels=3 | all | Typography scale | `text-base / text-xl / text-2xl` | lib:tailwind | high | pending | Confirm Tailwind scale |
 | token-005 | primary_action_count=1 | all | Primary color | `--color-primary` | project-local | high | provided | Exists in `src/tokens/color.css` |
 ```
@@ -131,7 +131,7 @@ expired.png: shadow_presence=elevated, type_hierarchy_levels=3
 **User chooses Option B:**
 ```
 Change:
-- token-003: map to --shadow-elevation-4 instead (elevated cards need more shadow)
+- token-003: map to --shadow-elevation-4 instead (modal-depth state needs stronger shadow)
 - token-004: already have this typography scale
 ```
 
@@ -147,7 +147,7 @@ Change:
 .card {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-elevation-2);
-  /* or: var(--shadow-elevation-4) for elevated state */
+  /* or: var(--shadow-elevation-4) for modal-depth state */
 }
 ```
 
