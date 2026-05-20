@@ -29,6 +29,9 @@ skill-collections/
 │   │   ├── templates/
 │   │   ├── references/
 │   │   └── examples/               # Golden regression samples
+│   ├── image-to-component/         # Screenshot -> component skeleton workflow
+│   ├── mastergo-to-component/      # MasterGo design-source provider
+│   ├── sketch-to-component/        # Sketch design-source provider
 │   └── html-article-to-markdown/
 │       ├── SKILL.md
 │       ├── README.md
@@ -49,7 +52,10 @@ skill-collections/
 ├── fixtures/                       # Shared test/demo app fixtures
 └── docs/                           # Top-level cross-cutting documentation
     ├── repo-workflow.md
-    └── sample-authoring.md
+    ├── sample-authoring.md
+    ├── design-source-to-component-architecture.md        # D2C 架构总纲（含 -zh 中文版）
+    ├── design-source-to-component-implementation-plan.md # D2C 实施计划与进度
+    └── superpowers/
 ```
 
 The top-level split is intentional:
