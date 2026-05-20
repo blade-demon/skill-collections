@@ -1,184 +1,182 @@
-# mastergo-to-component Architecture Design
+# mastergo-to-component Provider Architecture
 
-## Goal
+## Scope
 
-Create a skill that converts a MasterGo design URL into frontend code through a two-stage workflow:
+`mastergo-to-component` is the MasterGo provider adapter for the shared design-source pipeline.
 
-1. Fetch and normalize MasterGo DSL into a stable intermediate representation.
-2. Generate a static HTML preview for developer and visual review.
-3. After explicit approval, generate a React + TypeScript + BEM CSS component package.
+The authoritative D2C contract is [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md). This provider document must not redefine:
 
-The first reference design is:
+- the canonical IR identity or schema location;
+- preview, IR, or package output directories;
+- review gate count or gate semantics;
+- barrel export structure;
+- target stack output shape.
+
+Provider implementation must feed the global contract:
+
+```text
+MasterGo URL
+-> MasterGo provider extractor
+-> output/ir/raw-dsl.json
+-> output/ir/design-ir.json
+-> shared preview, contract, and target-package pipeline
+```
+
+The first reference design remains:
 
 ```text
 https://mastergo.com/file/192813714739577?fileOpenFrom=home&page_id=M&devMode=true&layer_id=2%3A0031
 ```
 
-The first generated target is React + TypeScript + BEM CSS. CSS must be split by component in the final React output.
+For this reference, `layer_id=2:0031` has previously represented the root page `财资小助手对话页`.
 
-This skill is the first concrete provider in the broader design-source pipeline described in [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md). It should not be treated as an isolated one-off generator: MasterGo-specific extraction feeds a provider-neutral Stable Design IR, and later Figma or Sketch providers should be able to reuse the same preview and React generation contract.
+## Provider Responsibilities
 
-## Non-Goals For The Initial Scaffold
+The MasterGo provider owns only provider-specific work:
 
-- Do not implement DSL fetching yet.
-- Do not implement HTML preview generation yet.
-- Do not implement React generation yet.
-- Do not create an active `SKILL.md` until the architecture and execution details are approved.
-- Do not call the MasterGo API from this scaffold step.
+| Responsibility | Provider rule |
+|---|---|
+| URL parsing | Parse `https://mastergo.com/file/{fileId}` and decode URL-encoded `layer_id` values such as `2%3A0031` into `2:0031`. |
+| Authentication | Read `MASTERGO_TOKEN` from the shell environment and never print the token value. |
+| DSL fetch | Request MasterGo DSL for the resolved `fileId` and `layerId`. |
+| Raw preservation | Save provider data as `output/ir/raw-dsl.json` when running the full pipeline. |
+| Source trace | Preserve source ids, source names, node types, file id, page id, and layer id under the canonical IR `source` or trace records. |
+| Asset export | Export or record MasterGo images, SVGs, icons, masks, and unresolved asset placeholders. |
+| Reference frame | Export a provider-rendered frame or layer image for screenshot diff when MasterGo supports it. |
+| Normalization | Convert MasterGo-specific nodes into the canonical `output/ir/design-ir.json` target described by the global architecture. |
+| Warnings | Emit warnings for lossy conversion, unsupported node types, missing assets, low-confidence semantic candidates, and skipped screenshot diff. |
 
-## Overall Architecture
+All provider-specific fields must remain isolated under `source` metadata or trace records. Downstream preview and target code generation must consume canonical IR views and contracts, not raw MasterGo DSL.
 
-```mermaid
-flowchart TD
-  A["MasterGo URL"] --> B["MasterGo Provider Extractor"]
-  B --> C["MasterGo Raw DSL"]
-  C --> D["Stable Design IR"]
-  D --> E["mastergo-ir.json"]
-  E --> F["HTML Preview Generator"]
-  F --> G["preview/index.html + preview.css + preview assets"]
-  G --> H{"Developer / Visual Review"}
-  H -- "Needs changes" --> I["Adjust IR mapping or preview style rules"]
-  I --> F
-  H -- "Approved" --> J["React Generator"]
-  J --> K["React TS + BEM CSS component package"]
-  K --> L["Validation and asset ledger review"]
-```
+## Non-Goals
 
-## Relationship To `image-to-component`
+- Do not define a MasterGo-only IR file.
+- Do not define a MasterGo-only output tree.
+- Do not define a separate preview approval flow.
+- Do not define a separate React package layout or barrel export contract.
+- Do not generate target code before both global gates pass.
+- Do not treat annotations as mandatory; zero-annotation runs must degrade through global semantic fallback rules.
 
-`image-to-component` starts from screenshots and should remain a structure-first skeleton workflow. It can infer component trees, state differences, props, and asset ledgers, but it must not promise design-source-level styling.
+## Runtime Modules
 
-`mastergo-to-component` starts from structured MasterGo DSL. It can use real design source signals such as node names, text nodes, layout values, style fields, component instances, and asset references. That is why it owns the high-fidelity route: Stable Design IR -> HTML preview -> approved React package.
-
-## Proposed Skill Directory
-
-```text
-skills/mastergo-to-component/
-├── docs/
-│   └── architecture-design.md
-├── agents/
-├── references/
-├── scripts/
-│   ├── src/
-│   └── tests/
-│       └── fixtures/
-└── examples/
-```
-
-`SKILL.md` is intentionally omitted in this first scaffold so the incomplete skill is not discoverable as a ready-to-use workflow.
-
-## Runtime Architecture
-
-When implemented, the scripts package should contain these modules:
+When implemented, the provider package should keep provider-specific modules separate from shared D2C stages:
 
 ```text
 scripts/src/
-├── cli.ts
-├── parse-url.ts
-├── fetch-dsl.ts
-├── normalize-dsl.ts
-├── generate-preview.ts
-├── generate-react.ts
-├── write-files.ts
-└── types.ts
+  cli.ts
+  parse-url.ts
+  fetch-dsl.ts
+  export-assets.ts
+  export-reference-frame.ts
+  normalize-design-ir.ts
+  write-provider-artifacts.ts
+  types.ts
 ```
-
-### Module Responsibilities
 
 | Module | Responsibility |
 |---|---|
-| `parse-url.ts` | Parse MasterGo file URLs and `/goto/` URLs. Extract `fileId` and `layerId`. |
-| `fetch-dsl.ts` | Implement the MasterGo provider extractor: read `MASTERGO_TOKEN` safely and request MasterGo DSL from `/mcp/dsl`. |
-| `normalize-dsl.ts` | Convert raw MasterGo DSL into provider-neutral Stable Design IR, saved as `mastergo-ir.json`. |
-| `generate-preview.ts` | Generate reviewable static HTML, CSS, and preview asset placeholders from IR. |
-| `generate-react.ts` | Generate React + TypeScript + BEM CSS component package from approved IR. |
-| `write-files.ts` | Write generated files, ensure directories, and prevent accidental overwrite when requested. |
-| `types.ts` | Define raw DSL adapter types, normalized IR types, and output file descriptors. |
-| `cli.ts` | Provide command entrypoints such as `preview` and `generate-react`. |
+| `parse-url.ts` | Extract `fileId`, `pageId` when available, and decoded `layerId`. |
+| `fetch-dsl.ts` | Read `MASTERGO_TOKEN` safely and fetch MasterGo raw DSL. |
+| `export-assets.ts` | Export or ledger image, SVG, icon, mask, and placeholder assets. |
+| `export-reference-frame.ts` | Export the reference frame/layer image used by screenshot diff. |
+| `normalize-design-ir.ts` | Convert MasterGo raw DSL into the canonical `output/ir/design-ir.json` shape. |
+| `write-provider-artifacts.ts` | Write `raw-dsl.json`, provider traces, assets, and reference-frame artifacts without overwriting unless explicitly requested. |
+| `types.ts` | Define MasterGo raw adapter types and provider trace helpers only. Canonical IR types belong to the shared pipeline. |
+| `cli.ts` | Expose provider entrypoints that hand off to the shared preview, contract, and package generation pipeline. |
 
-## Why Convert Raw MasterGo DSL Into Stable Design IR
+## Execution Flow
 
-MasterGo DSL is design-tool data. It contains low-level design concepts such as `FRAME`, `INSTANCE`, `GROUP`, `LAYER`, `PATH`, `SVG_ELLIPSE`, `TEXT`, `layout`, `style`, and `children`.
+### Step 1: Validate URL
 
-Frontend generation needs a more stable contract:
+Input example:
 
-- Which parts are semantic components.
-- Which text nodes are business data.
-- Which layers are visual decoration.
-- Which images or icons need assets.
-- Which CSS block names should be generated.
-- Which parts cannot be reliably automated and need a ledger entry.
+```bash
+npm run extract -- --url "<mastergo-url>" --out output
+```
 
-The IR is that contract. It translates noisy design-tool structure into a predictable JSON shape used by both output stages:
+Required behavior:
+
+- Accept MasterGo file URLs.
+- Accept `/goto/` links only after a resolver exists.
+- Decode `layer_id`.
+- Stop with a clear error when `layer_id` is missing or cannot be resolved.
+
+### Step 2: Check Token Safely
+
+Required behavior:
+
+- Check whether `MASTERGO_TOKEN` exists before any network call.
+- Never print the token value.
+- Surface missing token as a fatal provider extraction failure.
+
+Safe check:
+
+```bash
+test -n "$MASTERGO_TOKEN" && echo "Token is set" || echo "Token is NOT set"
+```
+
+### Step 3: Fetch MasterGo Raw DSL
+
+Required behavior:
+
+- Request the MasterGo DSL for the resolved `fileId` and `layerId`.
+- Send the token through the expected MasterGo authentication header.
+- Preserve the raw response in `output/ir/raw-dsl.json` for traceability when running the full pipeline.
+- Distinguish missing token, permission denied, invalid token, network failure, URL parse failure, empty frame, and unsupported node families.
+
+### Step 4: Export Assets And Reference Frame
+
+Required behavior:
+
+- Export images, SVGs, icons, and other resources when the MasterGo API exposes binary or vector content.
+- If binary export is not available, create asset ledger entries and placeholders through the global output rules.
+- Export a provider-rendered frame or layer image for screenshot diff when possible.
+- If the reference image cannot be exported, continue with a warning as defined by the global Screenshot Diff Reference section.
+
+### Step 5: Normalize To Canonical Design IR
+
+Required behavior:
+
+- Write `output/ir/design-ir.json` with `schemaVersion` matching the global architecture.
+- Preserve every useful source node id and source node name.
+- Keep provider-specific details under source metadata or trace records.
+- Convert MasterGo node types into canonical visual and semantic fields.
+- Record low-confidence semantic candidates rather than silently approving them.
+- Emit warnings for lossy or unsupported transformations.
+
+For `layer_id=2:0031`, the provider should avoid treating the whole page as one anonymous component. It should preserve enough source and layout information for the shared semantic mapper to propose meaningful regions such as page shell, navigation, conversation area, cards, action rows, and input area.
+
+## MasterGo Normalization Guidance
+
+MasterGo DSL may contain low-level design concepts such as:
 
 ```text
-MasterGo raw DSL
--> mastergo-ir.json
--> HTML preview
--> React component package
+FRAME
+INSTANCE
+GROUP
+LAYER
+PATH
+SVG_ELLIPSE
+TEXT
+layout
+style
+children
 ```
 
-This prevents the preview generator and React generator from each inventing their own interpretation of the raw MasterGo tree.
+Provider normalization should:
 
-The same IR boundary is also what keeps the architecture ready for future providers:
+- collapse wrappers that have no visual or semantic value;
+- preserve wrappers that affect layout, clipping, mask, or z-order;
+- extract text nodes even when text is split across nested groups;
+- preserve layout and style data needed by the Visual View;
+- record component-instance information when present;
+- preserve repeated groups for later semantic inference;
+- map unsupported paths to icon or shape candidates with warnings;
+- leave business semantics as candidates, not approved contracts.
 
-```text
-MasterGo DSL   \
-Figma data      -> Stable Design IR -> Preview -> React
-Sketch IR      /
-```
+## Reference Design Candidate Regions
 
-### Example Raw DSL Shape
-
-The raw DSL might represent a hotel card as unnamed frames and text nodes:
-
-```json
-{
-  "type": "FRAME",
-  "name": "编组 6备份 6",
-  "children": [
-    { "type": "TEXT", "characters": "深圳福田香格里拉大酒店" },
-    { "type": "TEXT", "characters": "4.9" },
-    { "type": "TEXT", "characters": "643.08" },
-    { "type": "TEXT", "characters": "预定" }
-  ]
-}
-```
-
-The normalized IR should express what the frontend generator needs:
-
-```json
-{
-  "kind": "component",
-  "componentName": "HotelRecommendationCard",
-  "blockName": "hotel-recommendation-card",
-  "props": {
-    "hotelName": "深圳福田香格里拉大酒店",
-    "rating": "4.9",
-    "price": "643.08",
-    "actionText": "预定"
-  },
-  "children": []
-}
-```
-
-## IR Responsibilities
-
-### 1. Clean The Node Tree
-
-Remove or collapse layers that do not help code generation:
-
-- Empty frames.
-- Pure mask containers.
-- Duplicate backup layers.
-- Anonymous groups that only wrap a single meaningful node.
-- Decorative rectangles that should become CSS backgrounds or borders.
-
-The normalizer must preserve meaningful layout and visual signals when they affect generated output.
-
-### 2. Identify Semantic Components
-
-Map design nodes into frontend component candidates. For the reference design, expected candidates are:
+For the first reference design, candidate regions may include:
 
 ```text
 StatusBar
@@ -190,330 +188,26 @@ RoomOptionRow
 BottomInputBar
 ```
 
-The first version can use conservative heuristics based on node names and text clusters. If confidence is low, it should keep the node as a generic section and record a warning.
+These names are hints, not provider-level contract. The final component names, props, states, events, and exports must come from the shared Semantic View, Interaction Spec, and Component Plan, then pass Gate 2.
 
-### 3. Extract Text And Business Data
+## Validation Focus
 
-Collect text content from scattered `TEXT` nodes and group it into component props or `data.ts`.
+MasterGo provider validation should cover provider-owned behavior:
 
-For the reference design, examples include:
-
-```text
-财资小助手
-我要订深圳的酒店
-根据您历史订单为您挑选了4家酒店，看看哪家更合你意：
-入离日期：4月30日-5月6日(5晚)
-深圳福田香格里拉大酒店
-益田路4088号
-4.9
-643.08
-豪华双床房
-豪华阁双床房
-含双早
-04-30 17:30前可免费取消
-预定
-```
-
-### 4. Generate Stable Names
-
-Convert design names into stable code names:
-
-```text
-财资小助手对话页 -> ChatAssistantPage
-组件/系统/状态栏-亮底 -> StatusBar
-组件/导航栏0 -> TopNavBar
-组件/bubble/self -> ChatBubble
-底/键盘输入 -> BottomInputBar
-Frame 25备份 2 -> HotelRecommendationCard
-```
-
-Names must be deterministic so repeated generation produces stable file paths and class names.
-
-### 5. Track Assets
-
-Record image, icon, SVG path, and mask requirements in IR. Assets that cannot be exported automatically should become placeholders plus ledger entries.
-
-Example:
-
-```json
-{
-  "kind": "image",
-  "sourceNodeName": "dfc94ab533072d133014b8fa6cb809bc",
-  "targetPath": "assets/images/hotel-cover-placeholder.png",
-  "status": "placeholder",
-  "reason": "Bitmap layer found in DSL, but no binary export is available."
-}
-```
-
-### 6. Track Warnings
-
-Record uncertain or lossy transformations:
-
-```text
-- Complex path was represented as an icon placeholder.
-- Mask effect was not automatically reproduced.
-- Bitmap image requires manual export from MasterGo.
-- Node looked like a component but did not match a known component heuristic.
-```
-
-Warnings feed both `preview-ledger.md` and `asset-ledger.md`.
-
-## Proposed IR Shape
-
-```ts
-type MasterGoComponentIR = {
-  source: {
-    url: string;
-    fileId: string;
-    layerId: string;
-    rootName: string;
-  };
-  page: {
-    name: string;
-    componentName: string;
-    blockName: string;
-    width?: number;
-    height?: number;
-    sections: IRNode[];
-  };
-  data: Record<string, unknown>;
-  assets: IRAsset[];
-  warnings: IRWarning[];
-};
-
-type IRNode = {
-  id: string;
-  kind: "page" | "section" | "component" | "text" | "image" | "icon" | "shape";
-  sourceType: string;
-  sourceName: string;
-  componentName?: string;
-  blockName?: string;
-  text?: string;
-  props?: Record<string, unknown>;
-  layout?: IRLayout;
-  style?: IRStyle;
-  children: IRNode[];
-};
-```
-
-The exact type can evolve during implementation, but this boundary must remain: generated preview and generated React consume IR, not raw MasterGo DSL.
-
-## Step-By-Step Execution Details
-
-### Step 1: Validate Input URL
-
-Input:
-
-```bash
-npm run preview -- --url "<mastergo-url>" --out mastergo-output
-```
-
-Required behavior:
-
-- Accept `https://mastergo.com/file/{fileId}?layer_id={layerId}`.
-- Accept MasterGo `/goto/` links if resolution is implemented.
-- Decode URL-encoded layer IDs such as `2%3A0031` into `2:0031`.
-- Stop with a clear error if `layer_id` is missing.
-
-### Step 2: Check Token Safely
-
-Required behavior:
-
-- Check whether `MASTERGO_TOKEN` exists.
-- Never print the token value.
-- Stop before network calls if the token is missing.
-
-Safe check:
-
-```bash
-test -n "$MASTERGO_TOKEN" && echo "Token is set" || echo "Token is NOT set"
-```
-
-### Step 3: Fetch DSL
-
-Required behavior:
-
-- Request:
-
-```text
-GET https://mastergo.com/mcp/dsl?fileId={fileId}&layerId={layerId}
-```
-
-- Send token through `X-MG-UserAccessToken`.
-- Preserve raw DSL only in memory unless the user asks to save it.
-- Save normalized `mastergo-ir.json` because it is the handoff artifact.
-
-Error handling must distinguish:
-
-- Missing token.
-- Permission denied.
-- Invalid token.
-- Network failure.
-- URL parse failure.
-- Empty frame or unsupported node.
-
-### Step 4: Normalize DSL To IR
-
-Required behavior:
-
-- Traverse the raw DSL tree.
-- Extract text nodes even if the raw DSL shape differs from earlier examples.
-- Preserve the source node id and source name on every IR node.
-- Collapse irrelevant wrappers.
-- Identify component candidates.
-- Build data records for known page patterns.
-- Record assets and warnings.
-
-For `layer_id=2:0031`, the expected root is `财资小助手对话页`. The generated IR should not treat the whole page as one anonymous component; it should split the page into meaningful sections.
-
-### Step 5: Generate HTML Preview
-
-Required output:
-
-```text
-mastergo-output/
-├── mastergo-ir.json
-└── preview/
-    ├── index.html
-    ├── preview.css
-    ├── assets/
-    │   ├── images/
-    │   └── icons/
-    └── preview-ledger.md
-```
-
-Preview rules:
-
-- Use static HTML and CSS only.
-- Centralize preview styles in `preview.css` for easy visual iteration.
-- Include visible content for all extracted text.
-- Use placeholders for missing images and icons.
-- Write a ledger entry for every placeholder or lossy conversion.
-- Do not generate React in this step.
-
-### Step 6: Developer And Visual Review Gate
-
-Required behavior:
-
-- Stop after preview generation.
-- Ask the user to review `preview/index.html`.
-- Do not run React generation until the user explicitly confirms that the HTML style is acceptable.
-
-This is a hard gate. It prevents unapproved visual decisions from being spread across many React component files.
-
-### Step 7: Generate React After Approval
-
-Input:
-
-```bash
-npm run generate-react -- --ir mastergo-output/mastergo-ir.json --out src/components/ChatAssistantPage
-```
-
-Required output:
-
-```text
-src/components/ChatAssistantPage/
-├── index.ts
-├── ChatAssistantPage.tsx
-├── ChatAssistantPage.css
-├── types.ts
-├── data.ts
-├── assets/
-│   ├── images/
-│   ├── icons/
-│   └── asset-ledger.md
-└── components/
-    ├── index.ts
-    ├── StatusBar/
-    │   ├── index.ts
-    │   ├── StatusBar.tsx
-    │   └── StatusBar.css
-    ├── TopNavBar/
-    │   ├── index.ts
-    │   ├── TopNavBar.tsx
-    │   └── TopNavBar.css
-    ├── ChatBubble/
-    │   ├── index.ts
-    │   ├── ChatBubble.tsx
-    │   └── ChatBubble.css
-    ├── SuggestionList/
-    │   ├── index.ts
-    │   ├── SuggestionList.tsx
-    │   └── SuggestionList.css
-    ├── HotelRecommendationCard/
-    │   ├── index.ts
-    │   ├── HotelRecommendationCard.tsx
-    │   └── HotelRecommendationCard.css
-    ├── RoomOptionRow/
-    │   ├── index.ts
-    │   ├── RoomOptionRow.tsx
-    │   └── RoomOptionRow.css
-    └── BottomInputBar/
-        ├── index.ts
-        ├── BottomInputBar.tsx
-        └── BottomInputBar.css
-```
-
-### Step 8: React Output Rules
-
-Required behavior:
-
-- Generate React function components.
-- Generate TypeScript props.
-- Generate one CSS file per component.
-- Keep page-level CSS only for page shell and global page composition.
-- Use BEM class names.
-- Avoid inline styles unless there is no reasonable CSS representation.
-- Use static imports for component CSS files.
-- Use `data.ts` for extracted sample content.
-
-### Step 9: Barrel Export Rules
-
-Root export:
-
-```ts
-export { ChatAssistantPage } from "./ChatAssistantPage";
-export type {
-  ChatAssistantPageProps,
-  ChatMessage,
-  HotelRecommendation,
-  RoomOption
-} from "./types";
-```
-
-Child component export:
-
-```ts
-export { StatusBar } from "./StatusBar";
-export { TopNavBar } from "./TopNavBar";
-export { ChatBubble } from "./ChatBubble";
-export { SuggestionList } from "./SuggestionList";
-export { HotelRecommendationCard } from "./HotelRecommendationCard";
-export { RoomOptionRow } from "./RoomOptionRow";
-export { BottomInputBar } from "./BottomInputBar";
-```
-
-Each component folder also has its own `index.ts`.
-
-### Step 10: Validation
-
-Initial validation should cover:
-
-- URL parsing.
-- Layer id decoding.
-- DSL-to-IR normalization on fixtures.
+- URL parsing and `layer_id` decoding.
+- Missing token detection without token leakage.
+- Raw DSL fixture loading.
 - Empty frame detection.
-- Preview file tree generation.
-- React file tree generation.
-- Presence of every component CSS file.
-- Presence of `asset-ledger.md`.
-- Valid barrel export paths.
+- Source trace preservation.
+- Asset and reference-frame warning paths.
+- Canonical `schemaVersion` presence.
+- Provider-specific data isolation under `source` or trace records.
 
-Full visual validation can be added after the first working generator exists.
+Do not duplicate shared pipeline tests for output package structure or gate semantics here. Those belong to the shared design-source pipeline.
 
 ## Open Questions
 
-1. Whether the skill should provide a one-command `sync` flow later, or keep `preview` and `generate-react` separate forever.
-2. Whether generated preview files should be overwritten by default or require `--force`.
-3. Whether unknown components should become generic `Section` components or stop generation for manual mapping.
-4. Whether asset placeholders should be generated as SVG files, PNG placeholders, or CSS-only blocks.
+1. Whether MasterGo can export a reliable provider-rendered reference image for every target frame.
+2. Which MasterGo asset families can be exported automatically versus ledged as placeholders.
+3. Whether `/goto/` URL resolution should be provider-owned or shared across connector utilities.
+4. Which MasterGo component-instance fields should become provider-neutral concepts after another provider validates the same need.
