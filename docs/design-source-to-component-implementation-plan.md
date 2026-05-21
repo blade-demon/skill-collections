@@ -6,7 +6,7 @@
 >
 > 状态图例：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始
 
-最后更新：2026-05-21（Sketch-first 调整、Stage 3 选项 A、多轮文档一致性修订）
+最后更新：2026-05-21（Sketch-first 调整、Stage 2 完成、Stage 3 确认由 Sketch 承接）
 
 ---
 
@@ -41,9 +41,9 @@
 | raw → canonical IR 规范化（适配边界） | Provider adapter | 同上 |
 | 资源导出 / 参考帧导出 | Provider adapter | 同上 |
 
-> Stage 2 首个 **raw-extraction** provider = **Sketch**（`skills/sketch-to-component/scripts/`，
-> 本轮只实现 `extractRaw`）；MasterGo adapter 暂停。**Stage 3 起 normalize 的 provider 仍待定
-> (选项 A)** —— 这里不代表 Sketch 已占定完整 pipeline。`Provider` 端口本身 provider 中立。
+> 首发 provider = **Sketch**（`skills/sketch-to-component/scripts/`）：Stage 2 已实现 `extractRaw`，
+> Stage 3 起的 `normalize` 也确认由 Sketch 承接（2026-05-21）。MasterGo adapter 暂停。`Provider`
+> 端口本身 provider 中立 —— 上表的"专有"列指各 provider 各自实现。
 
 ### 关键边界约束
 
@@ -107,13 +107,14 @@
 `normalizeAndValidate()` 增加 raw 校验 + provider id 一致性检查；补 `views` / `raw-artifact`
 测试；`interaction-spec` / `component-plan` 统一 `ContractStatusSchema`。
 
-### 阶段 2 — Sketch Provider Raw Extractor（探针，到 `raw-dsl.json`） 🚧
+### 阶段 2 — Sketch Provider Raw Extractor（到 `raw-dsl.json`） ✅
 
-> **定位(选项 A)**:本轮是 Sketch provider 的 raw extraction 探针——把本地 `.sketch` 提取成
-> `RawArtifact`。选 Sketch 先行,是因为 `.sketch` 是公开、本地、可检视的格式,`extractRaw` 能
-> 离线开发与测试、无需服务端往返。**Stage 3(normalize)起由哪个 provider 承载,待本轮跑通后
-> 再定**;本轮不预先承诺完整 pipeline。注:Sketch 是当前**唯一离线可行**的 normalize 候选——
-> MasterGo normalize 需服务端 raw、无法离线 TDD。
+> **定位**:Stage 2 是 Sketch provider 的 raw extraction——把本地 `.sketch` 提取成 `RawArtifact`。
+> 选 Sketch 先行,是因为 `.sketch` 是公开、本地、可检视的格式,可离线开发与测试、无需服务端往返。
+> Stage 2 验证通过后,**Stage 3(normalize)也已确认由 Sketch 承接**(2026-05-21);MasterGo
+> normalize 需服务端 raw、无法离线 TDD,暂停。
+>
+> 已完成:`skills/sketch-to-component/scripts/`,4 测试文件 15 用例,提交 `4e42f80`。
 
 详细蓝图见 [`../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)。
 
@@ -130,10 +131,10 @@
 MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服务端 DSL 契约能
 稳定取得后再做。
 
-### 阶段 3 — 规范化 → `design-ir.json` ⬜（最难;provider 待定）
+### 阶段 3 — Sketch 规范化 → `design-ir.json` ⬜（最难）
 
-- **首发 provider 待 Stage 2 跑通后再定**(选项 A)。Sketch 是当前唯一离线可行的 normalize
-  候选(`.sketch` 可检视、fixture 友好);MasterGo normalize 需服务端 raw、无法离线 TDD。
+- **首发 normalize provider = Sketch**(2026-05-21 确认,Stage 2 已验证 `.sketch` 离线可行)。
+  MasterGo normalize 需服务端 raw、无法离线 TDD,后置。
 - 实现 `Provider.normalize`:raw → canonical `design-ir.json` —— 清理节点树、零标注启发式
   识别语义候选、抽取文本、生成稳定命名、记录 assets/warnings。
 - 对脱敏 fixture 做 TDD，断言产出**通过 `d2c-core` 的 `validateDesignIR()`**。
@@ -184,9 +185,9 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ## 4. 下一步
 
-阶段 0、阶段 1 已完成。执行**阶段 2 — Sketch Provider Raw Extractor**:清理并重做
-`skills/sketch-to-component/scripts/`,实现 `.sketch` → `RawArtifact` → `raw-dsl.json`。
-详细蓝图见 [`../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)。
+阶段 0–2 已完成(d2c-core 契约包、Sketch raw extractor)。下一步执行**阶段 3 — Sketch 规范化**:
+实现 `Provider.normalize`,把 Sketch `raw-dsl.json` 转成 canonical `design-ir.json`。
+开工前先产出脱敏最小化 fixture,并出 Stage 3 蓝图供 review。
 
 ## 5. 贯穿原则
 

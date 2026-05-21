@@ -595,7 +595,7 @@ React 输出必须使用这种组件包与 barrel 导出形态。避免生成单
 
 1. 在 `SKILL.md` 中把 `image-to-component` 重新定位为“截图到骨架”。
 2. 保留它现有的结构对比、签名校验、prop 建模和资源清单方面的优势。
-3. 首个完整垂直切片 provider **待定**。先做 Sketch provider 的 raw extraction 探针——`.sketch` 是公开、本地、可检视的格式，`extractRaw` 无需服务端往返即可开发与测试。
+3. **Sketch 是首个完整垂直切片 provider**（2026-05-21 确认，Stage 2 raw extraction 验证通过后）：由它承载 raw extraction 与 `normalize`。`.sketch` 是公开、本地、可检视的格式，管线可离线开发与测试。
 4. 为首个跑到 `normalize` 的 provider 实现 `ir/design-ir.json` 作为权威规范化 IR 目标，同时记录任何 provider 专有假设。
 5. 只有在第二个 provider 证明了哪些概念真正共享之后，再抽取更强的中立概念。
 6. 待 MasterGo 服务端 raw DSL 契约可稳定取得后再恢复它；Figma 更晚。每个新 provider 都须遵守 IR 版本管理、预览门禁、契约门禁和重生成行为。

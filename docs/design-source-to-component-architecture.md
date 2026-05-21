@@ -595,7 +595,7 @@ When a user needs accurate visual reconstruction and can provide Sketch, Figma, 
 
 1. Reposition `image-to-component` as screenshot-to-skeleton in its `SKILL.md`.
 2. Keep its existing structural comparison, signature validation, prop modeling, and asset-ledger strengths.
-3. The first complete-vertical-slice provider is **TBD**. Build the Sketch provider's raw extraction first as an offline de-risking probe — `.sketch` is an open, local, inspectable format, so `extractRaw` is developed and tested without a server round-trip.
+3. **Sketch is the first complete-vertical-slice provider** (confirmed 2026-05-21, after Stage 2 raw extraction proved out): it carries raw extraction and `normalize`. `.sketch` is an open, local, inspectable format, so the pipeline is developed and tested offline.
 4. Implement `ir/design-ir.json` as the canonical normalized IR target for the first provider that reaches `normalize`, documenting any provider-specific assumptions.
 5. Extract stronger provider-neutral concepts only after a second provider proves what is actually shared.
 6. Restore MasterGo as a provider once its server-side raw DSL contract can be obtained reliably; add Figma later. Every new provider must respect the IR versioning, preview gate, contract gate, and regeneration behavior.

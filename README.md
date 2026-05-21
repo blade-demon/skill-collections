@@ -83,7 +83,7 @@ npm run test:d2c
 - `design-to-spec` 处于 v0.10.x（Node.js 运行时，四阶段状态机，golden samples，38 个回归测试）。详见 [`skills/design-to-spec/CHANGELOG.md`](./skills/design-to-spec/CHANGELOG.md)。
 - `image-to-component` 定位为截图/图片输入的结构优先 skeleton workflow，不承诺设计源级样式保真。
 - 设计源到组件管线:共享内核 `@skill-collections/d2c-core` 已落地(Stage 1)。实施计划见 [`docs/design-source-to-component-implementation-plan.md`](./docs/design-source-to-component-implementation-plan.md)。
-- `sketch-to-component` 进行中:Sketch raw extraction 探针——直接解析 `.sketch` 文件产出 `RawArtifact`，作为离线先行的去风险切片。
+- `sketch-to-component` 进行中:Stage 2(`.sketch` → `RawArtifact`)已完成;已确认由 Sketch 承接完整 D2C 垂直切片,下一步 Stage 3 规范化(`normalize` → `design-ir.json`)。
 - `mastergo-to-component` 实现暂缓:其 DSL 转换在服务端、raw 结构不可见，待服务端契约可稳定取得后再做。
 - `html-article-to-markdown` 处于早期阶段（TypeScript CLI，WeChat HTML 转 Markdown）。详见 [`skills/html-article-to-markdown/README.md`](./skills/html-article-to-markdown/README.md)。
 - 实战样本：`search-panel`（进行中，V0.11）。路线图见 [`skills/design-to-spec/references/roadmap.md`](./skills/design-to-spec/references/roadmap.md)。

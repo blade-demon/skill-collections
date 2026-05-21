@@ -12,9 +12,8 @@
 
 **这不代表 Sketch 已占定完整 pipeline。** Sketch 的 raw extraction 先行,是因为 `.sketch` 是公开、
 本地、可检视的格式,`extractRaw` 能离线开发与测试、无需服务端往返 —— 这是一次**离线先行的去风险
-探针**。首个完整垂直切片 provider **待定**:MasterGo 原计划承担此角色,但因 DSL 在服务端、raw
-不可离线检视而**已暂停**,不再作为 Stage 3 的默认承载;normalize 起的 provider 待 raw extraction
-验证后再定。
+探针**。Stage 2 验证通过后,**Sketch 已确认承接 Stage 3(normalize)**,成为首个完整垂直切片
+provider(2026-05-21)。MasterGo 因 DSL 在服务端、raw 不可离线检视而暂停,后置。
 
 **做**:`.sketch` → `RawArtifact` → CLI 写 `output/ir/raw-dsl.json`。
 **不做**:`normalize`(Stage 3)、SketchMCP、`SketchProvider implements Provider` 完整类、
@@ -198,8 +197,8 @@ Sketch 只读本地文件,**无需 token,可端到端自验**:
 
 ## 13. 已并入的 review 决策(2026-05-21,9 点)
 
-1. **定位澄清** —— 本轮是 Sketch raw extraction 探针,非占定完整 pipeline;首个完整垂直切片
-   provider 待定(选项 A),MasterGo 原定承担但已暂停(见第 1 节)。
+1. **定位澄清** —— 本轮(Stage 2)是 Sketch raw extraction;Stage 2 验证后 Sketch 已确认承接
+   Stage 3 normalize(2026-05-21),成为首个完整垂直切片 provider(见第 1 节)。
 2. **`SketchRawModel.pages`** —— 用 `Array<{id,path,data}>`,保留 zip 路径与顺序。
 3. **CLI `--out` 必填** —— 不设默认,避免落错目录。
 4. **新增 `read-failed` 错误码** —— `file-not-found` 仅限 ENOENT。
