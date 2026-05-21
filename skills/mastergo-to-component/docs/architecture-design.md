@@ -12,6 +12,12 @@ The authoritative D2C contract is [`../../../docs/design-source-to-component-arc
 - barrel export structure;
 - target stack output shape.
 
+> **Status (2026-05-21):** MasterGo provider implementation is deferred. The Sketch
+> provider's raw-extraction stage is being built first as an offline de-risking probe
+> (`.sketch` is a local, inspectable format); the MasterGo extractor follows once its
+> server-side DSL contract can be obtained reliably. See
+> [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md).
+
 Provider implementation must feed the global contract:
 
 ```text

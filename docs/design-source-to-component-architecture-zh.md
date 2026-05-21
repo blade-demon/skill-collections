@@ -599,3 +599,8 @@ React 输出必须使用这种组件包与 barrel 导出形态。避免生成单
 4. 为第一个 provider 实现 `ir/design-ir.json` 作为权威规范化 IR 目标，同时记录任何 provider 专有假设。
 5. 只有在第二个 provider 证明了哪些概念真正共享之后，再抽取更强的中立概念。
 6. 在 MasterGo provider 验证了 IR 版本管理、预览门禁、契约门禁和重生成行为之后，再加入 Figma 和 Sketch provider。
+
+> **更新(2026-05-21):** Sketch provider 的 raw extraction 阶段先行落地,作为离线去风险探针
+> —— `.sketch` 是公开、本地、可检视的格式,其 `extractRaw` 无需服务端往返即可开发与测试。
+> 这既不改变上面的排序,也不终结"完整 normalize → preview → codegen 由哪个 provider 承载"的
+> 决定,只是先验证提取路径。

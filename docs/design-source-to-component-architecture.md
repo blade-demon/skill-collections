@@ -599,3 +599,9 @@ When a user needs accurate visual reconstruction and can provide Sketch, Figma, 
 4. Implement `ir/design-ir.json` as the canonical normalized IR target for the first provider, while documenting any provider-specific assumptions.
 5. Extract stronger provider-neutral concepts only after a second provider proves what is actually shared.
 6. Add Figma and Sketch providers after the MasterGo provider proves the IR versioning, preview gate, contract gate, and regeneration behavior.
+
+> **Update (2026-05-21):** the Sketch provider's raw-extraction stage is being built first
+> as an offline de-risking probe — `.sketch` is an open, local, inspectable format, so its
+> `extractRaw` can be developed and tested without a server round-trip. This neither
+> changes the ordering above nor finalizes which provider carries the full
+> normalize → preview → codegen pipeline; it only validates the extraction approach early.

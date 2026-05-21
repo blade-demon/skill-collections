@@ -71,56 +71,66 @@
 - ✅ **`docs/repo-workflow.md` §1 同步**：布局树补 image/mastergo/sketch 三个 skill 与 docs/ 清单
   （`packages/` 与 §7 随阶段 1 落地一并更新）
 
-### 阶段 1 — 建立共享管线 + IR 契约 ⬜（最关键，保持克制）
+### 阶段 1 — 建立共享管线 + IR 契约 ✅
 
-1. 新建 `packages/d2c-core/` workspace：`package.json`（`@skill-collections/d2c-core`、
-   `type: module`、`zod`、`tsx`、`vitest`、`typescript`）、`tsconfig.json`、`vitest.config.ts`
-   ——复用 `skills/sketch-to-component/scripts/` 的配置惯例（ES2022 / ESNext / Bundler / strict /
-   noUncheckedIndexedAccess）。
-2. 根 `package.json` 的 `workspaces` **只加 `packages/*`**（`skills/*/scripts` 暂不纳入，见第 3 节 #2），
-   并加 `test:d2c` 脚本。
-3. `src/ir/`：Zod `DesignIRSchema`。
-   - **顶层信封从严**：`schemaVersion`、`source`（含 trace）、`warnings` 严格校验。
-   - **内层从宽**：`visual` / `semantic` / `interaction` 在拿到真实 DSL fixture 前**不要定死**，
-     先用 `confidence` / `warnings` / `annotations` / `candidates` 这种可扩展形态承接。
-   - 派生视图 schema：`VisualView` / `SemanticView` / `InteractionSpec` / `ComponentPlan`。
-   - `validateDesignIR()` + `schemaVersion` 兼容校验。
-4. `src/provider/`：定义能力型 `Provider` 端口接口（见第 1 节边界约束）。
-5. vitest 单测覆盖 schema 与 validator。纯类型与校验，不碰网络。
+已落地 `packages/d2c-core/`（`@skill-collections/d2c-core`，source-only 内部包，无 `dist/`）：
 
-**阶段 1 出口标准：**
-- `npm run test:d2c` 通过；
-- 根 workspace `npm install` 正常；
-- 最小 IR fixture 可被 `validateDesignIR()` parse；
-- 错误的 `schemaVersion` 会校验失败；
-- 缺 `source` trace 会校验失败；
-- 测试全程不访问网络。
+1. ✅ workspace 配置（`package.json` / `tsconfig.json` / `vitest.config.ts` / `README.md`），
+   复用 sketch scripts 的 TS/vitest 惯例。
+2. ✅ 根 `package.json` 加 `packages/*` 与 `test:d2c` 脚本（未并入 `check`）。
+3. ✅ `src/ir/`：`version.ts`（版本族 + 粒度化 `isCompatible`：malformed / family-mismatch /
+   major-incompatible / minor-incompatible）、`schema.ts`（`DesignIRSchema` 顶层从严、
+   `visual`/`semantic` 从宽，`Warning`/`Confidence`/`Annotation` 等稳定基元）、
+   `views.ts`（4 个派生视图仅信封 + `generatedFrom`）、`validate.ts`（`validateDesignIR()` /
+   `assertDesignIR()`）。
+4. ✅ `src/provider/`：能力型 `Provider` 端口 + `RawArtifactSchema`（`capturedAt` 为 ISO datetime）
+   + `normalizeAndValidate()` helper。
+5. ✅ vitest 单测 6 文件 40 用例;模块级 + 根 barrel。
 
-### 阶段 2 — MasterGo Provider 提取器（到 `raw-dsl.json`） ⬜
+**阶段 1 出口标准（全部已验证 ✅，2026-05-20）：**
+- ✅ `npm run test:d2c` 通过 — 6 文件 40/40；
+- ✅ 根 workspace `npm install` 正常 — 71 包，11s；
+- ✅ 最小 IR fixture 可被 `validateDesignIR()` parse；
+- ✅ 错误 / 畸形的 `schemaVersion` 会校验失败；
+- ✅ 缺 `source` trace（`source.ref` 空 / 缺 `source`）会校验失败；
+- ✅ 测试全程不访问网络（纯函数）；
+- ✅ 附加：`tsc --noEmit` 类型检查通过。
 
-1. **脚手架 `skills/mastergo-to-component/scripts/`**——目前只有空 `.gitkeep`，需补
-   `package.json` / `tsconfig.json` / `vitest.config.ts`。
-2. 把 `skills/mastergo-to-component/scripts` 作为**具体路径**加入根 `workspaces`（不是
-   `skills/*/scripts` 通配），使其可 `import @skill-collections/d2c-core`，同时把 sketch/image
-   的半成品 scripts 挡在外面。
-3. `parse-url.ts`：解析 MasterGo URL、decode `layer_id`。
-4. `fetch-dsl.ts`：读 `MASTERGO_TOKEN`（绝不打印）、拉 DSL、按总纲"错误与中止语义"做错误分类。
-5. **fixture 策略（脱敏）**：
-   - 先用**私有、git-ignored** 的完整 raw DSL fixture 跑通；为 `scripts/tests/fixtures/` 加 `.gitignore`。
-   - 之后再提交一份**最小化、脱敏、可复现**的 fixture 作为回归基线。
-   - 不直接提交完整设计稿原始数据。
+**阶段 1 后代码评审加固（已并入，40/40 通过）：** 抽出共享 `TraceRefSchema`（`source.ref`
+与 `RawArtifact.ref` 同用、非空）；`RawArtifact.payload` 显式拒绝缺失 / `undefined`；
+`DesignIRSchema.schemaVersion` 加格式 regex（schema 管格式、`isCompatible` 管语义）；
+`normalizeAndValidate()` 增加 raw 校验 + provider id 一致性检查；补 `views` / `raw-artifact`
+测试；`interaction-spec` / `component-plan` 统一 `ContractStatusSchema`。
 
-参考设计 URL：
-`https://mastergo.com/file/192813714739577?fileOpenFrom=home&page_id=M&devMode=true&layer_id=2%3A0031`
-（`layer_id=2:0031` 历史上对应根页面 `财资小助手对话页`）
+### 阶段 2 — Sketch Provider Raw Extractor（探针，到 `raw-dsl.json`） 🚧
 
-### 阶段 3 — MasterGo 规范化 → `design-ir.json` ⬜（最难）
+> **定位**:本轮是 Sketch provider 的 raw extraction 探针——把本地 `.sketch` 提取成
+> `RawArtifact`。选 Sketch 先行,是因为 `.sketch` 是公开、本地、可检视的格式,`extractRaw`
+> 能离线开发与测试、无需服务端往返。**这不代表 Sketch 已占定完整 pipeline**:MasterGo 仍是
+> 原定的首个完整 D2C 垂直切片;normalize→preview→codegen 由谁承载,待 raw extraction 验证后再定。
 
-- `normalize-design-ir.ts`：清理节点树、零标注启发式识别语义候选、抽取文本、生成稳定命名、
-  记录 assets/warnings；实现 core 的 `Provider.normalize`。
-- 对 fixture 做 TDD，断言产出**通过 `d2c-core` 的 `validateDesignIR()`**。
-- 补 `export-assets.ts`、`export-reference-frame.ts`、`write-provider-artifacts.ts`、provider `cli.ts`。
-- 先让参考设计产出一份合法 IR，不追求完美。
+详细蓝图见 [`../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)。
+
+1. 清理现有 `skills/sketch-to-component/scripts/`:删旧 `src/ir/`(Color/Rect)、删独立
+   `package-lock.json`;`package.json` 改 scoped 名 `@skill-collections/sketch-to-component-scripts`,
+   依赖 `@skill-collections/d2c-core` + `fflate`。
+2. 把 `skills/sketch-to-component/scripts` 作为**具体路径**加入根 `workspaces`;根加 `test:sketch`。
+3. `open-sketch-file.ts` / `acquire-from-file.ts` / `extract-raw.ts` / `cli.ts` —— `.sketch`
+   → `SketchRawModel` → `RawArtifact` → 写 `raw-dsl.json`;采集缝(判别联合)为后续 MCP 预留。
+4. 离线单测(合成 fixture)+ 真实 `d2c.sketch` 端到端验证。
+5. 参考文件 `/Users/blade/Desktop/d2c.sketch` 保持私有、git-ignored;真实 `raw-dsl.json` 含绝对
+   路径与设计内容,同样不入库;提交的回归 fixture 用脱敏最小化版本。
+
+MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服务端 DSL 契约能
+稳定取得后再做。
+
+### 阶段 3 — 规范化 → `design-ir.json` ⬜（最难）
+
+- 实现 `Provider.normalize`:raw → canonical `design-ir.json`。**首个落地的 normalize 针对
+  Sketch raw**(因其离线可检视、fixture 友好);MasterGo 的 normalize 待其服务端 raw 可得后并入。
+- 清理节点树、零标注启发式识别语义候选、抽取文本、生成稳定命名、记录 assets/warnings。
+- 对脱敏 fixture 做 TDD，断言产出**通过 `d2c-core` 的 `validateDesignIR()`**。
+- 此处才把 `SketchRawModel` 的内层 `_class` 模型真正展开。
 
 ### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ⬜
 
@@ -150,31 +160,30 @@
 ## 3. 仓库现存遗漏项（实施时一并处理）
 
 1. **mastergo `scripts/` 未脚手架**——只有空 `src/.gitkeep`、`tests/fixtures/`，无
-   `package.json`/`tsconfig`/`vitest.config`。→ 阶段 2 补。
-2. **根 `workspaces` 不覆盖**：当前是 `skills/*` + `samples/*/*`，不含 `packages/*`，也不含
-   `skills/*/scripts/` 子包。→ 阶段 1 加 `packages/*`；阶段 2 单独加 mastergo scripts 具体路径。
-   sketch/image 的 scripts 有半成品和独立 lockfile，**暂不纳入根 workspace / 根 check**，
-   待其脚手架稳定后再议。
+   `package.json`/`tsconfig`/`vitest.config`。→ 待 MasterGo provider 阶段补。
+2. **根 `workspaces` 不覆盖**：阶段 1 已加 `packages/*`；阶段 2 单独加
+   `skills/sketch-to-component/scripts` 具体路径。image 的 scripts 仍有独立 lockfile，
+   **暂不纳入根 workspace**，待其稳定后再议。
 3. **根 `test:skills` 写死**只跑 `design-to-spec` + `html-article-to-markdown`，新测试套件不会进
    `npm run check`。→ 阶段 1 加 `test:d2c`；阶段 7 并入 `check`。
 4. **`README.md` 与 `repo-workflow.md` 陈旧**：README 第 78 行旧术语、布局树漏 sketch；
    两者 §布局都需补 `packages/`。→ 阶段 0。
 5. **sketch 脚本残缺**：`scripts/package.json` 的 `extract`/`generate`/`e2e` 指向不存在的
    `src/cli.ts`；`src/ir/schema.ts`（仅 Color/Rect）是旧 sketch IR，与 canonical d2c-core IR
-   重叠且过时。→ 后续 Sketch provider 阶段清理；阶段 0 先标注，勿误当现成实现。
+   重叠且过时。→ **阶段 2 清理重做**(见 Stage 2 蓝图)。
 6. **无 CI**（repo-workflow §8）——非阻断，阶段 7 可选把 `npm run check` 提升为 GitHub Actions。
 
 ---
 
 ## 4. 下一步
 
-执行**阶段 1**：搭 `packages/d2c-core/`（`@skill-collections/d2c-core`）workspace、IR Zod schema
-（顶层严、内层宽）、能力型 `Provider` 接口、vitest 测试，并把 `packages/*` 加进根 `package.json`
-的 `workspaces` + 加 `test:d2c` 脚本。完成后对照第 2 节"阶段 1 出口标准"逐条核验。
+阶段 0、阶段 1 已完成。执行**阶段 2 — Sketch Provider Raw Extractor**:清理并重做
+`skills/sketch-to-component/scripts/`,实现 `.sketch` → `RawArtifact` → `raw-dsl.json`。
+详细蓝图见 [`../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)。
 
 ## 5. 贯穿原则
 
-- **垂直切片**：始终用参考 MasterGo URL 端到端跑，不要把单阶段做到完美再下一步。
+- **垂直切片**：用参考设计端到端跑(本轮用 `d2c.sketch`)，不要把单阶段做到完美再下一步。
 - **离线优先**：raw DSL 落 fixture，除提取器外所有阶段离线可测；测试不访问网络。
 - **保持克制**：没有真实 DSL fixture 前不要把 `semantic` / `interaction` 模型定死。
 - **门禁即发布里程碑**：做到门禁 1 即发 `SKILL.md`（标注能力边界），不等全链路。

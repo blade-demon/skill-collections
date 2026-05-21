@@ -16,12 +16,23 @@ The authoritative D2C contract is [`../../../docs/design-source-to-component-arc
 Sketch-specific extraction feeds the shared pipeline:
 
 ```text
-Sketch Frame / SketchMCP
--> Sketch provider extractor
+.sketch file (direct ZIP parse)        # first / primary extraction path
+  — or — SketchMCP (later alternative)
+-> Sketch provider extractor (extractRaw)
 -> output/ir/raw-dsl.json
 -> output/ir/design-ir.json
 -> shared preview, contract, and target-package pipeline
 ```
+
+**Extraction approach (2026-05-21).** The first extraction path is **direct `.sketch`
+file parsing** — `.sketch` is an open ZIP of JSON, so `extractRaw` is offline,
+inspectable, and fixture-friendly. SketchMCP is a later alternative behind the same
+seam: both acquisition strategies converge on one internal `SketchRawModel`, so
+`normalize` and the shared pipeline are unaffected when MCP is added. The current
+Stage 2 build is scoped to the file path — see
+[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md). The
+`Prerequisites` and `Configuration` sections below describe the *later* SketchMCP
+path, not the Stage 2 file path.
 
 ## When To Use
 
