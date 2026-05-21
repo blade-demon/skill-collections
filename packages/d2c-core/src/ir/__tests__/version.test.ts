@@ -7,9 +7,9 @@ import {
 
 describe('parseSchemaVersion', () => {
   it('parses a well-formed version', () => {
-    expect(parseSchemaVersion('d2c.design-ir/v0.1.0')).toEqual({
+    expect(parseSchemaVersion('d2c.design-ir/v0.2.0')).toEqual({
       family: 'd2c.design-ir',
-      version: { major: 0, minor: 1, patch: 0 },
+      version: { major: 0, minor: 2, patch: 0 },
     });
   });
 
@@ -25,7 +25,7 @@ describe('isCompatible', () => {
   });
 
   it('ignores patch differences', () => {
-    expect(isCompatible('d2c.design-ir/v0.1.9').ok).toBe(true);
+    expect(isCompatible('d2c.design-ir/v0.2.9').ok).toBe(true);
   });
 
   it('classifies a malformed string', () => {
@@ -36,14 +36,14 @@ describe('isCompatible', () => {
   });
 
   it('classifies a family mismatch', () => {
-    expect(isCompatible('other.ir/v0.1.0')).toMatchObject({
+    expect(isCompatible('other.ir/v0.2.0')).toMatchObject({
       ok: false,
       code: 'family-mismatch',
     });
   });
 
   it('classifies a major incompatibility', () => {
-    expect(isCompatible('d2c.design-ir/v9.1.0')).toMatchObject({
+    expect(isCompatible('d2c.design-ir/v9.2.0')).toMatchObject({
       ok: false,
       code: 'major-incompatible',
     });

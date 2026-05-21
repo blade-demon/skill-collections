@@ -74,13 +74,25 @@ ir/
 
 ```json
 {
-  "schemaVersion": "d2c.design-ir/v0.1.0",
+  "schemaVersion": "d2c.design-ir/v0.2.0",
   "source": {
-    "provider": "mastergo",
-    "ref": { "fileId": "192813714739577", "nodeId": "2:0031" }
+    "provider": "sketch",
+    "ref": { "fileName": "example.sketch", "documentId": "doc-1" },
+    "rootName": "Example Screen"
   },
-  "visual": {},
-  "semantic": {},
+  "visual": {
+    "artboard": { "width": 375, "height": 812 },
+    "assets": [],
+    "root": {
+      "id": "node-root",
+      "kind": "frame",
+      "name": "ExampleScreen",
+      "source": { "nodeId": "root-1", "originalType": "artboard", "provider": "sketch" },
+      "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
+      "children": []
+    }
+  },
+  "semantic": { "candidates": [] },
   "interaction": {
     "status": "draft"
   },

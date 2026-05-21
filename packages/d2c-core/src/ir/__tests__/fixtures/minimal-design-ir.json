@@ -1,14 +1,41 @@
 {
-  "schemaVersion": "d2c.design-ir/v0.1.0",
+  "schemaVersion": "d2c.design-ir/v0.2.0",
   "source": {
-    "provider": "mastergo",
+    "provider": "sketch",
     "ref": {
-      "fileId": "192813714739577",
-      "nodeId": "2:0031"
+      "fileName": "minimal.sketch",
+      "documentId": "doc-1"
+    },
+    "rootName": "Minimal Screen"
+  },
+  "visual": {
+    "artboard": {
+      "width": 375,
+      "height": 812
+    },
+    "assets": [],
+    "root": {
+      "id": "node-root",
+      "kind": "frame",
+      "name": "MinimalScreen",
+      "source": {
+        "nodeId": "root-1",
+        "name": "Minimal Screen",
+        "originalType": "artboard",
+        "provider": "sketch"
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812
+      },
+      "children": []
     }
   },
-  "visual": {},
-  "semantic": {},
+  "semantic": {
+    "candidates": []
+  },
   "interaction": {
     "status": "draft"
   },

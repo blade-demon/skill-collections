@@ -7,13 +7,13 @@ describe('DesignIRSchema', () => {
     expect(DesignIRSchema.safeParse(minimalDesignIR).success).toBe(true);
   });
 
-  it('accepts unknown fields inside the loose visual/semantic blocks', () => {
+  it('rejects unknown fields inside the v0.2 visual/semantic blocks', () => {
     const ir = {
       ...minimalDesignIR,
-      visual: { page: { width: 375 }, anything: [1, 2, 3] },
-      semantic: { candidates: [{ kind: 'card' }] },
+      visual: { ...minimalDesignIR.visual, anything: [1, 2, 3] },
+      semantic: { ...minimalDesignIR.semantic, anything: [1, 2, 3] },
     };
-    expect(DesignIRSchema.safeParse(ir).success).toBe(true);
+    expect(DesignIRSchema.safeParse(ir).success).toBe(false);
   });
 
   it('rejects unknown top-level keys', () => {
@@ -22,7 +22,7 @@ describe('DesignIRSchema', () => {
   });
 
   it('rejects an empty source.ref (no trace anchor)', () => {
-    const ir = { ...minimalDesignIR, source: { provider: 'mastergo', ref: {} } };
+    const ir = { ...minimalDesignIR, source: { provider: 'sketch', ref: {} } };
     expect(DesignIRSchema.safeParse(ir).success).toBe(false);
   });
 

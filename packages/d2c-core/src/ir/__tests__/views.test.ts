@@ -6,7 +6,7 @@ import {
   VisualViewSchema,
 } from '../views';
 
-const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.1.0' };
+const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.2.0' };
 
 describe('derived view envelopes', () => {
   it('parses a minimal visual-view', () => {

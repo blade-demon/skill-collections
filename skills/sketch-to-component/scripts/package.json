@@ -7,7 +7,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "extract": "tsx src/cli.ts extract"
+    "extract": "tsx src/cli.ts extract",
+    "normalize": "tsx src/cli.ts normalize"
   },
   "dependencies": {
     "@skill-collections/d2c-core": "*",

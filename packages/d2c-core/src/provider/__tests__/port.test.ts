@@ -3,11 +3,11 @@ import { normalizeAndValidate, type Provider, type RawArtifact } from '../index'
 import type { DesignIR } from '../../ir';
 import minimalDesignIR from '../../ir/__tests__/fixtures/minimal-design-ir.json';
 
-// The fixture's source.provider is "mastergo", so a consistent provider/raw
+// The fixture's source.provider is "sketch", so a consistent provider/raw
 // pair uses the same id.
 const raw: RawArtifact = {
-  provider: 'mastergo',
-  ref: { fileId: 'f1', nodeId: 'n1' },
+  provider: 'sketch',
+  ref: { fileName: 'minimal.sketch', documentId: 'doc-1' },
   payload: { nodes: [] },
   capturedAt: '2026-05-20T00:00:00.000Z',
 };
@@ -16,7 +16,7 @@ describe('Provider port', () => {
   it('a provider implementing only the required methods type-checks and validates', async () => {
     // No exportAssets / exportReferenceFrame — optional capabilities omitted.
     const provider: Provider = {
-      id: 'mastergo',
+      id: 'sketch',
       extractRaw: async () => raw,
       normalize: async () => minimalDesignIR as unknown as DesignIR,
     };
@@ -32,7 +32,7 @@ describe('Provider port', () => {
       extractRaw: async () => brokenRaw,
       // Missing source / visual / semantic / interaction / warnings.
       normalize: async () =>
-        ({ schemaVersion: 'd2c.design-ir/v0.1.0' }) as unknown as DesignIR,
+        ({ schemaVersion: 'd2c.design-ir/v0.2.0' }) as unknown as DesignIR,
     };
 
     const result = await normalizeAndValidate(provider, brokenRaw);
@@ -41,7 +41,7 @@ describe('Provider port', () => {
 
   it('rejects a raw artifact whose provider does not match the provider id', async () => {
     const provider: Provider = {
-      id: 'mastergo',
+      id: 'sketch',
       extractRaw: async () => raw,
       normalize: async () => minimalDesignIR as unknown as DesignIR,
     };
@@ -53,7 +53,7 @@ describe('Provider port', () => {
   });
 
   it('rejects an IR whose source.provider does not match the provider id', async () => {
-    // provider id is "figma" but the fixture IR says source.provider "mastergo".
+    // provider id is "figma" but the fixture IR says source.provider "sketch".
     const figmaRaw: RawArtifact = { ...raw, provider: 'figma' };
     const provider: Provider = {
       id: 'figma',

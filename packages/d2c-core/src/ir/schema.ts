@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { SCHEMA_VERSION_FORMAT } from './version';
+import { SemanticBlockSchema } from './semantic';
+import { VisualBlockSchema } from './visual';
 
 /* ── Stable extensible primitives ───────────────────────────────────────────
  * Pinned now so the (currently loose) visual / semantic / interaction blocks
@@ -47,6 +49,7 @@ export type Annotation = z.infer<typeof AnnotationSchema>;
 export const RECOMMENDED_SOURCE_REF_KEYS = [
   'url',
   'fileId',
+  'fileName',
   'documentId',
   'pageId',
   'nodeId',
@@ -86,9 +89,8 @@ export type ContractStatus = z.infer<typeof ContractStatusSchema>;
 
 /**
  * Canonical normalized Design IR — the single source of truth after
- * extraction. Top-level keys are strict. The `visual` and `semantic` inner
- * shapes are intentionally loose at Stage 1 (`record(unknown)`) and firm up
- * once a real provider DSL fixture exists.
+ * extraction. Top-level keys are strict. From v0.2 onward, `visual` and
+ * `semantic` are shared contracts consumed by preview, planning, and codegen.
  */
 export const DesignIRSchema = z
   .object({
@@ -102,8 +104,8 @@ export const DesignIRSchema = z
       message: 'must be "<family>/v<major>.<minor>.<patch>"',
     }),
     source: SourceSchema,
-    visual: z.record(z.unknown()),
-    semantic: z.record(z.unknown()),
+    visual: VisualBlockSchema,
+    semantic: SemanticBlockSchema,
     interaction: z.object({ status: ContractStatusSchema }).passthrough(),
     warnings: z.array(WarningSchema),
   })
