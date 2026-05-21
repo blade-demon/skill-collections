@@ -131,14 +131,17 @@
 MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服务端 DSL 契约能
 稳定取得后再做。
 
-### 阶段 3 — Sketch 规范化 → `design-ir.json` ⬜（最难）
+### 阶段 3 — Sketch 规范化 → `design-ir.json` ✅（最难）
 
-- **首发 normalize provider = Sketch**(2026-05-21 确认,Stage 2 已验证 `.sketch` 离线可行)。
-  MasterGo normalize 需服务端 raw、无法离线 TDD,后置。
-- 实现 `Provider.normalize`:raw → canonical `design-ir.json` —— 清理节点树、零标注启发式
-  识别语义候选、抽取文本、生成稳定命名、记录 assets/warnings。
-- 对脱敏 fixture 做 TDD，断言产出**通过 `d2c-core` 的 `validateDesignIR()`**。
-- 此处才把 raw model 的内层(如 `SketchRawModel` 的 `_class` 树)真正展开。
+已完成(提交 `7f1b2eb`,蓝图 `skills/sketch-to-component/docs/stage-3-normalize-outline.md`):
+
+- d2c-core 升 `v0.2.0`:新增 `visual.ts` / `semantic.ts` schema,收紧 `DesignIRSchema`。
+- Sketch `normalize`:`select-artboard` / `clean-tree` / `visual` / `symbols` / `names` /
+  `semantic` 管线;`SketchProvider` 组装;CLI `normalize` 命令。
+- 产物过 `validateDesignIR()`,字节级确定性;脱敏 fixture `sketch-raw.min.json` 入库。
+- test:d2c 45 / test:sketch 26 全过。
+- **遗留**:symbol `override` 已记录在 `symbol.overrides`,但未应用到 `visual` 树 ——
+  Stage 4 预览须消费它,否则被 override 的实例显示 master 默认内容。
 
 ### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ⬜
 
@@ -185,9 +188,9 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ## 4. 下一步
 
-阶段 0–2 已完成(d2c-core 契约包、Sketch raw extractor)。下一步执行**阶段 3 — Sketch 规范化**:
-实现 `Provider.normalize`,把 Sketch `raw-dsl.json` 转成 canonical `design-ir.json`。
-开工前先产出脱敏最小化 fixture,并出 Stage 3 蓝图供 review。
+阶段 0–3 已完成(d2c-core v0.2.0 契约 + Sketch raw extractor + normalize)。下一步执行
+**阶段 4 — Visual View 派生 + HTML 预览(门禁 1)**,d2c-core 共享管线。开工前先出 Stage 4
+蓝图供 review;蓝图须把"应用 symbol override"列为明确任务(见 Stage 3 遗留项)。
 
 ## 5. 贯穿原则
 
