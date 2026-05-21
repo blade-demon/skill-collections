@@ -6,13 +6,13 @@
 >
 > 状态图例：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始
 
-最后更新：2026-05-20（已并入用户对实施计划的 10 条评审意见）
+最后更新：2026-05-21（Sketch-first 调整、Stage 3 选项 A、多轮文档一致性修订）
 
 ---
 
 ## 0. 关键前提决策（已确认）
 
-子文档（`mastergo` 架构文档、`sketch` SKILL.md）都已声明 canonical IR、预览、门禁、校验
+子文档（`mastergo` / `sketch` 架构文档）都已声明 canonical IR、预览、门禁、校验
 "属于 shared pipeline"，但该 shared pipeline 在仓库里**没有代码落点**。`docs/repo-workflow.md` §7
 已预留 `packages/` 作为共享代码的家。
 
@@ -37,9 +37,12 @@
 | 交互建模 + Component Plan 生成 | 共享 | `packages/d2c-core/src/contract/` |
 | 目标代码生成（React 为首个 target） | 共享 | `packages/d2c-core/src/codegen/` |
 | 工程校验（typecheck / build / 截图 diff） | 共享 | `packages/d2c-core/src/validate/` |
-| URL 解析 / 鉴权 / 拉取 raw DSL | MasterGo provider | `skills/mastergo-to-component/scripts/src/` |
-| raw DSL → canonical IR 规范化（适配边界） | MasterGo provider | 同上 `normalize-design-ir.ts` |
-| 资源导出 / 参考帧导出 | MasterGo provider | 同上 |
+| 取 raw（provider 专有：文件 / URL / MCP）→ `RawArtifact` | Provider adapter | `skills/<provider>-to-component/scripts/src/` |
+| raw → canonical IR 规范化（适配边界） | Provider adapter | 同上 |
+| 资源导出 / 参考帧导出 | Provider adapter | 同上 |
+
+> 首发 provider = **Sketch**（`skills/sketch-to-component/scripts/`，本轮只实现 `extractRaw`，见 Stage 2）；
+> MasterGo adapter 暂停。`Provider` 端口本身 provider 中立 —— 上表的"专有"列指各 provider 各自实现。
 
 ### 关键边界约束
 
@@ -104,10 +107,11 @@
 
 ### 阶段 2 — Sketch Provider Raw Extractor（探针，到 `raw-dsl.json`） 🚧
 
-> **定位**:本轮是 Sketch provider 的 raw extraction 探针——把本地 `.sketch` 提取成
-> `RawArtifact`。选 Sketch 先行,是因为 `.sketch` 是公开、本地、可检视的格式,`extractRaw`
-> 能离线开发与测试、无需服务端往返。**这不代表 Sketch 已占定完整 pipeline**:MasterGo 仍是
-> 原定的首个完整 D2C 垂直切片;normalize→preview→codegen 由谁承载,待 raw extraction 验证后再定。
+> **定位(选项 A)**:本轮是 Sketch provider 的 raw extraction 探针——把本地 `.sketch` 提取成
+> `RawArtifact`。选 Sketch 先行,是因为 `.sketch` 是公开、本地、可检视的格式,`extractRaw` 能
+> 离线开发与测试、无需服务端往返。**Stage 3(normalize)起由哪个 provider 承载,待本轮跑通后
+> 再定**;本轮不预先承诺完整 pipeline。注:Sketch 是当前**唯一离线可行**的 normalize 候选——
+> MasterGo normalize 需服务端 raw、无法离线 TDD。
 
 详细蓝图见 [`../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)。
 
@@ -124,20 +128,21 @@
 MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服务端 DSL 契约能
 稳定取得后再做。
 
-### 阶段 3 — 规范化 → `design-ir.json` ⬜（最难）
+### 阶段 3 — 规范化 → `design-ir.json` ⬜（最难;provider 待定）
 
-- 实现 `Provider.normalize`:raw → canonical `design-ir.json`。**首个落地的 normalize 针对
-  Sketch raw**(因其离线可检视、fixture 友好);MasterGo 的 normalize 待其服务端 raw 可得后并入。
-- 清理节点树、零标注启发式识别语义候选、抽取文本、生成稳定命名、记录 assets/warnings。
+- **首发 provider 待 Stage 2 跑通后再定**(选项 A)。Sketch 是当前唯一离线可行的 normalize
+  候选(`.sketch` 可检视、fixture 友好);MasterGo normalize 需服务端 raw、无法离线 TDD。
+- 实现 `Provider.normalize`:raw → canonical `design-ir.json` —— 清理节点树、零标注启发式
+  识别语义候选、抽取文本、生成稳定命名、记录 assets/warnings。
 - 对脱敏 fixture 做 TDD，断言产出**通过 `d2c-core` 的 `validateDesignIR()`**。
-- 此处才把 `SketchRawModel` 的内层 `_class` 模型真正展开。
+- 此处才把 raw model 的内层(如 `SketchRawModel` 的 `_class` 树)真正展开。
 
 ### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ⬜
 
 - `d2c-core` 的 `derive-visual-view.ts` + `generate-preview.ts`
   （`index.html` / `preview.css` / `assets/` / `visual-review-report.md`）。
 - core pipeline runner 跑到 Gate 1 时返回 `requiresApproval`；确认动作由 skill / CLI 驱动。
-- **里程碑：** 发首版 `mastergo-to-component/SKILL.md`，描述明确写"仅到预览门禁"。
+- **里程碑：** 发首发 provider 的 `SKILL.md` / 架构文档，描述明确写"仅到预览门禁"。
 
 ### 阶段 5 — 共享：语义 / 交互 / 方案 → 门禁 2 ⬜
 
@@ -153,7 +158,7 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 ### 阶段 7 — 共享：工程校验 + 收尾 ⬜
 
 - `d2c-core`：typecheck / build / 截图 diff。
-- 接入根 `npm run check`；`mastergo SKILL.md` 升级为完整管线描述。
+- 接入根 `npm run check`；首发 provider 的 `SKILL.md` 升级为完整管线描述。
 
 ---
 
@@ -166,8 +171,8 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
    **暂不纳入根 workspace**，待其稳定后再议。
 3. **根 `test:skills` 写死**只跑 `design-to-spec` + `html-article-to-markdown`，新测试套件不会进
    `npm run check`。→ 阶段 1 加 `test:d2c`；阶段 7 并入 `check`。
-4. **`README.md` 与 `repo-workflow.md` 陈旧**：README 第 78 行旧术语、布局树漏 sketch；
-   两者 §布局都需补 `packages/`。→ 阶段 0。
+4. ✅ **`README.md` 与 `repo-workflow.md`** —— 已同步:术语更新、布局树补 `packages/` 与各
+   skill、provider 状态对齐(阶段 0 + 后续一致性修订完成)。
 5. **sketch 脚本残缺**：`scripts/package.json` 的 `extract`/`generate`/`e2e` 指向不存在的
    `src/cli.ts`；`src/ir/schema.ts`（仅 Color/Rect）是旧 sketch IR，与 canonical d2c-core IR
    重叠且过时。→ **阶段 2 清理重做**(见 Stage 2 蓝图)。
@@ -188,4 +193,4 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 - **保持克制**：没有真实 DSL fixture 前不要把 `semantic` / `interaction` 模型定死。
 - **门禁即发布里程碑**：做到门禁 1 即发 `SKILL.md`（标注能力边界），不等全链路。
 - **每阶段产物都过 schema 校验**，派生视图亦然。
-- 先 MasterGo 单 provider 跑通；Figma/Sketch 与中性化按迁移路径 #5–6 后置。
+- 先把单个 provider 的一条垂直切片端到端跑通(本轮从 Sketch raw extraction 起步)；其余 provider 与中性化后置。

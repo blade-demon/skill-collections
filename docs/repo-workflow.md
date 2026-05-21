@@ -15,6 +15,9 @@ skill-collections/
 ├── package-lock.json               # Root workspace lockfile
 ├── .gitignore                      # Shared local/build artifact ignores
 │
+├── packages/                       # Shared code consumed across skills
+│   └── d2c-core/                   # @skill-collections/d2c-core — D2C pipeline core
+│
 ├── skills/                         # Installable/copyable skills
 │   ├── design-to-spec/
 │   │   ├── SKILL.md
@@ -171,6 +174,9 @@ npm run check
 
 Runs in order: skill tests -> sample lints -> sample builds. Fail fast.
 
+`npm run check` does not yet cover the `d2c-core` package — run `npm run test:d2c`
+separately until it is folded into `check` (Stage 7).
+
 ### Work on a single sample
 
 ```bash
@@ -191,14 +197,15 @@ npm run dev
 
 ---
 
-## 7. Adding tooling later
+## 7. Shared packages and future tooling
 
-Two folders that don't exist yet but might:
+`packages/` now exists — it holds `d2c-core` (`@skill-collections/d2c-core`), the shared
+design-source-to-component pipeline core consumed across skills. Add further shared
+packages under `packages/*` only after the duplication is real.
 
-- `tools/` - repo-level scripts that operate across multiple skills or samples, such as a `new-sample.mjs` generator.
-- `packages/` - extracted shared code used by multiple skills or samples.
+One folder that still doesn't exist but might:
 
-Create either only after the duplication is real. Until then, local code inside each skill is easier to reason about.
+- `tools/` - repo-level scripts that operate across multiple skills or samples, such as a `new-sample.mjs` generator. Create only after the need is real.
 
 ---
 

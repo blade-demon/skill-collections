@@ -12,8 +12,9 @@
 
 **这不代表 Sketch 已占定完整 pipeline。** Sketch 的 raw extraction 先行,是因为 `.sketch` 是公开、
 本地、可检视的格式,`extractRaw` 能离线开发与测试、无需服务端往返 —— 这是一次**离线先行的去风险
-探针**。MasterGo 仍是原定的首个完整 D2C 垂直切片;normalize → preview → codegen 由哪个 provider
-承载,待 raw extraction 验证后再定。
+探针**。首个完整垂直切片 provider **待定**:MasterGo 原计划承担此角色,但因 DSL 在服务端、raw
+不可离线检视而**已暂停**,不再作为 Stage 3 的默认承载;normalize 起的 provider 待 raw extraction
+验证后再定。
 
 **做**:`.sketch` → `RawArtifact` → CLI 写 `output/ir/raw-dsl.json`。
 **不做**:`normalize`(Stage 3)、SketchMCP、`SketchProvider implements Provider` 完整类、
@@ -51,7 +52,8 @@ images/  fonts/  previews/   二进制资源
 - 删 `src/ir/`(旧 `Color`/`Rect` IR,已被 d2c-core canonical IR 取代)及其测试。
 - 删该包独立 `package-lock.json`。
 - `package.json` 重命名为 scoped 名 **`@skill-collections/sketch-to-component-scripts`**;
-  依赖 `@skill-collections/d2c-core`(workspace `*`)+ `fflate`;修正 `scripts`。
+  依赖写 `"@skill-collections/d2c-core": "*"`(普通 `*`,**不要** `workspace:` 协议——当前是
+  npm workspaces)与 `fflate`;修正 `scripts`(含 `extract` / `test` / `typecheck`)。
 - 根 `package.json`:`workspaces` 加具体路径 `skills/sketch-to-component/scripts`;新增脚本
   `test:sketch` = `npm test --workspace @skill-collections/sketch-to-component-scripts`。
 - 保留 `tsconfig.json` / `vitest.config.ts`(与 d2c-core 对齐)。
@@ -141,6 +143,14 @@ normalize / diff / 错误定位。
 
 **确定性**:zip 条目遍历、`pages`、`assets` 一律**按 path 排序后输出**,保证 `raw-dsl.json` 稳定可 diff。
 
+**ZIP 条目归类规则**(`acquire-from-file` 用,避免实现自由发挥):
+- `document.json` → `model.document`;`meta.json` → `model.meta`(缺任一 → `missing-entry`)。
+- 匹配 `^pages/[^/]+\.json$` 的条目 → `model.pages[]`(无任何匹配 → `missing-entry`)。
+- 目录条目(路径以 `/` 结尾)一律跳过。
+- 其余**非 JSON 二进制条目** → `model.assets[]`;`kind` 按前缀:`images/`→`image`、
+  `fonts/`→`font`、`previews/`→`preview`、其他→`other`。
+- `user.json` 及任何其他未匹配条目:忽略,不进 `model`。
+
 fixture / 脱敏:参考文件 `/Users/blade/Desktop/d2c.sketch` 保持私有、git-ignored;真实
 `raw-dsl.json`(含绝对路径与设计内容)同样不入库;提交的回归 fixture 用脱敏、最小化版本。
 Stage 2 单测一律用**手工构造的合成 fixture**。
@@ -148,13 +158,14 @@ Stage 2 单测一律用**手工构造的合成 fixture**。
 ## 9. CLI
 
 `extract --file <path> --out <dir>` —— **两者必填**(npm workspace 脚本 cwd 在包目录,默认输出
-易落错地方,故不设默认 `--out`)。真实命令:
+易落错地方,故不设默认 `--out`)。真实验证命令(输出写仓库外,避免误提交):
 
 ```
-npm run extract -- --file /Users/blade/Desktop/d2c.sketch --out output
+npm run extract -- --file /Users/blade/Desktop/d2c.sketch --out /tmp/d2c-sketch-output
 ```
 
-写 `<out>/ir/raw-dsl.json`(`mkdir -p`)。打印 **best-effort 摘要,只含 `SketchRawModel` schema
+写 `<out>/ir/raw-dsl.json`(`mkdir -p`),内容为 `JSON.stringify(rawArtifact, null, 2) + "\n"`
+(pretty 缩进 2 + 末尾换行,配合排序保证 diff 稳定)。打印 **best-effort 摘要,只含 `SketchRawModel` schema
 保证的字段**:provider、documentId、页数、资源数、`raw-dsl.json` 字节数 —— **不打印画板数**
 (画板需解析 loose 的 page 数据,属 normalize 范畴)。捕 `ExtractError` → `[code] message` 到
 stderr,exit 1。
@@ -173,8 +184,8 @@ stderr,exit 1。
 Sketch 只读本地文件,**无需 token,可端到端自验**:
 
 - 离线单测 + `tsc --noEmit`。
-- `npm run extract -- --file /Users/blade/Desktop/d2c.sketch --out output` → 真实
-  `output/ir/raw-dsl.json`:含 2 页、资源清单,约 1.1 MB。
+- `npm run extract -- --file /Users/blade/Desktop/d2c.sketch --out /tmp/d2c-sketch-output`
+  → 真实 `raw-dsl.json`(仓库外):含 2 页、资源清单,约 1.1 MB。验证后该目录可删。
 
 ## 12. 出口标准
 
@@ -187,8 +198,8 @@ Sketch 只读本地文件,**无需 token,可端到端自验**:
 
 ## 13. 已并入的 review 决策(2026-05-21,9 点)
 
-1. **定位澄清** —— 本轮是 Sketch raw extraction 探针,非占定完整 pipeline;MasterGo 仍是原定首个
-   完整垂直切片(见第 1 节)。
+1. **定位澄清** —— 本轮是 Sketch raw extraction 探针,非占定完整 pipeline;首个完整垂直切片
+   provider 待定(选项 A),MasterGo 原定承担但已暂停(见第 1 节)。
 2. **`SketchRawModel.pages`** —— 用 `Array<{id,path,data}>`,保留 zip 路径与顺序。
 3. **CLI `--out` 必填** —— 不设默认,避免落错目录。
 4. **新增 `read-failed` 错误码** —— `file-not-found` 仅限 ENOENT。
