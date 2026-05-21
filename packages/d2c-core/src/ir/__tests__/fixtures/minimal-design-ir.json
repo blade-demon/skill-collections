@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "d2c.design-ir/v0.1.0",
+  "source": {
+    "provider": "mastergo",
+    "ref": {
+      "fileId": "192813714739577",
+      "nodeId": "2:0031"
+    }
+  },
+  "visual": {},
+  "semantic": {},
+  "interaction": {
+    "status": "draft"
+  },
+  "warnings": []
+}

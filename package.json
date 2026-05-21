@@ -4,12 +4,14 @@
   "private": true,
   "description": "Monorepo for Anthropic-style skills and hands-on samples that exercise them.",
   "workspaces": [
+    "packages/*",
     "skills/*",
     "samples/*/*"
   ],
   "scripts": {
     "test:skills": "npm test --workspace skills/design-to-spec --workspace skills/html-article-to-markdown",
     "test:skill": "npm run test:skills",
+    "test:d2c": "npm test --workspace @skill-collections/d2c-core",
     "build:samples": "npm run build --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
     "lint:samples": "npm run lint --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
     "check": "npm run test:skills && npm run lint:samples && npm run build:samples"
