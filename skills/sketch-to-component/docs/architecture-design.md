@@ -65,7 +65,8 @@ Screenshot-only inputs belong to `image-to-component`, not this provider.
 
 | Role | Responsibility |
 |---|---|
-| Designer with Sketch + SketchMCP | Extract the selected frame, assets, and reference-frame image. |
+| Operator with a local `.sketch` file *(current — Stage 2)* | Run `extract --file <path> --out <dir>` to produce `raw-dsl.json`. |
+| Designer with Sketch + SketchMCP *(future)* | Extract the selected frame, assets, and reference-frame image. |
 | Developer without Sketch | Work from committed `output/ir/` artifacts, review gates, and generated `output/package/`. |
 | Shared D2C engine | Own canonical IR views, HTML preview, interaction spec, component plan, target package output, and validation. |
 

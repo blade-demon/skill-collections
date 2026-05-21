@@ -41,8 +41,9 @@
 | raw → canonical IR 规范化（适配边界） | Provider adapter | 同上 |
 | 资源导出 / 参考帧导出 | Provider adapter | 同上 |
 
-> 首发 provider = **Sketch**（`skills/sketch-to-component/scripts/`，本轮只实现 `extractRaw`，见 Stage 2）；
-> MasterGo adapter 暂停。`Provider` 端口本身 provider 中立 —— 上表的"专有"列指各 provider 各自实现。
+> Stage 2 首个 **raw-extraction** provider = **Sketch**（`skills/sketch-to-component/scripts/`，
+> 本轮只实现 `extractRaw`）；MasterGo adapter 暂停。**Stage 3 起 normalize 的 provider 仍待定
+> (选项 A)** —— 这里不代表 Sketch 已占定完整 pipeline。`Provider` 端口本身 provider 中立。
 
 ### 关键边界约束
 
@@ -57,7 +58,8 @@
   否则 core 会过早绑定到某种交互方式。
 - **codegen 留 target 扩展口**：即使首版只做 React，core 内也按 `src/codegen/react/` +
   `TargetGenerator` 抽象组织，避免 `d2c-core` 语义上变成 React-only。
-- `normalize-design-ir.ts` 留在 provider（必须懂 MasterGo 节点类型），但导入 core 的 IR schema。
+- raw → canonical IR 的 `normalize` 留在 provider（必须懂对应 provider 的节点类型，如 Sketch 的
+  `_class` 树、MasterGo 的 DSL 节点），但导入 core 的 IR schema。
 
 ---
 
