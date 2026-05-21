@@ -1,0 +1,4 @@
+# Local Stage 2 extraction outputs can include absolute paths and design content.
+output/
+d2c-sketch-output/
+*.sketch
