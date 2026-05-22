@@ -277,3 +277,23 @@ asset 对应不上、低置信候选、symbol 环、节点超量截断等。
   `MSAttributedStringColorAttribute` 缺失时,用图层 fill 兜底进 `text.style.color`。补
   `normalize-visual.test.ts` 单测(文字节点无 `style.fills`、保留 `text.style.color`)。
 - **配套**:消费端 `generate-preview` 同时加防御 —— 见 Stage 4 蓝图 §15 D2。
+
+## 19. Post-Stage-4 IR 保真审计 / 修订项(2026-05-22)
+
+> Stage 4 预览门禁跑通后、进入 Stage 5 前,对真实 `d2c.sketch` 的 `design-ir.json` 做了一次
+> 系统保真审计。完整证据、根因、codegen 影响见
+> [`stage-3-ir-fidelity-audit.md`](./stage-3-ir-fidelity-audit.md) —— 此处只列入口与修复
+> 批次,不复制表格。
+
+查出 6 条会污染 codegen 的 A 类缺陷,分 4 个修复批次推进:
+
+- **Batch 1**(必修,小而准):A1 行高 `lineHeight` 丢失、A2 字重 `fontWeight` 丢失、
+  A3 渐变填充塌缩成单色。
+- **Batch 2**(必修,**单独做**):A5 symbol 实例缩放时子节点坐标未换算。
+- **Batch 3**(schema 设计先行):A4 蒙版 / 裁剪未建模。
+- **Batch 4**(已知限制):A6 部分 symbol override 未应用。
+
+另有 B 类"结构充分性缺口"(绝对布局不足以支撑高质量 React 结构生成)—— 非 bug,归 Stage 5 蓝图。
+
+> ⚠️ **A5 是 Stage 5 前置阻断项**:symbol 缩放不修,semantic / component-plan 会基于错位
+> 子树做错误抽象,codegen 越走越偏。须在 Stage 5 蓝图定稿前修完。
