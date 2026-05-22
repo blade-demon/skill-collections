@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseExtractArgs, parseNormalizeArgs } from '../cli.js';
+import { parseExtractArgs, parseNormalizeArgs, parsePreviewArgs } from '../cli.js';
 
 describe('parseExtractArgs', () => {
   it('parses valid extract arguments', () => {
@@ -42,5 +42,31 @@ describe('parseNormalizeArgs', () => {
 
   it('rejects another option flag as a raw value', () => {
     expect(parseNormalizeArgs(['node', 'cli.ts', 'normalize', '--raw', '--out', '/tmp/out'])).toBeUndefined();
+  });
+});
+
+describe('parsePreviewArgs', () => {
+  it('parses valid preview arguments', () => {
+    expect(
+      parsePreviewArgs([
+        'node',
+        'cli.ts',
+        'preview',
+        '--design-ir',
+        '/tmp/design-ir.json',
+        '--out',
+        '/tmp/out',
+      ]),
+    ).toEqual({
+      command: 'preview',
+      designIrPath: '/tmp/design-ir.json',
+      outDir: '/tmp/out',
+    });
+  });
+
+  it('rejects another option flag as a design-ir value', () => {
+    expect(
+      parsePreviewArgs(['node', 'cli.ts', 'preview', '--design-ir', '--out', '/tmp/out']),
+    ).toBeUndefined();
   });
 });

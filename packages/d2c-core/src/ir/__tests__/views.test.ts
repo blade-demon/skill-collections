@@ -5,20 +5,29 @@ import {
   SemanticViewSchema,
   VisualViewSchema,
 } from '../views';
+import { makeVisualBlock } from '../../preview/__tests__/fixtures';
 
 const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.2.0' };
 
 describe('derived view envelopes', () => {
   it('parses a minimal visual-view', () => {
     expect(
-      VisualViewSchema.safeParse({ kind: 'visual-view', generatedFrom, body: {} })
+      VisualViewSchema.safeParse({
+        kind: 'visual-view',
+        generatedFrom,
+        body: makeVisualBlock(),
+      })
         .success,
     ).toBe(true);
   });
 
   it('rejects a wrong kind discriminator', () => {
     expect(
-      VisualViewSchema.safeParse({ kind: 'semantic-view', generatedFrom, body: {} })
+      VisualViewSchema.safeParse({
+        kind: 'semantic-view',
+        generatedFrom,
+        body: makeVisualBlock(),
+      })
         .success,
     ).toBe(false);
   });
@@ -39,7 +48,7 @@ describe('derived view envelopes', () => {
       VisualViewSchema.safeParse({
         kind: 'visual-view',
         generatedFrom: { ...generatedFrom, oops: true },
-        body: {},
+        body: makeVisualBlock(),
       }).success,
     ).toBe(false);
   });
@@ -49,12 +58,22 @@ describe('derived view envelopes', () => {
       VisualViewSchema.safeParse({
         kind: 'visual-view',
         generatedFrom: { ...generatedFrom, designIrHash: 'abc123' },
-        body: {},
+        body: makeVisualBlock(),
       }).success,
     ).toBe(true);
   });
 
-  it('accepts arbitrary content inside the loose body', () => {
+  it('rejects an invalid visual-view body', () => {
+    expect(
+      VisualViewSchema.safeParse({
+        kind: 'visual-view',
+        generatedFrom,
+        body: {},
+      }).success,
+    ).toBe(false);
+  });
+
+  it('accepts arbitrary content inside the semantic-view loose body', () => {
     expect(
       SemanticViewSchema.safeParse({
         kind: 'semantic-view',

@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import type { DesignIR, VisualNode } from '@skill-collections/d2c-core';
+import { runPreview as runCorePreview, type DesignIR, type VisualNode } from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
 import { extractRaw } from './extract-raw.js';
@@ -19,6 +19,12 @@ export interface NormalizeCliArgs {
   rawPath: string;
   outDir: string;
   artboard?: string;
+}
+
+export interface PreviewCliArgs {
+  command: 'preview';
+  designIrPath: string;
+  outDir: string;
 }
 
 function argValue(argv: string[], name: string): string | undefined {
@@ -52,9 +58,21 @@ export function parseNormalizeArgs(argv: string[]): NormalizeCliArgs | undefined
   return { command, rawPath, outDir, artboard };
 }
 
+export function parsePreviewArgs(argv: string[]): PreviewCliArgs | undefined {
+  const command = argv[2];
+  if (command !== 'preview') return undefined;
+
+  const designIrPath = argValue(argv, '--design-ir');
+  const outDir = argValue(argv, '--out');
+  if (!designIrPath || !outDir) return undefined;
+
+  return { command, designIrPath, outDir };
+}
+
 function printUsage(): void {
   console.error('Usage: npm run extract -- --file <path> --out <dir>');
   console.error('   or: npm run normalize -- --raw <path> --out <dir> [--artboard <id|name>]');
+  console.error('   or: npm run preview -- --design-ir <path> --out <dir>');
 }
 
 async function runExtract(): Promise<void> {
@@ -103,7 +121,50 @@ async function runNormalize(): Promise<void> {
   console.log(`design-ir.json: ${outputPath} (${Buffer.byteLength(irJson, 'utf8')} bytes)`);
 }
 
+async function runPreview(): Promise<void> {
+  const args = parsePreviewArgs(process.argv);
+  if (!args) {
+    printUsage();
+    process.exitCode = 2;
+    return;
+  }
+
+  const designIr = JSON.parse(await readFile(args.designIrPath, 'utf8')) as DesignIR;
+  const preview = runCorePreview(designIr);
+  const previewDir = join(args.outDir, 'preview');
+  const assetsDir = join(previewDir, 'assets');
+  const viewsDir = join(args.outDir, 'ir', 'views');
+  const indexPath = join(previewDir, 'index.html');
+  const cssPath = join(previewDir, 'preview.css');
+  const reportPath = join(previewDir, 'visual-review-report.md');
+  const visualViewPath = join(viewsDir, 'visual-view.json');
+
+  await mkdir(assetsDir, { recursive: true });
+  await mkdir(viewsDir, { recursive: true });
+  await writeFile(indexPath, preview.html, 'utf8');
+  await writeFile(cssPath, preview.css, 'utf8');
+  await writeFile(reportPath, preview.report, 'utf8');
+  await writeFile(visualViewPath, preview.visualViewJson, 'utf8');
+  for (const asset of preview.assets) {
+    await writeFile(join(previewDir, asset.path), asset.content, 'utf8');
+  }
+
+  console.log(`requiresApproval: ${preview.requiresApproval}`);
+  console.log(`overrideApplied: ${preview.stats.overrideApplied}`);
+  console.log(`overrideUnmapped: ${preview.stats.overrideUnmapped}`);
+  console.log(`overrideUnsupported: ${preview.stats.overrideUnsupported}`);
+  console.log(`placeholderAssets: ${preview.stats.placeholderAssets}`);
+  console.log(`visual-view.json: ${visualViewPath} (${Buffer.byteLength(preview.visualViewJson, 'utf8')} bytes)`);
+  console.log(`index.html: ${indexPath} (${Buffer.byteLength(preview.html, 'utf8')} bytes)`);
+  console.log(`preview.css: ${cssPath} (${Buffer.byteLength(preview.css, 'utf8')} bytes)`);
+  console.log(`visual-review-report.md: ${reportPath} (${Buffer.byteLength(preview.report, 'utf8')} bytes)`);
+}
+
 async function main(): Promise<void> {
+  if (process.argv[2] === 'preview') {
+    await runPreview();
+    return;
+  }
   if (process.argv[2] === 'normalize') {
     await runNormalize();
     return;

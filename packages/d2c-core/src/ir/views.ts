@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ContractStatusSchema } from './schema';
+import { VisualBlockSchema } from './visual';
 
 /**
  * Provenance back-reference carried by every derived view and contract, so an
@@ -19,14 +20,14 @@ export const GeneratedFromSchema = z
   .strict();
 export type GeneratedFrom = z.infer<typeof GeneratedFromSchema>;
 
-/* Stage 1 ships envelope-only schemas. The `body` of each view is left loose
- * (`record(unknown)`) and firms up in Stages 4–6. */
+/* `visual-view` firms up in Stage 4 because preview rendering needs a real
+ * VisualBlock. Later views remain envelope-only until their stages land. */
 
 export const VisualViewSchema = z
   .object({
     kind: z.literal('visual-view'),
     generatedFrom: GeneratedFromSchema,
-    body: z.record(z.unknown()),
+    body: VisualBlockSchema,
   })
   .strict();
 export type VisualView = z.infer<typeof VisualViewSchema>;
