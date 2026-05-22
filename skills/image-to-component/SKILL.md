@@ -9,7 +9,7 @@ description: Use when the user points to a directory of UI screenshots or design
 
 Convert a directory of UI screenshots into typed component skeletons. The critical step is **structural comparison first**: multiple screenshots often represent one component in different states, not multiple components.
 
-This is a **screenshot-to-skeleton** workflow. It can infer structure, variants, props, and asset needs from pixels, but screenshots do not reliably contain source-level style data such as design tokens, layer names, component instances, exportable vectors, or layout constraints. For high-fidelity generation from structured design data, route to a design-source workflow such as `mastergo-to-component`, future `figma-to-component`, or future `sketch-to-component`.
+This is a **screenshot-to-skeleton** workflow. It can infer structure, variants, props, and asset needs from pixels, but screenshots do not reliably contain source-level style data such as design tokens, layer names, component instances, exportable vectors, or layout constraints. For high-fidelity generation from structured design data, route to a design-source workflow — the `sketch-to-component` / `mastergo-to-component` / `figma-to-component` providers (all in development).
 
 **Hard context boundary:** the main agent must never read image files directly. Image reading happens only inside signature subagents, coarse-signature subagents, or optional style-context subagents. If subagent dispatch is unavailable, use `workflows/degraded-mode.md`.
 

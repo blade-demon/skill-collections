@@ -1,0 +1,6 @@
+# Local design sources and pipeline outputs — contain absolute paths and
+# design content, never committed.
+input/
+output/
+d2c-sketch-output/
+*.sketch

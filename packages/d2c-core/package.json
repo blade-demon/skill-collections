@@ -1,0 +1,25 @@
+{
+  "name": "@skill-collections/d2c-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared design-source-to-component (D2C) pipeline core: canonical IR schema, validators, and the provider port. Source-only internal workspace package — consumed via tsx/vitest/TS-aware tooling, not runnable by plain Node (no dist/).",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

@@ -74,14 +74,25 @@ ir/
 
 ```json
 {
-  "schemaVersion": "d2c.design-ir/v0.1.0",
+  "schemaVersion": "d2c.design-ir/v0.2.0",
   "source": {
-    "provider": "mastergo",
-    "fileId": "192813714739577",
-    "nodeId": "2:0031"
+    "provider": "sketch",
+    "ref": { "fileName": "example.sketch", "documentId": "doc-1" },
+    "rootName": "Example Screen"
   },
-  "visual": {},
-  "semantic": {},
+  "visual": {
+    "artboard": { "width": 375, "height": 812 },
+    "assets": [],
+    "root": {
+      "id": "node-root",
+      "kind": "frame",
+      "name": "ExampleScreen",
+      "source": { "nodeId": "root-1", "originalType": "artboard", "provider": "sketch" },
+      "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
+      "children": []
+    }
+  },
+  "semantic": { "candidates": [] },
   "interaction": {
     "status": "draft"
   },
@@ -94,6 +105,7 @@ ir/
 - 补丁（patch）变更只能新增可选字段。
 - 次要（minor）变更只能在提供迁移路径的前提下新增必填字段。
 - 主要（major）变更允许破坏旧 provider，但必须附带迁移说明。
+- 1.0 前的特例：major 为 `0` 期间，minor 升级一律视为破坏性 —— `isCompatible` 要求 major.minor 精确匹配（patch 忽略）。上面的 patch/minor/major 规则自 major ≥ 1 起生效。
 - Provider 提取器必须写入它所面向的 `schemaVersion`。
 
 ## 端到端 D2C 架构
@@ -269,7 +281,7 @@ Provider 提取器是唯一了解 provider 专有细节的层。
 
 - MasterGo 提取器读取 `MASTERGO_TOKEN`，解析 `fileId` 与 `layerId`，并请求 `/mcp/dsl`。
 - Figma 提取器会读取 Figma 的文件/节点数据，并在支持的情况下导出图片。
-- Sketch 提取器会读取已提交的 Sketch IR，或与 SketchMCP 通信。
+- Sketch 提取器直接解析 `.sketch` 文件（公开的 JSON ZIP 包），后续也可经 SketchMCP。
 
 Provider 原始数据不得被预览或目标代码生成直接消费。
 
@@ -595,7 +607,7 @@ React 输出必须使用这种组件包与 barrel 导出形态。避免生成单
 
 1. 在 `SKILL.md` 中把 `image-to-component` 重新定位为“截图到骨架”。
 2. 保留它现有的结构对比、签名校验、prop 建模和资源清单方面的优势。
-3. 把 `mastergo-to-component` 作为第一个设计源 provider。
-4. 为第一个 provider 实现 `ir/design-ir.json` 作为权威规范化 IR 目标，同时记录任何 provider 专有假设。
+3. **Sketch 是首个完整垂直切片 provider**（2026-05-21 确认，Stage 2 raw extraction 验证通过后）：由它承载 raw extraction 与 `normalize`。`.sketch` 是公开、本地、可检视的格式，管线可离线开发与测试。
+4. 为首个跑到 `normalize` 的 provider 实现 `ir/design-ir.json` 作为权威规范化 IR 目标，同时记录任何 provider 专有假设。
 5. 只有在第二个 provider 证明了哪些概念真正共享之后，再抽取更强的中立概念。
-6. 在 MasterGo provider 验证了 IR 版本管理、预览门禁、契约门禁和重生成行为之后，再加入 Figma 和 Sketch provider。
+6. 待 MasterGo 服务端 raw DSL 契约可稳定取得后再恢复它；Figma 更晚。每个新 provider 都须遵守 IR 版本管理、预览门禁、契约门禁和重生成行为。

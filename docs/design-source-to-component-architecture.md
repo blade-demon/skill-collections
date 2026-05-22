@@ -74,14 +74,25 @@ Use these terms consistently:
 
 ```json
 {
-  "schemaVersion": "d2c.design-ir/v0.1.0",
+  "schemaVersion": "d2c.design-ir/v0.2.0",
   "source": {
-    "provider": "mastergo",
-    "fileId": "192813714739577",
-    "nodeId": "2:0031"
+    "provider": "sketch",
+    "ref": { "fileName": "example.sketch", "documentId": "doc-1" },
+    "rootName": "Example Screen"
   },
-  "visual": {},
-  "semantic": {},
+  "visual": {
+    "artboard": { "width": 375, "height": 812 },
+    "assets": [],
+    "root": {
+      "id": "node-root",
+      "kind": "frame",
+      "name": "ExampleScreen",
+      "source": { "nodeId": "root-1", "originalType": "artboard", "provider": "sketch" },
+      "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
+      "children": []
+    }
+  },
+  "semantic": { "candidates": [] },
   "interaction": {
     "status": "draft"
   },
@@ -94,6 +105,7 @@ Compatibility rule:
 - Patch changes may add optional fields.
 - Minor changes may add required fields only behind a migration path.
 - Major changes may break old providers and must include a migration note.
+- Pre-1.0 exception: while the major version is `0`, a minor bump is treated as breaking — `isCompatible` requires an exact major.minor match (patch is ignored). The patch/minor/major rules above take effect once major ≥ 1.
 - Provider extractors must write the `schemaVersion` they target.
 
 ## End-To-End D2C Architecture
@@ -269,7 +281,7 @@ Examples:
 
 - MasterGo extractor reads `MASTERGO_TOKEN`, parses `fileId` and `layerId`, and requests `/mcp/dsl`.
 - Figma extractor would read Figma file/node data and export images where supported.
-- Sketch extractor would read a committed Sketch IR or talk to SketchMCP.
+- Sketch extractor parses a `.sketch` file directly (an open ZIP of JSON), or later via SketchMCP.
 
 Provider raw data must not be consumed directly by preview or target code generation.
 
@@ -595,7 +607,7 @@ When a user needs accurate visual reconstruction and can provide Sketch, Figma, 
 
 1. Reposition `image-to-component` as screenshot-to-skeleton in its `SKILL.md`.
 2. Keep its existing structural comparison, signature validation, prop modeling, and asset-ledger strengths.
-3. Treat `mastergo-to-component` as the first design-source provider.
-4. Implement `ir/design-ir.json` as the canonical normalized IR target for the first provider, while documenting any provider-specific assumptions.
+3. **Sketch is the first complete-vertical-slice provider** (confirmed 2026-05-21, after Stage 2 raw extraction proved out): it carries raw extraction and `normalize`. `.sketch` is an open, local, inspectable format, so the pipeline is developed and tested offline.
+4. Implement `ir/design-ir.json` as the canonical normalized IR target for the first provider that reaches `normalize`, documenting any provider-specific assumptions.
 5. Extract stronger provider-neutral concepts only after a second provider proves what is actually shared.
-6. Add Figma and Sketch providers after the MasterGo provider proves the IR versioning, preview gate, contract gate, and regeneration behavior.
+6. Restore MasterGo as a provider once its server-side raw DSL contract can be obtained reliably; add Figma later. Every new provider must respect the IR versioning, preview gate, contract gate, and regeneration behavior.

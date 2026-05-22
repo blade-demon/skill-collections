@@ -1,3 +1,11 @@
+> **⚠️ DEPRECATED (2026-05-21).** This plan predates the shared design-source
+> architecture. It targets a standalone SketchMCP → CSS Modules generator, which
+> conflicts with the current direction (provider-neutral `d2c-core` + a Sketch raw
+> extractor feeding a shared pipeline). Superseded by
+> [`../../../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../../../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)
+> and [`../../design-source-to-component-implementation-plan.md`](../../design-source-to-component-implementation-plan.md).
+> Kept for history only — do not implement from this file.
+
 # Sketch-to-Component Skill Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

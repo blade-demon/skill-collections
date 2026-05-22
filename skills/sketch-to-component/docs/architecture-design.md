@@ -16,19 +16,46 @@ The authoritative D2C contract is [`../../../docs/design-source-to-component-arc
 Sketch-specific extraction feeds the shared pipeline:
 
 ```text
-Sketch Frame / SketchMCP
--> Sketch provider extractor
+.sketch file (direct ZIP parse)        # first / primary extraction path
+  — or — SketchMCP (later alternative)
+-> Sketch provider extractor (extractRaw)
 -> output/ir/raw-dsl.json
 -> output/ir/design-ir.json
 -> shared preview, contract, and target-package pipeline
 ```
 
+**Extraction approach (2026-05-21).** The first extraction path is **direct `.sketch`
+file parsing** — `.sketch` is an open ZIP of JSON, so `extractRaw` is offline,
+inspectable, and fixture-friendly. SketchMCP is a later alternative behind the same
+seam: both acquisition strategies converge on one internal `SketchRawModel`, so
+`normalize` and the shared pipeline are unaffected when MCP is added. The current
+Stage 2 build is scoped to the file path — see
+[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md). The
+`Prerequisites` and `Configuration` sections below describe the *later* SketchMCP
+path, not the Stage 2 file path.
+
+## Current Stage 2 scope
+
+The sections below (`Role Split`, `Prerequisites`, `Provider Responsibilities`,
+`Commands`) describe the full eventual Sketch provider, much of it via SketchMCP.
+**The current Stage 2 build is much narrower** — see
+[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md):
+
+- one command only: `extract --file <path> --out <dir>` — read a local `.sketch`,
+  write `raw-dsl.json`;
+- no SketchMCP, no frame/artboard selection, no asset or reference-frame export,
+  no `normalize`;
+- output is a `RawArtifact` whose `payload` is the whole-document `SketchRawModel`.
+
+Treat anything below that conflicts with this section as future scope, not Stage 2.
+
 ## When To Use
 
 This provider applies when:
 
-- the user wants to convert a Sketch frame through D2C;
-- the user has SketchMCP available;
+- the user wants to convert a Sketch design through D2C;
+- a local `.sketch` file is available — the current Stage 2 main entry, via `extract --file`;
+- SketchMCP is available (a later extraction path, not Stage 2);
 - the repo contains committed Sketch-derived raw or canonical artifacts;
 - the user asks for Sketch provider behavior, limitations, or validation.
 
@@ -38,7 +65,8 @@ Screenshot-only inputs belong to `image-to-component`, not this provider.
 
 | Role | Responsibility |
 |---|---|
-| Designer with Sketch + SketchMCP | Extract the selected frame, assets, and reference-frame image. |
+| Operator with a local `.sketch` file *(current — Stage 2)* | Run `extract --file <path> --out <dir>` to produce `raw-dsl.json`. |
+| Designer with Sketch + SketchMCP *(future)* | Extract the selected frame, assets, and reference-frame image. |
 | Developer without Sketch | Work from committed `output/ir/` artifacts, review gates, and generated `output/package/`. |
 | Shared D2C engine | Own canonical IR views, HTML preview, interaction spec, component plan, target package output, and validation. |
 
@@ -144,16 +172,29 @@ Provider normalization should:
 
 ## Commands
 
-Command names may vary as the provider implementation matures. Their outputs must still follow the global architecture.
+### Current — Stage 2 only
 
-| Command | Audience | Purpose |
-|---|---|---|
-| `npm install` | All | Install provider script dependencies. |
-| `npm test` | All | Run provider-owned tests. |
-| `npm run extract -- --config <path> --name <frame>` | Designer | Extract Sketch raw data, assets, and reference image into `output/ir/` and `output/preview/` sidecar locations. |
-| `npm run generate -- --config <path> --name <frame>` | All | Normalize existing provider artifacts into `output/ir/design-ir.json` and hand off to the shared pipeline when implemented. |
+The Stage 2 build exposes one extraction command — see
+[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md):
 
-If current scripts lag behind this contract, extend the scripts toward the global architecture rather than reverting this provider to a provider-specific output model.
+| Command | Purpose |
+|---|---|
+| `npm install` | Install provider script dependencies. |
+| `npm test` | Run provider-owned tests. |
+| `npm run typecheck` | Type-check the provider scripts. |
+| `npm run extract -- --file <path> --out <dir>` | Parse a local `.sketch` file; write `<out>/ir/raw-dsl.json`. |
+
+### Future — not Stage 2
+
+These describe the eventual full provider (SketchMCP extraction, frame selection,
+normalization) and are **out of scope now**:
+
+| Command | Purpose |
+|---|---|
+| `extract` via SketchMCP / frame selection | Extract a selected frame, assets, and a reference image. |
+| `generate` | Normalize provider artifacts into `design-ir.json` and hand off to the shared pipeline. |
+
+Command names may evolve as the provider matures; outputs must still follow the global architecture.
 
 ## Gates
 
