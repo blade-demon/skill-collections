@@ -1,0 +1,17 @@
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.vite/
+**/.vite/
+coverage/
+**/coverage/
+package-lock.json
+**/package-lock.json
+fixtures/
+docs/superpowers/plans/
+skills/design-to-spec/examples/
+samples/**/design-spec/
+skills/sketch-to-component/scripts/src/__tests__/fixtures/*.json

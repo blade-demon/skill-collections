@@ -6,20 +6,46 @@
   "workspaces": [
     "packages/*",
     "skills/*",
+    "skills/image-to-component/scripts",
     "skills/sketch-to-component/scripts",
     "samples/*/*"
   ],
   "scripts": {
-    "test:skills": "npm test --workspace skills/design-to-spec --workspace skills/html-article-to-markdown",
+    "test:skills": "npm test --workspace skills/design-to-spec --workspace skills/html-article-to-markdown --workspace image-to-component-scripts --workspace @skill-collections/sketch-to-component-scripts",
     "test:samples": "npm test --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
     "test:skill": "npm run test:skills",
     "test:d2c": "npm test --workspace @skill-collections/d2c-core",
+    "test:image": "npm test --workspace image-to-component-scripts",
     "test:sketch": "npm test --workspace @skill-collections/sketch-to-component-scripts",
+    "test:all": "npm run test:skills && npm run test:samples && npm run test:d2c",
+    "typecheck:d2c": "npm run typecheck --workspace @skill-collections/d2c-core",
+    "typecheck:image": "npm run typecheck --workspace image-to-component-scripts",
+    "typecheck:sketch": "npm run typecheck --workspace @skill-collections/sketch-to-component-scripts",
+    "typecheck:html": "npm run build --workspace html-article-to-markdown",
+    "typecheck": "npm run typecheck:d2c && npm run typecheck:image && npm run typecheck:sketch && npm run typecheck:html",
     "build:samples": "npm run build --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
+    "build:fixtures": "npm run build --prefix fixtures",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "lint:samples": "npm run lint --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
-    "check": "npm run test:skills && npm run test:samples && npm run lint:samples && npm run build:samples"
+    "lint:fixtures": "npm run lint --prefix fixtures",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:fixtures": "npm run lint:fixtures && npm run build:fixtures",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run test:all && npm run build:samples",
+    "check:full": "npm run check && npm run check:fixtures"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.5.0",
+    "lefthook": "^1.13.6",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.58.2"
   }
 }
