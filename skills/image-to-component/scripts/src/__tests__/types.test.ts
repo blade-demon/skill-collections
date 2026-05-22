@@ -86,8 +86,10 @@ describe('SkeletonConfigSchema', () => {
     }
 
     const parsed = SkeletonConfigSchema.parse(input)
-    expect(parsed.stylePlan?.rules[0].declarations).toHaveLength(4)
-    expect(parsed.stylePlan?.rules[0].variants).toHaveLength(1)
+    const rule = parsed.stylePlan?.rules[0]
+    expect(rule).toBeDefined()
+    expect(rule!.declarations).toHaveLength(4)
+    expect(rule!.variants).toHaveLength(1)
   })
 
   it('rejects unsafe style plan variant names', () => {

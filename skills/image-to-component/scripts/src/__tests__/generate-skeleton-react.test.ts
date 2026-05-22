@@ -88,6 +88,7 @@ describe('generateReact TSX CSS Modules', () => {
             declarations: [
               { property: 'padding', value: 'var(--space-sm)', source: 'token-ledger' },
             ],
+            variants: [],
           },
         ],
       },
@@ -150,12 +151,14 @@ describe('generateReact TSX BEM', () => {
             declarations: [
               { property: 'display', value: 'flex', source: 'inferred' },
             ],
+            variants: [],
           },
           {
             component: 'ActionBar',
             declarations: [
               { property: 'justify-content', value: 'flex-end', source: 'inferred' },
             ],
+            variants: [],
           },
         ],
       },
