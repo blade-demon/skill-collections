@@ -36,7 +36,8 @@
 - **根因**:`normalize/visual.ts` `extractText()` 从 `paragraphStyle` 只取了 `alignment`,
   未取行高。`TextContent.style.lineHeight` 字段存在却从不填。
 - **codegen 影响**:文字行距全错,多行文本(气泡正文、说明文字)垂直节奏失真。
-- **批次**:Batch 1。
+- **批次**:Batch 1 —— ✅ 已完成(2026-05-22):`extractText` 读 `maximumLineHeight`
+  (退 `minimumLineHeight`);两者无 / 为 0 则留空(= auto)。
 
 ### A2 — 字重 `fontWeight` 全丢
 
@@ -46,7 +47,9 @@
   `size`,未把字体名后缀归一成中立字重。`TextContent.style.fontWeight` 字段存在却从不填。
 - **codegen 影响**:粗体标题(酒店名、价格)全渲染成常规体,除非 codegen 自行反解 Sketch
   字体名 —— 而这属 provider 私有知识,应在 normalize 归一。
-- **批次**:Batch 1。实现时一并定:是否把 `fontFamily` 规整为基础族名(剥离 `-Semibold` 等后缀)。
+- **批次**:Batch 1 —— ✅ 已完成(2026-05-22):解析字体名末段已知权重词(Thin…Black →
+  100…900)→ `fontWeight`,并剥离到基础族名;未命中已知后缀的字体名(如 `Helvetica`)原样
+  不动 —— 不做品牌 / 别名映射。
 
 ### A3 — 渐变填充塌缩成单色
 
@@ -56,8 +59,10 @@
   都没留。**
 - **隐蔽性**:`color` 字段有值、无 warning —— 下游完全看不出这是有损产物。
 - **codegen 影响**:9 处渐变背景变纯色。
-- **批次**:Batch 1 —— **至少**把渐变原始数据保留进 `style.raw.gradient`;完整渐变建模
-  (`Fill` schema 增 gradient 字段)可后置。
+- **批次**:Batch 1 —— ✅ 已完成(2026-05-22):渐变原始数据(stops / from / to /
+  gradientType)保留进**每个 fill 自己的** `fill.raw.gradient`(非 `style` 级,支持单节点多
+  渐变);`fill.type` 留 `gradient`、`color` 留 fallback。完整渐变建模(`Fill` schema 增
+  gradient 字段)可后置。
 
 ### A4 — 蒙版 / 裁剪完全没建模
 
@@ -127,12 +132,12 @@ grid)的能力与边界。建议在 Stage 5 蓝图开一节"布局推断能力�
 
 ## 6. 修复批次
 
-| 批次 | 内容 | 性质 | 依赖 |
+| 批次 | 内容 | 性质 | 状态 |
 |---|---|---|---|
-| **Batch 1** | A1 lineHeight、A2 fontWeight、A3 gradient → `style.raw.gradient` | 必修,小而准;`extractText` / `normalizeFills` 各加几行 | 无,可立即开 |
-| **Batch 2** | A5 symbol instance scale transform | 必修,**单独做**;需专门 fixture + 回归测试 | 动代码前先深挖换算公式 |
-| **Batch 3** | A4 mask / clipping | 须先设计 `VisualNode` mask schema 语义,再实现 | schema 设计先行 |
-| **Batch 4** | A6 symbolID / color / border override | 已知限制,保留 warning | 进 Stage 6 或独立 override 批次 |
+| **Batch 1** | A1 lineHeight、A2 fontWeight、A3 gradient → `fill.raw.gradient` | 必修,小而准;`extractText` / `normalizeFills` | ✅ 已完成(2026-05-22,test:sketch 33) |
+| **Batch 2** | A5 symbol instance scale transform | 必修,**单独做**;需专门 fixture + 回归测试;动代码前先深挖换算公式 | ⬜ 下一批 |
+| **Batch 3** | A4 mask / clipping | 须先设计 `VisualNode` mask schema 语义,再实现 | ⬜ schema 设计先行 |
+| **Batch 4** | A6 symbolID / color / border override | 已知限制,保留 warning | ⬜ 顺延(Stage 6 / 独立 override 批次) |
 
 **批次纪律 —— 不散修、不混批**:Batch 1 三项同源(都在 `extractText` / `normalizeFills`),
 可收进一个 commit;Batch 2 必须独立,因为它牵涉坐标换算、嵌套 symbol、override path、

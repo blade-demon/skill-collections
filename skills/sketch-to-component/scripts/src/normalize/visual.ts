@@ -210,7 +210,11 @@ function extractText(node: SketchNode): TextContent {
   const textStyle: NonNullable<TextContent['style']> = {};
   const font = encoded.MSAttributedStringFontAttribute as Record<string, unknown> | undefined;
   const fontAttrs = font?.attributes as Record<string, unknown> | undefined;
-  if (typeof fontAttrs?.name === 'string') textStyle.fontFamily = fontAttrs.name;
+  if (typeof fontAttrs?.name === 'string') {
+    const { family, weight } = parseFontName(fontAttrs.name);
+    textStyle.fontFamily = family;
+    if (weight !== undefined) textStyle.fontWeight = weight;
+  }
   if (typeof fontAttrs?.size === 'number') textStyle.fontSize = fontAttrs.size;
   const color = colorToHex(encoded.MSAttributedStringColorAttribute) ?? layerTextColor(node);
   if (color) textStyle.color = color;
@@ -218,6 +222,8 @@ function extractText(node: SketchNode): TextContent {
   const alignment = readNumber(paragraph?.alignment, 0);
   const alignmentMap = ['left', 'right', 'center', 'justify'] as const;
   textStyle.textAlign = alignmentMap[alignment] ?? 'left';
+  const lineHeight = readLineHeight(paragraph);
+  if (lineHeight !== undefined) textStyle.lineHeight = lineHeight;
   return Object.keys(textStyle).length > 0 ? { content, style: textStyle } : { content };
 }
 
@@ -237,6 +243,46 @@ function getTextAttributes(node: SketchNode): Record<string, unknown> {
   return textStyle.encodedAttributes && typeof textStyle.encodedAttributes === 'object'
     ? (textStyle.encodedAttributes as Record<string, unknown>)
     : {};
+}
+
+/** Sketch font names encode weight as a trailing `-<Weight>` segment. */
+const FONT_WEIGHTS: Record<string, number> = {
+  thin: 100,
+  extralight: 200,
+  ultralight: 200,
+  light: 300,
+  regular: 400,
+  normal: 400,
+  medium: 500,
+  semibold: 600,
+  demibold: 600,
+  bold: 700,
+  extrabold: 800,
+  heavy: 800,
+  black: 900,
+};
+
+/**
+ * Split a Sketch font name into base family + numeric weight. Only a trailing
+ * `-<Weight>` segment that exactly matches a known weight word is stripped;
+ * any other name is returned untouched (no brand/alias guessing — Batch 1 A2).
+ */
+function parseFontName(name: string): { family: string; weight?: number } {
+  const dash = name.lastIndexOf('-');
+  if (dash > 0) {
+    const weight = FONT_WEIGHTS[name.slice(dash + 1).toLowerCase()];
+    if (weight !== undefined) return { family: name.slice(0, dash), weight };
+  }
+  return { family: name };
+}
+
+/** Sketch fixed line height lives in paragraphStyle max/min; absent = auto. */
+function readLineHeight(paragraph: Record<string, unknown> | undefined): number | undefined {
+  const max = paragraph?.maximumLineHeight;
+  if (typeof max === 'number' && max > 0) return max;
+  const min = paragraph?.minimumLineHeight;
+  if (typeof min === 'number' && min > 0) return min;
+  return undefined;
 }
 
 /** A Sketch text layer's enabled layer-level fill doubles as its text colour. */
@@ -275,10 +321,15 @@ function normalizeFills(value: unknown): Fill[] {
     .filter((fill) => fill && typeof fill === 'object' && (fill as Record<string, unknown>).isEnabled !== false)
     .map((fill) => {
       const f = fill as Record<string, unknown>;
+      // Gradient fills collapse to a single fallback `color`; keep the raw
+      // Sketch gradient (stops / from / to / gradientType) so it is not lost
+      // until Fill gains a first-class gradient model (Batch 1 A3).
+      const raw: Record<string, unknown> = { fillType: f.fillType };
+      if (f.gradient && typeof f.gradient === 'object') raw.gradient = f.gradient;
       return {
         type: fillTypeName(f.fillType),
         color: colorToHex(f.color),
-        raw: { fillType: f.fillType },
+        raw,
       };
     });
 }
