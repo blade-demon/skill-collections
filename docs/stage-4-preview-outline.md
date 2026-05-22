@@ -175,9 +175,9 @@ d2c-core `ir/views.ts`:收紧 `VisualViewSchema.body`。
 - 真实 `d2c.sketch` 端到端 `extract → normalize → preview` 产出可评审的 `index.html`。
 - 里程碑:据此发首版 `sketch-to-component/SKILL.md`(或架构文档),描述明确写"到预览门禁为止"。
 
-## 15. 缺陷修订(Gate-1 评审发现 — 2026-05-22)
+## 15. 缺陷修订(预览评审发现)
 
-> 首次跑通 Stage 4、对真实 `d2c.sketch` 预览做视觉评审时发现,记此备后续 review。
+> 对真实 `d2c.sketch` 预览做视觉评审时发现的预览层缺陷,逐条标注发现时机,记此备后续 review。
 
 **D2 — `fills[0]` 无差别映射成 `background-color`**
 
@@ -192,3 +192,20 @@ d2c-core `ir/views.ts`:收紧 `VisualViewSchema.body`。
   Stage 3 normalize 一并修掉(见 Stage 3 蓝图 §18 D1),此处为消费端防御,二者并存。
 - **遗留**:矢量图标目前渲染为"空白"(不画实心块);真实图标还原需 SVG 资源导出 ——
   已在 §8 列为 Stage 4 之后的后置专项。
+
+**D3 — 定宽文字盒 + `white-space: pre-wrap` 把字形裁掉**(2026-05-22,Batch 1 后复跑预览发现)
+
+- **现象**:酒店价格 `643.08` 在预览里渲染成 `643.0`,末位 `8` 丢失。IR 保真审计 Batch 1
+  (A2 正确补上 `fontWeight`)后复跑预览复查时发现。
+- **根因**:`generate-preview`(§7)给文字节点设 `white-space: pre-wrap`,叠加定宽定高盒 +
+  `.d2c-node { overflow: hidden }`。当渲染字体与设计字体度量不一致时(headless 浏览器无
+  `DINAlternate`,改用更宽的替代字体;Batch 1 又正确补了 `font-weight:700` 使替代字体更宽),
+  文本超出 Sketch 量得的盒宽 → `pre-wrap` 触发换行 → 第二行被固定高度 + `overflow:hidden`
+  裁掉。
+- **非 IR 缺陷**:`design-ir.json` 内容 `643.08`、`width:43`、`fontWeight:700` 均正确 ——
+  这是**预览渲染保真问题**;Batch 1 让 IR 更准,反而暴露了预览生成器的这一弱点。
+- **蓝图缺陷**:§7 文本映射默认浏览器字体度量与设计一致;无设计字体时"定宽盒 + `pre-wrap` +
+  裁剪"会裁字。
+- **修订(待定,非平凡)**:候选方向 —— ① 文字节点改 `white-space: pre`(但多行气泡靠自动
+  换行,不能一刀切)② 预览不对文字盒做高度裁剪 ③ 嵌入 / 替换真实设计字体。**优先级低于 IR
+  修复批次,顺延**;根治方案留待后续 Stage 4 预览增强专项里定。
