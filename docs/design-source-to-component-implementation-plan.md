@@ -6,7 +6,7 @@
 >
 > 状态图例：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始
 
-最后更新：2026-05-22（Stage 4 完成并通过 Gate-1 评审；D1/D2 缺陷已修订）
+最后更新：2026-05-23（Stage 4 已完成；仓库质量门禁接入 `check:full` / CI / hooks）
 
 ---
 
@@ -83,7 +83,8 @@
 
 1. ✅ workspace 配置（`package.json` / `tsconfig.json` / `vitest.config.ts` / `README.md`），
    复用 sketch scripts 的 TS/vitest 惯例。
-2. ✅ 根 `package.json` 加 `packages/*` 与 `test:d2c` 脚本（未并入 `check`）。
+2. ✅ 根 `package.json` 加 `packages/*` 与 `test:d2c` 脚本；后续仓库加固已把 D2C 类型检查与测试并入
+   `check:full`。
 3. ✅ `src/ir/`：`version.ts`（版本族 + 粒度化 `isCompatible`：malformed / family-mismatch /
    major-incompatible / minor-incompatible）、`schema.ts`（`DesignIRSchema` 顶层从严、
    `visual`/`semantic` 从宽，`Warning`/`Confidence`/`Annotation` 等稳定基元）、
@@ -172,7 +173,9 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 ### 阶段 7 — 共享：工程校验 + 收尾 ⬜
 
 - `d2c-core`：typecheck / build / 截图 diff。
-- 接入根 `npm run check`；首发 provider 的 `SKILL.md` 升级为完整管线描述。
+- 首发 provider 的 `SKILL.md` 升级为完整管线描述。
+- 已提前完成的仓库级质量门禁：root `lint` / `format:check` / `typecheck` / `test:all` /
+  `build:samples` / `check:fixtures` / `check:full`，并接入 GitHub Actions 与 `lefthook`。
 
 ---
 
@@ -180,17 +183,15 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 1. **mastergo `scripts/` 未脚手架**——只有空 `src/.gitkeep`、`tests/fixtures/`，无
    `package.json`/`tsconfig`/`vitest.config`。→ 待 MasterGo provider 阶段补。
-2. **根 `workspaces` 不覆盖**：阶段 1 已加 `packages/*`；阶段 2 单独加
-   `skills/sketch-to-component/scripts` 具体路径。image 的 scripts 仍有独立 lockfile，
-   **暂不纳入根 workspace**，待其稳定后再议。
-3. **根 `test:skills` 写死**只跑 `design-to-spec` + `html-article-to-markdown`，新测试套件不会进
-   `npm run check`。→ 阶段 1 加 `test:d2c`；阶段 7 并入 `check`。
+2. ✅ **根 `workspaces` 覆盖已补齐**：当前覆盖 `packages/*`、`skills/*`、
+   `skills/image-to-component/scripts`、`skills/sketch-to-component/scripts`、`samples/*/*`。
+3. ✅ **根质量脚本已补齐**：`typecheck` 覆盖 d2c / image / sketch / html；`test:all` 覆盖 skills /
+   samples / d2c；`check:full` 再追加 samples build 与 fixture lint/build。
 4. ✅ **`README.md` 与 `repo-workflow.md`** —— 已同步:术语更新、布局树补 `packages/` 与各
    skill、provider 状态对齐(阶段 0 + 后续一致性修订完成)。
-5. **sketch 脚本残缺**：`scripts/package.json` 的 `extract`/`generate`/`e2e` 指向不存在的
-   `src/cli.ts`；`src/ir/schema.ts`（仅 Color/Rect）是旧 sketch IR，与 canonical d2c-core IR
-   重叠且过时。→ **阶段 2 清理重做**(见 Stage 2 蓝图)。
-6. **无 CI**（repo-workflow §8）——非阻断，阶段 7 可选把 `npm run check` 提升为 GitHub Actions。
+5. ✅ **sketch 脚本残缺已清理**：阶段 2 已重做 `scripts/package.json`、`src/cli.ts`、raw extract；
+   阶段 3/4 已补 `normalize` 与 `preview` 命令，旧 sketch IR 已移除。
+6. ✅ **CI 已接入**：GitHub Actions 使用 `npm ci`、`npm ci --prefix fixtures`、`npm run check:full`。
 
 ---
 
