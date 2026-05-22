@@ -1,5 +1,7 @@
 # search-panel — add-search-panel 的增量规格
 
+<!-- CONTRACT_DERIVED: 此文件由 generate-output.js 从 YAML 契约机械生成。4B 阶段 LLM 不得添加契约中不存在的 Requirement 或 Scenario，不得修改 state: / request: trace anchor。-->
+
 ## ADDED Requirements
 
 ### Requirement: SearchPanel 状态覆盖

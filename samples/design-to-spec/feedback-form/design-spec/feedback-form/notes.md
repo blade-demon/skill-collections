@@ -1,16 +1,21 @@
 # FeedbackForm — 设计笔记
 
 > 由 `design-to-spec/scripts/generate-output.js` 根据 YAML 契约生成。此文件是协作草稿，`needs_human_input` 和开放问题需要人类确认。
+>
+> **节标记说明**：`<!-- CONTRACT_DERIVED -->` 节由脚本从 YAML 契约机械生成，4B 阶段 **不得修改**字段名、类型、枚举值、trace anchor；`<!-- NARRATIVE -->` 节允许 LLM 补充背景、决策理由、项目上下文，但不得引入契约中不存在的组件、状态或接口。
 
+<!-- NARRATIVE -->
 ## 为什么
 
 `FeedbackForm` 将设计稿中的可见结构、接口字段和交互状态固化为可实现规格。
 
+<!-- NARRATIVE -->
 ## 决策
 
 - **契约优先** — 本文仅使用 `contracts/*.yaml` 中的事实，不重新分析设计稿或接口文档。
 - **状态可测试** — `required: true` 的状态会进入 OpenSpec Scenario。
 
+<!-- CONTRACT_DERIVED -->
 ## 数据契约
 
 ```ts
@@ -51,12 +56,14 @@ interface FeedbackFormData {
 | `FORBIDDEN` | `message` | false | `error` | 未登录或 token 过期；前端跳 /login，不展示错误条 |
 | `INTERNAL_ERROR` | `message` | false | `error` | 服务端未分类错误；顶部错误条文案 '服务暂时不可用' |
 
+<!-- CONTRACT_DERIVED -->
 ## 数据获取方式
 
 | 接口/方法名 | 调用时机 | 请求关键参数 | 响应关键字段 | 缓存策略 | 补充说明 |
 | --------- | ------- | ---------- | ---------- | ------- | ------- |
 | `POST /api/v1/feedback` | `submitBtn.onClick AND 前端校验全部通过` | 无 | data.feedback_id, data.submitted_at | 待项目确认 | request `submitRequest`, call_type `user_triggered` |
 
+<!-- CONTRACT_DERIVED -->
 ## 状态枚举
 
 | 状态 | 触发条件 | UI 表现 | required | source | scope | scope_components | render_assertion |
@@ -70,6 +77,7 @@ interface FeedbackFormData {
 | `emailInvalid` | emailField.onBlur AND emailField.value !== '' AND email regex fails | identified | true | visible | element | emailField, emailHint | renders emailField with red border; renders emailHint '邮箱格式不正确' |
 | `commentInvalid` | commentField.onBlur AND commentField.value.trim().length < 5 | identified | true | visible | element | commentField, commentHint | renders commentField with red border; renders commentHint '评论至少 5 个字符' |
 
+<!-- CONTRACT_DERIVED -->
 ## 组件分解
 
 | 组件 | type | semantic_type | parent_id | role | repeat_source | 目的 | 复用信号 |
@@ -92,10 +100,12 @@ interface FeedbackFormData {
 | `feedbackIdText` | `Text` | `` | `feedbackForm` | `secondary` | `` | success 态显示 data.feedback_id；样式（是否可复制 / 字号 / 颜色）待设计签收 | component-local |
 | `resetButton` | `Button` | `` | `feedbackForm` | `action` | `` | success 态按钮；点击后清空所有字段并回到 idle | component-local |
 
+<!-- NARRATIVE -->
 ## 布局陷阱
 
 - 卡片内部垂直堆叠：errorBanner（条件）→ formTitle → ratingGroup → commentField（含 commentLabel + commentHint）→ emailField（含 emailLabel + emailHint）→ submitBtn；success 态替换为 successIcon + successTitle + successBody + feedbackIdText + resetButton
 
+<!-- CONTRACT_DERIVED -->
 ## 置信度地图
 
 | 元素 / 行为 | 状态 | 备注 |
@@ -126,6 +136,7 @@ interface FeedbackFormData {
 | `emailInvalid` | identified | emailField.onBlur AND emailField.value !== '' AND email regex fails |
 | `commentInvalid` | identified | commentField.onBlur AND commentField.value.trim().length < 5 |
 
+<!-- CONTRACT_DERIVED -->
 ## 开放问题
 
 1. [P2] VALIDATION_FAILED 的 data.field_errors 当前 schema 描述为 {field: string}，但前端展示需要的是逐字段处理。后端是否能保证 field 名与前端字段名一致（rating / comment / email）？
@@ -135,20 +146,24 @@ interface FeedbackFormData {
 5. [P2] 是否需要提交确认弹窗？产品方未明确表态；倾向不做以减少摩擦，但若反馈是公开可见（如评论区）可能需要
 6. [P2] rating 取消（点击同一颗第二次回到 0）的语义是否需要在 spec.md 里有 Scenario？目前隐含在 ratingGroup 内部不构成顶层状态转换
 
+<!-- CONTRACT_DERIVED -->
 ## 计划提示
 
 - `generated_from_contracts`
 - `validate_output_required`
 
+<!-- CONTRACT_DERIVED -->
 ## 交叉引用
 
 - 输入契约：`./contracts/ui-schema.yaml`、`./contracts/api-schema.yaml`、`./contracts/mapping-logic.yaml`
 - 规格增量：`./specs/feedback-form/spec.md`
 
+<!-- NARRATIVE -->
 ## 建议的下一步
 
 将完整输出目录交给规划或实现流程；下游不应重新阅读原始设计稿，而应消费本目录和 `contracts/*.yaml`。
 
+<!-- CONTRACT_DERIVED -->
 ## Traceability
 
 | trace_id | kind | source | target | notes |
@@ -185,6 +200,7 @@ interface FeedbackFormData {
 | `state:emailInvalid` | state | `emailInvalid` | `emailField, emailHint` | required `true` |
 | `state:commentInvalid` | state | `commentInvalid` | `commentField, commentHint` | required `true` |
 
+<!-- CONTRACT_DERIVED -->
 ## 埋点锚点
 
 | 锚点 ID | 触发 Scenario（对应 spec.md 标题或 Requirement） | 类型 | 关键参数（语义层） | 备注 |

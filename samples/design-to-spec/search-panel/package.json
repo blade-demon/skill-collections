@@ -6,6 +6,7 @@
   "description": "Hands-on sample exercising design-to-spec on a search-panel UI unit.",
   "scripts": {
     "dev": "vite",
+    "test": "node --test tests/*.test.js",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "echo \"(lint not configured)\""

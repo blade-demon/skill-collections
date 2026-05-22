@@ -148,6 +148,7 @@ async function runSearch(keyword, isAutoRetry = false) {
 
   // state_machine: loading -> success / empty / error / invalidKeyword
   if (response.code === 0) {
+    window.__lastSearchResponse = response; // for the renderer
     if (response.data.results.length > 0) {
       setState("success");
       // ui_to_event view-search-result
@@ -155,11 +156,9 @@ async function runSearch(keyword, isAutoRetry = false) {
         keyword,
         result_count: response.data.total,
       });
-      window.__lastSearchResponse = response; // for the renderer
     } else {
       setState("empty");
       emitTrackingEvent("view-search-empty", { keyword });
-      window.__lastSearchResponse = response;
     }
     return;
   }

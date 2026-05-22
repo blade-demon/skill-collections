@@ -1,7 +1,10 @@
 # FeedbackForm — 数据获取逻辑设计
 
 > 由 `design-to-spec/scripts/generate-output.js` 根据 YAML 契约生成。
+>
+> **节标记说明**：`<!-- CONTRACT_DERIVED -->` 节由脚本从 YAML 契约机械生成，4B 阶段**不得修改**；`<!-- NARRATIVE -->` 节允许 LLM 补充数据流文字描述，但不得引入契约中不存在的请求或接口。
 
+<!-- NARRATIVE -->
 ## 数据流向
 
 ```
@@ -11,12 +14,14 @@ contracts/api-schema.yaml
       -> UI components
 ```
 
+<!-- CONTRACT_DERIVED -->
 ## 触发时机与条件
 
 | 触发事件 | 前提条件 | 备注 |
 |---------|---------|------|
 | `submitBtn.onClick AND 前端校验全部通过` | endpoint `submitFeedback` 可用 | call_type `user_triggered` |
 
+<!-- CONTRACT_DERIVED -->
 ## 请求链路
 
 ### 请求清单
@@ -41,31 +46,37 @@ contracts/api-schema.yaml
 
 **响应关键字段**：data.feedback_id, data.submitted_at。
 
+<!-- CONTRACT_DERIVED -->
 ## 接口元信息
 
 | endpoint | auth_required | cache_key_fields | pagination | error_shape |
 | -------- | ------------- | ---------------- | ---------- | ----------- |
 | `POST /api/v1/feedback` | true | — | none | VALIDATION_FAILED, RATE_LIMITED, NETWORK_ERROR, FORBIDDEN, INTERNAL_ERROR |
+<!-- CONTRACT_DERIVED -->
 ## 分页与无限滚动
 
 不涉及，除非契约中的请求或开放问题另有说明。
 
+<!-- CONTRACT_DERIVED -->
 ## 缓存与复用策略
 
 - **strategy**: none
 - **notes**: 写操作不缓存
 
+<!-- CONTRACT_DERIVED -->
 ## 重试策略
 
 - **strategy**: none
 - **notes**: 不自动重试；NETWORK_ERROR / INTERNAL_ERROR 由用户手动再次点击；RATE_LIMITED 走倒计时禁用，30s 后允许
 
+<!-- CONTRACT_DERIVED -->
 ## 竞态与并发处理
 
 - **abortable**: true
 - **stale_response**: ignore
 - **notes**: submitting 态按钮禁用，物理上不会重复触发；组件 unmount 时 abort 当前请求
 
+<!-- CONTRACT_DERIVED -->
 ## 错误分级与降级策略
 
 | 错误类型 | 触发条件 | UI 表现 | 是否可重试 | 备注 |
@@ -78,6 +89,7 @@ contracts/api-schema.yaml
 | `FORBIDDEN` | `message` | `error` | 否 | 未登录或 token 过期；前端跳 /login，不展示错误条 |
 | `INTERNAL_ERROR` | `message` | `error` | 否 | 服务端未分类错误；顶部错误条文案 '服务暂时不可用' |
 
+<!-- CONTRACT_DERIVED -->
 ## 状态机
 
 | from | event | to | render_assertion |
@@ -97,10 +109,12 @@ contracts/api-schema.yaml
 | `emailInvalid` | emailField.onInput | `idle` | clears emailHint and red border; submitBtn re-evaluates 前端校验 |
 | `commentInvalid` | commentField.onInput | `idle` | clears commentHint and red border |
 
+<!-- CONTRACT_DERIVED -->
 ## 父组件约定
 
 若契约中无直接请求，父组件负责传入数据、loading、error 和交互回调。
 
+<!-- CONTRACT_DERIVED -->
 ## 待确认项汇总
 
 | # | 待确认内容 | 需确认对象 | 优先级 |
