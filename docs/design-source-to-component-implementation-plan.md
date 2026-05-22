@@ -195,9 +195,22 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 ## 4. 下一步
 
 阶段 0–4 已完成(d2c-core v0.2.0 契约 + Sketch raw extractor + normalize + Visual View
-预览门禁)。Stage 4 Gate-1 评审发现的 D1/D2 缺陷已修订(见各阶段蓝图"缺陷修订"节)。下一步执行
-**阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)**,d2c-core 共享管线;开工前先出 Stage 5
-蓝图供 review。
+预览门禁)。Stage 4 Gate-1 评审发现的 D1/D2 缺陷已修订(见各阶段蓝图"缺陷修订"节)。
+
+**进 Stage 5 前先做一轮 IR 保真修复。** Post-Stage-4 审计查出 6 条会污染 codegen 的 A 类缺陷
+(见 [`stage-3-ir-fidelity-audit.md`](../skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md)),
+按批次推进:
+
+1. **Batch 1**(必修,小而准):A1 行高 / A2 字重 / A3 渐变保留 —— 改 `extractText` /
+   `normalizeFills`,补单测。
+2. **Batch 2**(必修,**单独做**):A5 symbol 实例缩放时子节点坐标换算 —— 需专门 fixture +
+   回归测试。
+3. **Batch 3**(schema 设计先行):A4 蒙版 / 裁剪建模 —— 先定 `VisualNode` mask 语义。
+4. **Batch 4**(已知限制,顺延):A6 部分 symbol override。
+
+⚠️ **A5 是 Stage 5 前置阻断项**:symbol 缩放不修,semantic / component-plan 会基于错位
+子树做错误抽象。Batch 1→2 修完方可进 **阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)**
+(Batch 3 可顺延);Stage 5 开工前先出蓝图供 review,蓝图须开一节承接 B 类"布局推断能力缺口"。
 
 ## 5. 贯穿原则
 
