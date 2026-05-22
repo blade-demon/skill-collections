@@ -1,4 +1,6 @@
-# Local Stage 2 extraction outputs can include absolute paths and design content.
+# Local design sources and pipeline outputs — contain absolute paths and
+# design content, never committed.
+input/
 output/
 d2c-sketch-output/
 *.sketch
