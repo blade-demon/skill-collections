@@ -240,7 +240,7 @@ Before opening a PR for a new sample:
 - [ ] `src/` builds (if it has a build) and runs locally
 - [ ] `walkthrough.md` is written and ≤ 200 lines
 - [ ] `samples/<skill-name>/<sample-name>/README.md` explains the goal in 1 paragraph
-- [ ] Top-level `npm run check` passes
+- [ ] Top-level `npm run check:full` passes, or any skipped fixture check is explained
 - [ ] Either added a regression test or documented why none was needed
 - [ ] No proprietary content, no copyrighted images, no real customer data
 

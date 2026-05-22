@@ -34,6 +34,8 @@ skill-collections/
 | 查看 MasterGo provider 适配器架构（实现暂停） | [`skills/mastergo-to-component/docs/architecture-design.md`](./skills/mastergo-to-component/docs/architecture-design.md)         |
 | 完整的 inputs → spec → 实现全流程             | [`samples/design-to-spec/search-panel/`](./samples/design-to-spec/search-panel/)                                                 |
 | 了解 monorepo 组织方式                        | [`docs/repo-workflow.md`](./docs/repo-workflow.md)                                                                               |
+| 了解贡献与本地质量门禁                        | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                                                                                           |
+| 了解公共 API 与复杂逻辑的注释约定             | [`docs/commenting-guide.md`](./docs/commenting-guide.md)                                                                         |
 | 编写新 sample                                 | [`docs/sample-authoring.md`](./docs/sample-authoring.md)                                                                         |
 | 迭代路线图                                    | [`skills/design-to-spec/references/roadmap.md`](./skills/design-to-spec/references/roadmap.md)                                   |
 
@@ -67,20 +69,31 @@ skills/<skill-name>/
 ## Common commands
 
 ```bash
-# 测试所有 skill（回归套件）
-npm run test:skills
+# 安装根 workspace 依赖
+npm ci
+
+# 安装 fixture app 依赖（运行完整门禁前需要）
+npm ci --prefix fixtures
+
+# 安装本地 Git hooks
+npx lefthook install
+
+# lint / format
+npm run lint
+npm run format:check
+npm run format
+
+# 类型检查
+npm run typecheck
+
+# 测试所有 skill、samples、D2C 内核
+npm run test:all
 
 # 构建所有 samples
 npm run build:samples
 
-# 完整合并前检查（暂不含 D2C 内核）
-npm run check
-
-# D2C 内核（d2c-core）测试 —— 目前单独跑，Stage 7 再并入 check
-npm run test:d2c
-
-# Sketch provider（extract / normalize / preview）测试
-npm run test:sketch
+# 完整合并前检查（本地等价 CI）
+npm run check:full
 ```
 
 ## Status
