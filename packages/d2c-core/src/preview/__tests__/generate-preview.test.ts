@@ -34,4 +34,79 @@ describe('generatePreview', () => {
     expect(second.css).toBe(first.css);
     expect(JSON.stringify(second.assets)).toBe(JSON.stringify(first.assets));
   });
+
+  it('does not render text fills as background colors', () => {
+    const designIr = makeDesignIR();
+    const textNode = designIr.visual.root.children[0]?.children[0];
+    if (!textNode?.text) throw new Error('Fixture text node missing');
+    textNode.style = {
+      ...textNode.style,
+      fills: [{ type: 'color', color: '#000000FF' }],
+    };
+    textNode.text = {
+      ...textNode.text,
+      style: {
+        ...textNode.text.style,
+        color: '#000000FF',
+      },
+    };
+
+    const { visualView } = deriveVisualView(designIr);
+    const preview = generatePreview(visualView);
+    const textRule = cssRule(preview.css, '.d2c-node-text-target');
+
+    expect(textRule).toContain('color: #000000FF;');
+    expect(textRule).not.toContain('background-color: #000000FF;');
+  });
+
+  it('does not render unsupported vector paths as filled bounding boxes', () => {
+    const designIr = makeDesignIR();
+    designIr.visual.root.children.push({
+      id: 'node-vector-group',
+      kind: 'shape',
+      name: 'VectorGroup',
+      source: {
+        nodeId: 'vector-group',
+        name: 'Vector Group',
+        originalType: 'shapeGroup',
+        provider: 'test',
+      },
+      layout: { x: 160, y: 140, width: 40, height: 24 },
+      style: {
+        fills: [{ type: 'color', color: '#000000FF' }],
+      },
+      children: [
+        {
+          id: 'node-vector-path',
+          kind: 'shape',
+          name: 'VectorPath',
+          source: {
+            nodeId: 'vector-path',
+            name: 'Vector Path',
+            originalType: 'shapePath',
+            provider: 'test',
+          },
+          layout: { x: 0, y: 0, width: 40, height: 24 },
+          style: {
+            fills: [{ type: 'color', color: '#000000FF' }],
+          },
+          children: [],
+        },
+      ],
+    });
+
+    const { visualView } = deriveVisualView(designIr);
+    const preview = generatePreview(visualView);
+
+    expect(cssRule(preview.css, '.d2c-node-shape')).toContain('background-color: #EEEEEEFF;');
+    expect(cssRule(preview.css, '.d2c-node-vector-group')).not.toContain('background-color: #000000FF;');
+    expect(cssRule(preview.css, '.d2c-node-vector-path')).not.toContain('background-color: #000000FF;');
+  });
 });
+
+function cssRule(css: string, selector: string): string {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = new RegExp(`${escapedSelector} \\{[\\s\\S]*?\\}`).exec(css);
+  if (!match) throw new Error(`Missing CSS rule for ${selector}`);
+  return match[0];
+}

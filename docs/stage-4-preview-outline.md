@@ -101,8 +101,9 @@ Stage 3 把 symbol 实例**就地展开成 master 默认子树**,override 只存
   `image` → 占位 `<div>`(§8)。
 - **定位**:每节点 `position:absolute; left/top/width/height` 取自 `layout`(局部坐标,
   Stage 3 §5 已定);父节点 `position:relative`。根 = 画板,尺寸 `artboard.width × height`。
-- **样式 → CSS**:`fills[0]` → `background`;`borders` → `border`;`effects` → `box-shadow`;
-  `radius` → `border-radius`;`opacity`。
+- **样式 → CSS**:`fills[0]` → `background-color`(**仅盒子型节点** —— `text` 节点与
+  `shapeGroup`/`shapePath` 矢量图标不画背景,见 §15 D2);`borders` → `border`;
+  `effects` → `box-shadow`;`radius` → `border-radius`;`opacity`。
 - **CSS 独立**:每节点一条类(按 `node.id`),`index.html` 引用 `preview.css`(决策 #4)。
 - **确定性**:节点遍历按 children 顺序(已是渲染序),类名/规则顺序稳定。
 
@@ -173,3 +174,21 @@ d2c-core `ir/views.ts`:收紧 `VisualViewSchema.body`。
 - 预览产物确定性可复跑;`tsc --noEmit` 干净;两个测试套件全过。
 - 真实 `d2c.sketch` 端到端 `extract → normalize → preview` 产出可评审的 `index.html`。
 - 里程碑:据此发首版 `sketch-to-component/SKILL.md`(或架构文档),描述明确写"到预览门禁为止"。
+
+## 15. 缺陷修订(Gate-1 评审发现 — 2026-05-22)
+
+> 首次跑通 Stage 4、对真实 `d2c.sketch` 预览做视觉评审时发现,记此备后续 review。
+
+**D2 — `fills[0]` 无差别映射成 `background-color`**
+
+- **现象**:① "根据您历史订单…"等文字节点变纯色块(详见 Stage 3 蓝图 §18 D1);
+  ② 状态栏 wifi/信号、评分心形等矢量图标渲染成实心彩色方块。
+- **根因**:原 §7 "`fills[0]` → `background`" 对所有节点 kind 一视同仁。文字节点的 fill
+  本不该当背景;`shapeGroup`/`shapePath`(矢量图标碎片)用包围盒填充会得到误导性实心块。
+- **蓝图缺陷**:§7 样式映射未按节点 kind 区分。
+- **修订**:`generate-preview.ts` 增 `shouldRenderBoxFill(node)` —— `text` 节点、以及
+  `source.originalType` 为 `shapeGroup`/`shapePath` 的 shape 节点不输出 `background-color`。
+  补 `generate-preview.test.ts` 两条单测(文字 / 矢量节点不出背景)。文字侧的根因另在
+  Stage 3 normalize 一并修掉(见 Stage 3 蓝图 §18 D1),此处为消费端防御,二者并存。
+- **遗留**:矢量图标目前渲染为"空白"(不画实心块);真实图标还原需 SVG 资源导出 ——
+  已在 §8 列为 Stage 4 之后的后置专项。

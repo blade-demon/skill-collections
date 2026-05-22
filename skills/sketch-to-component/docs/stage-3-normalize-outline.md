@@ -139,8 +139,10 @@ SemanticBlock { candidates: SemanticCandidate[] }  // 可为空 / 很薄
   未知 `_class` → 最近 kind + 一条 warning。`_class` 原值进 `source.originalType`。
 - **layout**:取 Sketch 节点 `frame` 的 x/y/w/h,按 §5 约定换算成局部坐标。
 - **style**:规范化 `fills` / `borders` / `shadows`(→`effects`)/ `opacity` / 圆角(→`radius`);
-  颜色统一 `#RRGGBBAA`。建不出模型的进 `style.raw`。
-- **text**:从 `attributedString` / `stringAttribute` 抽 `content` 与 `TextContent.style` 字段。
+  颜色统一 `#RRGGBBAA`。建不出模型的进 `style.raw`。**例外**:文字图层(`kind:'text'`)的
+  `style.fills` 是文字颜色、不是盒子背景,**不进 `style.fills`** —— 见 §18 D1。
+- **text**:从 `attributedString` / `stringAttribute` 抽 `content` 与 `TextContent.style` 字段;
+  文字色优先取字符级 `MSAttributedStringColorAttribute`,缺失时回退图层 `style.fills`。
 - **assets**:`bitmap` 节点 → 在 `visual.assets` 建一条 `AssetEntry`,节点 `assetRef` 指其 `id`;
   对应不上 → warning + 占位条目。
 
@@ -257,3 +259,21 @@ asset 对应不上、低置信候选、symbol 环、节点超量截断等。
    override trace,并加循环保护。
 4. **fixture 脱敏** —— ✅ Codex 可出候选 + 脱敏报告,最终替换内容由人审。
 5. **Stage 3 拆分** —— ✅ 一个 Stage,含 thin semantic,内部按 3A/3B/3C 顺序执行。
+
+## 18. 缺陷修订(Gate-1 评审发现 — 2026-05-22)
+
+> Stage 4 预览门禁评审时发现的、本蓝图原先遗漏的规范化缺陷,记此备后续 review。
+
+**D1 — 文字图层 fill 被当成盒子背景**
+
+- **现象**:Gate-1 预览里"根据您历史订单…"等 6 个文字节点渲染成纯色块(黑底黑字、
+  白底白字),文字被自己的背景吞没。
+- **根因**:Sketch 文字图层的 `style.fills` 语义上是**文字颜色**,不是盒子背景填充。
+  原 §6 "style:规范化 `fills`…" 对所有 `kind` 一视同仁,把文字色同时写进了
+  `style.fills`(错)与 `text.style.color`(对);下游 `generate-preview` 又把任何
+  `style.fills` 画成 `background-color`,文字节点遂成纯色块。
+- **蓝图缺陷**:§6 既没声明"文字图层 fill = 文字色",也没规定文字节点不得携带 `style.fills`。
+- **修订**:`normalize/visual.ts` —— `kind==='text'` 的节点不再产出 `style.fills`;字符级
+  `MSAttributedStringColorAttribute` 缺失时,用图层 fill 兜底进 `text.style.color`。补
+  `normalize-visual.test.ts` 单测(文字节点无 `style.fills`、保留 `text.style.color`)。
+- **配套**:消费端 `generate-preview` 同时加防御 —— 见 Stage 4 蓝图 §15 D2。

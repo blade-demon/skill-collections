@@ -109,7 +109,7 @@ function normalizeNode(
     children,
   };
 
-  const style = extractStyle(node);
+  const style = extractStyle(node, kind);
   if (style) visualNode.style = style;
   if (kind === 'text') visualNode.text = extractText(node);
   if (kind === 'image') {
@@ -143,9 +143,12 @@ function normalizeSymbolInstance(
     );
   }
 
+  const kind: VisualNodeKind = master
+    ? mapKind(getNodeClass(master), context.warnings, master)
+    : 'frame';
   const visualNode: VisualNode = {
     id: stableNodeId(getNodeId(node)),
-    kind: master ? mapKind(getNodeClass(master), context.warnings, master) : 'frame',
+    kind,
     name: stableComponentName(getNodeName(node), getNodeId(node)),
     source: {
       nodeId: getNodeId(node),
@@ -161,7 +164,7 @@ function normalizeSymbolInstance(
     },
     children,
   };
-  const style = extractStyle(node);
+  const style = extractStyle(node, kind);
   if (style) visualNode.style = style;
   return visualNode;
 }
@@ -209,7 +212,7 @@ function extractText(node: SketchNode): TextContent {
   const fontAttrs = font?.attributes as Record<string, unknown> | undefined;
   if (typeof fontAttrs?.name === 'string') textStyle.fontFamily = fontAttrs.name;
   if (typeof fontAttrs?.size === 'number') textStyle.fontSize = fontAttrs.size;
-  const color = colorToHex(encoded.MSAttributedStringColorAttribute);
+  const color = colorToHex(encoded.MSAttributedStringColorAttribute) ?? layerTextColor(node);
   if (color) textStyle.color = color;
   const paragraph = encoded.paragraphStyle as Record<string, unknown> | undefined;
   const alignment = readNumber(paragraph?.alignment, 0);
@@ -236,12 +239,25 @@ function getTextAttributes(node: SketchNode): Record<string, unknown> {
     : {};
 }
 
-function extractStyle(node: SketchNode): Style | undefined {
+/** A Sketch text layer's enabled layer-level fill doubles as its text colour. */
+function layerTextColor(node: SketchNode): string | undefined {
+  const style = node.style && typeof node.style === 'object' ? node.style : undefined;
+  if (!style) return undefined;
+  return normalizeFills(style.fills)[0]?.color;
+}
+
+function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined {
   const style = node.style && typeof node.style === 'object' ? node.style : undefined;
   if (!style) return undefined;
   const result: Style = {};
-  const fills = normalizeFills(style.fills);
-  if (fills.length > 0) result.fills = fills;
+  // A Sketch text layer's `style.fills` encode the *text colour*, not a box
+  // background — that colour is captured in `text.style.color` (see extractText).
+  // Emitting it as `style.fills` would let preview/codegen paint the text node
+  // as a solid block (Gate-1 review defect, 2026-05-22).
+  if (kind !== 'text') {
+    const fills = normalizeFills(style.fills);
+    if (fills.length > 0) result.fills = fills;
+  }
   const borders = normalizeBorders(style.borders);
   if (borders.length > 0) result.borders = borders;
   const effects = normalizeEffects(style.shadows, style.innerShadows);

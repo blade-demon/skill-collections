@@ -6,7 +6,7 @@
 >
 > 状态图例：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始
 
-最后更新：2026-05-21（Sketch-first 调整、Stage 2 完成、Stage 3 确认由 Sketch 承接）
+最后更新：2026-05-22（Stage 4 完成并通过 Gate-1 评审；D1/D2 缺陷已修订）
 
 ---
 
@@ -143,11 +143,17 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 - **遗留**:symbol `override` 已记录在 `symbol.overrides`,但未应用到 `visual` 树 ——
   Stage 4 预览须消费它,否则被 override 的实例显示 master 默认内容。
 
-### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ⬜
+### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ✅
 
-- `d2c-core` 的 `derive-visual-view.ts` + `generate-preview.ts`
-  （`index.html` / `preview.css` / `assets/` / `visual-review-report.md`）。
-- core pipeline runner 跑到 Gate 1 时返回 `requiresApproval`；确认动作由 skill / CLI 驱动。
+已完成（提交 `556220b`，蓝图 [`stage-4-preview-outline.md`](./stage-4-preview-outline.md)）：
+
+- `d2c-core/src/preview/`：`derive-visual-view`（应用 symbol 文本 override）、`generate-preview`
+  （`index.html` / `preview.css` / 占位 `assets/`）、`visual-review-report`、`run-preview`
+  （门禁 1 薄入口）；CLI `preview` 子命令。
+- core 跑到 Gate 1 返回 `requiresApproval='gate-1'`；确认动作由 skill / CLI 驱动。
+- test:d2c 57 / test:sketch 30 全过。
+- **Gate-1 评审发现并已修订的设计缺陷**：D1 文字图层 fill 被当成盒子背景、D2 `fills[0]`
+  无差别映射成 `background-color` —— 详见 Stage 3 蓝图 §18、Stage 4 蓝图 §15。
 - **里程碑：** 发首发 provider 的 `SKILL.md` / 架构文档，描述明确写"仅到预览门禁"。
 
 ### 阶段 5 — 共享：语义 / 交互 / 方案 → 门禁 2 ⬜
@@ -188,9 +194,10 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ## 4. 下一步
 
-阶段 0–3 已完成(d2c-core v0.2.0 契约 + Sketch raw extractor + normalize)。下一步执行
-**阶段 4 — Visual View 派生 + HTML 预览(门禁 1)**,d2c-core 共享管线。开工前先出 Stage 4
-蓝图供 review;蓝图须把"应用 symbol override"列为明确任务(见 Stage 3 遗留项)。
+阶段 0–4 已完成(d2c-core v0.2.0 契约 + Sketch raw extractor + normalize + Visual View
+预览门禁)。Stage 4 Gate-1 评审发现的 D1/D2 缺陷已修订(见各阶段蓝图"缺陷修订"节)。下一步执行
+**阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)**,d2c-core 共享管线;开工前先出 Stage 5
+蓝图供 review。
 
 ## 5. 贯穿原则
 

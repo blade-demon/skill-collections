@@ -134,7 +134,7 @@ function nodeDeclarations(
 
   const style = node.style;
   const fill = style?.fills?.[0];
-  if (fill?.color) declarations.push(`background-color: ${fill.color};`);
+  if (shouldRenderBoxFill(node) && fill?.color) declarations.push(`background-color: ${fill.color};`);
   const border = style?.borders?.[0];
   if (border?.color || border?.thickness !== undefined) {
     declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
@@ -170,6 +170,15 @@ function nodeDeclarations(
   }
 
   return declarations;
+}
+
+function shouldRenderBoxFill(node: VisualNode): boolean {
+  if (node.kind === 'text') return false;
+  if (node.kind === 'shape') {
+    const originalType = node.source.originalType?.toLowerCase();
+    if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
+  }
+  return true;
 }
 
 interface PlaceholderAsset {
