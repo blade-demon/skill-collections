@@ -18,7 +18,7 @@ function genTypesTs(node: ComponentNode): string {
 // ── Root component ────────────────────────────────────────────────────────────
 
 function genRootTsCssModules(node: ComponentNode): string {
-  const { name, element, discriminator, props, children } = node
+  const { element, discriminator, props, children } = node
 
   const lines: string[] = []
 
@@ -142,7 +142,7 @@ function genRootTsBem(node: ComponentNode): string {
 }
 
 function genRootJsCssModules(node: ComponentNode): string {
-  const { name, element, discriminator, props, children } = node
+  const { element, discriminator, props, children } = node
 
   const lines: string[] = []
 

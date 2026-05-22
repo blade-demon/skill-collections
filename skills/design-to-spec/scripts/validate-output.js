@@ -7,7 +7,6 @@ import { loadYaml } from "./lib/yaml.js";
 import { parseArgs, requireOpts } from "./lib/cli.js";
 
 const EVENT_PATTERN = /[a-z]+(?:-[a-z]+)+/g;
-const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*$/gm;
 
 function pyRepr(value) {
   if (typeof value === "string") return `'${value}'`;
@@ -344,13 +343,16 @@ function main() {
   }
 
   let result;
+  let notesText;
+  let dataFetchingText;
+  let specText;
   try {
     const uiDoc = loadYaml(args.ui);
     const apiDoc = loadYaml(args.api);
     const mappingDoc = loadYaml(args.mapping);
-    const notesText = readText(args.notes);
-    const dataFetchingText = readText(args["data-fetching"]);
-    const specText = readText(args.spec);
+    notesText = readText(args.notes);
+    dataFetchingText = readText(args["data-fetching"]);
+    specText = readText(args.spec);
     result = validateOutputs(uiDoc, apiDoc, mappingDoc, notesText, dataFetchingText, specText);
   } catch (err) {
     console.error(err.message);

@@ -13,7 +13,7 @@ import { buildSymbolIndex } from './normalize/symbols.js';
 import { getNodeName } from './normalize/sketch-nodes.js';
 import { buildVisualBlock } from './normalize/visual.js';
 
-export interface NormalizeSketchOptions extends SelectArtboardOptions {}
+export type NormalizeSketchOptions = SelectArtboardOptions;
 
 export async function normalizeSketchRaw(
   input: unknown,

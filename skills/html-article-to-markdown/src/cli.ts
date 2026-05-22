@@ -1,6 +1,5 @@
 import { buildMarkdown } from "./index.js";
 import { fetchUrlToHtml } from "./fetcher/fetchUrl.js";
-import { fetchMarkdownViaApi } from "./fetcher/fetchViaApi.js";
 import type { ConvertOptions } from "./types.js";
 import { formatVerification } from "./verify/formatVerification.js";
 import { hasVerificationErrors, verifyMarkdown } from "./verify/verifyMarkdown.js";

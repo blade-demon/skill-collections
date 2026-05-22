@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { BatchResultSchema, CoarseBatchResultSchema, CoverageEntrySchema, SkeletonConfigSchema } from '../types.js'
+import { BatchResultSchema, CoarseBatchResultSchema, SkeletonConfigSchema } from '../types.js'
 
 describe('BatchResultSchema', () => {
   it('accepts a valid minimal batch result', () => {

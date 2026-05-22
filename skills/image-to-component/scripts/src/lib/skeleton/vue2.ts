@@ -10,7 +10,6 @@ function toKebab(name: string): string {
 
 function genRootCssModules(node: ComponentNode): string {
   const { name, element, discriminator, props, children } = node
-  const kebab = toKebab(name)
 
   const lines: string[] = []
 

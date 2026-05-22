@@ -12,10 +12,10 @@ export function setMockMode(mode) {
   localStorage.setItem(STORAGE_KEY, mode);
 }
 
-export function mockSubmitFeedback({ body, signal }) {
+export function mockSubmitFeedback({ signal }) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
-      resolve(buildResponse(getMockMode(), body));
+      resolve(buildResponse(getMockMode()));
     }, 800);
 
     if (signal) {
@@ -29,7 +29,7 @@ export function mockSubmitFeedback({ body, signal }) {
   });
 }
 
-function buildResponse(mode, body) {
+function buildResponse(mode) {
   switch (mode) {
     case "validation-failed":
       return {
