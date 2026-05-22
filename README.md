@@ -22,20 +22,20 @@ skill-collections/
 
 ## Quick map
 
-| 目标 | 文档 |
-|---|---|
-| 了解 `design-to-spec` 能做什么 | [`skills/design-to-spec/ONBOARDING.md`](./skills/design-to-spec/ONBOARDING.md) |
-| 在真实设计稿上运行 design-to-spec | [`skills/design-to-spec/references/operator-guide.md`](./skills/design-to-spec/references/operator-guide.md) |
-| 了解 HTML → Markdown 转换 skill | [`skills/html-article-to-markdown/README.md`](./skills/html-article-to-markdown/README.md) |
-| 了解截图流和设计源流的边界 | [`docs/design-source-to-component-architecture.md`](./docs/design-source-to-component-architecture.md) |
-| 查看设计源到组件的实施计划与进度 | [`docs/design-source-to-component-implementation-plan.md`](./docs/design-source-to-component-implementation-plan.md) |
-| 查看 Sketch provider 适配器架构 | [`skills/sketch-to-component/docs/architecture-design.md`](./skills/sketch-to-component/docs/architecture-design.md) |
-| 查看 IR 保真审计与修复批次（A1–A6）| [`skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md`](./skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md) |
-| 查看 MasterGo provider 适配器架构（实现暂停）| [`skills/mastergo-to-component/docs/architecture-design.md`](./skills/mastergo-to-component/docs/architecture-design.md) |
-| 完整的 inputs → spec → 实现全流程 | [`samples/design-to-spec/search-panel/`](./samples/design-to-spec/search-panel/) |
-| 了解 monorepo 组织方式 | [`docs/repo-workflow.md`](./docs/repo-workflow.md) |
-| 编写新 sample | [`docs/sample-authoring.md`](./docs/sample-authoring.md) |
-| 迭代路线图 | [`skills/design-to-spec/references/roadmap.md`](./skills/design-to-spec/references/roadmap.md) |
+| 目标                                          | 文档                                                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 了解 `design-to-spec` 能做什么                | [`skills/design-to-spec/ONBOARDING.md`](./skills/design-to-spec/ONBOARDING.md)                                                   |
+| 在真实设计稿上运行 design-to-spec             | [`skills/design-to-spec/references/operator-guide.md`](./skills/design-to-spec/references/operator-guide.md)                     |
+| 了解 HTML → Markdown 转换 skill               | [`skills/html-article-to-markdown/README.md`](./skills/html-article-to-markdown/README.md)                                       |
+| 了解截图流和设计源流的边界                    | [`docs/design-source-to-component-architecture.md`](./docs/design-source-to-component-architecture.md)                           |
+| 查看设计源到组件的实施计划与进度              | [`docs/design-source-to-component-implementation-plan.md`](./docs/design-source-to-component-implementation-plan.md)             |
+| 查看 Sketch provider 适配器架构               | [`skills/sketch-to-component/docs/architecture-design.md`](./skills/sketch-to-component/docs/architecture-design.md)             |
+| 查看 IR 保真审计与修复批次（A1–A6）           | [`skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md`](./skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md) |
+| 查看 MasterGo provider 适配器架构（实现暂停） | [`skills/mastergo-to-component/docs/architecture-design.md`](./skills/mastergo-to-component/docs/architecture-design.md)         |
+| 完整的 inputs → spec → 实现全流程             | [`samples/design-to-spec/search-panel/`](./samples/design-to-spec/search-panel/)                                                 |
+| 了解 monorepo 组织方式                        | [`docs/repo-workflow.md`](./docs/repo-workflow.md)                                                                               |
+| 编写新 sample                                 | [`docs/sample-authoring.md`](./docs/sample-authoring.md)                                                                         |
+| 迭代路线图                                    | [`skills/design-to-spec/references/roadmap.md`](./skills/design-to-spec/references/roadmap.md)                                   |
 
 ## Skill 目录约定
 

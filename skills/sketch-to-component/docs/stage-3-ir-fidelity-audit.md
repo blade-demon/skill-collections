@@ -132,12 +132,12 @@ grid)的能力与边界。建议在 Stage 5 蓝图开一节"布局推断能力�
 
 ## 6. 修复批次
 
-| 批次 | 内容 | 性质 | 状态 |
-|---|---|---|---|
-| **Batch 1** | A1 lineHeight、A2 fontWeight、A3 gradient → `fill.raw.gradient` | 必修,小而准;`extractText` / `normalizeFills` | ✅ 已完成(2026-05-22,test:sketch 33) |
-| **Batch 2** | A5 symbol instance scale transform | 必修,**单独做**;需专门 fixture + 回归测试;动代码前先深挖换算公式 | ⬜ 下一批 |
-| **Batch 3** | A4 mask / clipping | 须先设计 `VisualNode` mask schema 语义,再实现 | ⬜ schema 设计先行 |
-| **Batch 4** | A6 symbolID / color / border override | 已知限制,保留 warning | ⬜ 顺延(Stage 6 / 独立 override 批次) |
+| 批次        | 内容                                                            | 性质                                                             | 状态                                  |
+| ----------- | --------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| **Batch 1** | A1 lineHeight、A2 fontWeight、A3 gradient → `fill.raw.gradient` | 必修,小而准;`extractText` / `normalizeFills`                     | ✅ 已完成(2026-05-22,test:sketch 33)  |
+| **Batch 2** | A5 symbol instance scale transform                              | 必修,**单独做**;需专门 fixture + 回归测试;动代码前先深挖换算公式 | ⬜ 下一批                             |
+| **Batch 3** | A4 mask / clipping                                              | 须先设计 `VisualNode` mask schema 语义,再实现                    | ⬜ schema 设计先行                    |
+| **Batch 4** | A6 symbolID / color / border override                           | 已知限制,保留 warning                                            | ⬜ 顺延(Stage 6 / 独立 override 批次) |
 
 **批次纪律 —— 不散修、不混批**:Batch 1 三项同源(都在 `extractText` / `normalizeFills`),
 可收进一个 commit;Batch 2 必须独立,因为它牵涉坐标换算、嵌套 symbol、override path、

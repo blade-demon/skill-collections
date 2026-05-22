@@ -56,7 +56,7 @@ samples/<skill-name>/<sample-name>/
 
 - `inputs/` is immutable after the sample lands. If you need to evolve, fork the sample (e.g. `search-panel-v2`).
 - `design-spec/` is the skill's output. Regenerate it whenever contracts change; commit the result.
-- `src/` consumes `design-spec/` only. Not `inputs/` directly. This enforces the skill's value proposition: *spec is the contract*.
+- `src/` consumes `design-spec/` only. Not `inputs/` directly. This enforces the skill's value proposition: _spec is the contract_.
 - `walkthrough.md` records what happened during sample creation. Future readers learn from it.
 
 ---
@@ -181,15 +181,19 @@ Skill output (abbreviated):
 \`\`\`
 
 Notes / surprises:
+
 - ...
 
 ## Stage 2 — API extraction (WAITING_FOR_API)
+
 ...
 
 ## Stage 3 — Logic mapping (WAITING_FOR_MAPPING)
+
 ...
 
 ## Stage 4 — Generation (GENERATING_SPEC)
+
 ...
 
 ## Open questions that remain

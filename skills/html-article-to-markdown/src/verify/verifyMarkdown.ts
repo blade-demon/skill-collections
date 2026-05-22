@@ -1,5 +1,5 @@
-import { readFile, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile, stat } from 'node:fs/promises';
+import { join } from 'node:path';
 
 export interface VerificationReport {
   rawDependencies: string[];
@@ -19,17 +19,17 @@ export function markdownImageUrls(markdown: string): string[] {
   const urls: string[] = [];
   const imageRe = /!\[[^\]]*]\((<[^>]+>|[^)\n]+)\)/g;
   for (let match = imageRe.exec(markdown); match; match = imageRe.exec(markdown)) {
-    urls.push(match[1].trim().replace(/^<|>$/g, ""));
+    urls.push(match[1].trim().replace(/^<|>$/g, ''));
   }
   const htmlImageRe = /<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
   for (let match = htmlImageRe.exec(markdown); match; match = htmlImageRe.exec(markdown)) {
-    urls.push((match[1] ?? match[2] ?? match[3] ?? "").trim());
+    urls.push((match[1] ?? match[2] ?? match[3] ?? '').trim());
   }
   return urls;
 }
 
 export async function verifyMarkdown(mdPath: string): Promise<VerificationReport> {
-  const markdown = await readFile(mdPath, "utf8");
+  const markdown = await readFile(mdPath, 'utf8');
   const rawDependencies: string[] = [];
   for (const match of markdown.matchAll(/00_raw|_files/g)) {
     const value = match[0];
@@ -38,7 +38,7 @@ export async function verifyMarkdown(mdPath: string): Promise<VerificationReport
     }
   }
   if (/data:image/i.test(stripImageReferences(markdown))) {
-    rawDependencies.push("data:image");
+    rawDependencies.push('data:image');
   }
 
   let localImages = 0;
@@ -59,9 +59,9 @@ export async function verifyMarkdown(mdPath: string): Promise<VerificationReport
       continue;
     }
 
-    const cleanPath = decodeURIComponent(url.split(/[?#]/, 1)[0] ?? "");
+    const cleanPath = decodeURIComponent(url.split(/[?#]/, 1)[0] ?? '');
     try {
-      const info = await stat(join(mdPath, "..", cleanPath));
+      const info = await stat(join(mdPath, '..', cleanPath));
       if (info.isFile()) {
         localImages += 1;
       } else {
@@ -82,7 +82,10 @@ export async function verifyMarkdown(mdPath: string): Promise<VerificationReport
   };
 }
 
-export function hasVerificationErrors(report: VerificationReport, policy: VerificationPolicy): boolean {
+export function hasVerificationErrors(
+  report: VerificationReport,
+  policy: VerificationPolicy,
+): boolean {
   return (
     report.rawDependencies.length > 0 ||
     report.missingLocalImages.length > 0 ||
@@ -93,6 +96,6 @@ export function hasVerificationErrors(report: VerificationReport, policy: Verifi
 
 function stripImageReferences(markdown: string): string {
   return markdown
-    .replace(/!\[[^\]]*]\((<[^>]+>|[^)\n]+)\)/g, "")
-    .replace(/<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi, "");
+    .replace(/!\[[^\]]*]\((<[^>]+>|[^)\n]+)\)/g, '')
+    .replace(/<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi, '');
 }

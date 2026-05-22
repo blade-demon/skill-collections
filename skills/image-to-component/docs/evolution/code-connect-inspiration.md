@@ -27,7 +27,7 @@ Figma Code Connect 解决的核心问题是：**设计稿中的组件 ↔ 代码
 function generateCodeForFigmaNode(node) {
   if (!hasCodeConnect(node)) {
     // 没有显式绑定 → 不生成、不猜测
-    return { status: "unmapped", suggestion: "Define figma.connect() for this node" };
+    return { status: 'unmapped', suggestion: 'Define figma.connect() for this node' };
   }
   const mapping = getCodeConnect(node);
   return renderFromMapping(mapping);
@@ -48,24 +48,24 @@ for each detected_token in style_extraction_result:
     mark as "provided" (auto-approved, parallel to hasCodeConnect() == true)
   else:
     add to token_ledger as "pending"
-    
+
 if any token_ledger row is "pending":
   show decision-gate (A/B/C)
   wait for user
   apply user's decisions
-  
+
 proceed_to_code_generation()  # 只使用 confirmed 的映射
 ```
 
 ### 映射关系一览
 
-| Code Connect | image-to-component |
-|---|---|
-| `hasCodeConnect(node)` 检查 | Image Connect / Style Connect 的 decision-gate |
-| `true` → 直接用绑定 | `status: provided` → 直接生成代码 |
-| `false` → 报告 unmapped、不生成 | `status: pending` → 进 ledger，等待用户决定 |
-| 开发者补 `figma.connect()` | 用户在 gate 选 A/B/C，把 pending 解决为 provided/create/hardcoded |
-| 工具不在未绑定时即兴生成 | 主代理不在未确认 token 时即兴生成 CSS |
+| Code Connect                    | image-to-component                                                |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `hasCodeConnect(node)` 检查     | Image Connect / Style Connect 的 decision-gate                    |
+| `true` → 直接用绑定             | `status: provided` → 直接生成代码                                 |
+| `false` → 报告 unmapped、不生成 | `status: pending` → 进 ledger，等待用户决定                       |
+| 开发者补 `figma.connect()`      | 用户在 gate 选 A/B/C，把 pending 解决为 provided/create/hardcoded |
+| 工具不在未绑定时即兴生成        | 主代理不在未确认 token 时即兴生成 CSS                             |
 
 ### 为什么这层借鉴是核心的
 
@@ -107,18 +107,18 @@ figma.connect(Button, "https://www.figma.com/file/xxx?node-id=1:2", {
 token-ledger 的列设计直接对应这个双轨思想：
 
 ```markdown
-| Token ID | Visual trait | Suggested token name | Confidence | Status | User action |
-|---|---|---|---|---:|---|
-| token-002 | Card shadow  | `--shadow-elevation-2` | high | pending  | Confirm mapping |
-| token-001 | Border radius| `--radius-md`          | high | provided | Exists in project |
+| Token ID  | Visual trait  | Suggested token name   | Confidence |   Status | User action       |
+| --------- | ------------- | ---------------------- | ---------- | -------: | ----------------- |
+| token-002 | Card shadow   | `--shadow-elevation-2` | high       |  pending | Confirm mapping   |
+| token-001 | Border radius | `--radius-md`          | high       | provided | Exists in project |
 ```
 
 **双轨分解：**
 
-| 轨道 | Code Connect 对应 | token-ledger 列 | 含义 |
-|---|---|---|---|
-| **建议轨** | `figma.string("Label")` 这段声明 | `Suggested token name` + `Confidence` | AI 提议的映射候选 + 置信度 |
-| **状态轨** | 文件存在 + 工具校验通过 | `Status` + `User action` | 该映射当前是否生效、用户需做什么 |
+| 轨道       | Code Connect 对应                | token-ledger 列                       | 含义                             |
+| ---------- | -------------------------------- | ------------------------------------- | -------------------------------- |
+| **建议轨** | `figma.string("Label")` 这段声明 | `Suggested token name` + `Confidence` | AI 提议的映射候选 + 置信度       |
+| **状态轨** | 文件存在 + 工具校验通过          | `Status` + `User action`              | 该映射当前是否生效、用户需做什么 |
 
 > 上面的示例为教学简化版本，省略了真实 ledger 的其他列。实际 token-ledger 还有一个 `Source` 列（值如 `project-local`、`lib:antd`、`proposed`），用于表达**来源/出处**——这是双轨之外的第三维度（provenance），但不影响双轨概念本身。完整列定义见 `workflows/style-connect.md`。
 
@@ -142,12 +142,12 @@ token-ledger 的列设计直接对应这个双轨思想：
 
 ### 一个具象类比
 
-| | Code Connect | token-ledger |
-|---|---|---|
-| AI 提议 | 工具扫描 Figma 节点，给出可能对应的代码组件候选 | 子代理提取 style hint，给出可能对应的 token 名 |
-| 建议名形式 | `figma.connect(Button, ...)` 草稿 | `Suggested token name: --radius-md` |
-| 状态激活 | 开发者 review、调整、commit 该文件 | 用户在 gate 选择 A/B/C，更新 status |
-| 代码生成读取 | 只读 committed 的 `*.figma.tsx` | 只读 `Status != pending` 的行 |
+|              | Code Connect                                    | token-ledger                                   |
+| ------------ | ----------------------------------------------- | ---------------------------------------------- |
+| AI 提议      | 工具扫描 Figma 节点，给出可能对应的代码组件候选 | 子代理提取 style hint，给出可能对应的 token 名 |
+| 建议名形式   | `figma.connect(Button, ...)` 草稿               | `Suggested token name: --radius-md`            |
+| 状态激活     | 开发者 review、调整、commit 该文件              | 用户在 gate 选择 A/B/C，更新 status            |
+| 代码生成读取 | 只读 committed 的 `*.figma.tsx`                 | 只读 `Status != pending` 的行                  |
 
 ---
 
@@ -155,14 +155,14 @@ token-ledger 的列设计直接对应这个双轨思想：
 
 为避免后续迭代时混淆，明确**没有**搬过来的部分：
 
-| Code Connect 特性 | 是否借鉴 | 原因 |
-|---|---|---|
-| `hasCodeConnect()` 检查机制 | ✅ 借鉴 | 映射为 decision-gate |
-| `figma.connect()` 双轨元数据 | ✅ 借鉴 | 映射为 token-ledger 列结构 |
-| `*.figma.tsx` 文件作为单一事实源 | ❌ 未借鉴 | skill 是一次性生成场景，元数据持久化由 `.image-to-component.rules.md` 承担，不需要每个映射一个文件 |
-| `figma.string/enum/boolean()` 类型化助手 | ❌ 未借鉴 | 我们的 token 类型由 style-context-spec.md 的枚举约束，不需要在 ledger 中重新定义类型语义 |
-| Storybook / CI 集成 | ❌ 未借鉴（当前阶段） | 仅在 `render-verification.md` 中预留入口，未做强绑定 |
-| Variant 矩阵展开 | ⚠️ 部分借鉴 | 通过 status 字段隐式表达（pending/expired 等），未做矩阵化 |
+| Code Connect 特性                        | 是否借鉴              | 原因                                                                                               |
+| ---------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
+| `hasCodeConnect()` 检查机制              | ✅ 借鉴               | 映射为 decision-gate                                                                               |
+| `figma.connect()` 双轨元数据             | ✅ 借鉴               | 映射为 token-ledger 列结构                                                                         |
+| `*.figma.tsx` 文件作为单一事实源         | ❌ 未借鉴             | skill 是一次性生成场景，元数据持久化由 `.image-to-component.rules.md` 承担，不需要每个映射一个文件 |
+| `figma.string/enum/boolean()` 类型化助手 | ❌ 未借鉴             | 我们的 token 类型由 style-context-spec.md 的枚举约束，不需要在 ledger 中重新定义类型语义           |
+| Storybook / CI 集成                      | ❌ 未借鉴（当前阶段） | 仅在 `render-verification.md` 中预留入口，未做强绑定                                               |
+| Variant 矩阵展开                         | ⚠️ 部分借鉴           | 通过 status 字段隐式表达（pending/expired 等），未做矩阵化                                         |
 
 ---
 

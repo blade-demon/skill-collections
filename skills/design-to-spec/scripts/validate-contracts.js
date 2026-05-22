@@ -1,26 +1,26 @@
 #!/usr/bin/env node
 // Validate design-to-spec YAML contracts: schema, uniqueness, and cross-refs.
 
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { loadYaml } from "./lib/yaml.js";
-import { validateJsonSchema } from "./lib/json-schema.js";
-import { parseArgs, requireOpts } from "./lib/cli.js";
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadYaml } from './lib/yaml.js';
+import { validateJsonSchema } from './lib/json-schema.js';
+import { parseArgs, requireOpts } from './lib/cli.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SCHEMA_DIR = resolve(__dirname, "..", "schemas");
+const SCHEMA_DIR = resolve(__dirname, '..', 'schemas');
 
 function repr(value) {
-  if (typeof value === "string") return `'${value.replace(/'/g, "\\'")}'`;
-  if (value === null || value === undefined) return "None";
+  if (typeof value === 'string') return `'${value.replace(/'/g, "\\'")}'`;
+  if (value === null || value === undefined) return 'None';
   return String(value);
 }
 
 function loadJson(path) {
   let text;
   try {
-    text = readFileSync(path, "utf8");
+    text = readFileSync(path, 'utf8');
   } catch (err) {
     throw new Error(`${path}: cannot read: ${err.message}`);
   }
@@ -30,7 +30,7 @@ function loadJson(path) {
   } catch (err) {
     throw new Error(`${path}: invalid JSON: ${err.message}`);
   }
-  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error(`${path}: top-level JSON must be a mapping`);
   }
   return data;
@@ -83,24 +83,24 @@ function validateUniqueness(ui, api, mapping) {
   const components = ui.components ?? [];
   const states = ui.states ?? [];
   validateUniqueValues(
-    "ui.components[].id",
+    'ui.components[].id',
     components.map((i) => i.id),
     errors,
   );
   validateUniqueValues(
-    "ui.states[].id",
+    'ui.states[].id',
     states.map((i) => i.id),
     errors,
   );
 
   const endpoints = api.endpoints ?? [];
   validateUniqueValues(
-    "api.endpoints[].id",
+    'api.endpoints[].id',
     endpoints.map((i) => i.id),
     errors,
   );
   for (const endpoint of endpoints) {
-    const eid = endpoint.id ?? "<unknown>";
+    const eid = endpoint.id ?? '<unknown>';
     const label = `api.endpoints[${eid}]`;
     validateUniqueValues(
       `${label}.params[].name`,
@@ -115,19 +115,19 @@ function validateUniqueness(ui, api, mapping) {
   }
 
   validateUniqueValues(
-    "api.open_questions[].id",
+    'api.open_questions[].id',
     (api.open_questions ?? []).map((i) => i.id),
     errors,
   );
 
   const requests = mapping.data_fetching?.requests ?? [];
   validateUniqueValues(
-    "mapping.data_fetching.requests[].id",
+    'mapping.data_fetching.requests[].id',
     requests.map((i) => i.id),
     errors,
   );
   validateUniqueValues(
-    "mapping.open_questions[].id",
+    'mapping.open_questions[].id',
     (mapping.open_questions ?? []).map((i) => i.id),
     errors,
   );
@@ -141,16 +141,16 @@ function validate(uiDoc, apiDoc, mappingDoc) {
   let api = apiDoc.api ?? {};
   let mapping = mappingDoc.mapping ?? {};
 
-  if (typeof ui !== "object" || ui === null || Array.isArray(ui)) {
-    errors.push("ui-schema: missing ui mapping");
+  if (typeof ui !== 'object' || ui === null || Array.isArray(ui)) {
+    errors.push('ui-schema: missing ui mapping');
     ui = {};
   }
-  if (typeof api !== "object" || api === null || Array.isArray(api)) {
-    errors.push("api-schema: missing api mapping");
+  if (typeof api !== 'object' || api === null || Array.isArray(api)) {
+    errors.push('api-schema: missing api mapping');
     api = {};
   }
-  if (typeof mapping !== "object" || mapping === null || Array.isArray(mapping)) {
-    errors.push("mapping-logic: missing mapping mapping");
+  if (typeof mapping !== 'object' || mapping === null || Array.isArray(mapping)) {
+    errors.push('mapping-logic: missing mapping mapping');
     mapping = {};
   }
 
@@ -174,7 +174,7 @@ function validate(uiDoc, apiDoc, mappingDoc) {
 
   for (const item of components) {
     const parentId = item.parent_id;
-    if (parentId && parentId !== "root" && !componentIds.has(parentId)) {
+    if (parentId && parentId !== 'root' && !componentIds.has(parentId)) {
       errors.push(
         `ui.components[${item.id}].parent_id references missing component ${repr(parentId)}`,
       );
@@ -208,26 +208,28 @@ function validate(uiDoc, apiDoc, mappingDoc) {
 
   for (const binding of mapping.bindings ?? []) {
     const direction = binding.direction;
-    if (direction === "ui_to_api") {
+    if (direction === 'ui_to_api') {
       if (!componentIds.has(binding.source_ui)) {
         errors.push(`binding source_ui references missing component ${repr(binding.source_ui)}`);
       }
       if (!paramNames.has(binding.target_api)) {
         errors.push(`binding target_api references missing API param ${repr(binding.target_api)}`);
       }
-    } else if (direction === "api_to_ui") {
+    } else if (direction === 'api_to_ui') {
       if (!responseFields.has(binding.source_api)) {
-        errors.push(`binding source_api references missing response field ${repr(binding.source_api)}`);
+        errors.push(
+          `binding source_api references missing response field ${repr(binding.source_api)}`,
+        );
       }
       if (!componentIds.has(binding.target_ui)) {
         errors.push(`binding target_ui references missing component ${repr(binding.target_ui)}`);
       }
-    } else if (direction === "ui_to_event") {
+    } else if (direction === 'ui_to_event') {
       if (!componentIds.has(binding.source_ui)) {
         errors.push(`binding source_ui references missing component ${repr(binding.source_ui)}`);
       }
       if (!binding.target_event) {
-        errors.push("ui_to_event binding is missing target_event");
+        errors.push('ui_to_event binding is missing target_event');
       }
     } else {
       errors.push(`binding has unsupported direction ${repr(direction)}`);
@@ -257,26 +259,26 @@ function main() {
   let args;
   try {
     args = parseArgs(process.argv.slice(2), {
-      options: ["ui", "api", "mapping", "ui-schema", "api-schema", "mapping-schema"],
+      options: ['ui', 'api', 'mapping', 'ui-schema', 'api-schema', 'mapping-schema'],
     });
-    requireOpts(args, ["ui", "api", "mapping"]);
+    requireOpts(args, ['ui', 'api', 'mapping']);
   } catch (err) {
     console.error(err.message);
     return 1;
   }
 
-  const uiSchemaPath = args["ui-schema"] ?? resolve(SCHEMA_DIR, "ui-schema.json");
-  const apiSchemaPath = args["api-schema"] ?? resolve(SCHEMA_DIR, "api-schema.json");
-  const mappingSchemaPath = args["mapping-schema"] ?? resolve(SCHEMA_DIR, "mapping-logic.json");
+  const uiSchemaPath = args['ui-schema'] ?? resolve(SCHEMA_DIR, 'ui-schema.json');
+  const apiSchemaPath = args['api-schema'] ?? resolve(SCHEMA_DIR, 'api-schema.json');
+  const mappingSchemaPath = args['mapping-schema'] ?? resolve(SCHEMA_DIR, 'mapping-logic.json');
 
   let errors = [];
   try {
     const uiDoc = loadYaml(args.ui);
     const apiDoc = loadYaml(args.api);
     const mappingDoc = loadYaml(args.mapping);
-    errors.push(...validateSchema("ui-schema", uiDoc, uiSchemaPath));
-    errors.push(...validateSchema("api-schema", apiDoc, apiSchemaPath));
-    errors.push(...validateSchema("mapping-logic", mappingDoc, mappingSchemaPath));
+    errors.push(...validateSchema('ui-schema', uiDoc, uiSchemaPath));
+    errors.push(...validateSchema('api-schema', apiDoc, apiSchemaPath));
+    errors.push(...validateSchema('mapping-logic', mappingDoc, mappingSchemaPath));
     if (errors.length === 0) {
       errors.push(...validate(uiDoc, apiDoc, mappingDoc));
     }
@@ -292,7 +294,7 @@ function main() {
     return 1;
   }
 
-  console.log("OK: contracts are valid");
+  console.log('OK: contracts are valid');
   return 0;
 }
 

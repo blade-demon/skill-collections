@@ -30,7 +30,10 @@ describe('selectArtboard', () => {
     const layers = screenPage?.data.layers as SketchNode[] | undefined;
     const artboard = layers?.[0];
     if (!screenPage || !artboard) throw new Error('fixture missing screen artboard');
-    screenPage.data.layers = [artboard, { ...structuredClone(artboard), do_objectID: 'other-artboard' }];
+    screenPage.data.layers = [
+      artboard,
+      { ...structuredClone(artboard), do_objectID: 'other-artboard' },
+    ];
 
     expect(() => selectArtboard(duplicate)).toThrow(/Multiple artboards/);
   });

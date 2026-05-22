@@ -13,12 +13,12 @@ Use this workflow while defining props and generating the directory tree/code sk
 
 ## Prop Mapping
 
-| Signature role | Generated API |
-|---|---|
-| `media` image/content | `{name}Src: string` and `{name}Alt: string` |
-| Optional `media` | `{name}Src?: string` and `{name}Alt?: string` |
-| Status-varying media | Use data props keyed by status or conditional rendering driven by the existing `status` union |
-| Unreliable icon | Placeholder component/element plus asset-ledger row |
+| Signature role        | Generated API                                                                                 |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| `media` image/content | `{name}Src: string` and `{name}Alt: string`                                                   |
+| Optional `media`      | `{name}Src?: string` and `{name}Alt?: string`                                                 |
+| Status-varying media  | Use data props keyed by status or conditional rendering driven by the existing `status` union |
+| Unreliable icon       | Placeholder component/element plus asset-ledger row                                           |
 
 Use generic names when the signature lacks semantics, e.g. `mediaASrc`, `mediaAAlt`. Use semantic names only when supplied by the user, filename, or project context.
 
@@ -27,10 +27,10 @@ Use generic names when the signature lacks semantics, e.g. `mediaASrc`, `mediaAA
 Create or output `asset-ledger.md` with this table:
 
 ```markdown
-| Asset ID | Source image(s) | Signature path | Intended use | Generated placeholder | Required user action | Status |
-|---|---|---|---|---|---|---|
-| asset-001 | pending.png, used.png | M.card[0].media | QR/code-like media area | `mediaASrc` / `mediaAAlt` props | Provide final image URL or import path | pending |
-| asset-002 | expired.png | T.media | Unknown leading icon | `<span className={styles.iconPlaceholder} aria-hidden />` | Identify icon asset or existing icon component | pending |
+| Asset ID  | Source image(s)       | Signature path  | Intended use            | Generated placeholder                                     | Required user action                           | Status  |
+| --------- | --------------------- | --------------- | ----------------------- | --------------------------------------------------------- | ---------------------------------------------- | ------- |
+| asset-001 | pending.png, used.png | M.card[0].media | QR/code-like media area | `mediaASrc` / `mediaAAlt` props                           | Provide final image URL or import path         | pending |
+| asset-002 | expired.png           | T.media         | Unknown leading icon    | `<span className={styles.iconPlaceholder} aria-hidden />` | Identify icon asset or existing icon component | pending |
 ```
 
 ## Status Values
@@ -48,6 +48,7 @@ Create or output `asset-ledger.md` with this table:
 ## Exit
 
 Exit when every media/icon node is represented by:
+
 - A concrete `src`/`alt` prop,
 - A confirmed existing asset/component, or
 - A row in `asset-ledger.md`.

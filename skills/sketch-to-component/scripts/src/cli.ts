@@ -1,7 +1,11 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { runPreview as runCorePreview, type DesignIR, type VisualNode } from '@skill-collections/d2c-core';
+import {
+  runPreview as runCorePreview,
+  type DesignIR,
+  type VisualNode,
+} from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
 import { extractRaw } from './extract-raw.js';
@@ -154,10 +158,14 @@ async function runPreview(): Promise<void> {
   console.log(`overrideUnmapped: ${preview.stats.overrideUnmapped}`);
   console.log(`overrideUnsupported: ${preview.stats.overrideUnsupported}`);
   console.log(`placeholderAssets: ${preview.stats.placeholderAssets}`);
-  console.log(`visual-view.json: ${visualViewPath} (${Buffer.byteLength(preview.visualViewJson, 'utf8')} bytes)`);
+  console.log(
+    `visual-view.json: ${visualViewPath} (${Buffer.byteLength(preview.visualViewJson, 'utf8')} bytes)`,
+  );
   console.log(`index.html: ${indexPath} (${Buffer.byteLength(preview.html, 'utf8')} bytes)`);
   console.log(`preview.css: ${cssPath} (${Buffer.byteLength(preview.css, 'utf8')} bytes)`);
-  console.log(`visual-review-report.md: ${reportPath} (${Buffer.byteLength(preview.report, 'utf8')} bytes)`);
+  console.log(
+    `visual-review-report.md: ${reportPath} (${Buffer.byteLength(preview.report, 'utf8')} bytes)`,
+  );
 }
 
 async function main(): Promise<void> {

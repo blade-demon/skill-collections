@@ -121,13 +121,13 @@ design-spec/<component-name>/
 
 ## 5. 通用反模式（任何角色都该警惕）
 
-| 现象 | 含义 | 处理 |
-|---|---|---|
-| 评审会上口头同意了某个改动，没人改 contracts | 共识没有事实源支撑，下次跑生成器会被覆盖 | 立即记录人要求作者改 yaml + 重跑 |
-| 直接在 markdown 上批注修改建议 | 改完不会同步到 contracts | 把建议写在 PR comment 或 contracts/*.yaml 里 |
-| 看到 `[UNKNOWN]` / `needs_human_input` 默认开发会处理 | 默认 = 把不确定性留到 coding 后才暴露 | 当场认领或登记 open question |
-| `open_questions` 里 P0 一堆，依然在评 spec.md 细节 | 优先级反了——P0 阻塞 coding | 先关 P0 再聊 spec |
-| markdown 看上去合理但和 contracts 不一致 | 可能 markdown 被手改、CI 没跑 | 跑 `node design-to-spec/scripts/validate-output.js --strict ...` 验证 |
+| 现象                                                  | 含义                                     | 处理                                                                  |
+| ----------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------- |
+| 评审会上口头同意了某个改动，没人改 contracts          | 共识没有事实源支撑，下次跑生成器会被覆盖 | 立即记录人要求作者改 yaml + 重跑                                      |
+| 直接在 markdown 上批注修改建议                        | 改完不会同步到 contracts                 | 把建议写在 PR comment 或 contracts/\*.yaml 里                         |
+| 看到 `[UNKNOWN]` / `needs_human_input` 默认开发会处理 | 默认 = 把不确定性留到 coding 后才暴露    | 当场认领或登记 open question                                          |
+| `open_questions` 里 P0 一堆，依然在评 spec.md 细节    | 优先级反了——P0 阻塞 coding               | 先关 P0 再聊 spec                                                     |
+| markdown 看上去合理但和 contracts 不一致              | 可能 markdown 被手改、CI 没跑            | 跑 `node design-to-spec/scripts/validate-output.js --strict ...` 验证 |
 
 ---
 

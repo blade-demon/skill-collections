@@ -4,24 +4,24 @@ Use this after structural comparison and confirmed Image Connect decisions.
 
 ## Diff-To-Prop Rules
 
-| Diff type | Modeling |
-|---|---|
-| `status` appears/disappears | `status: StatusUnion` drives conditional rendering |
-| `meta` varies with status | Concrete data prop, e.g. `timestamp?: string` |
-| `action` disappears with status | Optional callback, e.g. `onRefresh?: () => void` |
-| Whole slot replacement | `status` or `step/phase` drives conditional rendering |
-| `hint` disappears with status | Static copy, not a prop |
-| `media` varies | Asset props per `asset-handling.md` |
+| Diff type                       | Modeling                                              |
+| ------------------------------- | ----------------------------------------------------- |
+| `status` appears/disappears     | `status: StatusUnion` drives conditional rendering    |
+| `meta` varies with status       | Concrete data prop, e.g. `timestamp?: string`         |
+| `action` disappears with status | Optional callback, e.g. `onRefresh?: () => void`      |
+| Whole slot replacement          | `status` or `step/phase` drives conditional rendering |
+| `hint` disappears with status   | Static copy, not a prop                               |
+| `media` varies                  | Asset props per `asset-handling.md`                   |
 
 For same-component state variants, prefer one flat discriminator:
 
 ```ts
-type OrderStatus = 'pending' | 'used' | 'expired'
+type OrderStatus = 'pending' | 'used' | 'expired';
 
 interface ComponentProps {
-  status: OrderStatus
-  timestamp?: string
-  onRefresh?: () => void
+  status: OrderStatus;
+  timestamp?: string;
+  onRefresh?: () => void;
 }
 ```
 

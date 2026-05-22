@@ -1,4 +1,9 @@
-import type { SemanticBlock, SemanticCandidate, VisualNode, Warning } from '@skill-collections/d2c-core';
+import type {
+  SemanticBlock,
+  SemanticCandidate,
+  VisualNode,
+  Warning,
+} from '@skill-collections/d2c-core';
 
 export function deriveSemanticBlock(root: VisualNode, warnings: Warning[]): SemanticBlock {
   const candidates: SemanticCandidate[] = [];

@@ -6,17 +6,11 @@
     "rootDir": ".",
     "outDir": "dist",
     "strict": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "noEmitOnError": true
   },
-  "include": [
-    "bin/**/*.ts",
-    "src/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["bin/**/*.ts", "src/**/*.ts", "tests/**/*.ts"]
 }

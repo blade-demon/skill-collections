@@ -14,22 +14,22 @@ Structural skeleton = drop leaf roles, keep container roles and topology. Exampl
 
 First strip `O` and compare only `T`, `M`, `B`, and `F` for base component identity:
 
-| Condition | Decision |
-|---|---|
+| Condition                                                                        | Decision                 |
+| -------------------------------------------------------------------------------- | ------------------------ |
 | Structural skeletons are identical, or differ only by allowed leaf changes below | Candidate same component |
-| Any container role or topology differs | Different component |
-| Total role count differs by more than 50% | Different component |
+| Any container role or topology differs                                           | Different component      |
+| Total role count differs by more than 50%                                        | Different component      |
 
 For candidate same components:
 
-| Difference | Classification |
-|---|---|
-| Leaf role swap, such as `hint` to `status` | State variant |
-| Leaf `?` appears | State variant, uncertain |
-| Leaf added/removed and total count change <= 1 | State variant |
-| One slot's leaf-only content is fully replaced | State variant |
-| Leaf nodes added/removed in 2+ distinct slots | Structural variant; run `manual-review-exit.md` |
-| Repetition count inside a container changes | State variant, data-driven |
+| Difference                                     | Classification                                  |
+| ---------------------------------------------- | ----------------------------------------------- |
+| Leaf role swap, such as `hint` to `status`     | State variant                                   |
+| Leaf `?` appears                               | State variant, uncertain                        |
+| Leaf added/removed and total count change <= 1 | State variant                                   |
+| One slot's leaf-only content is fully replaced | State variant                                   |
+| Leaf nodes added/removed in 2+ distinct slots  | Structural variant; run `manual-review-exit.md` |
+| Repetition count inside a container changes    | State variant, data-driven                      |
 
 Overlay handling:
 
@@ -43,12 +43,12 @@ F-slot appearing/disappearing is a state variant and does not decide component i
 
 If the user declared a relationship in Step 2, treat it as the default decision, but compare it with the mechanical result:
 
-| Declaration | Mechanical result | Action |
-|---|---|---|
-| Same component, N states | Same component | Apply declaration and continue |
+| Declaration              | Mechanical result   | Action                                                                    |
+| ------------------------ | ------------------- | ------------------------------------------------------------------------- |
+| Same component, N states | Same component      | Apply declaration and continue                                            |
 | Same component, N states | Different component | Pause and ask force-merge, accept split, or restart with corrected images |
-| Different components | Same component | Apply declaration; semantic intent wins |
-| Sequenced flow | Same/manual review | Use `step` or `phase` discriminator |
+| Different components     | Same component      | Apply declaration; semantic intent wins                                   |
+| Sequenced flow           | Same/manual review  | Use `step` or `phase` discriminator                                       |
 
 ## Exits
 

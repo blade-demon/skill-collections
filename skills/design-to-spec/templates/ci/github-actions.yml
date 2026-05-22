@@ -19,14 +19,14 @@ name: design-spec-check
 on:
   pull_request:
     paths:
-      - "design-spec/**"
-      - "design-to-spec/**"
-      - ".github/workflows/design-spec-check.yml"
+      - 'design-spec/**'
+      - 'design-to-spec/**'
+      - '.github/workflows/design-spec-check.yml'
   push:
     branches: [main]
     paths:
-      - "design-spec/**"
-      - "design-to-spec/**"
+      - 'design-spec/**'
+      - 'design-to-spec/**'
 
 jobs:
   validate:
@@ -36,8 +36,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install
         run: npm ci

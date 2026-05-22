@@ -28,14 +28,14 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 
 ## Fields
 
-| Field | Required | Type | Rules |
-|---|---:|---|---|
-| `batch` | yes | string | Must match the dispatched Stage A batch id. |
-| `images` | yes | array | Exactly one object per input path. |
-| `filename` | yes | string | Basename only. |
-| `coarse_signature` | yes | object | Exactly `T`, `M`, `B`; no `O` or `F` in Stage A. |
-| `needs_full_signature` | yes | boolean | `true` when this image must enter Stage B. |
-| `reason` | yes | string | One allowlisted reason below. |
+| Field                  | Required | Type    | Rules                                            |
+| ---------------------- | -------: | ------- | ------------------------------------------------ |
+| `batch`                |      yes | string  | Must match the dispatched Stage A batch id.      |
+| `images`               |      yes | array   | Exactly one object per input path.               |
+| `filename`             |      yes | string  | Basename only.                                   |
+| `coarse_signature`     |      yes | object  | Exactly `T`, `M`, `B`; no `O` or `F` in Stage A. |
+| `needs_full_signature` |      yes | boolean | `true` when this image must enter Stage B.       |
+| `reason`               |      yes | string  | One allowlisted reason below.                    |
 
 Each `coarse_signature` slot is an array of top-level role words only. Do not include nested roles, operators, containers, notes, text copy, or visual styling.
 

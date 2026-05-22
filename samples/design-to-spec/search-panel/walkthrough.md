@@ -120,6 +120,7 @@ api:
 **输入**：`inputs/interaction-notes.md`，描述触发 / 状态机 / 错误处理 / 并发。
 
 **stage 3 注入了前两阶段的完整 YAML**——这是关键。LLM 推理时 context 里同时有 ui-schema 和 api-schema，所以它知道：
+
 - "submit 触发" 的 submit 在 ui-schema 里就是 `submitBtn`
 - "传 keyword" 的 keyword 在 api-schema 里就是 `params.keyword`
 - "返回 results" 的 results 在 api-schema 里是 `data.results`
@@ -133,7 +134,7 @@ mapping:
   data_fetching:
     requests: [{ id: searchRequest, trigger: submitBtn.onClick OR Enter, endpoint: searchAll, ... }]
     cache_policy: { strategy: none }
-    retry_policy: { strategy: auto_on_rate_limited, max_attempts: 1, backoff: "fixed 5s" }
+    retry_policy: { strategy: auto_on_rate_limited, max_attempts: 1, backoff: 'fixed 5s' }
     concurrency_policy: { abortable: true, stale_response: ignore }
 
   bindings:
@@ -157,7 +158,7 @@ mapping:
    - invalidKeyword → loading（修正后再提交）
    - loading → idle（FORBIDDEN 跳登录）
    - 等等
-   
+
    这些都是 `interaction-notes.md` 里隐含但需要显式登记的。skill 提示用户「列出所有 from-to 路径」时把它们都挖出来。
 
 2. **`ui_to_api: searchInput → page` transform 是 `constant 1`** —— v1 不分页，但前端调用必须传 page。直接绑定到 `searchInput` 显然不对（页码不来自输入框）。这种"形式上是 ui_to_api 但值是常量"的边界，目前用 transform 字段表达。**是否需要新增一种 `constant_to_api` direction？** 登记为 v0.13+ 的 schema 演进话题，不阻塞当前 sample。
@@ -211,6 +212,7 @@ node skills/design-to-spec/scripts/validate-output.js --strict ...
 ```
 
 `--strict` 校验包含：
+
 - 所有 `required: true` 状态在 spec.md 都有 Scenario
 - 所有 `request:<id>` 在 data-fetching.md 出现
 - 所有 `ui_to_event` 事件在 notes.md 或 spec.md 出现
@@ -223,14 +225,14 @@ node skills/design-to-spec/scripts/validate-output.js --strict ...
 
 ## 关键 open questions（回到产品 / 设计 / 后端 / 数据团队）
 
-| ID | 优先级 | 内容 | Owner（建议） |
-|---|---|---|---|
-| `mapping-q1` | P0 | INVALID_KEYWORD 红字提示样式 | 设计 |
-| `api-q1` | P1 | results[].score 是否在 v1 schema 保留 | 后端 + 前端 |
-| `mapping-q2` | P1 | RATE_LIMITED 5s 倒计时可视化 | 产品 |
-| `mapping-q3` | P1 | FORBIDDEN 回来是否保留 keyword | 产品 + 安全 |
-| `api-q2` | P2 | FORBIDDEN 跳登录是否携带 keyword | 产品 |
-| `mapping-q4` | P2 | tap-search-submit-disabled 埋点 | 数据团队 |
+| ID           | 优先级 | 内容                                  | Owner（建议） |
+| ------------ | ------ | ------------------------------------- | ------------- |
+| `mapping-q1` | P0     | INVALID_KEYWORD 红字提示样式          | 设计          |
+| `api-q1`     | P1     | results[].score 是否在 v1 schema 保留 | 后端 + 前端   |
+| `mapping-q2` | P1     | RATE_LIMITED 5s 倒计时可视化          | 产品          |
+| `mapping-q3` | P1     | FORBIDDEN 回来是否保留 keyword        | 产品 + 安全   |
+| `api-q2`     | P2     | FORBIDDEN 跳登录是否携带 keyword      | 产品          |
+| `mapping-q4` | P2     | tap-search-submit-disabled 埋点       | 数据团队      |
 
 **P0 不关闭不进 coding**（per `skills/design-to-spec/references/contracts.md` §评审退出标准）。本 sample 的 `mapping-q1` 暂时按"灰色 12px 文字、searchInput 下方 4px 间距、`#F53F3F`"的占位实现，等设计签收后回填到 ui-schema 并重跑生成。
 

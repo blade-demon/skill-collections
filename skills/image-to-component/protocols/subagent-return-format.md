@@ -31,18 +31,18 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 
 ### Top-Level Fields
 
-| Field | Required | Type | Rules |
-|---|---:|---|---|
-| `batch` | yes | string | Must exactly match the dispatcher-provided batch id, for example `batch-1`. |
-| `images` | yes | array | Must contain exactly one object for each input path in the batch. No extra images. No omissions. |
+| Field    | Required | Type   | Rules                                                                                            |
+| -------- | -------: | ------ | ------------------------------------------------------------------------------------------------ |
+| `batch`  |      yes | string | Must exactly match the dispatcher-provided batch id, for example `batch-1`.                      |
+| `images` |      yes | array  | Must contain exactly one object for each input path in the batch. No extra images. No omissions. |
 
 ### Image Fields
 
-| Field | Required | Type | Rules |
-|---|---:|---|---|
-| `filename` | yes | string | Basename only, matching one input image path in the batch. Do not include directory paths. |
-| `signature` | yes | object | Must contain exactly the five slot keys `T`, `M`, `B`, `O`, `F`. |
-| `notes` | yes | object | May contain only allowlisted note keys. Use `null` when a known optional key is absent. |
+| Field       | Required | Type   | Rules                                                                                      |
+| ----------- | -------: | ------ | ------------------------------------------------------------------------------------------ |
+| `filename`  |      yes | string | Basename only, matching one input image path in the batch. Do not include directory paths. |
+| `signature` |      yes | object | Must contain exactly the five slot keys `T`, `M`, `B`, `O`, `F`.                           |
+| `notes`     |      yes | object | May contain only allowlisted note keys. Use `null` when a known optional key is absent.    |
 
 ### Signature Slot Object
 
@@ -70,14 +70,14 @@ Slot expressions use the grammar and vocabulary from `signature-spec.md`:
 
 `notes` may contain only these keys:
 
-| Key | Allowed value |
-|---|---|
-| `overlay_type` | `modal`, `drawer`, `toast`, `sheet`, or `null` |
-| `float_anchor` | `br`, `bl`, `tr`, `tl`, or `null` |
-| `occluded` | array of slot.role path strings, or `null` |
-| `divider` | `dashed`, `solid`, `dotted`, or `null` |
-| `tab_active` | string matching one visible tab label, or `null` |
-| `list_count` | integer, string in `≥N` / `>=N` form, or `null` |
+| Key            | Allowed value                                    |
+| -------------- | ------------------------------------------------ |
+| `overlay_type` | `modal`, `drawer`, `toast`, `sheet`, or `null`   |
+| `float_anchor` | `br`, `bl`, `tr`, `tl`, or `null`                |
+| `occluded`     | array of slot.role path strings, or `null`       |
+| `divider`      | `dashed`, `solid`, `dotted`, or `null`           |
+| `tab_active`   | string matching one visible tab label, or `null` |
+| `list_count`   | integer, string in `≥N` / `>=N` form, or `null`  |
 
 No other keys are allowed. Reject visual or descriptive keys such as `bg`, `color`, `shadow`, `radius`, `font_size`, `theme`, `description`, or `summary`.
 

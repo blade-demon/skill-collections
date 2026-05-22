@@ -68,9 +68,13 @@ export function selectArtboard(
     );
     if (matches.length === 1) return { ...matches[0]!, warnings };
     if (matches.length > 1) {
-      throw new Error(`Multiple artboards matched "${options.artboard}": ${formatCandidates(matches)}`);
+      throw new Error(
+        `Multiple artboards matched "${options.artboard}": ${formatCandidates(matches)}`,
+      );
     }
-    throw new Error(`No artboard matched "${options.artboard}". Candidates: ${formatCandidates(candidates)}`);
+    throw new Error(
+      `No artboard matched "${options.artboard}". Candidates: ${formatCandidates(candidates)}`,
+    );
   }
 
   const nonSymbolPageCandidates = candidates.filter(({ page }) => !isSymbolLibraryPage(page));

@@ -17,9 +17,9 @@
 
 ```yaml
 # 必填项
-tech_stack: miniprogram          # miniprogram / react / vue / flutter / agnostic
-design_system: none              # tdesign / nutui / vant / antd / shadcn / none
-output_dir: design-spec          # 生成文件的根目录（相对项目根）
+tech_stack: miniprogram # miniprogram / react / vue / flutter / agnostic
+design_system: none # tdesign / nutui / vant / antd / shadcn / none
+output_dir: design-spec # 生成文件的根目录（相对项目根）
 
 # 推荐填，能让阶段一自动 Glob 发现可复用原子组件
 components_dir: src/components
@@ -31,6 +31,7 @@ openspec_dir: openspec
 ### 优先级（重要）
 
 skill 解析顺序：
+
 1. **AGENTS.md 声明** ← 本文件
 2. 用户对话中明确提供
 3. 阶段一默认询问

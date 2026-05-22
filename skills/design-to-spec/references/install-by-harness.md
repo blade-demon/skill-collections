@@ -10,14 +10,14 @@ design-to-spec 的核心是一份 `SKILL.md`（系统提示）+ 一组确定性�
 
 ## 兼容性矩阵
 
-| Harness | SKILL.md 自动加载 | 推荐安装位置 | 状态 |
-|---|---|---|---|
-| Claude Code | ✅（按 description 触发） | `~/.claude/skills/design-to-spec/` 或 `<project>/.claude/skills/design-to-spec/` | 推荐 |
-| OpenCode | ✅（AGENTS.md 持久化项目上下文） | `<project>/design-to-spec/` + AGENTS.md 引用 | 推荐 |
-| Cursor | ⚠️（需手动转 `.cursor/rules/`） | `<project>/.cursor/rules/design-to-spec.mdc` | 可用 |
-| Cline | ⚠️（需手动写 `.clinerules`） | `<project>/.clinerules/design-to-spec.md` | 可用 |
-| Continue | ⚠️（需手动配 system message） | `~/.continue/config.yaml` | 可用 |
-| 其他 LLM 客户端 | ❌（手动复制 SKILL.md 当 system prompt） | 任意位置 | 降级 |
+| Harness         | SKILL.md 自动加载                        | 推荐安装位置                                                                     | 状态 |
+| --------------- | ---------------------------------------- | -------------------------------------------------------------------------------- | ---- |
+| Claude Code     | ✅（按 description 触发）                | `~/.claude/skills/design-to-spec/` 或 `<project>/.claude/skills/design-to-spec/` | 推荐 |
+| OpenCode        | ✅（AGENTS.md 持久化项目上下文）         | `<project>/design-to-spec/` + AGENTS.md 引用                                     | 推荐 |
+| Cursor          | ⚠️（需手动转 `.cursor/rules/`）          | `<project>/.cursor/rules/design-to-spec.mdc`                                     | 可用 |
+| Cline           | ⚠️（需手动写 `.clinerules`）             | `<project>/.clinerules/design-to-spec.md`                                        | 可用 |
+| Continue        | ⚠️（需手动配 system message）            | `~/.continue/config.yaml`                                                        | 可用 |
+| 其他 LLM 客户端 | ❌（手动复制 SKILL.md 当 system prompt） | 任意位置                                                                         | 降级 |
 
 **核心区别**：✅ 表示 harness 会按 SKILL.md frontmatter 的 `description` 自动判断是否启用；⚠️ 表示需要你手动把 SKILL.md 转成该工具的"规则文件"格式；❌ 表示工具完全不支持 skill 概念，只能把 SKILL.md 复制粘贴当系统提示用。
 
@@ -44,6 +44,7 @@ npm test                       # 预期：33+ 项全过
 两种放法二选一：
 
 **A. 用户级（个人多个项目共用）**
+
 ```bash
 mkdir -p ~/.claude/skills
 cp -r /path/to/design-to-spec ~/.claude/skills/design-to-spec
@@ -51,6 +52,7 @@ cd ~/.claude/skills/design-to-spec && npm install
 ```
 
 **B. 项目级（团队共享，跟随仓库版本）**
+
 ```bash
 mkdir -p <project>/.claude/skills
 cp -r /path/to/design-to-spec <project>/.claude/skills/design-to-spec
@@ -81,6 +83,7 @@ Claude Code 会扫描 `~/.claude/skills/` 和 `<project>/.claude/skills/`，按 
 ```
 
 如果没看到启动话术，说明 skill 没被触发。最可能的原因：
+
 - SKILL.md frontmatter 里 `description` 字段缺失或被改坏 → 检查 `head -10 SKILL.md`
 - 安装位置不在 Claude Code 扫描路径 → `ls ~/.claude/skills/design-to-spec/SKILL.md` 应当存在
 - 提示词里没有"设计稿"/"组件"等关键词 → 加上"想生成 OpenSpec / 实现规格"等措辞
@@ -112,11 +115,11 @@ cd design-to-spec && npm install
 ## design-to-spec 项目上下文
 
 - skill_path: design-to-spec/SKILL.md
-- tech_stack: web              # miniprogram / react / vue / flutter / agnostic
-- design_system: none           # tdesign / nutui / vant / antd / shadcn / none
-- output_dir: design-spec       # 生成文件的根目录
+- tech_stack: web # miniprogram / react / vue / flutter / agnostic
+- design_system: none # tdesign / nutui / vant / antd / shadcn / none
+- output_dir: design-spec # 生成文件的根目录
 - components_dir: src/components # 现有原子组件目录
-- openspec_dir: openspec        # OpenSpec 规格目录
+- openspec_dir: openspec # OpenSpec 规格目录
 ```
 
 skill 读取优先级：AGENTS.md 声明 > 用户对话中提供 > 阶段一默认询问。
@@ -125,10 +128,10 @@ skill 读取优先级：AGENTS.md 声明 > 用户对话中提供 > 阶段一默�
 
 OpenCode 通过 Tab 切换 Plan / Execute。建议：
 
-| 阶段 | 模式 | 原因 |
-|---|---|---|
-| 阶段一/二/三 | **Plan** | 纯分析，不写文件 |
-| 阶段四 | **Execute** | 需要写 contracts/ 和 3 份输出 |
+| 阶段         | 模式        | 原因                          |
+| ------------ | ----------- | ----------------------------- |
+| 阶段一/二/三 | **Plan**    | 纯分析，不写文件              |
+| 阶段四       | **Execute** | 需要写 contracts/ 和 3 份输出 |
 
 ### 冒烟测试
 
@@ -165,9 +168,9 @@ cp tools/design-to-spec/SKILL.md .cursor/rules/design-to-spec.mdc
 ---
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs. See SKILL.md for full protocol.
 globs:
-  - "**/design-spec/**"
-  - "**/*.svg"
-  - "**/*.png"
+  - '**/design-spec/**'
+  - '**/*.svg'
+  - '**/*.png'
 alwaysApply: false
 ---
 ```
@@ -180,7 +183,7 @@ Cursor 会话发送同样的提示词，期望看到启动话术。如果没触�
 
 ### 已知坑
 
-- Cursor 的 rule 文件默认大小限制约 6000 行，SKILL.md（约 540 行）远低于上限。如果你做了大量定制导致超长，可以把 references/* 的内容拆成多个 rule 文件。
+- Cursor 的 rule 文件默认大小限制约 6000 行，SKILL.md（约 540 行）远低于上限。如果你做了大量定制导致超长，可以把 references/\* 的内容拆成多个 rule 文件。
 - Cursor 默认不读 `.cursor/rules/` 之外的 markdown，所以 SKILL.md 中提到的 `references/contracts.md` 等按需加载文件，**LLM 必须靠 file read 工具去取**——这是 Cursor 模式下的固有限制，无法像 Claude Code/OpenCode 那样 skill runtime 自动 lazy load。
 
 ---

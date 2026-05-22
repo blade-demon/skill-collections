@@ -30,28 +30,29 @@ After all trees, write one transition sentence, for example: "接下来将对比
 
 Derive component names only from: (a) signature role and slot, (b) user-declared state or business context from Step 2, (c) confirmed state names from Step 6 when available. Never use visual information the signature does not carry.
 
-| Slot / role | Default name | When user context is known |
-|---|---|---|
-| `T` container | `<Header>` | `<PageNameHeader>` when page purpose is declared |
-| `M` top-level `card(...)` | `<Card>` | `<CouponCard>` when business object is declared |
-| `M` top-level `list(card(...))` | `<List>` with `<ListItem>` | domain names when declared |
-| `media` (first in slot) | `<MediaA>` | semantic name only when Step 2 declares it |
-| `media` (second in slot) | `<MediaB>` | semantic name only when Step 2 declares it |
-| `status` | `<StatusStamp>` | `<UsedStamp>` / `<ExpiredStamp>` when state is known |
-| `hint` (first) | `<HintA>` | no content-based names |
-| `hint` (second) | `<HintB>` | no content-based names |
-| `action` (first) | `<ActionA>` | `<RefreshButton>` when Step 2 declares the action |
-| `action` (second) | `<ActionB>` | semantic name only when declared |
-| `form` fields | `<FormFieldA>`, `<FormFieldB>` | domain name when declared |
-| `B` slot | `<Footer>` or inline leaves | — |
-| `O` overlay | `<OverlayModal>` / `<OverlayDrawer>` etc. | domain name when declared |
-| `F` floating anchor | `<FloatAction>` | — |
+| Slot / role                     | Default name                              | When user context is known                           |
+| ------------------------------- | ----------------------------------------- | ---------------------------------------------------- |
+| `T` container                   | `<Header>`                                | `<PageNameHeader>` when page purpose is declared     |
+| `M` top-level `card(...)`       | `<Card>`                                  | `<CouponCard>` when business object is declared      |
+| `M` top-level `list(card(...))` | `<List>` with `<ListItem>`                | domain names when declared                           |
+| `media` (first in slot)         | `<MediaA>`                                | semantic name only when Step 2 declares it           |
+| `media` (second in slot)        | `<MediaB>`                                | semantic name only when Step 2 declares it           |
+| `status`                        | `<StatusStamp>`                           | `<UsedStamp>` / `<ExpiredStamp>` when state is known |
+| `hint` (first)                  | `<HintA>`                                 | no content-based names                               |
+| `hint` (second)                 | `<HintB>`                                 | no content-based names                               |
+| `action` (first)                | `<ActionA>`                               | `<RefreshButton>` when Step 2 declares the action    |
+| `action` (second)               | `<ActionB>`                               | semantic name only when declared                     |
+| `form` fields                   | `<FormFieldA>`, `<FormFieldB>`            | domain name when declared                            |
+| `B` slot                        | `<Footer>` or inline leaves               | —                                                    |
+| `O` overlay                     | `<OverlayModal>` / `<OverlayDrawer>` etc. | domain name when declared                            |
+| `F` floating anchor             | `<FloatAction>`                           | —                                                    |
 
 Use PascalCase for all component names.
 
 Do not name a component after its visual position, icon shape, text content, color, or any attribute the signature does not carry.
 
 Forbidden examples:
+
 - ❌ `<IconThumb>` — icon shape
 - ❌ `<QRCodeArea>` — visual content guess
 - ❌ `<OrangeButton>` — color
@@ -59,6 +60,7 @@ Forbidden examples:
 - ❌ `<ErrorText>` — text content
 
 Allowed examples:
+
 - ✅ `<MediaA>` — generic media, first in slot
 - ✅ `<CouponCard>` — business object declared in Step 2
 - ✅ `<ExpiredStamp>` — state name confirmed in Step 6
@@ -100,11 +102,11 @@ Allowed comment examples:
 
 ## Operator-to-Tree Mapping
 
-| Signature operator | Tree representation |
-|---|---|
-| `A + B` (horizontal siblings) | `A` and `B` as separate sibling lines at the same indent level |
-| `A -> B` (vertical sequence) | `B` is a child of `A`, indented one level |
-| `container(...)` | `container` node with children from the parenthesised expression |
+| Signature operator            | Tree representation                                              |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `A + B` (horizontal siblings) | `A` and `B` as separate sibling lines at the same indent level   |
+| `A -> B` (vertical sequence)  | `B` is a child of `A`, indented one level                        |
+| `container(...)`              | `container` node with children from the parenthesised expression |
 
 ## Overlay and Float Trees
 

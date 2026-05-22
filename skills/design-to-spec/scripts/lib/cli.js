@@ -5,7 +5,7 @@ export function parseArgs(argv, spec) {
   const opts = new Set(spec.options ?? []);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg.startsWith("--")) {
+    if (arg.startsWith('--')) {
       const name = arg.slice(2);
       if (flags.has(name)) {
         result[name] = true;
@@ -29,6 +29,6 @@ export function parseArgs(argv, spec) {
 export function requireOpts(args, names) {
   const missing = names.filter((n) => args[n] === undefined);
   if (missing.length > 0) {
-    throw new Error(`missing required options: ${missing.map((n) => "--" + n).join(", ")}`);
+    throw new Error(`missing required options: ${missing.map((n) => '--' + n).join(', ')}`);
   }
 }

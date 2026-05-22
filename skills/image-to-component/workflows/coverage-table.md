@@ -5,6 +5,7 @@ Use this workflow after directory tree planning and before outputting or writing
 ## Trigger
 
 Generate a coverage table for every non-trivial output, especially when:
+
 - More than one screenshot was processed.
 - Multiple components or status variants are generated.
 - A staged large-directory workflow selected representatives.
@@ -13,23 +14,23 @@ Generate a coverage table for every non-trivial output, especially when:
 ## Exact Format
 
 ```markdown
-| Signature path | Covering file(s) | Component(s) | Status |
-|---|---|---|---|
-| T | src/components/OrderPage/Header.tsx | Header | covered |
-| M.card[0].media | src/components/OrderPage/components/QRCodeArea.tsx | QRCodeArea | covered |
-| M.card[0].status | src/components/OrderPage/components/QRCodeArea.tsx | QRCodeArea | covered |
-| B.meta | src/components/OrderPage/components/Footer.tsx | Footer | reused |
-| O.modal | src/components/OrderPage/components/ExpiredModal.tsx | ExpiredModal | pending |
+| Signature path   | Covering file(s)                                     | Component(s) | Status  |
+| ---------------- | ---------------------------------------------------- | ------------ | ------- |
+| T                | src/components/OrderPage/Header.tsx                  | Header       | covered |
+| M.card[0].media  | src/components/OrderPage/components/QRCodeArea.tsx   | QRCodeArea   | covered |
+| M.card[0].status | src/components/OrderPage/components/QRCodeArea.tsx   | QRCodeArea   | covered |
+| B.meta           | src/components/OrderPage/components/Footer.tsx       | Footer       | reused  |
+| O.modal          | src/components/OrderPage/components/ExpiredModal.tsx | ExpiredModal | pending |
 ```
 
 ## Fields
 
-| Field | Meaning |
-|---|---|
-| Signature path | Mechanical path from slot and role/container position, e.g. `T.title`, `M.list.card[0].meta`, `O.modal.action` |
-| Covering file(s) | Output files responsible for rendering that path |
-| Component(s) | Component names responsible for the path |
-| Status | `covered`, `reused`, or `pending` |
+| Field            | Meaning                                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| Signature path   | Mechanical path from slot and role/container position, e.g. `T.title`, `M.list.card[0].meta`, `O.modal.action` |
+| Covering file(s) | Output files responsible for rendering that path                                                               |
+| Component(s)     | Component names responsible for the path                                                                       |
+| Status           | `covered`, `reused`, or `pending`                                                                              |
 
 ## Status Values
 

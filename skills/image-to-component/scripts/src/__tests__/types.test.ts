@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { BatchResultSchema, CoarseBatchResultSchema, SkeletonConfigSchema } from '../types.js'
+import { describe, it, expect } from 'vitest';
+import { BatchResultSchema, CoarseBatchResultSchema, SkeletonConfigSchema } from '../types.js';
 
 describe('BatchResultSchema', () => {
   it('accepts a valid minimal batch result', () => {
@@ -12,14 +12,14 @@ describe('BatchResultSchema', () => {
           notes: { overlay_type: null, float_anchor: null },
         },
       ],
-    }
-    expect(() => BatchResultSchema.parse(input)).not.toThrow()
-  })
+    };
+    expect(() => BatchResultSchema.parse(input)).not.toThrow();
+  });
 
   it('rejects when batch field is missing', () => {
-    expect(() => BatchResultSchema.parse({ images: [] })).toThrow()
-  })
-})
+    expect(() => BatchResultSchema.parse({ images: [] })).toThrow();
+  });
+});
 
 describe('CoarseBatchResultSchema', () => {
   it('accepts valid coarse batch', () => {
@@ -33,10 +33,10 @@ describe('CoarseBatchResultSchema', () => {
           reason: 'slot contains nested container',
         },
       ],
-    }
-    expect(() => CoarseBatchResultSchema.parse(input)).not.toThrow()
-  })
-})
+    };
+    expect(() => CoarseBatchResultSchema.parse(input)).not.toThrow();
+  });
+});
 
 describe('SkeletonConfigSchema', () => {
   it('accepts a minimal react config', () => {
@@ -50,9 +50,9 @@ describe('SkeletonConfigSchema', () => {
         props: [],
         children: [],
       },
-    }
-    expect(() => SkeletonConfigSchema.parse(input)).not.toThrow()
-  })
+    };
+    expect(() => SkeletonConfigSchema.parse(input)).not.toThrow();
+  });
 
   it('accepts a style plan for generated CSS declarations', () => {
     const input = {
@@ -72,25 +72,32 @@ describe('SkeletonConfigSchema', () => {
               { property: 'display', value: 'flex', source: 'inferred' },
               { property: '--card-gap', value: 'var(--space-md)', source: 'token' },
               { property: '-webkit-line-clamp', value: '2', source: 'hardcoded' },
-              { property: 'gap', value: 'var(--space-md)', source: 'token-ledger', comment: 'Confirmed in token-ledger.md' },
+              {
+                property: 'gap',
+                value: 'var(--space-md)',
+                source: 'token-ledger',
+                comment: 'Confirmed in token-ledger.md',
+              },
             ],
             variants: [
               {
                 name: 'high-risk',
-                declarations: [{ property: 'box-shadow', value: 'var(--shadow-card)', source: 'provided' }],
+                declarations: [
+                  { property: 'box-shadow', value: 'var(--shadow-card)', source: 'provided' },
+                ],
               },
             ],
           },
         ],
       },
-    }
+    };
 
-    const parsed = SkeletonConfigSchema.parse(input)
-    const rule = parsed.stylePlan?.rules[0]
-    expect(rule).toBeDefined()
-    expect(rule!.declarations).toHaveLength(4)
-    expect(rule!.variants).toHaveLength(1)
-  })
+    const parsed = SkeletonConfigSchema.parse(input);
+    const rule = parsed.stylePlan?.rules[0];
+    expect(rule).toBeDefined();
+    expect(rule!.declarations).toHaveLength(4);
+    expect(rule!.variants).toHaveLength(1);
+  });
 
   it('rejects unsafe style plan variant names', () => {
     const input = {
@@ -116,8 +123,8 @@ describe('SkeletonConfigSchema', () => {
           },
         ],
       },
-    }
+    };
 
-    expect(() => SkeletonConfigSchema.parse(input)).toThrow()
-  })
-})
+    expect(() => SkeletonConfigSchema.parse(input)).toThrow();
+  });
+});

@@ -16,6 +16,7 @@ Examples in the skill:
 - **token-ledger.md** — Captures style traits that don't map cleanly to existing design tokens.
 
 Each ledger row captures:
+
 - What was detected or analyzed
 - Which images/context it came from
 - What the AI proposes as a solution
@@ -23,6 +24,7 @@ Each ledger row captures:
 - Current status (pending, provided, reused, hardcoded, skipped)
 
 **Without the ledger:** The AI would either:
+
 - Invent asset names (`<img src={asset123} />`), breaking the build
 - Invent tokens (`color: var(--color-unknown-xyz)`), breaking styles
 - Hardcode wrong values silently, creating bugs
@@ -53,6 +55,7 @@ C. Skip Style Connect (hardcode everything with TODO comments)
 ```
 
 **Without the gate:** The AI would guess between:
+
 - "Bind to wrong token" (leading to visual bugs)
 - "Invent new token" (leading to inconsistent design systems)
 - "Hardcode" (losing token consistency)
@@ -110,11 +113,12 @@ Workflow:
    - Media that's unclear → add to ledger
 
 2. **Ledger** — Create `asset-ledger.md`:
+
    ```markdown
-   | Asset ID | Source image(s) | Signature path | Intended use | Generated placeholder | Required user action | Status |
-   |---|---|---|---|---|---|---|
-   | asset-001 | pending.png, used.png | M.card[0].media | QR-code-like area | `mediaASrc` prop | Provide image URL | pending |
-   | asset-002 | expired.png | T.media | Unknown icon | `<span className={styles.icon} />` | Identify icon or use existing component | pending |
+   | Asset ID  | Source image(s)       | Signature path  | Intended use      | Generated placeholder              | Required user action                    | Status  |
+   | --------- | --------------------- | --------------- | ----------------- | ---------------------------------- | --------------------------------------- | ------- |
+   | asset-001 | pending.png, used.png | M.card[0].media | QR-code-like area | `mediaASrc` prop                   | Provide image URL                       | pending |
+   | asset-002 | expired.png           | T.media         | Unknown icon      | `<span className={styles.icon} />` | Identify icon or use existing component | pending |
    ```
 
 3. **User sees the ledger** — User reads it and realizes:
@@ -126,7 +130,7 @@ Workflow:
    - User confirms "hardcode with TODO" for now
 
 5. **Code Generation** — Now safe to generate:
-   - `<img src={props.mediaASrc} alt={props.mediaAAlt} />`  ← user provided the prop
+   - `<img src={props.mediaASrc} alt={props.mediaAAlt} />` ← user provided the prop
    - `<Icon name={props.iconName} />` ← user provided the name
    - `// TODO: provide QRCodeImage` ← if user chose hardcoded
 
@@ -147,12 +151,13 @@ Workflow:
    - `type_hierarchy_levels=3` → typography tokens (needs confirmation)
 
 3. **Ledger** — Create `token-ledger.md`:
+
    ```markdown
-   | Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
-   |---|---|---|---|---|---|---:|---|---|
-   | token-001 | corner_radius=medium | all | Border radius | `--radius-md` | project-local | high | provided | Exists in `src/tokens/spacing.css` |
-   | token-002 | shadow_presence=card | pending.png | Card shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm antd theme value |
-   | token-003 | type_hierarchy_levels=3 | pending.png | Typography scale | typography | lib:tailwind | high | pending | Confirm Tailwind scale |
+   | Token ID  | Hint source             | Source image(s) | Visual trait     | Suggested token name | Source        | Confidence | Status   | User action                        |
+   | --------- | ----------------------- | --------------- | ---------------- | -------------------- | ------------- | ---------: | -------- | ---------------------------------- |
+   | token-001 | corner_radius=medium    | all             | Border radius    | `--radius-md`        | project-local |       high | provided | Exists in `src/tokens/spacing.css` |
+   | token-002 | shadow_presence=card    | pending.png     | Card shadow      | `--ant-box-shadow`   | lib:antd      |       high | pending  | Confirm antd theme value           |
+   | token-003 | type_hierarchy_levels=3 | pending.png     | Typography scale | typography           | lib:tailwind  |       high | pending  | Confirm Tailwind scale             |
    ```
 
    The `Source` column makes the provenance of each candidate token explicit (project code vs. installed library vs. AI proposal). This is essential when the same token name exists in multiple sources — the user can see at a glance which source the workflow is using.
@@ -163,6 +168,7 @@ Workflow:
    - Typography scale exists; use it
 
 5. **Decision-Gate**:
+
    ```
    A. Accept all mappings (use suggested token names)
    B. Change specific rows (e.g., "token-003 should use `--shadow-elevation-3` not `-2`")
@@ -172,6 +178,7 @@ Workflow:
 6. **User chooses A** → All tokens confirmed, move to code generation.
 
 7. **Code Generation** — Now safe:
+
    ```css
    .cardContainer {
      border-radius: var(--radius-md);
@@ -186,6 +193,7 @@ Workflow:
 ### Problem: AI Infers Without Asking
 
 Without ledger + gate, the AI might:
+
 - See a shadowed button and invent `--shadow-button`
 - See a spacing pattern and invent `--spacing-tight-xs`
 - Guess that "undefined token" means "skip this style"
@@ -202,6 +210,7 @@ All decisions made silently, invisibly, in code that ships.
 ### Result: 100% Auditable
 
 Every mapping from visual design to code token is either:
+
 - **Automatically handled** (high-confidence mappings from existing token library)
 - **Explicitly confirmed by user** (via decision-gate)
 - **Explicitly TODO** (awaiting future decision)
@@ -241,6 +250,7 @@ const responsiveColor = isDesktop ? 'var(--color-primary)' : 'var(--color-primar
 ### ✅ Ask for Confirmation
 
 In token-ledger:
+
 ```markdown
 | Token ID | ... | Status | User action |
 | token-005 | ... | pending | Should `--color-primary` vary by viewport? If yes, what tokens? |
@@ -252,14 +262,14 @@ User confirms → code generation uses their explicit choice.
 
 Each ledger row carries a `Status` that describes the decision state:
 
-| Status | Meaning | Code generation | Example |
-|---|---|---|---|
-| `pending` | Not yet confirmed | BLOCKED (waiting for user choice) | User hasn't decided on `--shadow-elevation-2` yet |
-| `provided` | Confirmed; token exists in project | USE IT (reference the token) | `--radius-md` confirmed to exist; use as-is |
-| `reused` | Confirmed; existing token pattern applies | USE IT | User confirmed `--shadow-elevation-2` is correct |
-| `create` | User requests a new token | CREATE IT (or TODO with comment) | User says "make a new token `--spacing-micro`" |
-| `hardcoded` | User approved inline style + TODO comment | INLINE + TODO | `color: #ff6b6b; // TODO: extract to token` |
-| `skip` | User excludes this style from output | OMIT IT | User says "don't style this, use browser defaults" |
+| Status      | Meaning                                   | Code generation                   | Example                                            |
+| ----------- | ----------------------------------------- | --------------------------------- | -------------------------------------------------- |
+| `pending`   | Not yet confirmed                         | BLOCKED (waiting for user choice) | User hasn't decided on `--shadow-elevation-2` yet  |
+| `provided`  | Confirmed; token exists in project        | USE IT (reference the token)      | `--radius-md` confirmed to exist; use as-is        |
+| `reused`    | Confirmed; existing token pattern applies | USE IT                            | User confirmed `--shadow-elevation-2` is correct   |
+| `create`    | User requests a new token                 | CREATE IT (or TODO with comment)  | User says "make a new token `--spacing-micro`"     |
+| `hardcoded` | User approved inline style + TODO comment | INLINE + TODO                     | `color: #ff6b6b; // TODO: extract to token`        |
+| `skip`      | User excludes this style from output      | OMIT IT                           | User says "don't style this, use browser defaults" |
 
 ## Integration Points
 
@@ -270,6 +280,7 @@ The ledger + gate pattern is used in:
 - **Asset Handling (Step 9)** — asset identification and placeholder decisions
 
 Future extensions could use the same pattern for:
+
 - Animation token mapping
 - Responsive breakpoint decisions
 - Accessibility requirement confirmation

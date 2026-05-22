@@ -17,6 +17,7 @@
 已预留 `packages/` 作为共享代码的家。
 
 **决策（已通过）：** 新建 npm workspace 包承载共享管线。
+
 - 包名用 scoped 名称 **`@skill-collections/d2c-core`**（workspace import 更清晰，且区分内部包）。
 - `design-ir.json` 的 Zod schema 放 `d2c-core`，**不放 mastergo provider**。
 - 命名 `d2c-core` 为定稿值。
@@ -27,19 +28,19 @@
 
 只有"提取 + 规范化"是 provider 私有；**`design-ir.json` 之后的一切都是共享的**。
 
-| 模块 / 阶段 | 归属 | 位置 |
-|---|---|---|
-| IR schema + 派生视图 schema + `validateDesignIR()` | 共享 | `packages/d2c-core/src/ir/` |
-| `Provider` 能力接口（port） | 共享 | `packages/d2c-core/src/provider/` |
-| 管线编排 runner + 门禁状态机 | 共享 | `packages/d2c-core/src/pipeline/` |
-| Visual View 派生 + HTML 预览生成 | 共享 | `packages/d2c-core/src/preview/` |
-| 标注提取 + 启发式语义 + Semantic View | 共享 | `packages/d2c-core/src/semantic/` |
-| 交互建模 + Component Plan 生成 | 共享 | `packages/d2c-core/src/contract/` |
-| 目标代码生成（React 为首个 target） | 共享 | `packages/d2c-core/src/codegen/` |
-| 工程校验（typecheck / build / 截图 diff） | 共享 | `packages/d2c-core/src/validate/` |
+| 模块 / 阶段                                              | 归属             | 位置                                          |
+| -------------------------------------------------------- | ---------------- | --------------------------------------------- |
+| IR schema + 派生视图 schema + `validateDesignIR()`       | 共享             | `packages/d2c-core/src/ir/`                   |
+| `Provider` 能力接口（port）                              | 共享             | `packages/d2c-core/src/provider/`             |
+| 管线编排 runner + 门禁状态机                             | 共享             | `packages/d2c-core/src/pipeline/`             |
+| Visual View 派生 + HTML 预览生成                         | 共享             | `packages/d2c-core/src/preview/`              |
+| 标注提取 + 启发式语义 + Semantic View                    | 共享             | `packages/d2c-core/src/semantic/`             |
+| 交互建模 + Component Plan 生成                           | 共享             | `packages/d2c-core/src/contract/`             |
+| 目标代码生成（React 为首个 target）                      | 共享             | `packages/d2c-core/src/codegen/`              |
+| 工程校验（typecheck / build / 截图 diff）                | 共享             | `packages/d2c-core/src/validate/`             |
 | 取 raw（provider 专有：文件 / URL / MCP）→ `RawArtifact` | Provider adapter | `skills/<provider>-to-component/scripts/src/` |
-| raw → canonical IR 规范化（适配边界） | Provider adapter | 同上 |
-| 资源导出 / 参考帧导出 | Provider adapter | 同上 |
+| raw → canonical IR 规范化（适配边界）                    | Provider adapter | 同上                                          |
+| 资源导出 / 参考帧导出                                    | Provider adapter | 同上                                          |
 
 > 首发 provider = **Sketch**（`skills/sketch-to-component/scripts/`）：Stage 2 已实现 `extractRaw`，
 > Stage 3 起的 `normalize` 也确认由 Sketch 承接（2026-05-21）。MasterGo adapter 暂停。`Provider`
@@ -89,10 +90,11 @@
    `views.ts`（4 个派生视图仅信封 + `generatedFrom`）、`validate.ts`（`validateDesignIR()` /
    `assertDesignIR()`）。
 4. ✅ `src/provider/`：能力型 `Provider` 端口 + `RawArtifactSchema`（`capturedAt` 为 ISO datetime）
-   + `normalizeAndValidate()` helper。
+   - `normalizeAndValidate()` helper。
 5. ✅ vitest 单测 6 文件 40 用例;模块级 + 根 barrel。
 
 **阶段 1 出口标准（全部已验证 ✅，2026-05-20）：**
+
 - ✅ `npm run test:d2c` 通过 — 6 文件 40/40；
 - ✅ 根 workspace `npm install` 正常 — 71 包，11s；
 - ✅ 最小 IR fixture 可被 `validateDesignIR()` parse；

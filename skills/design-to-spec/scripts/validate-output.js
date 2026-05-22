@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 // Validate generated design-to-spec output files against the YAML contracts.
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { loadYaml } from "./lib/yaml.js";
-import { parseArgs, requireOpts } from "./lib/cli.js";
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { loadYaml } from './lib/yaml.js';
+import { parseArgs, requireOpts } from './lib/cli.js';
 
 const EVENT_PATTERN = /[a-z]+(?:-[a-z]+)+/g;
 
 function pyRepr(value) {
-  if (typeof value === "string") return `'${value}'`;
-  if (value === null || value === undefined) return "None";
+  if (typeof value === 'string') return `'${value}'`;
+  if (value === null || value === undefined) return 'None';
   return String(value);
 }
 
@@ -18,7 +18,7 @@ function readText(path) {
   if (!existsSync(path)) {
     throw new Error(`${path}: file does not exist`);
   }
-  return readFileSync(path, "utf8");
+  return readFileSync(path, 'utf8');
 }
 
 function collectEndpointUrls(apiDoc) {
@@ -32,8 +32,8 @@ function collectEndpointUrls(apiDoc) {
 function collectEventNames(mappingDoc) {
   const events = new Set();
   for (const binding of mappingDoc.mapping?.bindings ?? []) {
-    if (binding.direction !== "ui_to_event") continue;
-    for (const text of [binding.target_event ?? "", binding.transform ?? ""]) {
+    if (binding.direction !== 'ui_to_event') continue;
+    for (const text of [binding.target_event ?? '', binding.transform ?? '']) {
       const matches = String(text).match(EVENT_PATTERN) ?? [];
       for (const m of matches) events.add(m);
     }
@@ -42,15 +42,12 @@ function collectEventNames(mappingDoc) {
 }
 
 function collectOpenQuestions(apiDoc, mappingDoc) {
-  return [
-    ...(apiDoc.api?.open_questions ?? []),
-    ...(mappingDoc.mapping?.open_questions ?? []),
-  ];
+  return [...(apiDoc.api?.open_questions ?? []), ...(mappingDoc.mapping?.open_questions ?? [])];
 }
 
 function normalizedProbe(text, length = 12) {
-  let compact = text.replace(/\s+/g, "");
-  compact = compact.replace(/[`"'()（）？?，,。.:：；;、]/g, "");
+  let compact = text.replace(/\s+/g, '');
+  compact = compact.replace(/[`"'()（）？?，,。.:：；;、]/g, '');
   return compact.slice(0, length);
 }
 
@@ -60,7 +57,12 @@ function findAllHeadings(markdown) {
   const matches = [];
   let m;
   while ((m = re.exec(markdown)) !== null) {
-    matches.push({ start: m.index, end: m.index + m[0].length, level: m[1].length, title: m[2].trim() });
+    matches.push({
+      start: m.index,
+      end: m.index + m[0].length,
+      level: m[1].length,
+      title: m[2].trim(),
+    });
   }
   return matches;
 }
@@ -81,7 +83,7 @@ function sectionText(markdown, heading, level = 2) {
       return markdown.slice(start, end).trim();
     }
   }
-  return "";
+  return '';
 }
 
 function extractNumberedItems(markdownSection) {
@@ -91,7 +93,10 @@ function extractNumberedItems(markdownSection) {
 
   function flush() {
     if (currentNumber !== null) {
-      const joined = currentLines.map((l) => l.trim()).join(" ").trim();
+      const joined = currentLines
+        .map((l) => l.trim())
+        .join(' ')
+        .trim();
       items.set(currentNumber, joined);
     }
   }
@@ -102,7 +107,7 @@ function extractNumberedItems(markdownSection) {
       flush();
       currentNumber = parseInt(m[1], 10);
       currentLines = [m[2]];
-    } else if (currentNumber !== null && (line.startsWith(" ") || line.startsWith("\t"))) {
+    } else if (currentNumber !== null && (line.startsWith(' ') || line.startsWith('\t'))) {
       currentLines.push(line);
     }
   }
@@ -114,8 +119,12 @@ function extractTableRows(markdownSection) {
   const rows = [];
   for (const line of markdownSection.split(/\r?\n/)) {
     const stripped = line.trim();
-    if (!stripped.startsWith("|") || !stripped.endsWith("|")) continue;
-    const cells = stripped.replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+    if (!stripped.startsWith('|') || !stripped.endsWith('|')) continue;
+    const cells = stripped
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map((c) => c.trim());
     if (cells.length > 0 && cells.every((c) => /^:?-{3,}:?$/.test(c))) continue;
     rows.push(cells);
   }
@@ -123,7 +132,7 @@ function extractTableRows(markdownSection) {
 }
 
 function collectStateIdsFromNotes(notesText) {
-  const rows = extractTableRows(sectionText(notesText, "状态枚举"));
+  const rows = extractTableRows(sectionText(notesText, '状态枚举'));
   const stateIds = new Set();
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -135,7 +144,7 @@ function collectStateIdsFromNotes(notesText) {
 }
 
 function collectTrackingAnchorIds(notesText) {
-  const rows = extractTableRows(sectionText(notesText, "埋点锚点"));
+  const rows = extractTableRows(sectionText(notesText, '埋点锚点'));
   const anchors = new Set();
   for (let i = 1; i < rows.length; i++) {
     for (const cell of rows[i]) {
@@ -156,7 +165,7 @@ function collectTraceIds(markdown) {
 
 function validateTraceability(uiDoc, mappingDoc, notesText, dataFetchingText, specText) {
   const errors = [];
-  const traceSection = sectionText(notesText, "Traceability");
+  const traceSection = sectionText(notesText, 'Traceability');
   if (!traceSection) return errors;
 
   const notesTraceIds = collectTraceIds(traceSection);
@@ -201,7 +210,7 @@ function validateTraceability(uiDoc, mappingDoc, notesText, dataFetchingText, sp
 }
 
 function questionNumber(question) {
-  const id = String(question.id ?? "");
+  const id = String(question.id ?? '');
   const m = /(\d+)$/.exec(id);
   return m ? parseInt(m[1], 10) : null;
 }
@@ -210,15 +219,13 @@ function questionIsAnchored(question, numberedQuestions, notesText) {
   const number = questionNumber(question);
   if (number !== null && numberedQuestions.has(number)) return true;
 
-  const content = question.content ?? "";
+  const content = question.content ?? '';
   const probe = normalizedProbe(content);
   const normalizedNotes = normalizedProbe(notesText, notesText.length);
   if (probe && normalizedNotes.includes(probe)) return true;
 
-  const openQuestionText = [...numberedQuestions.values()].join("\n");
-  const tokens = content
-    .split(/[`\s"'()（）？?，,。.:：；;、/]+/)
-    .filter((t) => t.length >= 4);
+  const openQuestionText = [...numberedQuestions.values()].join('\n');
+  const tokens = content.split(/[`\s"'()（）？?，,。.:：；;、/]+/).filter((t) => t.length >= 4);
   if (tokens.length === 0) return false;
   const hits = tokens.reduce((acc, t) => acc + (openQuestionText.includes(t) ? 1 : 0), 0);
   return hits >= Math.min(2, tokens.length);
@@ -234,11 +241,7 @@ function saveBaseline(notesText, dataFetchingText, specText, baselinePath) {
     ...collectTraceIds(dataFetchingText),
     ...collectTraceIds(specText),
   ]);
-  writeFileSync(
-    baselinePath,
-    JSON.stringify({ traceIds: [...traceIds].sort() }, null, 2),
-    "utf8",
-  );
+  writeFileSync(baselinePath, JSON.stringify({ traceIds: [...traceIds].sort() }, null, 2), 'utf8');
 }
 
 /**
@@ -246,7 +249,7 @@ function saveBaseline(notesText, dataFetchingText, specText, baselinePath) {
  * 非空表示 LLM 在 NARRATIVE 节之外引入了新实体，应报 ERROR。
  */
 function checkNoNewEntities(notesText, dataFetchingText, specText, baselinePath) {
-  const baseline = JSON.parse(readFileSync(baselinePath, "utf8"));
+  const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
   const baselineIds = new Set(baseline.traceIds ?? []);
   const currentIds = new Set([
     ...collectTraceIds(notesText),
@@ -260,9 +263,15 @@ function validateOutputs(uiDoc, apiDoc, mappingDoc, notesText, dataFetchingText,
   const errors = [];
   const warnings = [];
 
-  let requiredFragments = ["## ADDED Requirements", "### Requirement:", "#### Scenario:", "- WHEN", "- THEN"];
-  if (specText.includes("## MODIFIED Requirements")) {
-    requiredFragments = ["## MODIFIED Requirements", ...requiredFragments.slice(1)];
+  let requiredFragments = [
+    '## ADDED Requirements',
+    '### Requirement:',
+    '#### Scenario:',
+    '- WHEN',
+    '- THEN',
+  ];
+  if (specText.includes('## MODIFIED Requirements')) {
+    requiredFragments = ['## MODIFIED Requirements', ...requiredFragments.slice(1)];
   }
   for (const fragment of requiredFragments) {
     if (!specText.includes(fragment)) {
@@ -273,14 +282,14 @@ function validateOutputs(uiDoc, apiDoc, mappingDoc, notesText, dataFetchingText,
   const notesStateIds = collectStateIdsFromNotes(notesText);
   for (const state of uiDoc.ui?.states ?? []) {
     if (state.required === true) {
-      const id = state.id ?? "";
+      const id = state.id ?? '';
       if (id && !notesStateIds.has(id)) {
         errors.push(`required state ${pyRepr(id)} is not listed in notes.md 状态枚举`);
       }
       if (id && !specText.includes(id)) {
         errors.push(`required state ${pyRepr(id)} is not mentioned in spec.md`);
       }
-      const assertion = state.render_assertion ?? "";
+      const assertion = state.render_assertion ?? '';
       if (assertion && !specText.includes(assertion) && !specText.includes(id)) {
         warnings.push(`required state ${pyRepr(id)} render_assertion is not reflected in spec.md`);
       }
@@ -299,29 +308,29 @@ function validateOutputs(uiDoc, apiDoc, mappingDoc, notesText, dataFetchingText,
   }
 
   const trackingAnchorIds = collectTrackingAnchorIds(notesText);
-  const combinedNotesSpec = notesText + "\n" + specText;
+  const combinedNotesSpec = notesText + '\n' + specText;
   for (const eventName of collectEventNames(mappingDoc)) {
     if (!trackingAnchorIds.has(eventName) && !combinedNotesSpec.includes(eventName)) {
       errors.push(`event ${pyRepr(eventName)} is not mentioned in notes.md or spec.md`);
     }
   }
 
-  const numberedQuestions = extractNumberedItems(sectionText(notesText, "开放问题"));
+  const numberedQuestions = extractNumberedItems(sectionText(notesText, '开放问题'));
   for (const question of collectOpenQuestions(apiDoc, mappingDoc)) {
-    const priority = question.priority ?? "";
-    if (priority === "P0" && !questionIsAnchored(question, numberedQuestions, notesText)) {
-      warnings.push(`P0 open question may be missing from notes.md: ${question.content ?? ""}`);
+    const priority = question.priority ?? '';
+    if (priority === 'P0' && !questionIsAnchored(question, numberedQuestions, notesText)) {
+      warnings.push(`P0 open question may be missing from notes.md: ${question.content ?? ''}`);
     }
   }
 
-  if (!dataFetchingText.includes("## 待确认项汇总")) {
-    warnings.push("data-fetching.md is missing a 待确认项汇总 section");
+  if (!dataFetchingText.includes('## 待确认项汇总')) {
+    warnings.push('data-fetching.md is missing a 待确认项汇总 section');
   }
-  if (!notesText.includes("## 开放问题")) {
-    errors.push("notes.md is missing an 开放问题 section");
+  if (!notesText.includes('## 开放问题')) {
+    errors.push('notes.md is missing an 开放问题 section');
   }
-  if (!notesText.includes("## 埋点锚点")) {
-    warnings.push("notes.md is missing an 埋点锚点 section");
+  if (!notesText.includes('## 埋点锚点')) {
+    warnings.push('notes.md is missing an 埋点锚点 section');
   }
 
   errors.push(...validateTraceability(uiDoc, mappingDoc, notesText, dataFetchingText, specText));
@@ -333,10 +342,19 @@ function main() {
   let args;
   try {
     args = parseArgs(process.argv.slice(2), {
-      options: ["ui", "api", "mapping", "notes", "data-fetching", "spec", "save-baseline", "no-new-entities"],
-      flags: ["strict"],
+      options: [
+        'ui',
+        'api',
+        'mapping',
+        'notes',
+        'data-fetching',
+        'spec',
+        'save-baseline',
+        'no-new-entities',
+      ],
+      flags: ['strict'],
     });
-    requireOpts(args, ["ui", "api", "mapping", "notes", "data-fetching", "spec"]);
+    requireOpts(args, ['ui', 'api', 'mapping', 'notes', 'data-fetching', 'spec']);
   } catch (err) {
     console.error(err.message);
     return 1;
@@ -351,7 +369,7 @@ function main() {
     const apiDoc = loadYaml(args.api);
     const mappingDoc = loadYaml(args.mapping);
     notesText = readText(args.notes);
-    dataFetchingText = readText(args["data-fetching"]);
+    dataFetchingText = readText(args['data-fetching']);
     specText = readText(args.spec);
     result = validateOutputs(uiDoc, apiDoc, mappingDoc, notesText, dataFetchingText, specText);
   } catch (err) {
@@ -368,17 +386,17 @@ function main() {
   }
 
   // --no-new-entities: 4B 完成后与 4A 基线对比，防止 LLM 偷渡新实体
-  if (args["no-new-entities"]) {
-    if (!existsSync(args["no-new-entities"])) {
+  if (args['no-new-entities']) {
+    if (!existsSync(args['no-new-entities'])) {
       errors.push(
-        `baseline file not found: ${args["no-new-entities"]} — run 4A with --save-baseline first`,
+        `baseline file not found: ${args['no-new-entities']} — run 4A with --save-baseline first`,
       );
     } else {
       const added = checkNoNewEntities(
         notesText,
         dataFetchingText,
         specText,
-        args["no-new-entities"],
+        args['no-new-entities'],
       );
       for (const id of added) {
         errors.push(
@@ -395,12 +413,12 @@ function main() {
     return 1;
   }
 
-  console.log("OK: output files are valid");
+  console.log('OK: output files are valid');
 
   // --save-baseline: 仅在校验全部通过后保存基线（保证基线本身是干净的）
-  if (args["save-baseline"]) {
-    saveBaseline(notesText, dataFetchingText, specText, args["save-baseline"]);
-    console.log(`baseline saved → ${args["save-baseline"]}`);
+  if (args['save-baseline']) {
+    saveBaseline(notesText, dataFetchingText, specText, args['save-baseline']);
+    console.log(`baseline saved → ${args['save-baseline']}`);
   }
 
   return 0;
@@ -410,4 +428,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   process.exit(main());
 }
 
-export { validateOutputs, sectionText, extractTableRows, extractNumberedItems, collectTraceIds, saveBaseline, checkNoNewEntities };
+export {
+  validateOutputs,
+  sectionText,
+  extractTableRows,
+  extractNumberedItems,
+  collectTraceIds,
+  saveBaseline,
+  checkNoNewEntities,
+};

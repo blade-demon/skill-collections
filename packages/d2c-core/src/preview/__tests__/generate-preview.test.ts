@@ -99,8 +99,12 @@ describe('generatePreview', () => {
     const preview = generatePreview(visualView);
 
     expect(cssRule(preview.css, '.d2c-node-shape')).toContain('background-color: #EEEEEEFF;');
-    expect(cssRule(preview.css, '.d2c-node-vector-group')).not.toContain('background-color: #000000FF;');
-    expect(cssRule(preview.css, '.d2c-node-vector-path')).not.toContain('background-color: #000000FF;');
+    expect(cssRule(preview.css, '.d2c-node-vector-group')).not.toContain(
+      'background-color: #000000FF;',
+    );
+    expect(cssRule(preview.css, '.d2c-node-vector-path')).not.toContain(
+      'background-color: #000000FF;',
+    );
   });
 });
 

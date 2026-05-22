@@ -24,10 +24,10 @@ design-to-component
 
 Design-to-code has two distinct fidelity layers. They should be modeled and reviewed separately.
 
-| Layer | Goal | Primary Inputs | Primary Outputs | Review Gate |
-|---|---|---|---|---|
-| Visual fidelity | Make the result look like the design | design DSL, layout, style, tokens, assets | `ir/views/visual-view.json`, `preview/index.html`, `preview/preview.css`, `preview/assets/` | HTML preview approval |
-| Contract fidelity | Make the result usable as a maintainable component contract | annotations, layer names, project rules, developer contracts | `ir/views/semantic-view.json`, `ir/interaction-spec.json`, `ir/component-plan.json` | component plan approval |
+| Layer             | Goal                                                        | Primary Inputs                                               | Primary Outputs                                                                             | Review Gate             |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------- |
+| Visual fidelity   | Make the result look like the design                        | design DSL, layout, style, tokens, assets                    | `ir/views/visual-view.json`, `preview/index.html`, `preview/preview.css`, `preview/assets/` | HTML preview approval   |
+| Contract fidelity | Make the result usable as a maintainable component contract | annotations, layer names, project rules, developer contracts | `ir/views/semantic-view.json`, `ir/interaction-spec.json`, `ir/component-plan.json`         | component plan approval |
 
 Visual fidelity answers "does it look right?" Contract fidelity answers "is the generated component boundary, API, state, and event contract usable?"
 
@@ -61,14 +61,14 @@ Placement rule:
 
 Use these terms consistently:
 
-| Term | Meaning |
-|---|---|
-| Raw DSL | Provider-specific data returned by MasterGo, Figma, Sketch, or another connector |
-| Normalized Design IR | The canonical provider-normalized contract stored at `ir/design-ir.json` |
-| Visual View | A derived view of the canonical IR used by the preview renderer |
-| Semantic View | A derived view of the canonical IR used by component planning |
-| Interaction Spec | A developer-authorized contract for events, payloads, state, and data |
-| Component Plan | The final code-generation plan approved before target stack output |
+| Term                 | Meaning                                                                          |
+| -------------------- | -------------------------------------------------------------------------------- |
+| Raw DSL              | Provider-specific data returned by MasterGo, Figma, Sketch, or another connector |
+| Normalized Design IR | The canonical provider-normalized contract stored at `ir/design-ir.json`         |
+| Visual View          | A derived view of the canonical IR used by the preview renderer                  |
+| Semantic View        | A derived view of the canonical IR used by component planning                    |
+| Interaction Spec     | A developer-authorized contract for events, payloads, state, and data            |
+| Component Plan       | The final code-generation plan approved before target stack output               |
 
 `design-ir.json` must include a schema version:
 
@@ -216,21 +216,21 @@ Gate rejection returns to the narrowest affected stage. A visual rejection may r
 
 ## Responsibility And Deliverables
 
-| Stage | Owner | Input | Deliverable |
-|---|---|---|---|
-| Design preparation | Designer | design file | accessible design source and exportable assets |
-| Semantic annotation | Designer + developer | design file and business intent | optional `@component`, `@state`, `@event`, `@slot`, `@data` annotations |
-| Project rule setup | Developer | target codebase conventions | stack rules, token mapping, BEM rules, export rules |
-| DSL extraction | MCP / connector | design URL, file, page, or layer id | `ir/raw-dsl.json`, assets, reference frame image, source trace |
-| IR normalization | D2C engine | raw DSL, assets, project tokens | `ir/design-ir.json` |
-| Visual view derivation | D2C engine | canonical IR | `ir/views/visual-view.json` |
-| HTML preview | D2C engine | Visual View derived from canonical IR | `preview/index.html`, `preview/preview.css`, `preview/assets/` |
-| Visual review | Designer + developer | HTML preview and screenshot diff | `preview/visual-review-report.md` and Gate 1 approval |
-| Semantic mapping | D2C engine + developer | canonical IR, annotations, project rules | `ir/views/semantic-view.json` |
-| Interaction modeling | Developer + D2C engine | interaction contract and semantic view | `ir/interaction-spec.json` |
-| Component planning | Developer + D2C engine | semantic view and interaction spec | `ir/component-plan.json` and Gate 2 approval |
-| Code generation | D2C engine | approved component plan | target component package with barrel exports |
-| Engineering validation | Developer + tools | generated code | typecheck, build, render, and screenshot-diff reports |
+| Stage                  | Owner                  | Input                                    | Deliverable                                                             |
+| ---------------------- | ---------------------- | ---------------------------------------- | ----------------------------------------------------------------------- |
+| Design preparation     | Designer               | design file                              | accessible design source and exportable assets                          |
+| Semantic annotation    | Designer + developer   | design file and business intent          | optional `@component`, `@state`, `@event`, `@slot`, `@data` annotations |
+| Project rule setup     | Developer              | target codebase conventions              | stack rules, token mapping, BEM rules, export rules                     |
+| DSL extraction         | MCP / connector        | design URL, file, page, or layer id      | `ir/raw-dsl.json`, assets, reference frame image, source trace          |
+| IR normalization       | D2C engine             | raw DSL, assets, project tokens          | `ir/design-ir.json`                                                     |
+| Visual view derivation | D2C engine             | canonical IR                             | `ir/views/visual-view.json`                                             |
+| HTML preview           | D2C engine             | Visual View derived from canonical IR    | `preview/index.html`, `preview/preview.css`, `preview/assets/`          |
+| Visual review          | Designer + developer   | HTML preview and screenshot diff         | `preview/visual-review-report.md` and Gate 1 approval                   |
+| Semantic mapping       | D2C engine + developer | canonical IR, annotations, project rules | `ir/views/semantic-view.json`                                           |
+| Interaction modeling   | Developer + D2C engine | interaction contract and semantic view   | `ir/interaction-spec.json`                                              |
+| Component planning     | Developer + D2C engine | semantic view and interaction spec       | `ir/component-plan.json` and Gate 2 approval                            |
+| Code generation        | D2C engine             | approved component plan                  | target component package with barrel exports                            |
+| Engineering validation | Developer + tools      | generated code                           | typecheck, build, render, and screenshot-diff reports                   |
 
 ## Why Split These Workflows
 
@@ -252,12 +252,12 @@ Design-source providers start from structured data. Sketch, Figma, and MasterGo 
 
 ## Workflow Roles
 
-| Workflow | Input | Primary Output | Fidelity Goal |
-|---|---|---|---|
-| `image-to-component` | UI screenshots or mockup images | typed skeletons, state model, asset ledger | low to medium |
-| `sketch-to-component` | Sketch file or Sketch MCP/IR | normalized design IR, preview, target component package | medium to high |
-| `figma-to-component` | Figma API/MCP data | normalized design IR, preview, target component package | medium to high |
-| `mastergo-to-component` | MasterGo DSL | normalized design IR, preview, target component package | medium to high |
+| Workflow                | Input                           | Primary Output                                          | Fidelity Goal  |
+| ----------------------- | ------------------------------- | ------------------------------------------------------- | -------------- |
+| `image-to-component`    | UI screenshots or mockup images | typed skeletons, state model, asset ledger              | low to medium  |
+| `sketch-to-component`   | Sketch file or Sketch MCP/IR    | normalized design IR, preview, target component package | medium to high |
+| `figma-to-component`    | Figma API/MCP data              | normalized design IR, preview, target component package | medium to high |
+| `mastergo-to-component` | MasterGo DSL                    | normalized design IR, preview, target component package | medium to high |
 
 ## Shared Design-Source Pipeline
 
@@ -560,32 +560,32 @@ output/
 Root export:
 
 ```ts
-export * from './components/ChatAssistantPage'
+export * from './components/ChatAssistantPage';
 ```
 
 Page component export:
 
 ```ts
-export { ChatAssistantPage } from './ChatAssistantPage'
-export type { ChatAssistantPageProps } from './ChatAssistantPage.types'
+export { ChatAssistantPage } from './ChatAssistantPage';
+export type { ChatAssistantPageProps } from './ChatAssistantPage.types';
 
-export * from './components/ChatHeader'
-export * from './components/MessageList'
-export * from './components/InputComposer'
+export * from './components/ChatHeader';
+export * from './components/MessageList';
+export * from './components/InputComposer';
 ```
 
 Child component export:
 
 ```ts
-export { MessageList } from './MessageList'
-export type { MessageItem, MessageListProps } from './MessageList.types'
+export { MessageList } from './MessageList';
+export type { MessageItem, MessageListProps } from './MessageList.types';
 ```
 
 Asset export:
 
 ```ts
-export { default as assistantAvatar } from './assistant-avatar.png'
-export { default as sendIcon } from './send.svg'
+export { default as assistantAvatar } from './assistant-avatar.png';
+export { default as sendIcon } from './send.svg';
 ```
 
 React output must use this package and barrel export shape. Avoid generating a single page `.tsx` file with one large CSS file.

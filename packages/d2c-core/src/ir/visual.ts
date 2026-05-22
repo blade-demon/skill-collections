@@ -101,14 +101,7 @@ export const AssetEntrySchema = z
   .strict();
 export type AssetEntry = z.infer<typeof AssetEntrySchema>;
 
-export const VisualNodeKindSchema = z.enum([
-  'frame',
-  'group',
-  'text',
-  'image',
-  'vector',
-  'shape',
-]);
+export const VisualNodeKindSchema = z.enum(['frame', 'group', 'text', 'image', 'vector', 'shape']);
 export type VisualNodeKind = z.infer<typeof VisualNodeKindSchema>;
 
 export const SourceTraceSchema = z

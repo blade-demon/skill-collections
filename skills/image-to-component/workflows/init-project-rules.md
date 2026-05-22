@@ -36,15 +36,15 @@ After Scan Strategy completes, resolve the project's component libraries before 
 
 Map detected signals to the standardized name used in the rules file and adapter table:
 
-| Detection signal | Standardized name |
-|---|---|
-| `antd` in dependencies | `antd` |
-| `@mui/material` in dependencies | `mui` |
-| `@chakra-ui/react` in dependencies | `chakra` |
-| Any `@radix-ui/*` in dependencies | `radix` |
-| `tailwindcss` in devDependencies | `tailwind` |
-| `components.json` exists at project root | `shadcn` |
-| User-specified "Other" entry | `<lowercased-user-input>` (no adapter) |
+| Detection signal                         | Standardized name                      |
+| ---------------------------------------- | -------------------------------------- |
+| `antd` in dependencies                   | `antd`                                 |
+| `@mui/material` in dependencies          | `mui`                                  |
+| `@chakra-ui/react` in dependencies       | `chakra`                               |
+| Any `@radix-ui/*` in dependencies        | `radix`                                |
+| `tailwindcss` in devDependencies         | `tailwind`                             |
+| `components.json` exists at project root | `shadcn`                               |
+| User-specified "Other" entry             | `<lowercased-user-input>` (no adapter) |
 
 ### Confirmation Flow
 
@@ -92,16 +92,16 @@ When the user picks option B (Edit the list), explicitly state that order matter
 
 When project evidence is absent, incomplete, or consistent with the user's spec, encode these defaults:
 
-| Rule | Default |
-|---|---|
-| Component directory | `src/components/` |
-| Style stack | CSS Modules |
-| `cn` helper path | `src/utils/cn.ts` |
-| Icon source | Only `@iconify/react`; do not introduce new icon packages |
-| Accessibility | All interactive elements must have `aria-label` |
-| Base components | `Button`, `Card`, `Modal`, `ListItem` with paths when discovered |
-| Test command | `vitest` |
-| Component libraries | `[]` (none — only project-local token sources used) |
+| Rule                | Default                                                          |
+| ------------------- | ---------------------------------------------------------------- |
+| Component directory | `src/components/`                                                |
+| Style stack         | CSS Modules                                                      |
+| `cn` helper path    | `src/utils/cn.ts`                                                |
+| Icon source         | Only `@iconify/react`; do not introduce new icon packages        |
+| Accessibility       | All interactive elements must have `aria-label`                  |
+| Base components     | `Button`, `Card`, `Modal`, `ListItem` with paths when discovered |
+| Test command        | `vitest`                                                         |
+| Component libraries | `[]` (none — only project-local token sources used)              |
 
 Defaults are not guesses about the existing app. Mark them as defaults in the rules file so later generation can distinguish project evidence from fallback policy.
 
@@ -150,6 +150,7 @@ Generated for image-to-component runs in this project. Update this file when pro
 ### Token Discovery Sources (informational)
 
 When Style Connect runs, it will scan tokens from:
+
 - Project-local: `src/tokens/`, `src/styles/`, `tailwind.config.*`
 - Library: <resolved adapter paths, e.g., `node_modules/antd/dist/reset.css`, `tailwind.config.*` resolved theme>
 
@@ -176,12 +177,12 @@ If no library is selected, only project-local sources are scanned.
 
 ## Existing Base Components
 
-| Component | Path | Notes |
-|---|---|---|
-| Button | not discovered | default candidate |
-| Card | not discovered | default candidate |
-| Modal | not discovered | default candidate |
-| ListItem | not discovered | default candidate |
+| Component | Path           | Notes             |
+| --------- | -------------- | ----------------- |
+| Button    | not discovered | default candidate |
+| Card      | not discovered | default candidate |
+| Modal     | not discovered | default candidate |
+| ListItem  | not discovered | default candidate |
 
 ## Test Command
 

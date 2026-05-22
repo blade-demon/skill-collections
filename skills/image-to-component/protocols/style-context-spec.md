@@ -42,14 +42,14 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 
 `style_hints` must contain exactly these keys:
 
-| Key | Type | Allowed values |
-|---|---|---|
-| `density` | string | `compact`, `normal`, `loose` |
-| `corner_radius` | string | `none`, `small`, `medium`, `large` |
-| `type_hierarchy_levels` | integer | `1` through `5` |
-| `primary_action_count` | integer | `0` or greater |
-| `is_mobile_viewport` | boolean | `true` or `false` |
-| `shadow_presence` | string | `none`, `card`, `modal`, `overlay` |
+| Key                     | Type    | Allowed values                     |
+| ----------------------- | ------- | ---------------------------------- |
+| `density`               | string  | `compact`, `normal`, `loose`       |
+| `corner_radius`         | string  | `none`, `small`, `medium`, `large` |
+| `type_hierarchy_levels` | integer | `1` through `5`                    |
+| `primary_action_count`  | integer | `0` or greater                     |
+| `is_mobile_viewport`    | boolean | `true` or `false`                  |
+| `shadow_presence`       | string  | `none`, `card`, `modal`, `overlay` |
 
 No other keys are allowed anywhere inside `style_hints`.
 

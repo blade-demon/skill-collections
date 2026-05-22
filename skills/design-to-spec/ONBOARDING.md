@@ -61,12 +61,12 @@ design-spec/<component-name>/
 
 ## 5. 上手成本
 
-| 项 | 要求 |
-|---|---|
-| 运行环境 | Node.js ≥ 18 |
-| 依赖安装 | 单次 `npm install`（仅一个包：`js-yaml`） |
-| 第一次跑通时间 | 约 5 分钟（用内置 `today-windvane` sample） |
-| 真正用在自己需求上 | 第一个组件 30–60 分钟，熟悉后 15–30 分钟 |
+| 项                 | 要求                                        |
+| ------------------ | ------------------------------------------- |
+| 运行环境           | Node.js ≥ 18                                |
+| 依赖安装           | 单次 `npm install`（仅一个包：`js-yaml`）   |
+| 第一次跑通时间     | 约 5 分钟（用内置 `today-windvane` sample） |
+| 真正用在自己需求上 | 第一个组件 30–60 分钟，熟悉后 15–30 分钟    |
 
 ---
 
@@ -79,22 +79,22 @@ skill 由两部分组成，分布位置不同：
 
 **最简单的路径**：把整个 `design-to-spec/` 目录放进项目内一个固定位置，让两部分共址。下面三种放法选一种：
 
-| 分发方式 | 命令 | 适合 | 升级 |
-|---|---|---|---|
-| **直接复制** | `cp -r /path/to/design-to-spec ./tools/design-to-spec` | 个人试用、临时项目 | 手动重新 cp |
-| **git submodule** | `git submodule add <repo-url> tools/design-to-spec` | 多人协作、想跟随上游版本 | `git submodule update --remote` |
-| **monorepo workspace** | 在根 `package.json` 加 `"workspaces": ["tools/design-to-spec"]` | 已是 monorepo | 跟随主仓库 |
+| 分发方式               | 命令                                                            | 适合                     | 升级                            |
+| ---------------------- | --------------------------------------------------------------- | ------------------------ | ------------------------------- |
+| **直接复制**           | `cp -r /path/to/design-to-spec ./tools/design-to-spec`          | 个人试用、临时项目       | 手动重新 cp                     |
+| **git submodule**      | `git submodule add <repo-url> tools/design-to-spec`             | 多人协作、想跟随上游版本 | `git submodule update --remote` |
+| **monorepo workspace** | 在根 `package.json` 加 `"workspaces": ["tools/design-to-spec"]` | 已是 monorepo            | 跟随主仓库                      |
 
 **推荐 git submodule**：版本固定在某个 commit、升级显式可控、新同事 `git clone --recurse-submodules` 一步到位。
 
 放好后让 harness 知道 SKILL.md 在哪。不同 harness 配法不同，挑你用的看：
 
-| Harness | 配置方式 |
-|---|---|
-| Claude Code | 把 skill 目录放在 `.claude/skills/design-to-spec/` 自动加载 |
-| OpenCode | 加到项目根 `AGENTS.md`（详见 [install-by-harness.md](./references/install-by-harness.md)） |
-| Cursor | 把 SKILL.md 拷到 `.cursor/rules/design-to-spec.mdc` |
-| Cline / Continue / 其他 | 见 [install-by-harness.md](./references/install-by-harness.md) |
+| Harness                 | 配置方式                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| Claude Code             | 把 skill 目录放在 `.claude/skills/design-to-spec/` 自动加载                                |
+| OpenCode                | 加到项目根 `AGENTS.md`（详见 [install-by-harness.md](./references/install-by-harness.md)） |
+| Cursor                  | 把 SKILL.md 拷到 `.cursor/rules/design-to-spec.mdc`                                        |
+| Cline / Continue / 其他 | 见 [install-by-harness.md](./references/install-by-harness.md)                             |
 
 **完整接入矩阵**：[references/install-by-harness.md](./references/install-by-harness.md)（含每种 harness 的 smoke-test 提示词和已知坑）。
 
@@ -136,16 +136,16 @@ node scripts/generate-output.js \
 
 **想看不同形态的 sample？** 内置两份回归对照（仅 contracts + 输出）：
 
-| Sample | 形态 | 看什么 |
-|---|---|---|
-| `examples/today-windvane/` | 自取数据卡片 | 完整的接口 + 状态机 + 错误码 + 分页 |
-| `examples/price-card/` | props-only 纯展示组件 | 退化路径：`api.endpoints` 空、`bindings` 空、状态由 props 驱动 |
+| Sample                     | 形态                  | 看什么                                                         |
+| -------------------------- | --------------------- | -------------------------------------------------------------- |
+| `examples/today-windvane/` | 自取数据卡片          | 完整的接口 + 状态机 + 错误码 + 分页                            |
+| `examples/price-card/`     | props-only 纯展示组件 | 退化路径：`api.endpoints` 空、`bindings` 空、状态由 props 驱动 |
 
 **想看完整的 inputs → spec → 实现 全流程？** 上一层有手动验证 sample（含 `inputs/` 原始材料 + `walkthrough.md` 过程记录 + `src/` 可运行代码）：
 
-| Sample | 形态 | 看什么 |
-|---|---|---|
-| `../../samples/design-to-spec/search-panel/` | GET + 列表 | 主导 binding 是 `api_to_ui`；状态机焦点在数据获取 + abort + retry |
+| Sample                                        | 形态        | 看什么                                                                                  |
+| --------------------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
+| `../../samples/design-to-spec/search-panel/`  | GET + 列表  | 主导 binding 是 `api_to_ui`；状态机焦点在数据获取 + abort + retry                       |
 | `../../samples/design-to-spec/feedback-form/` | POST + 表单 | 主导 binding 是 `ui_to_api`；多字段双层校验；request_body / element-scoped invalid 状态 |
 
 **想看真实对话长什么样？** [`examples/transcript-search-panel.md`](./examples/transcript-search-panel.md) 是一份完整对话录——基于 search-panel sample 反向整理，包含用户漏识别后的纠错、阶段三补埋点、阶段四自动生成全过程。比 walkthrough（推导视角）更接近你实际会看到的会话。
@@ -158,25 +158,25 @@ node scripts/generate-output.js \
 
 按你现在想做的事选：
 
-| 我现在想…… | 去读 |
-|---|---|
-| 真的拿一个自己的设计稿跑一次 | [operator-guide.md §1 五分钟最小例子](./references/operator-guide.md) |
-| 看一份真实对话长什么样（照抄就行）| [examples/transcript-search-panel.md](./examples/transcript-search-panel.md) |
-| 把 skill 接进我用的 IDE / harness | [references/install-by-harness.md](./references/install-by-harness.md) |
-| 多张设计稿 / 多个页面怎么处理 | [operator-guide.md §2 多视觉稿场景](./references/operator-guide.md) |
-| 没接口文档 / 接口未定 | [operator-guide.md §4 没有接口文档怎么办](./references/operator-guide.md) |
-| context 不够用了 | [operator-guide.md §3](./references/operator-guide.md) |
-| 多组件项目怎么做不漂移 | [operator-guide.md §5 跨组件复用](./references/operator-guide.md) |
-| 字段含义、契约约束、校验规则 | [references/contracts.md](./references/contracts.md) |
-| 跑不通 / 看到报错 | [references/troubleshooting.md](./references/troubleshooting.md)（按症状 grep） |
-| 看到生词 / 不懂的术语 | [references/glossary.md](./references/glossary.md)（一句话定义 + 例子） |
-| 把 skill 接入项目级配置 | [templates/agents-snippet.md](./templates/agents-snippet.md) / [templates/claude-md-snippet.md](./templates/claude-md-snippet.md) |
-| 把校验接入 CI / pre-commit | [references/ci-integration.md](./references/ci-integration.md)（GitHub Actions / husky / lefthook 三选一） |
-| 给 PM / QA / 后端讲怎么 review | [references/reviewer-guide.md](./references/reviewer-guide.md)（四视角签收 checklist） |
-| 用 vs 不用 design-to-spec 工作量差多少 | [references/case-study-feedback-form.md](./references/case-study-feedback-form.md)（before/after 真实对比） |
-| 升级新版本前必须确认什么 | [README.md §升级前必读](./README.md) |
-| 工具的工作原理和 4 阶段架构 | [SKILL.md](./SKILL.md) |
-| 这工具未来还会做什么 | [references/roadmap.md](./references/roadmap.md) |
+| 我现在想……                             | 去读                                                                                                                              |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 真的拿一个自己的设计稿跑一次           | [operator-guide.md §1 五分钟最小例子](./references/operator-guide.md)                                                             |
+| 看一份真实对话长什么样（照抄就行）     | [examples/transcript-search-panel.md](./examples/transcript-search-panel.md)                                                      |
+| 把 skill 接进我用的 IDE / harness      | [references/install-by-harness.md](./references/install-by-harness.md)                                                            |
+| 多张设计稿 / 多个页面怎么处理          | [operator-guide.md §2 多视觉稿场景](./references/operator-guide.md)                                                               |
+| 没接口文档 / 接口未定                  | [operator-guide.md §4 没有接口文档怎么办](./references/operator-guide.md)                                                         |
+| context 不够用了                       | [operator-guide.md §3](./references/operator-guide.md)                                                                            |
+| 多组件项目怎么做不漂移                 | [operator-guide.md §5 跨组件复用](./references/operator-guide.md)                                                                 |
+| 字段含义、契约约束、校验规则           | [references/contracts.md](./references/contracts.md)                                                                              |
+| 跑不通 / 看到报错                      | [references/troubleshooting.md](./references/troubleshooting.md)（按症状 grep）                                                   |
+| 看到生词 / 不懂的术语                  | [references/glossary.md](./references/glossary.md)（一句话定义 + 例子）                                                           |
+| 把 skill 接入项目级配置                | [templates/agents-snippet.md](./templates/agents-snippet.md) / [templates/claude-md-snippet.md](./templates/claude-md-snippet.md) |
+| 把校验接入 CI / pre-commit             | [references/ci-integration.md](./references/ci-integration.md)（GitHub Actions / husky / lefthook 三选一）                        |
+| 给 PM / QA / 后端讲怎么 review         | [references/reviewer-guide.md](./references/reviewer-guide.md)（四视角签收 checklist）                                            |
+| 用 vs 不用 design-to-spec 工作量差多少 | [references/case-study-feedback-form.md](./references/case-study-feedback-form.md)（before/after 真实对比）                       |
+| 升级新版本前必须确认什么               | [README.md §升级前必读](./README.md)                                                                                              |
+| 工具的工作原理和 4 阶段架构            | [SKILL.md](./SKILL.md)                                                                                                            |
+| 这工具未来还会做什么                   | [references/roadmap.md](./references/roadmap.md)                                                                                  |
 
 ---
 
@@ -199,6 +199,7 @@ v0.10 的 Scenario 是 OpenSpec 风格但兼容大多数 BDD 测试框架。如�
 
 **Q：这跟普通的 prompt 工程有什么不一样？**
 两点关键区别：
+
 1. **机器校验**：`scripts/validate-contracts.js` + `scripts/validate-output.js` 会在每次生成时检查契约一致性、必需状态覆盖、trace 锚点完整性。普通 prompt 没有这层。
 2. **缺口必须显式登记**：不确定的地方必须写进 `open_questions` 或 `needs_human_input`，不允许 LLM 静默猜测。详见 [contracts.md §使用规则](./references/contracts.md)。
 

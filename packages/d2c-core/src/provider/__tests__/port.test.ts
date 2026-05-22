@@ -31,8 +31,7 @@ describe('Provider port', () => {
       id: 'broken',
       extractRaw: async () => brokenRaw,
       // Missing source / visual / semantic / interaction / warnings.
-      normalize: async () =>
-        ({ schemaVersion: 'd2c.design-ir/v0.2.0' }) as unknown as DesignIR,
+      normalize: async () => ({ schemaVersion: 'd2c.design-ir/v0.2.0' }) as unknown as DesignIR,
     };
 
     const result = await normalizeAndValidate(provider, brokenRaw);

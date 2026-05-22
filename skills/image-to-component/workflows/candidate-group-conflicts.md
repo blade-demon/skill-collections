@@ -5,6 +5,7 @@ Use this workflow after all signatures have been collected. Do not run it during
 ## Trigger
 
 A conflict exists when:
+
 - Two or more candidate groups have different structural skeletons, and
 - Each conflicting candidate group contains more than 1 image.
 
@@ -28,11 +29,11 @@ C. Process only a specified subset of files. List filenames directly,
 
 ## Outcomes
 
-| User choice | Action |
-|---|---|
-| A | Run prop modeling and code generation separately for each candidate group |
-| B | Merge all signatures, model all differences as props/status, and continue |
-| C | Restart file-list handling with only the user-listed filenames |
+| User choice | Action                                                                    |
+| ----------- | ------------------------------------------------------------------------- |
+| A           | Run prop modeling and code generation separately for each candidate group |
+| B           | Merge all signatures, model all differences as props/status, and continue |
+| C           | Restart file-list handling with only the user-listed filenames            |
 
 ## Guardrails
 

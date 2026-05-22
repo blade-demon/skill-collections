@@ -132,8 +132,18 @@ describe('buildVisualBlock', () => {
           frame: { _class: 'rect', x: 0, y: 0, width: 50, height: 50 },
           style: {
             fills: [
-              { isEnabled: true, fillType: 1, color: { _class: 'color', red: 1, green: 0, blue: 0, alpha: 1 }, gradient: gradient(0) },
-              { isEnabled: true, fillType: 1, color: { _class: 'color', red: 0, green: 0, blue: 1, alpha: 1 }, gradient: gradient(1) },
+              {
+                isEnabled: true,
+                fillType: 1,
+                color: { _class: 'color', red: 1, green: 0, blue: 0, alpha: 1 },
+                gradient: gradient(0),
+              },
+              {
+                isEnabled: true,
+                fillType: 1,
+                color: { _class: 'color', red: 0, green: 0, blue: 1, alpha: 1 },
+                gradient: gradient(1),
+              },
             ],
           },
           layers: [],

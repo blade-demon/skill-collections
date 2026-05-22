@@ -97,15 +97,15 @@ Not every skill needs every folder. Add a folder only when the skill actually ha
 
 The repo deliberately separates two concepts that are easy to conflate:
 
-| | Golden regression samples | Hands-on samples |
-|---|---|---|
-| **Lives in** | `skills/design-to-spec/examples/` | `samples/design-to-spec/<name>/` |
-| **Purpose** | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
-| **Audience** | The skill's own tests | Skill users / reviewers / readers |
-| **Owned by** | `design-to-spec` maintainers | Sample authors |
-| **Editable?** | No; test scripts assert exact output | Yes; samples evolve over time |
-| **Contains** | Contracts + generated markdown | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
-| **Failure means** | The skill regressed | The sample drifted from its spec |
+|                   | Golden regression samples                                  | Hands-on samples                                          |
+| ----------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
+| **Lives in**      | `skills/design-to-spec/examples/`                          | `samples/design-to-spec/<name>/`                          |
+| **Purpose**       | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
+| **Audience**      | The skill's own tests                                      | Skill users / reviewers / readers                         |
+| **Owned by**      | `design-to-spec` maintainers                               | Sample authors                                            |
+| **Editable?**     | No; test scripts assert exact output                       | Yes; samples evolve over time                             |
+| **Contains**      | Contracts + generated markdown                             | `inputs/` + `design-spec/` + `src/` + `walkthrough.md`    |
+| **Failure means** | The skill regressed                                        | The sample drifted from its spec                          |
 
 Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
 

@@ -17,6 +17,7 @@ The first returned signature for a batch fails validation.
 ## Required Diagnosis
 
 Before re-dispatching, the main agent must identify:
+
 - Exact rule violated.
 - Exact slot or line.
 - Exact invalid token/operator/key when applicable.
@@ -54,13 +55,13 @@ Return a corrected JSON object only. Do not explain the screenshot.
 
 ## Examples
 
-| Failure | Correction |
-|---|---|
-| `overlay` used as a role | Replace `overlay` with an allowed O-slot expression and include `overlay_type` in notes |
-| `status(error)` | `status` cannot take parentheses; use bare `status` |
-| `card(title -> meta) -> media -> status` suspected as broken card internals and user confirmed internals | Put trailing `media` and `status` inside the `card(...)` container |
-| `notes: bg=blue` | Remove visual note keys; notes keys must come from the allowlist |
-| Unbalanced `card(title -> meta` | Balance parentheses before returning |
+| Failure                                                                                                  | Correction                                                                              |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `overlay` used as a role                                                                                 | Replace `overlay` with an allowed O-slot expression and include `overlay_type` in notes |
+| `status(error)`                                                                                          | `status` cannot take parentheses; use bare `status`                                     |
+| `card(title -> meta) -> media -> status` suspected as broken card internals and user confirmed internals | Put trailing `media` and `status` inside the `card(...)` container                      |
+| `notes: bg=blue`                                                                                         | Remove visual note keys; notes keys must come from the allowlist                        |
+| Unbalanced `card(title -> meta`                                                                          | Balance parentheses before returning                                                    |
 
 ## Second Failure
 

@@ -41,13 +41,13 @@ WAITING_FOR_UI -> WAITING_FOR_API -> WAITING_FOR_MAPPING -> GENERATING_SPEC
 
 ## 输入
 
-| 输入 | 必需 | 说明 |
-| ---- | ---- | ---- |
-| UI 设计稿 | 是 | 截图、SVG、Figma 导出图，或清晰的组件树描述 |
-| 组件名称 | 推荐 | 缺失时从设计稿或语义推断 |
-| 接口文档 | 推荐 | OpenAPI、Swagger、Markdown、TypeScript 类型、Postman Collection 均可 |
-| 交互/数据说明 | 推荐 | 触发时机、失败处理、分页、缓存、轮询、父组件传参等 |
-| 目标技术栈 | 可选 | `web`、`miniprogram` 等；用于加载对应 stack hints |
+| 输入          | 必需 | 说明                                                                 |
+| ------------- | ---- | -------------------------------------------------------------------- |
+| UI 设计稿     | 是   | 截图、SVG、Figma 导出图，或清晰的组件树描述                          |
+| 组件名称      | 推荐 | 缺失时从设计稿或语义推断                                             |
+| 接口文档      | 推荐 | OpenAPI、Swagger、Markdown、TypeScript 类型、Postman Collection 均可 |
+| 交互/数据说明 | 推荐 | 触发时机、失败处理、分页、缓存、轮询、父组件传参等                   |
+| 目标技术栈    | 可选 | `web`、`miniprogram` 等；用于加载对应 stack hints                    |
 
 没有接口文档时，`API_Schema.endpoints` 为空，数据字段会降级为推断，并在开放问题中要求确认。
 

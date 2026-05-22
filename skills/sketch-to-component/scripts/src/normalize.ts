@@ -68,7 +68,9 @@ export async function normalizeParsedSketchRaw(
 
   const result = validateDesignIR(ir);
   if (!result.ok) {
-    throw new Error(`Sketch normalize produced invalid DesignIR:\n  - ${result.errors.join('\n  - ')}`);
+    throw new Error(
+      `Sketch normalize produced invalid DesignIR:\n  - ${result.errors.join('\n  - ')}`,
+    );
   }
   return result.value;
 }

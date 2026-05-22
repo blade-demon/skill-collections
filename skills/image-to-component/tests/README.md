@@ -11,11 +11,11 @@ All input screenshots are real business pages from the ToC financial app.
 
 ## Cases
 
-| Case | Images | Skill behavior covered |
-|---|---:|---|
-| [case-1-risk-assessment](case-1-risk-assessment/) | 1 | Single-page result: nav + card + footer action, props from dynamic quota data |
-| [case-2-fund-recommendation](case-2-fund-recommendation/) | 1 | Section-level list: sparkline media, favoriting toggle, variable return period label |
-| [case-3-index-fund](case-3-index-fund/) | 1 | Section with tab navigation: nav slot in M, dual-action per row (subscribe + favorite) |
+| Case                                                      | Images | Skill behavior covered                                                                 |
+| --------------------------------------------------------- | -----: | -------------------------------------------------------------------------------------- |
+| [case-1-risk-assessment](case-1-risk-assessment/)         |      1 | Single-page result: nav + card + footer action, props from dynamic quota data          |
+| [case-2-fund-recommendation](case-2-fund-recommendation/) |      1 | Section-level list: sparkline media, favoriting toggle, variable return period label   |
+| [case-3-index-fund](case-3-index-fund/)                   |      1 | Section with tab navigation: nav slot in M, dual-action per row (subscribe + favorite) |
 
 ## Coverage Gap
 

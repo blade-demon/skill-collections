@@ -23,6 +23,7 @@ C. Cancel the skill - exit cleanly with no output.
 ## Other Framework Output
 
 When the user chooses an unsupported framework:
+
 - Do not generate React or Vue code.
 - Output the Step 11 directory tree as a structural suggestion only.
 - Output component trees derived from signatures.
@@ -32,6 +33,7 @@ When the user chooses an unsupported framework:
 ## Manual Signatures
 
 If the user provides structured signatures manually:
+
 - Validate them using the same signature validation rules.
 - On failure, show exact errors and ask for corrected JSON, skip, or stop.
 - On success, resume structural comparison.
@@ -39,6 +41,7 @@ If the user provides structured signatures manually:
 ## Exit
 
 Exit degraded mode when:
+
 - Valid signatures are available and comparison can resume.
 - The user allowed a one-run boundary relaxation.
 - The user cancels.

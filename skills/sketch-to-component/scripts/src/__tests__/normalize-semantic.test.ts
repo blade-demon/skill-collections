@@ -25,6 +25,8 @@ describe('deriveSemanticBlock', () => {
     expect(semantic.candidates.length).toBeGreaterThan(0);
     expect(semantic.candidates.some((candidate) => candidate.symbolMasterId)).toBe(true);
     expect(semantic.candidates.every((candidate) => candidate.reason.length > 0)).toBe(true);
-    expect(warnings.some((warning) => warning.code === 'low-confidence-semantic-candidate')).toBe(true);
+    expect(warnings.some((warning) => warning.code === 'low-confidence-semantic-candidate')).toBe(
+      true,
+    );
   });
 });

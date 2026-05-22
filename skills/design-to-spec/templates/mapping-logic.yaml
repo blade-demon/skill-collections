@@ -11,65 +11,65 @@
 #   - open_questions 不确定的内容全部放这里，不要静默猜测
 
 mapping:
-  component: ComponentName       # 与 UI_Schema.ui.name 一致
+  component: ComponentName # 与 UI_Schema.ui.name 一致
 
   data_fetching:
     requests:
-      - id: mainRequest          # 请求唯一 id
-        trigger: btnId.onClick   # 引用 UI_Schema 的 component id + 事件
-        endpoint: endpointId     # 引用 API_Schema 的 endpoint id
+      - id: mainRequest # 请求唯一 id
+        trigger: btnId.onClick # 引用 UI_Schema 的 component id + 事件
+        endpoint: endpointId # 引用 API_Schema 的 endpoint id
         call_type: user_triggered # user_triggered / on_mount / polling / realtime
-        loading_state: true      # 是否需要 loading 中间态
-        depends_on: []           # 依赖的 request id；无依赖写 []
+        loading_state: true # 是否需要 loading 中间态
+        depends_on: [] # 依赖的 request id；无依赖写 []
     cache_policy:
-      strategy: none             # none / query_cache / local_storage / swr / custom
-      key_fields: []             # 参与缓存 key 的字段，需能在 API_Schema 中找到
-      ttl: ""                    # 例如 60s / 当日 24:00；无缓存写 ""
-      stale_behavior: ""         # keep_previous_data / show_stale_badge / block_render / ""
-      notes: ""
+      strategy: none # none / query_cache / local_storage / swr / custom
+      key_fields: [] # 参与缓存 key 的字段，需能在 API_Schema 中找到
+      ttl: '' # 例如 60s / 当日 24:00；无缓存写 ""
+      stale_behavior: '' # keep_previous_data / show_stale_badge / block_render / ""
+      notes: ''
     retry_policy:
-      strategy: manual           # none / manual / automatic / custom
+      strategy: manual # none / manual / automatic / custom
       max_attempts: 1
-      backoff: none              # none / fixed / exponential
-      notes: ""
+      backoff: none # none / fixed / exponential
+      notes: ''
     concurrency_policy:
-      abortable: false           # 是否可取消在途请求
-      dedupe_key: ""             # 去重 key；无则写 ""
-      stale_response: ignore     # ignore / apply_latest / block_new / needs_human_input
-      notes: ""
+      abortable: false # 是否可取消在途请求
+      dedupe_key: '' # 去重 key；无则写 ""
+      stale_response: ignore # ignore / apply_latest / block_new / needs_human_input
+      notes: ''
 
   bindings:
-    - source_ui: inputId         # UI → API 方向：用户输入绑定到请求参数
+    - source_ui: inputId # UI → API 方向：用户输入绑定到请求参数
       target_api: paramName
       direction: ui_to_api
     - source_api: data.fieldName # API → UI 方向：响应字段绑定到展示组件
       target_ui: displayId
       direction: api_to_ui
-      transform: none            # none / format（如日期格式化）/ derive（写公式）
-    - source_ui: actionId        # UI → Event 方向：组件向父级发出事件，不直接调 API
+      transform: none # none / format（如日期格式化）/ derive（写公式）
+    - source_ui: actionId # UI → Event 方向：组件向父级发出事件，不直接调 API
       target_event: tap-action
       direction: ui_to_event
-      transform: "emit tap-action { id }"
+      transform: 'emit tap-action { id }'
 
   state_machine:
     - from: idle
       event: btnId.onClick
       to: loading
-      render_assertion: "renders loadingState"
+      render_assertion: 'renders loadingState'
     - from: loading
-      event: "api_success && data.xxx.length > 0"
+      event: 'api_success && data.xxx.length > 0'
       to: success
-      render_assertion: "renders main content matching the mockup"
+      render_assertion: 'renders main content matching the mockup'
     - from: loading
-      event: "api_success && data.xxx.length === 0"
+      event: 'api_success && data.xxx.length === 0'
       to: empty
-      render_assertion: "renders emptyState and hides contentList"
+      render_assertion: 'renders emptyState and hides contentList'
     - from: loading
       event: api_error
       to: error
-      render_assertion: "renders errorState with retry affordance"
+      render_assertion: 'renders errorState with retry affordance'
 
   open_questions:
     - id: oq1
-      content: "具体待确认问题"
-      priority: P0               # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认
+      content: '具体待确认问题'
+      priority: P0 # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认

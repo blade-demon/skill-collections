@@ -5,6 +5,7 @@ Use this workflow when mechanical comparison returns "structural variant (manual
 ## Trigger
 
 Trigger when structural skeletons are identical but leaf-node differences are too ambiguous to classify automatically, especially:
+
 - Leaf nodes added or removed in 2 or more distinct slots.
 - Mixed replacement/addition/removal patterns across 4 or more signatures.
 - Business meaning cannot be inferred from signature roles alone.
@@ -35,11 +36,11 @@ Do not replace this with a vague uncertainty statement.
 
 ## Outcomes
 
-| User choice | Action |
-|---|---|
-| A | Record `user confirmed: same component`; continue to prop modeling and map differences to props/status |
-| B | Record `user confirmed: different components, coincidentally similar structure`; run prop modeling and code generation separately for each image/component |
-| C | Record `user confirmed: sequential flow steps`; use `step` or `phase` discriminator and model per-step differences under that discriminator |
+| User choice | Action                                                                                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A           | Record `user confirmed: same component`; continue to prop modeling and map differences to props/status                                                     |
+| B           | Record `user confirmed: different components, coincidentally similar structure`; run prop modeling and code generation separately for each image/component |
+| C           | Record `user confirmed: sequential flow steps`; use `step` or `phase` discriminator and model per-step differences under that discriminator                |
 
 ## Notes
 

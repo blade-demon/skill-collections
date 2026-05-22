@@ -19,7 +19,9 @@ describe('deriveVisualView', () => {
       'Applied override',
     );
     expect(result.stats.overrideApplied).toBe(1);
-    expect(result.warnings.some((warning) => warning.code === 'unmapped-symbol-override')).toBe(true);
+    expect(result.warnings.some((warning) => warning.code === 'unmapped-symbol-override')).toBe(
+      true,
+    );
   });
 
   it('uses stable JSON independent of object key insertion order', () => {

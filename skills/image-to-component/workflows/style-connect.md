@@ -35,14 +35,14 @@ Search for existing design tokens in the project, then in any declared component
 
 If `.image-to-component.rules.md` declares any `Component Libraries`, scan their known token paths instead of doing a full `node_modules` traversal. Each adapter tells discovery (a) how to detect the library, (b) which files to read, (c) how to namespace tokens in the `Source` column.
 
-| Library name | Detection | Token source paths | Token namespace |
-|---|---|---|---|
-| `antd` | `antd` in `package.json` dependencies | `node_modules/antd/dist/reset.css`, `node_modules/antd/es/theme/themes/default.js` | `--ant-*` CSS vars; JS theme keys |
-| `mui` | `@mui/material` in dependencies | `node_modules/@mui/material/styles/createTheme.js` (default theme object) | JS theme keys (e.g., `palette.primary.main`) |
-| `chakra` | `@chakra-ui/react` in dependencies | `node_modules/@chakra-ui/theme/dist/index.mjs` | JS theme keys (e.g., `colors.blue.500`) |
-| `shadcn` | `components.json` marker file at project root | user's `globals.css` (or equivalent), `tailwind.config.*` resolved theme | `--*` user-defined CSS vars + Tailwind utility classes |
-| `tailwind` | `tailwindcss` in devDependencies; `tailwind.config.*` exists | `tailwind.config.*` resolved (handles `presets`, `extend`) | Utility class names; resolved `theme.colors.*`, `theme.spacing.*` |
-| `radix` | any `@radix-ui/*` in dependencies | (no design tokens; primitives only) | n/a — record `Source: inferred` if matched |
+| Library name | Detection                                                    | Token source paths                                                                 | Token namespace                                                   |
+| ------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `antd`       | `antd` in `package.json` dependencies                        | `node_modules/antd/dist/reset.css`, `node_modules/antd/es/theme/themes/default.js` | `--ant-*` CSS vars; JS theme keys                                 |
+| `mui`        | `@mui/material` in dependencies                              | `node_modules/@mui/material/styles/createTheme.js` (default theme object)          | JS theme keys (e.g., `palette.primary.main`)                      |
+| `chakra`     | `@chakra-ui/react` in dependencies                           | `node_modules/@chakra-ui/theme/dist/index.mjs`                                     | JS theme keys (e.g., `colors.blue.500`)                           |
+| `shadcn`     | `components.json` marker file at project root                | user's `globals.css` (or equivalent), `tailwind.config.*` resolved theme           | `--*` user-defined CSS vars + Tailwind utility classes            |
+| `tailwind`   | `tailwindcss` in devDependencies; `tailwind.config.*` exists | `tailwind.config.*` resolved (handles `presets`, `extend`)                         | Utility class names; resolved `theme.colors.*`, `theme.spacing.*` |
+| `radix`      | any `@radix-ui/*` in dependencies                            | (no design tokens; primitives only)                                                | n/a — record `Source: inferred` if matched                        |
 
 **Priority resolution:** If the same token name (e.g., `--color-primary`) appears in multiple sources, take the value from the highest-priority source and record only that one row in the ledger. Mention the lower-priority duplicates in the row's `User action` column for transparency (e.g., "Also defined in lib:antd; using project-local").
 
@@ -54,14 +54,14 @@ For each style hint extracted in Step 4, attempt to map it to an existing token:
 
 Mappable hint types:
 
-| Hint | Possible token mappings | How to match |
-|---|---|---|
-| `corner_radius` (enum: `none`, `small`, `medium`, `large`) | Border radius tokens | Match radius scale level |
-| `shadow_presence` (enum: `none`, `card`, `modal`, `overlay`) | Shadow/elevation tokens | Match shadow depth category |
-| `type_hierarchy_levels` (int 1-5) | Typography scale tokens | Confirm font sizes/weights available |
-| `density` (enum: `compact`, `normal`, `loose`) | Spacing/padding tokens | Implies base spacing scale |
-| `is_mobile_viewport` (boolean) | Responsive breakpoint tokens | Signals mobile-first design |
-| `primary_action_count` (int) | Action button color/style tokens | Indicates color palette usage |
+| Hint                                                         | Possible token mappings          | How to match                         |
+| ------------------------------------------------------------ | -------------------------------- | ------------------------------------ |
+| `corner_radius` (enum: `none`, `small`, `medium`, `large`)   | Border radius tokens             | Match radius scale level             |
+| `shadow_presence` (enum: `none`, `card`, `modal`, `overlay`) | Shadow/elevation tokens          | Match shadow depth category          |
+| `type_hierarchy_levels` (int 1-5)                            | Typography scale tokens          | Confirm font sizes/weights available |
+| `density` (enum: `compact`, `normal`, `loose`)               | Spacing/padding tokens           | Implies base spacing scale           |
+| `is_mobile_viewport` (boolean)                               | Responsive breakpoint tokens     | Signals mobile-first design          |
+| `primary_action_count` (int)                                 | Action button color/style tokens | Indicates color palette usage        |
 
 Mapping rules:
 
@@ -74,23 +74,23 @@ Mapping rules:
 Create or output `token-ledger.md` with this table:
 
 ```markdown
-| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
-|---|---|---|---|---|---|---:|---|---|
-| token-001 | corner_radius=medium | pending.png, used.png | Medium border radius | `--radius-md` | project-local | high | pending | Confirm mapping or create new token |
-| token-002 | shadow_presence=card | expired.png | Card drop shadow | `--ant-box-shadow` | lib:antd | medium | pending | Verify shadow depth mapping; also defined in lib:tailwind, using lib:antd by priority |
-| token-003 | type_hierarchy_levels=3 | pending.png | 3 font sizes (h1, body, caption) | `type-scale-3` | proposed | high | pending | No matching token found; create or use closest existing scale |
-| token-004 | primary_action_count=1 | all | Single primary action color | `--color-primary` | project-local | high | provided | Already exists in project |
+| Token ID  | Hint source             | Source image(s)       | Visual trait                     | Suggested token name | Source        | Confidence | Status   | User action                                                                           |
+| --------- | ----------------------- | --------------------- | -------------------------------- | -------------------- | ------------- | ---------: | -------- | ------------------------------------------------------------------------------------- |
+| token-001 | corner_radius=medium    | pending.png, used.png | Medium border radius             | `--radius-md`        | project-local |       high | pending  | Confirm mapping or create new token                                                   |
+| token-002 | shadow_presence=card    | expired.png           | Card drop shadow                 | `--ant-box-shadow`   | lib:antd      |     medium | pending  | Verify shadow depth mapping; also defined in lib:tailwind, using lib:antd by priority |
+| token-003 | type_hierarchy_levels=3 | pending.png           | 3 font sizes (h1, body, caption) | `type-scale-3`       | proposed      |       high | pending  | No matching token found; create or use closest existing scale                         |
+| token-004 | primary_action_count=1  | all                   | Single primary action color      | `--color-primary`    | project-local |       high | provided | Already exists in project                                                             |
 ```
 
 ### Source Column Values
 
-| Value | Meaning |
-|---|---|
-| `project-local` | Defined in the user's own code (`src/tokens/*`, project CSS variables, `tailwind.config.*` custom sections) |
-| `lib:<name>` | Defined in a declared component library (`lib:antd`, `lib:mui`, `lib:chakra`, `lib:shadcn`, `lib:tailwind`) |
-| `css-var-runtime` | Found as a CSS custom property in a project file but with no clear definition site |
-| `proposed` | No matching token found in any source; AI proposed a new name (used with `status: create`) |
-| `inferred` | No source supports this token; pure heuristic from style hint (used with `status: hardcoded`) |
+| Value             | Meaning                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| `project-local`   | Defined in the user's own code (`src/tokens/*`, project CSS variables, `tailwind.config.*` custom sections) |
+| `lib:<name>`      | Defined in a declared component library (`lib:antd`, `lib:mui`, `lib:chakra`, `lib:shadcn`, `lib:tailwind`) |
+| `css-var-runtime` | Found as a CSS custom property in a project file but with no clear definition site                          |
+| `proposed`        | No matching token found in any source; AI proposed a new name (used with `status: create`)                  |
+| `inferred`        | No source supports this token; pure heuristic from style hint (used with `status: hardcoded`)               |
 
 ## Status Values
 
@@ -137,13 +137,14 @@ Do not proceed to code generation until the user confirms A, B, or C.
 
 User choice handling:
 
-| Choice | Action |
-|---|---|
-| A | Apply default resolution strategy (described above). Update token ledger. Continue to `workflows/style-plan.md`, then Step 10. |
-| B | Apply row-level user changes. Ask for clarification if any row remains ambiguous. Reshow decision-gate if clarification needed. |
-| C | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to `workflows/style-plan.md`, then Step 10. |
+| Choice | Action                                                                                                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Apply default resolution strategy (described above). Update token ledger. Continue to `workflows/style-plan.md`, then Step 10.   |
+| B      | Apply row-level user changes. Ask for clarification if any row remains ambiguous. Reshow decision-gate if clarification needed.  |
+| C      | Mark all tokens as `hardcoded`. Mark entire token ledger status as skipped. Continue to `workflows/style-plan.md`, then Step 10. |
 
 If a token decision is `create`, ask:
+
 - Should the new token be added to `.image-to-component.rules.md` for future runs?
 - What should the new token file location be (if a token file structure exists)?
 - Do not actually write token files; just record the decision for code generation.
@@ -170,19 +171,20 @@ expired.png: corner_radius=medium, shadow_presence=modal, type_hierarchy_levels=
 ```
 
 Project context (from `.image-to-component.rules.md`):
+
 - `Component Libraries: [antd, tailwind]` (priority order)
 - Local tokens: `src/tokens/spacing.css`, `src/tokens/color.css`
 
 Output (token-ledger.md after mapping):
 
 ```markdown
-| Token ID | Hint source | Source image(s) | Visual trait | Suggested token name | Source | Confidence | Status | User action |
-|---|---|---|---|---|---|---:|---|---|
-| token-001 | corner_radius=medium | all 3 images | Medium border radius on cards | `--radius-md` | project-local | high | provided | Exists: `--radius-md` in `src/tokens/spacing.css` (also defined in lib:antd as `--ant-border-radius`, using project-local by priority) |
-| token-002 | shadow_presence=card | pending.png, used.png | Card elevation shadow | `--ant-box-shadow` | lib:antd | high | pending | Confirm: matches antd default theme `--ant-box-shadow` |
-| token-003 | shadow_presence=modal | expired.png | Modal-depth shadow | `--ant-box-shadow-secondary` | lib:antd | medium | pending | Verify: could also use a stronger elevation; antd has 3 levels |
-| token-004 | type_hierarchy_levels=3 | pending.png, expired.png | Typography scale (h1, body, caption) | typography | lib:tailwind | high | pending | Confirm: uses Tailwind `text-2xl`, `text-base`, `text-xs` from resolved config |
-| token-005 | primary_action_count=1 | used.png | Primary action button color | `--color-primary` | project-local | high | provided | Exists: `--color-primary` in `src/tokens/color.css` |
+| Token ID  | Hint source             | Source image(s)          | Visual trait                         | Suggested token name         | Source        | Confidence | Status   | User action                                                                                                                            |
+| --------- | ----------------------- | ------------------------ | ------------------------------------ | ---------------------------- | ------------- | ---------: | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| token-001 | corner_radius=medium    | all 3 images             | Medium border radius on cards        | `--radius-md`                | project-local |       high | provided | Exists: `--radius-md` in `src/tokens/spacing.css` (also defined in lib:antd as `--ant-border-radius`, using project-local by priority) |
+| token-002 | shadow_presence=card    | pending.png, used.png    | Card elevation shadow                | `--ant-box-shadow`           | lib:antd      |       high | pending  | Confirm: matches antd default theme `--ant-box-shadow`                                                                                 |
+| token-003 | shadow_presence=modal   | expired.png              | Modal-depth shadow                   | `--ant-box-shadow-secondary` | lib:antd      |     medium | pending  | Verify: could also use a stronger elevation; antd has 3 levels                                                                         |
+| token-004 | type_hierarchy_levels=3 | pending.png, expired.png | Typography scale (h1, body, caption) | typography                   | lib:tailwind  |       high | pending  | Confirm: uses Tailwind `text-2xl`, `text-base`, `text-xs` from resolved config                                                         |
+| token-005 | primary_action_count=1  | used.png                 | Primary action button color          | `--color-primary`            | project-local |       high | provided | Exists: `--color-primary` in `src/tokens/color.css`                                                                                    |
 ```
 
 ## Exit

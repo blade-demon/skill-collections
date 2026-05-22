@@ -1,10 +1,6 @@
 import { ExtractError } from './errors.js';
 import type { SketchArchive } from './open-sketch-file.js';
-import {
-  type SketchAssetEntry,
-  type SketchPage,
-  type SketchRawModel,
-} from './sketch-raw-model.js';
+import { type SketchAssetEntry, type SketchPage, type SketchRawModel } from './sketch-raw-model.js';
 
 const decoder = new TextDecoder();
 const PAGE_ENTRY_RE = /^pages\/([^/]+)\.json$/;

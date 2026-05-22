@@ -1,4 +1,10 @@
-import { assertDesignIR, VisualViewSchema, type DesignIR, type VisualView, type Warning } from '../ir';
+import {
+  assertDesignIR,
+  VisualViewSchema,
+  type DesignIR,
+  type VisualView,
+  type Warning,
+} from '../ir';
 import { applySymbolOverrides, type OverrideStats } from './apply-overrides';
 import { stableJson, stableSha256 } from './stable-json';
 
@@ -23,7 +29,9 @@ export function deriveVisualView(input: DesignIR): DeriveVisualViewResult {
 
   const parsed = VisualViewSchema.safeParse(visualView);
   if (!parsed.success) {
-    throw new Error(`Invalid VisualView:\n  - ${parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('\n  - ')}`);
+    throw new Error(
+      `Invalid VisualView:\n  - ${parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('\n  - ')}`,
+    );
   }
 
   return {

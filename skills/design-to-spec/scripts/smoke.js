@@ -13,31 +13,31 @@
 // - lefthook pre-push / CI 早期阶段做"环境健康检查"
 // - 升级到新版本后跑一次确认基础链路没坏
 
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { tmpdir } from "node:os";
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 
 const __filename = fileURLToPath(import.meta.url);
-const ROOT = resolve(dirname(__filename), "..");
+const ROOT = resolve(dirname(__filename), '..');
 
-const SAMPLE = "today-windvane";
-const SAMPLE_DIR = resolve(ROOT, "examples", SAMPLE);
+const SAMPLE = 'today-windvane';
+const SAMPLE_DIR = resolve(ROOT, 'examples', SAMPLE);
 const CONTRACTS = {
-  ui: resolve(SAMPLE_DIR, "contracts/ui-schema.yaml"),
-  api: resolve(SAMPLE_DIR, "contracts/api-schema.yaml"),
-  mapping: resolve(SAMPLE_DIR, "contracts/mapping-logic.yaml"),
+  ui: resolve(SAMPLE_DIR, 'contracts/ui-schema.yaml'),
+  api: resolve(SAMPLE_DIR, 'contracts/api-schema.yaml'),
+  mapping: resolve(SAMPLE_DIR, 'contracts/mapping-logic.yaml'),
 };
 const SCRIPTS = {
-  validateContracts: resolve(ROOT, "scripts/validate-contracts.js"),
-  generate: resolve(ROOT, "scripts/generate-output.js"),
-  validateOutput: resolve(ROOT, "scripts/validate-output.js"),
+  validateContracts: resolve(ROOT, 'scripts/validate-contracts.js'),
+  generate: resolve(ROOT, 'scripts/generate-output.js'),
+  validateOutput: resolve(ROOT, 'scripts/validate-output.js'),
 };
 
 function fail(msg, extra) {
   process.stderr.write(`❌ smoke: ${msg}\n`);
-  if (extra) process.stderr.write(extra + "\n");
+  if (extra) process.stderr.write(extra + '\n');
   process.exit(1);
 }
 
@@ -54,11 +54,11 @@ function step(label, fn) {
 
 function run(file, args) {
   const result = spawnSync(process.execPath, [file, ...args], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   if (result.status !== 0) {
-    const out = (result.stdout ?? "") + (result.stderr ?? "");
+    const out = (result.stdout ?? '') + (result.stderr ?? '');
     throw new Error(out.trim() || `exit ${result.status}`);
   }
 }
@@ -75,38 +75,51 @@ for (const [k, p] of Object.entries(SCRIPTS)) {
   }
 }
 
-const tmp = mkdtempSync(resolve(tmpdir(), "d2s-smoke-"));
+const tmp = mkdtempSync(resolve(tmpdir(), 'd2s-smoke-'));
 const t0 = Date.now();
 process.stdout.write(`design-to-spec smoke (${SAMPLE} → ${tmp})\n`);
 
 try {
-  step("validate-contracts", () => {
+  step('validate-contracts', () => {
     run(SCRIPTS.validateContracts, [
-      "--ui", CONTRACTS.ui,
-      "--api", CONTRACTS.api,
-      "--mapping", CONTRACTS.mapping,
+      '--ui',
+      CONTRACTS.ui,
+      '--api',
+      CONTRACTS.api,
+      '--mapping',
+      CONTRACTS.mapping,
     ]);
   });
 
-  step("generate-output", () => {
+  step('generate-output', () => {
     run(SCRIPTS.generate, [
-      "--ui", CONTRACTS.ui,
-      "--api", CONTRACTS.api,
-      "--mapping", CONTRACTS.mapping,
-      "--out-dir", tmp,
+      '--ui',
+      CONTRACTS.ui,
+      '--api',
+      CONTRACTS.api,
+      '--mapping',
+      CONTRACTS.mapping,
+      '--out-dir',
+      tmp,
     ]);
   });
 
-  step("validate-output --strict", () => {
+  step('validate-output --strict', () => {
     const cap = SAMPLE; // today-windvane capability dir name == sample name
     run(SCRIPTS.validateOutput, [
-      "--strict",
-      "--ui", resolve(tmp, "contracts/ui-schema.yaml"),
-      "--api", resolve(tmp, "contracts/api-schema.yaml"),
-      "--mapping", resolve(tmp, "contracts/mapping-logic.yaml"),
-      "--notes", resolve(tmp, "notes.md"),
-      "--data-fetching", resolve(tmp, "data-fetching.md"),
-      "--spec", resolve(tmp, `specs/${cap}/spec.md`),
+      '--strict',
+      '--ui',
+      resolve(tmp, 'contracts/ui-schema.yaml'),
+      '--api',
+      resolve(tmp, 'contracts/api-schema.yaml'),
+      '--mapping',
+      resolve(tmp, 'contracts/mapping-logic.yaml'),
+      '--notes',
+      resolve(tmp, 'notes.md'),
+      '--data-fetching',
+      resolve(tmp, 'data-fetching.md'),
+      '--spec',
+      resolve(tmp, `specs/${cap}/spec.md`),
     ]);
   });
 

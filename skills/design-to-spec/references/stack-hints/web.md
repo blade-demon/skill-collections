@@ -12,8 +12,8 @@
 
 ## 布局陷阱
 
-- `**min-width: 0` 在 flex 子元素上** —— 与小程序相同的陷阱。具有 `flex: 1` 和截断文本的 flex 子元素除非应用 `min-width: 0` 否则会拒绝收缩到其固有内容宽度以下。这几乎在每个省略号布局中都会咬人。
-- `**text-overflow: ellipsis`** 需要 `overflow: hidden` 和 `white-space: nowrap` 一起使用。或者对多行截断使用 `display: -webkit-box; -webkit-line-clamp: N; -webkit-box-orient: vertical; overflow: hidden;`（尽管有前缀，但得到广泛支持）。
+- `**min-width: 0` 在 flex 子元素上\*\* —— 与小程序相同的陷阱。具有 `flex: 1` 和截断文本的 flex 子元素除非应用 `min-width: 0` 否则会拒绝收缩到其固有内容宽度以下。这几乎在每个省略号布局中都会咬人。
+- `**text-overflow: ellipsis`\*\* 需要 `overflow: hidden` 和 `white-space: nowrap` 一起使用。或者对多行截断使用 `display: -webkit-box; -webkit-line-clamp: N; -webkit-box-orient: vertical; overflow: hidden;`（尽管有前缀，但得到广泛支持）。
 - **行中的固定宽度 chips**：CSS grid 与 `grid-template-columns: repeat(2, minmax(0, 1fr))` 比 flex 百分比更干净，因为 `minmax(0, 1fr)` 已经包含了 `min-width: 0` 修复。
 - **容器查询**（`@container`）现在得到广泛支持，在组件本地响应行为方面优于媒体查询。当组件需要适应其父宽度而不是视口时，优先使用它们。
 - **固定宽高比的媒体**：`aspect-ratio: 16 / 9` 是现代方式；避免 `padding-bottom: 56.25%` hack。

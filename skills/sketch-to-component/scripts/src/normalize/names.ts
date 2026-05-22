@@ -16,7 +16,10 @@ const NAME_OVERRIDES = new Map<string, string>([
 ]);
 
 export function stableNodeId(sourceNodeId: string): string {
-  const normalized = sourceNodeId.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const normalized = sourceNodeId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
   if (normalized) return `node-${normalized}`;
   return `node-${createHash('sha1').update(sourceNodeId).digest('hex').slice(0, 10)}`;
 }
@@ -43,7 +46,10 @@ export function stableComponentName(rawName: string, fallbackId: string): string
 
   const generic = inferGenericName(trimmed);
   if (generic) return generic;
-  return `Node${createHash('sha1').update(fallbackId || trimmed).digest('hex').slice(0, 8)}`;
+  return `Node${createHash('sha1')
+    .update(fallbackId || trimmed)
+    .digest('hex')
+    .slice(0, 8)}`;
 }
 
 function inferGenericName(name: string): string | undefined {

@@ -14,7 +14,7 @@ pre-commit:
   parallel: true
   commands:
     design-spec-contracts:
-      glob: "design-spec/*/contracts/*.yaml"
+      glob: 'design-spec/*/contracts/*.yaml'
       run: |
         set -e
         # 取本次 staged 改动里的 design-spec 顶级目录
@@ -31,9 +31,9 @@ pre-commit:
 
     design-spec-output:
       glob:
-        - "design-spec/*/notes.md"
-        - "design-spec/*/data-fetching.md"
-        - "design-spec/*/specs/**/spec.md"
+        - 'design-spec/*/notes.md'
+        - 'design-spec/*/data-fetching.md'
+        - 'design-spec/*/specs/**/spec.md'
       run: |
         set -e
         dirs=$(echo "{staged_files}" | tr ' ' '\n' | awk -F/ '/^design-spec\// {print $1"/"$2}' | sort -u)

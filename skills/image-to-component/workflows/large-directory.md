@@ -22,12 +22,13 @@ C. Cancel.
 
 If the user chooses A, run:
 
-| Stage | Scope | Signature depth | Purpose |
-|---|---|---|---|
-| Stage A | Every image | T/M/B top-level roles only; no container expansion | Build coarse groups cheaply |
-| Stage B | Selected images only | Full signature-spec signatures | Resolve ambiguity and support code generation |
+| Stage   | Scope                | Signature depth                                    | Purpose                                       |
+| ------- | -------------------- | -------------------------------------------------- | --------------------------------------------- |
+| Stage A | Every image          | T/M/B top-level roles only; no container expansion | Build coarse groups cheaply                   |
+| Stage B | Selected images only | Full signature-spec signatures                     | Resolve ambiguity and support code generation |
 
 Stage B includes only:
+
 - Inconsistent coarse groups.
 - Coarse signatures with unclear nested containers.
 - Files explicitly requested by the user.
@@ -55,17 +56,18 @@ If the user chooses B, restate the staged plan with expected batch count and wai
 
 For more than 5 selected images, pre-group filenames before batching:
 
-| Rule | Grouping method |
-|---|---|
-| Filename contains status keyword (`pending`, `used`, `expired`, `active`, `disabled`) | Same candidate state group |
-| Filename contains sequence keyword (`page1`, `page2`, `step1`, `step2`) | Same candidate sequence group |
-| All other files | Alphabetical fill |
+| Rule                                                                                  | Grouping method               |
+| ------------------------------------------------------------------------------------- | ----------------------------- |
+| Filename contains status keyword (`pending`, `used`, `expired`, `active`, `disabled`) | Same candidate state group    |
+| Filename contains sequence keyword (`page1`, `page2`, `step1`, `step2`)               | Same candidate sequence group |
+| All other files                                                                       | Alphabetical fill             |
 
 Candidate groups are semantic hints. Read batches are operational units of at most 5 images. If a candidate group exceeds 5 images, split it into multiple read batches but keep one candidate-group label.
 
 ## Exit
 
 Exit this workflow with:
+
 - A filtered filename set, or
 - A confirmed staged plan, or
 - Cancellation.

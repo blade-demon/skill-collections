@@ -12,22 +12,22 @@ Must model `returnPeriod` as a data field (not hardcoded), because the screensho
 
 ```ts
 export interface FundItem {
-  id: string
-  name: string
-  returnRate: number
-  returnPeriod: string
-  tagline: string
-  minAmount: string
-  sparklineData: number[]
-  isFavorited: boolean
+  id: string;
+  name: string;
+  returnRate: number;
+  returnPeriod: string;
+  tagline: string;
+  minAmount: string;
+  sparklineData: number[];
+  isFavorited: boolean;
 }
 
 export interface FundRecommendationSectionProps {
-  title: string
-  subtitle: string
-  items: FundItem[]
-  onToggleFavorite?: (id: string) => void
-  onItemClick?: (id: string) => void
+  title: string;
+  subtitle: string;
+  items: FundItem[];
+  onToggleFavorite?: (id: string) => void;
+  onItemClick?: (id: string) => void;
 }
 ```
 

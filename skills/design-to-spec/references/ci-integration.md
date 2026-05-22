@@ -19,11 +19,11 @@ CI 集成做的是**机器把守这道纪律**：
 
 ## 1. 三种集成形态怎么选
 
-| 形态 | 触发时机 | 强度 | 何时该选 |
-|---|---|---|---|
-| **GitHub Actions** | PR / push 到 main | 团队级强制 | 多人协作、需要在 review 前阻断合并 |
-| **Husky pre-commit** | 本地 `git commit` | 个人级 + 团队级（commit 配置进 repo） | 想在最早时刻反馈，不让坏 commit 进 git 历史 |
-| **lefthook** | 同 husky，但配置更简洁、跨语言更友好 | 同 husky | Go/Rust/Python 多技术栈仓库；不想吃 husky 的 `.husky/` 目录 |
+| 形态                 | 触发时机                             | 强度                                  | 何时该选                                                    |
+| -------------------- | ------------------------------------ | ------------------------------------- | ----------------------------------------------------------- |
+| **GitHub Actions**   | PR / push 到 main                    | 团队级强制                            | 多人协作、需要在 review 前阻断合并                          |
+| **Husky pre-commit** | 本地 `git commit`                    | 个人级 + 团队级（commit 配置进 repo） | 想在最早时刻反馈，不让坏 commit 进 git 历史                 |
+| **lefthook**         | 同 husky，但配置更简洁、跨语言更友好 | 同 husky                              | Go/Rust/Python 多技术栈仓库；不想吃 husky 的 `.husky/` 目录 |
 
 **推荐组合**：
 

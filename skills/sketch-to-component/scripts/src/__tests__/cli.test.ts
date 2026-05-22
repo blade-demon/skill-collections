@@ -5,7 +5,15 @@ import { parseExtractArgs, parseNormalizeArgs, parsePreviewArgs } from '../cli.j
 describe('parseExtractArgs', () => {
   it('parses valid extract arguments', () => {
     expect(
-      parseExtractArgs(['node', 'cli.ts', 'extract', '--file', '/tmp/mock.sketch', '--out', '/tmp/out']),
+      parseExtractArgs([
+        'node',
+        'cli.ts',
+        'extract',
+        '--file',
+        '/tmp/mock.sketch',
+        '--out',
+        '/tmp/out',
+      ]),
     ).toEqual({
       command: 'extract',
       filePath: '/tmp/mock.sketch',
@@ -14,7 +22,9 @@ describe('parseExtractArgs', () => {
   });
 
   it('rejects another option flag as an argument value', () => {
-    expect(parseExtractArgs(['node', 'cli.ts', 'extract', '--file', '--out', '/tmp/out'])).toBeUndefined();
+    expect(
+      parseExtractArgs(['node', 'cli.ts', 'extract', '--file', '--out', '/tmp/out']),
+    ).toBeUndefined();
   });
 });
 
@@ -41,7 +51,9 @@ describe('parseNormalizeArgs', () => {
   });
 
   it('rejects another option flag as a raw value', () => {
-    expect(parseNormalizeArgs(['node', 'cli.ts', 'normalize', '--raw', '--out', '/tmp/out'])).toBeUndefined();
+    expect(
+      parseNormalizeArgs(['node', 'cli.ts', 'normalize', '--raw', '--out', '/tmp/out']),
+    ).toBeUndefined();
   });
 });
 

@@ -134,7 +134,8 @@ function nodeDeclarations(
 
   const style = node.style;
   const fill = style?.fills?.[0];
-  if (shouldRenderBoxFill(node) && fill?.color) declarations.push(`background-color: ${fill.color};`);
+  if (shouldRenderBoxFill(node) && fill?.color)
+    declarations.push(`background-color: ${fill.color};`);
   const border = style?.borders?.[0];
   if (border?.color || border?.thickness !== undefined) {
     declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
@@ -145,13 +146,15 @@ function nodeDeclarations(
       `box-shadow: ${px(effect.x ?? 0)} ${px(effect.y ?? 0)} ${px(effect.blur ?? 0)} ${px(effect.spread ?? 0)} ${effect.color ?? '#00000033'};`,
     );
   }
-  if (style?.radius !== undefined) declarations.push(`border-radius: ${radiusValue(style.radius)};`);
+  if (style?.radius !== undefined)
+    declarations.push(`border-radius: ${radiusValue(style.radius)};`);
   if (style?.opacity !== undefined) declarations.push(`opacity: ${formatNumber(style.opacity)};`);
 
   if (node.kind === 'text') {
     const textStyle = node.text?.style;
     declarations.push('white-space: pre-wrap;');
-    if (textStyle?.fontFamily) declarations.push(`font-family: ${cssString(textStyle.fontFamily)};`);
+    if (textStyle?.fontFamily)
+      declarations.push(`font-family: ${cssString(textStyle.fontFamily)};`);
     if (textStyle?.fontSize) declarations.push(`font-size: ${px(textStyle.fontSize)};`);
     if (textStyle?.fontWeight) declarations.push(`font-weight: ${textStyle.fontWeight};`);
     if (textStyle?.lineHeight) declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
@@ -218,7 +221,11 @@ function renderPlaceholderSvg(assetId: string, width: number, height: number): s
   ].join('\n');
 }
 
-function walk(node: VisualNode, visit: (node: VisualNode, isRoot: boolean) => void, isRoot = true): void {
+function walk(
+  node: VisualNode,
+  visit: (node: VisualNode, isRoot: boolean) => void,
+  isRoot = true,
+): void {
   visit(node, isRoot);
   for (const child of node.children) walk(child, visit, false);
 }
@@ -228,11 +235,16 @@ function nodeSelector(node: VisualNode): string {
 }
 
 function nodeClassName(node: VisualNode): string {
-  const safe = node.id.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
+  const safe = node.id
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   return `d2c-${safe || 'node'}`;
 }
 
-function radiusValue(radius: Exclude<NonNullable<VisualNode['style']>['radius'], undefined>): string {
+function radiusValue(
+  radius: Exclude<NonNullable<VisualNode['style']>['radius'], undefined>,
+): string {
   if (typeof radius === 'number') return px(radius);
   return `${px(radius.topLeft)} ${px(radius.topRight)} ${px(radius.bottomRight)} ${px(radius.bottomLeft)}`;
 }

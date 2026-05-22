@@ -20,15 +20,11 @@ describe('RawArtifactSchema', () => {
   });
 
   it('rejects an explicit undefined payload', () => {
-    expect(
-      RawArtifactSchema.safeParse({ ...validRaw, payload: undefined }).success,
-    ).toBe(false);
+    expect(RawArtifactSchema.safeParse({ ...validRaw, payload: undefined }).success).toBe(false);
   });
 
   it('accepts a null payload (null is a defined value)', () => {
-    expect(
-      RawArtifactSchema.safeParse({ ...validRaw, payload: null }).success,
-    ).toBe(true);
+    expect(RawArtifactSchema.safeParse({ ...validRaw, payload: null }).success).toBe(true);
   });
 
   it('rejects an empty ref (no trace anchor)', () => {
@@ -36,14 +32,12 @@ describe('RawArtifactSchema', () => {
   });
 
   it('rejects a non-ISO capturedAt', () => {
-    expect(
-      RawArtifactSchema.safeParse({ ...validRaw, capturedAt: 'yesterday' }).success,
-    ).toBe(false);
+    expect(RawArtifactSchema.safeParse({ ...validRaw, capturedAt: 'yesterday' }).success).toBe(
+      false,
+    );
   });
 
   it('rejects unknown keys (strict)', () => {
-    expect(
-      RawArtifactSchema.safeParse({ ...validRaw, extra: true }).success,
-    ).toBe(false);
+    expect(RawArtifactSchema.safeParse({ ...validRaw, extra: true }).success).toBe(false);
   });
 });

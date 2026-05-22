@@ -58,6 +58,7 @@
 ## Requirement: User can submit search
 
 ### Scenario: Empty input shows validation error
+
 WHEN user clicks submitBtn with empty searchInput
 THEN renders .input-error with text "请输入关键词"
 ```
@@ -77,7 +78,7 @@ state_machine:
   - from: idle
     event: submitBtn.onClick
     to: loading
-    render_assertion: "renders loadingState"
+    render_assertion: 'renders loadingState'
 ```
 
 **出现在**：`mapping-logic.yaml` 的 `state_machine[]`。阶段四把每条转换生成一条 Scenario。
@@ -90,12 +91,12 @@ state_machine:
 
 **4 类锚点**：
 
-| 锚点 | 出现位置 | 引用的契约字段 |
-|---|---|---|
-| `component:<id>` | notes.md 组件分解节 | `ui.components[].id` |
-| `binding:<index>:<direction>` | notes.md 数据契约节 | `mapping.bindings[]`（1-based 顺序） |
-| `state:<id>` | spec.md Scenario | `ui.states[].id`（required: true） |
-| `request:<id>` | data-fetching.md 请求节 | `mapping.data_fetching.requests[].id` |
+| 锚点                          | 出现位置                | 引用的契约字段                        |
+| ----------------------------- | ----------------------- | ------------------------------------- |
+| `component:<id>`              | notes.md 组件分解节     | `ui.components[].id`                  |
+| `binding:<index>:<direction>` | notes.md 数据契约节     | `mapping.bindings[]`（1-based 顺序）  |
+| `state:<id>`                  | spec.md Scenario        | `ui.states[].id`（required: true）    |
+| `request:<id>`                | data-fetching.md 请求节 | `mapping.data_fetching.requests[].id` |
 
 **反模式**：润色 markdown 时把 trace 当装饰删掉。
 
@@ -109,10 +110,10 @@ state_machine:
 
 **一句话**：阶段一对每个元素打的置信度标签，三档。
 
-| 值 | 含义 |
-|---|---|
-| `identified` | 设计稿里 affordance 直接可见，无歧义 |
-| `inferred` | 行业惯例推断（如表单 → 必有 submit） |
+| 值                  | 含义                                                    |
+| ------------------- | ------------------------------------------------------- |
+| `identified`        | 设计稿里 affordance 直接可见，无歧义                    |
+| `inferred`          | 行业惯例推断（如表单 → 必有 submit）                    |
 | `needs_human_input` | 真正模糊，需人工拍板。**必须配对一条 `open_questions`** |
 
 ---
@@ -168,14 +169,14 @@ state_machine:
 
 **一句话**：组件在交互层级里的语义角色，6 选 1。
 
-| 值 | 用法 |
-|---|---|
-| `primary` | 主操作按钮、主输入框 |
-| `secondary` | 次操作（取消、查看更多） |
-| `action` | 单次触发的图标按钮、菜单项 |
-| `decoration` | 纯视觉装饰 |
-| `container` | 布局容器 |
-| `data_field` | 纯数据展示字段（无交互） |
+| 值           | 用法                       |
+| ------------ | -------------------------- |
+| `primary`    | 主操作按钮、主输入框       |
+| `secondary`  | 次操作（取消、查看更多）   |
+| `action`     | 单次触发的图标按钮、菜单项 |
+| `decoration` | 纯视觉装饰                 |
+| `container`  | 布局容器                   |
+| `data_field` | 纯数据展示字段（无交互）   |
 
 ---
 
@@ -260,10 +261,10 @@ pagination:
 
 **一句话**：UI 与 API 的数据流向，3 选 1。
 
-| direction | 含义 | 必填字段 |
-|---|---|---|
-| `ui_to_api` | 用户输入 → 请求参数 | `source_ui` + `target_api` |
-| `api_to_ui` | 响应字段 → UI 展示 | `source_api` + `target_ui` |
+| direction     | 含义                          | 必填字段                     |
+| ------------- | ----------------------------- | ---------------------------- |
+| `ui_to_api`   | 用户输入 → 请求参数           | `source_ui` + `target_api`   |
+| `api_to_ui`   | 响应字段 → UI 展示            | `source_api` + `target_ui`   |
 | `ui_to_event` | UI 触发组件事件，不直接调 API | `source_ui` + `target_event` |
 
 ---
@@ -272,12 +273,12 @@ pagination:
 
 **一句话**：请求触发模式，4 选 1。
 
-| 值 | 例子 |
-|---|---|
-| `user_triggered` | 用户点击搜索按钮 |
-| `on_mount` | 进页面立即拉数据 |
-| `polling` | 定时刷新 |
-| `realtime` | WebSocket / SSE 推送 |
+| 值               | 例子                 |
+| ---------------- | -------------------- |
+| `user_triggered` | 用户点击搜索按钮     |
+| `on_mount`       | 进页面立即拉数据     |
+| `polling`        | 定时刷新             |
+| `realtime`       | WebSocket / SSE 推送 |
 
 ---
 
@@ -300,10 +301,10 @@ concurrency_policy:
 
 **一句话**：binding 时是否对数据做加工。
 
-| 值 | 例子 |
-|---|---|
-| `none` | 直接绑 |
-| `format` | 日期 `2026-05-04` → `5月4日` |
+| 值       | 例子                                   |
+| -------- | -------------------------------------- |
+| `none`   | 直接绑                                 |
+| `format` | 日期 `2026-05-04` → `5月4日`           |
 | `derive` | 从多字段计算（折扣率 = 1 - 现价/原价） |
 
 ---
@@ -312,33 +313,33 @@ concurrency_policy:
 
 ### 状态机的 4 个阶段
 
-| 状态 | 触发 | 负责 |
-|---|---|---|
-| `WAITING_FOR_UI` | skill 启动 | 阶段一：视觉提纯 |
-| `WAITING_FOR_API` | 用户确认 ui-schema | 阶段二：接口提纯 |
-| `WAITING_FOR_MAPPING` | 用户确认 api-schema | 阶段三：逻辑映射 |
-| `GENERATING_SPEC` | 用户确认 mapping-logic | 阶段四：规格组装（确定性） |
+| 状态                  | 触发                   | 负责                       |
+| --------------------- | ---------------------- | -------------------------- |
+| `WAITING_FOR_UI`      | skill 启动             | 阶段一：视觉提纯           |
+| `WAITING_FOR_API`     | 用户确认 ui-schema     | 阶段二：接口提纯           |
+| `WAITING_FOR_MAPPING` | 用户确认 api-schema    | 阶段三：逻辑映射           |
+| `GENERATING_SPEC`     | 用户确认 mapping-logic | 阶段四：规格组装（确定性） |
 
 ---
 
 ### `open_questions` 优先级
 
-| 优先级 | 含义 | 处理时机 |
-|---|---|---|
-| `P0` | 阻塞 coding。未关闭不能进入实现 | 评审会必须解决 |
-| `P1` | 阻塞具体场景但不阻塞主流程 | 编码中或评审后跟进 |
-| `P2` | 优化项 | 待办池，不绑时间 |
+| 优先级 | 含义                            | 处理时机           |
+| ------ | ------------------------------- | ------------------ |
+| `P0`   | 阻塞 coding。未关闭不能进入实现 | 评审会必须解决     |
+| `P1`   | 阻塞具体场景但不阻塞主流程      | 编码中或评审后跟进 |
+| `P2`   | 优化项                          | 待办池，不绑时间   |
 
 ---
 
 ### 阶段四的 4 个写入子阶段（A / B / C / D）
 
-| 子阶段 | 写什么 | 释放什么 context |
-|---|---|---|
-| A | 三份契约 + notes.md 部分节 | 原始 API 文档、UI/API_Schema 完整 YAML |
-| B | data-fetching.md | data-fetching.md 完整内容 |
-| C | notes.md 剩余节 | 步骤 1-3 分析过程 |
-| D | spec.md | （已基本释放完，靠状态/数据锚点写） |
+| 子阶段 | 写什么                     | 释放什么 context                       |
+| ------ | -------------------------- | -------------------------------------- |
+| A      | 三份契约 + notes.md 部分节 | 原始 API 文档、UI/API_Schema 完整 YAML |
+| B      | data-fetching.md           | data-fetching.md 完整内容              |
+| C      | notes.md 剩余节            | 步骤 1-3 分析过程                      |
+| D      | spec.md                    | （已基本释放完，靠状态/数据锚点写）    |
 
 详见 `SKILL.md §4.4 分阶段写入`。
 
@@ -348,11 +349,11 @@ concurrency_policy:
 
 ### `needs_human_input` vs `open_questions`
 
-| | `needs_human_input` | `open_questions` |
-|---|---|---|
-| 是什么 | 字段级标签 | 列表级条目（含 id + content + priority） |
-| 答的是 | 「**哪里**不确定」 | 「**要决定什么**，谁来定」 |
-| 关系 | **必须配对**：每个 `needs_human_input` 字段对应一条 `open_questions` |
+|        | `needs_human_input`                                                  | `open_questions`                         |
+| ------ | -------------------------------------------------------------------- | ---------------------------------------- |
+| 是什么 | 字段级标签                                                           | 列表级条目（含 id + content + priority） |
+| 答的是 | 「**哪里**不确定」                                                   | 「**要决定什么**，谁来定」               |
+| 关系   | **必须配对**：每个 `needs_human_input` 字段对应一条 `open_questions` |
 
 详见 `references/contracts.md §needs_human_input 与 open_questions 使用规则`。
 
@@ -360,23 +361,23 @@ concurrency_policy:
 
 ### `examples/` vs `samples/`
 
-| | `examples/`（skill 目录内） | `samples/`（仓库根） |
-|---|---|---|
-| 用途 | 回归测试金样 | 手动验证全流程 |
-| 内容 | `contracts/` + 生成的 markdown | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
-| 谁会读 | `npm test` / 字段填写参考 | 第一次使用 skill 的同事 |
-| 当前数量 | 2 份（today-windvane, price-card） | 2 份（search-panel, feedback-form） |
+|          | `examples/`（skill 目录内）        | `samples/`（仓库根）                                   |
+| -------- | ---------------------------------- | ------------------------------------------------------ |
+| 用途     | 回归测试金样                       | 手动验证全流程                                         |
+| 内容     | `contracts/` + 生成的 markdown     | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
+| 谁会读   | `npm test` / 字段填写参考          | 第一次使用 skill 的同事                                |
+| 当前数量 | 2 份（today-windvane, price-card） | 2 份（search-panel, feedback-form）                    |
 
 ---
 
 ### `validate-contracts.js` vs `validate-output.js`
 
-| | `validate-contracts.js` | `validate-output.js` |
-|---|---|---|
-| 何时跑 | 阶段四前 | 阶段四后 |
-| 输入 | 三份 yaml | 三份 yaml + 三份 markdown |
-| 检查什么 | YAML 结构 + 跨契约引用一致性 | markdown 是否覆盖契约必需项 + trace 锚点 |
-| `--strict` | 无 | 把 warning 升级成错误 |
+|            | `validate-contracts.js`      | `validate-output.js`                     |
+| ---------- | ---------------------------- | ---------------------------------------- |
+| 何时跑     | 阶段四前                     | 阶段四后                                 |
+| 输入       | 三份 yaml                    | 三份 yaml + 三份 markdown                |
+| 检查什么   | YAML 结构 + 跨契约引用一致性 | markdown 是否覆盖契约必需项 + trace 锚点 |
+| `--strict` | 无                           | 把 warning 升级成错误                    |
 
 ---
 

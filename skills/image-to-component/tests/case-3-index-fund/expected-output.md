@@ -11,24 +11,24 @@ Single image → one independent component `IndexFundSection`.
 Must model tab state externally (controlled component):
 
 ```ts
-export type IndexTab = '指数增强' | '宽基指数' | '港股指数' | '双创指数'
+export type IndexTab = '指数增强' | '宽基指数' | '港股指数' | '双创指数';
 
 export interface IndexFundItem {
-  id: string
-  name: string
-  returnRate: number
-  returnLabel: string
-  isFavorited: boolean
+  id: string;
+  name: string;
+  returnRate: number;
+  returnLabel: string;
+  isFavorited: boolean;
 }
 
 export interface IndexFundSectionProps {
-  tabs: IndexTab[]
-  activeTab: IndexTab
-  items: IndexFundItem[]
-  onTabChange?: (tab: IndexTab) => void
-  onSubscribe?: (id: string) => void
-  onToggleFavorite?: (id: string) => void
-  onViewMore?: () => void
+  tabs: IndexTab[];
+  activeTab: IndexTab;
+  items: IndexFundItem[];
+  onTabChange?: (tab: IndexTab) => void;
+  onSubscribe?: (id: string) => void;
+  onToggleFavorite?: (id: string) => void;
+  onViewMore?: () => void;
 }
 ```
 

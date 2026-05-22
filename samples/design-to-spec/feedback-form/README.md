@@ -2,13 +2,13 @@
 
 第二个 hands-on sample，与 `search-panel` 形态互补：
 
-| | search-panel | feedback-form |
-|---|---|---|
-| HTTP 方法 | GET | POST |
-| 主导 binding | `api_to_ui` | `ui_to_api` + `request_body` |
-| 状态机焦点 | 数据获取 | 表单提交 + 字段级校验 |
-| 多字段 | 1（keyword） | 3（rating / comment / email） |
-| validation | 后端 INVALID_KEYWORD | 前端 + 后端 双层 |
+|              | search-panel         | feedback-form                 |
+| ------------ | -------------------- | ----------------------------- |
+| HTTP 方法    | GET                  | POST                          |
+| 主导 binding | `api_to_ui`          | `ui_to_api` + `request_body`  |
+| 状态机焦点   | 数据获取             | 表单提交 + 字段级校验         |
+| 多字段       | 1（keyword）         | 3（rating / comment / email） |
+| validation   | 后端 INVALID_KEYWORD | 前端 + 后端 双层              |
 
 ## 这个 sample 教什么
 

@@ -8,13 +8,13 @@
 // jump from spec.md to the implementation by searching for `state:<id>`,
 // `binding:<index>:<direction>`, or `request:<id>`.
 
-import { mockSearch, getMockMode, setMockMode } from "./mock-search.js";
+import { mockSearch, getMockMode, setMockMode } from './mock-search.js';
 
 // ---------------------------------------------------------------------------
 // 1. Render the panel skeleton (component:searchPanel)
 // ---------------------------------------------------------------------------
 
-const root = document.querySelector("#search-panel");
+const root = document.querySelector('#search-panel');
 root.innerHTML = `
   <div class="search-panel__input-row">
     <input
@@ -37,23 +37,23 @@ root.innerHTML = `
   <div class="results-region" data-trace="component:resultsRegion"></div>
 `;
 
-const inputEl = root.querySelector(".search-panel__input");
-const submitEl = root.querySelector(".search-panel__submit");
-const validationEl = root.querySelector(".search-panel__validation-hint");
-const resultsEl = root.querySelector(".results-region");
+const inputEl = root.querySelector('.search-panel__input');
+const submitEl = root.querySelector('.search-panel__submit');
+const validationEl = root.querySelector('.search-panel__validation-hint');
+const resultsEl = root.querySelector('.results-region');
 
 // Mock-mode dropdown wiring (test scaffolding, not part of the component contract)
-const mockModeEl = document.querySelector("#mock-mode");
+const mockModeEl = document.querySelector('#mock-mode');
 mockModeEl.value = getMockMode();
-mockModeEl.addEventListener("change", (e) => setMockMode(e.target.value));
+mockModeEl.addEventListener('change', (e) => setMockMode(e.target.value));
 
 // ---------------------------------------------------------------------------
 // 2. State machine (state:idle / loading / success / empty / error / invalidKeyword)
 // ---------------------------------------------------------------------------
 
-let currentState = "idle";
-let lastSubmittedKeyword = "";
-let lastErrorCode = "";
+let currentState = 'idle';
+let lastSubmittedKeyword = '';
+let lastErrorCode = '';
 let inFlightController = null;
 let rateLimitedRetryTimer = null;
 let rateLimitedAttempts = 0;
@@ -69,24 +69,24 @@ function setState(next) {
 // ---------------------------------------------------------------------------
 
 // binding:1:ui_to_api — searchInput.value -> keyword (with trim + length validation)
-inputEl.addEventListener("input", () => {
+inputEl.addEventListener('input', () => {
   const keyword = inputEl.value.trim();
   // state:disabled (element-scoped local state) — submitBtn greyed out when keyword empty
   submitEl.disabled = keyword.length === 0;
   // Clear validation hint as soon as user edits
-  if (root.dataset.validationError === "true") {
-    root.dataset.validationError = "false";
-    validationEl.textContent = "";
+  if (root.dataset.validationError === 'true') {
+    root.dataset.validationError = 'false';
+    validationEl.textContent = '';
   }
 });
 
-inputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !submitEl.disabled) {
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !submitEl.disabled) {
     submit();
   }
 });
 
-submitEl.addEventListener("click", () => submit());
+submitEl.addEventListener('click', () => submit());
 
 // binding:7:ui_to_event — tap-search-submit
 function emitTrackingEvent(name, payload) {
@@ -104,7 +104,7 @@ async function submit() {
   if (keyword.length === 0) return;
 
   // ui_to_event tap-search-submit
-  emitTrackingEvent("tap-search-submit", {
+  emitTrackingEvent('tap-search-submit', {
     keyword,
     keyword_length: keyword.length,
   });
@@ -120,7 +120,7 @@ async function submit() {
   }
 
   lastSubmittedKeyword = keyword;
-  setState("loading");
+  setState('loading');
 
   await runSearch(keyword);
 }
@@ -133,12 +133,12 @@ async function runSearch(keyword, isAutoRetry = false) {
   try {
     response = await mockSearch({ keyword, page: 1, signal: controller.signal });
   } catch (err) {
-    if (err.name === "AbortError") {
+    if (err.name === 'AbortError') {
       // concurrency_policy.stale_response: ignore — drop this response entirely
       return;
     }
     // Anything else is treated as a network failure
-    transitionToError(keyword, "NETWORK_ERROR", "网络异常，请重试");
+    transitionToError(keyword, 'NETWORK_ERROR', '网络异常，请重试');
     return;
   }
 
@@ -150,15 +150,15 @@ async function runSearch(keyword, isAutoRetry = false) {
   if (response.code === 0) {
     window.__lastSearchResponse = response; // for the renderer
     if (response.data.results.length > 0) {
-      setState("success");
+      setState('success');
       // ui_to_event view-search-result
-      emitTrackingEvent("view-search-result", {
+      emitTrackingEvent('view-search-result', {
         keyword,
         result_count: response.data.total,
       });
     } else {
-      setState("empty");
-      emitTrackingEvent("view-search-empty", { keyword });
+      setState('empty');
+      emitTrackingEvent('view-search-empty', { keyword });
     }
     return;
   }
@@ -166,25 +166,25 @@ async function runSearch(keyword, isAutoRetry = false) {
   // Business error path
   lastErrorCode = response.code;
 
-  if (response.code === "INVALID_KEYWORD") {
+  if (response.code === 'INVALID_KEYWORD') {
     // state:invalidKeyword — element-scoped, NOT a full error state
-    root.dataset.validationError = "true";
+    root.dataset.validationError = 'true';
     validationEl.textContent = response.message;
-    setState("invalidKeyword");
+    setState('invalidKeyword');
     return;
   }
 
-  if (response.code === "FORBIDDEN") {
+  if (response.code === 'FORBIDDEN') {
     // state_machine: loading -> idle (navigates to /login)
-    console.log("[nav] would redirect to /login (sample stub)");
-    setState("idle");
+    console.log('[nav] would redirect to /login (sample stub)');
+    setState('idle');
     return;
   }
 
-  if (response.code === "RATE_LIMITED" && !isAutoRetry && rateLimitedAttempts < 1) {
+  if (response.code === 'RATE_LIMITED' && !isAutoRetry && rateLimitedAttempts < 1) {
     // retry_policy: auto_on_rate_limited, max_attempts: 1, fixed 5s backoff
     rateLimitedAttempts += 1;
-    showToast("请求过于频繁，请稍后再试（5 秒后自动重试）");
+    showToast('请求过于频繁，请稍后再试（5 秒后自动重试）');
     rateLimitedRetryTimer = setTimeout(() => {
       rateLimitedRetryTimer = null;
       hideToast();
@@ -203,20 +203,20 @@ async function runSearch(keyword, isAutoRetry = false) {
 function transitionToError(keyword, code, message) {
   lastErrorCode = code;
   window.__lastErrorMessage = message;
-  setState("error");
-  emitTrackingEvent("view-search-error", { keyword, error_code: code });
+  setState('error');
+  emitTrackingEvent('view-search-error', { keyword, error_code: code });
 }
 
 function errorMessage(code, fallback) {
   switch (code) {
-    case "NETWORK_ERROR":
-      return "网络异常，请重试";
-    case "RATE_LIMITED":
-      return "请求过于频繁，请稍后再试";
-    case "INTERNAL_ERROR":
-      return "服务异常，请联系管理员";
+    case 'NETWORK_ERROR':
+      return '网络异常，请重试';
+    case 'RATE_LIMITED':
+      return '请求过于频繁，请稍后再试';
+    case 'INTERNAL_ERROR':
+      return '服务异常，请联系管理员';
     default:
-      return fallback || "请求失败";
+      return fallback || '请求失败';
   }
 }
 
@@ -226,10 +226,10 @@ function errorMessage(code, fallback) {
 
 function render() {
   // Common: submit button loading flag
-  submitEl.dataset.loading = currentState === "loading" ? "true" : "false";
+  submitEl.dataset.loading = currentState === 'loading' ? 'true' : 'false';
 
   switch (currentState) {
-    case "idle":
+    case 'idle':
       resultsEl.innerHTML = `
         <div class="results-region__guide" data-trace="state:idle">
           <span>请输入关键词后</span>
@@ -238,7 +238,7 @@ function render() {
       `;
       return;
 
-    case "loading":
+    case 'loading':
       resultsEl.innerHTML = `
         <ul class="skeleton-list" data-trace="state:loading">
           ${Array.from({ length: 3 })
@@ -250,12 +250,12 @@ function render() {
                 </li>
               `,
             )
-            .join("")}
+            .join('')}
         </ul>
       `;
       return;
 
-    case "success": {
+    case 'success': {
       const data = window.__lastSearchResponse.data;
       // binding:3:api_to_ui (data.total -> resultCount)
       // binding:4:api_to_ui (data.results -> resultList)
@@ -264,15 +264,13 @@ function render() {
           共 ${data.total} 条结果
         </p>
         <ul class="result-list" data-trace="component:resultList state:success">
-          ${data.results
-            .map((item) => renderResultItem(item))
-            .join("")}
+          ${data.results.map((item) => renderResultItem(item)).join('')}
         </ul>
       `;
       return;
     }
 
-    case "empty":
+    case 'empty':
       resultsEl.innerHTML = `
         <div class="results-region__empty" data-trace="state:empty">
           <span class="icon" data-trace="component:emptyIcon"></span>
@@ -281,12 +279,12 @@ function render() {
       `;
       return;
 
-    case "error":
+    case 'error':
       resultsEl.innerHTML = `
         <div class="results-region__error" data-trace="state:error">
           <span class="icon" data-trace="component:errorIcon">!</span>
           <span class="text" data-trace="component:errorText">${
-            window.__lastErrorMessage || "请求失败"
+            window.__lastErrorMessage || '请求失败'
           }</span>
           <button
             class="retry-button"
@@ -295,20 +293,18 @@ function render() {
         </div>
       `;
       // state_machine: error -> loading on retryButton.onClick
-      resultsEl
-        .querySelector(".retry-button")
-        .addEventListener("click", () => {
-          emitTrackingEvent("tap-search-retry", {
-            keyword: lastSubmittedKeyword,
-            error_code: lastErrorCode,
-          });
-          rateLimitedAttempts = 0;
-          setState("loading");
-          runSearch(lastSubmittedKeyword);
+      resultsEl.querySelector('.retry-button').addEventListener('click', () => {
+        emitTrackingEvent('tap-search-retry', {
+          keyword: lastSubmittedKeyword,
+          error_code: lastErrorCode,
         });
+        rateLimitedAttempts = 0;
+        setState('loading');
+        runSearch(lastSubmittedKeyword);
+      });
       return;
 
-    case "invalidKeyword":
+    case 'invalidKeyword':
       // resultsRegion stays in idle layout per spec; validation hint is
       // toggled separately by the input handler.
       resultsEl.innerHTML = `
@@ -335,13 +331,17 @@ function renderResultItem(item) {
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[c]);
+  return String(s).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[c],
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -352,8 +352,8 @@ let toastEl = null;
 
 function showToast(text) {
   hideToast();
-  toastEl = document.createElement("div");
-  toastEl.className = "toast";
+  toastEl = document.createElement('div');
+  toastEl.className = 'toast';
   toastEl.textContent = text;
   document.body.appendChild(toastEl);
 }
@@ -369,4 +369,4 @@ function hideToast() {
 // 7. Initial render
 // ---------------------------------------------------------------------------
 
-setState("idle");
+setState('idle');

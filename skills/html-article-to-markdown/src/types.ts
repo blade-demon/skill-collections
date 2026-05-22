@@ -1,4 +1,4 @@
-export type ImageMethod = "local-copy" | "remote-download" | "screenshot" | "remote-link";
+export type ImageMethod = 'local-copy' | 'remote-download' | 'screenshot' | 'remote-link';
 
 export interface ConvertOptions {
   htmlPath: string;
