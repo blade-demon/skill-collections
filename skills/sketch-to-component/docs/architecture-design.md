@@ -29,32 +29,32 @@ file parsing** — `.sketch` is an open ZIP of JSON, so `extractRaw` is offline,
 inspectable, and fixture-friendly. SketchMCP is a later alternative behind the same
 seam: both acquisition strategies converge on one internal `SketchRawModel`, so
 `normalize` and the shared pipeline are unaffected when MCP is added. The current
-Stage 2 build is scoped to the file path — see
-[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md). The
-`Prerequisites` and `Configuration` sections below describe the *later* SketchMCP
-path, not the Stage 2 file path.
+local-file acquisition path remains the implemented acquisition path — see
+[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md). Normalize
+and preview now build on that local raw artifact. The `Prerequisites` and
+`Configuration` sections below describe the _later_ SketchMCP path, not the
+current local-file path.
 
-## Current Stage 2 scope
+## Current Implemented Scope
 
-The sections below (`Role Split`, `Prerequisites`, `Provider Responsibilities`,
-`Commands`) describe the full eventual Sketch provider, much of it via SketchMCP.
-**The current Stage 2 build is much narrower** — see
-[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md):
+The implemented vertical slice now reaches Gate 1 preview:
 
-- one command only: `extract --file <path> --out <dir>` — read a local `.sketch`,
-  write `raw-dsl.json`;
-- no SketchMCP, no frame/artboard selection, no asset or reference-frame export,
-  no `normalize`;
-- output is a `RawArtifact` whose `payload` is the whole-document `SketchRawModel`.
+- `extract --file <path> --out <dir>` reads a local `.sketch` ZIP and writes
+  `<out>/ir/raw-dsl.json`;
+- `normalize --raw <path> --out <dir>` converts Sketch raw data into validated
+  `<out>/ir/design-ir.json`;
+- `preview --ir <path> --out <dir>` invokes shared `d2c-core` preview helpers
+  and writes Gate 1 HTML/review artifacts.
 
-Treat anything below that conflicts with this section as future scope, not Stage 2.
+SketchMCP, remote document acquisition, full asset export, interaction modeling,
+component-plan generation, and target package codegen are still future scope.
 
 ## When To Use
 
 This provider applies when:
 
 - the user wants to convert a Sketch design through D2C;
-- a local `.sketch` file is available — the current Stage 2 main entry, via `extract --file`;
+- a local `.sketch` file is available — the current acquisition entry, via `extract --file`;
 - SketchMCP is available (a later extraction path, not Stage 2);
 - the repo contains committed Sketch-derived raw or canonical artifacts;
 - the user asks for Sketch provider behavior, limitations, or validation.
@@ -63,12 +63,12 @@ Screenshot-only inputs belong to `image-to-component`, not this provider.
 
 ## Role Split
 
-| Role | Responsibility |
-|---|---|
-| Operator with a local `.sketch` file *(current — Stage 2)* | Run `extract --file <path> --out <dir>` to produce `raw-dsl.json`. |
-| Designer with Sketch + SketchMCP *(future)* | Extract the selected frame, assets, and reference-frame image. |
-| Developer without Sketch | Work from committed `output/ir/` artifacts, review gates, and generated `output/package/`. |
-| Shared D2C engine | Own canonical IR views, HTML preview, interaction spec, component plan, target package output, and validation. |
+| Role                                             | Responsibility                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Operator with a local `.sketch` file _(current)_ | Run `extract`, `normalize`, and `preview` to reach Gate 1 from local files.                                           |
+| Designer with Sketch + SketchMCP _(future)_      | Extract the selected frame, assets, and reference-frame image.                                                        |
+| Developer without Sketch                         | Work from committed `output/ir/` artifacts, review gates, and future generated `output/package/`.                     |
+| Shared D2C engine                                | Own canonical IR views, HTML preview, future interaction spec, component plan, target package output, and validation. |
 
 The Sketch provider should make developer builds possible without requiring Sketch, as long as the required `output/ir/raw-dsl.json`, `output/ir/design-ir.json`, and asset/reference artifacts are committed or otherwise supplied.
 
@@ -130,16 +130,16 @@ output/
 
 The Sketch provider owns only Sketch-specific work:
 
-| Responsibility | Provider rule |
-|---|---|
-| Frame resolution | Resolve the selected frame or configured frame id. |
-| MCP extraction | Fetch Sketch document/frame data through SketchMCP. |
-| Raw preservation | Save provider response as `output/ir/raw-dsl.json`. |
-| Source trace | Preserve page, artboard, layer, symbol, and override source ids under canonical source metadata or trace records. |
-| Asset export | Export images, SVGs, symbols, masks, and unresolved placeholders when available. |
-| Reference frame | Export a Sketch-rendered frame image for screenshot diff. |
-| Normalization | Convert Sketch-specific document data into canonical `output/ir/design-ir.json`. |
-| Warnings | Record unsupported effects, masks, gradients, nested overrides, missing assets, and low-confidence semantic candidates. |
+| Responsibility   | Provider rule                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Frame resolution | Resolve the selected frame or configured frame id.                                                                      |
+| MCP extraction   | Fetch Sketch document/frame data through SketchMCP.                                                                     |
+| Raw preservation | Save provider response as `output/ir/raw-dsl.json`.                                                                     |
+| Source trace     | Preserve page, artboard, layer, symbol, and override source ids under canonical source metadata or trace records.       |
+| Asset export     | Export images, SVGs, symbols, masks, and unresolved placeholders when available.                                        |
+| Reference frame  | Export a Sketch-rendered frame image for screenshot diff.                                                               |
+| Normalization    | Convert Sketch-specific document data into canonical `output/ir/design-ir.json`.                                        |
+| Warnings         | Record unsupported effects, masks, gradients, nested overrides, missing assets, and low-confidence semantic candidates. |
 
 Raw Sketch data must not be consumed directly by preview or target package generation.
 
@@ -172,29 +172,33 @@ Provider normalization should:
 
 ## Commands
 
-### Current — Stage 2 only
+### Current — through Gate 1 preview
 
-The Stage 2 build exposes one extraction command — see
-[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md):
+The current provider scripts are intentionally local and deterministic:
 
-| Command | Purpose |
-|---|---|
-| `npm install` | Install provider script dependencies. |
-| `npm test` | Run provider-owned tests. |
-| `npm run typecheck` | Type-check the provider scripts. |
-| `npm run extract -- --file <path> --out <dir>` | Parse a local `.sketch` file; write `<out>/ir/raw-dsl.json`. |
+| Command                                         | Purpose                                                             |
+| ----------------------------------------------- | ------------------------------------------------------------------- |
+| `npm install`                                   | Install provider script dependencies when working standalone.       |
+| `npm test`                                      | Run provider-owned tests.                                           |
+| `npm run typecheck`                             | Type-check the provider scripts.                                    |
+| `npm run extract -- --file <path> --out <dir>`  | Parse a local `.sketch` file; write `<out>/ir/raw-dsl.json`.        |
+| `npm run normalize -- --raw <path> --out <dir>` | Normalize raw Sketch data into validated `<out>/ir/design-ir.json`. |
+| `npm run preview -- --ir <path> --out <dir>`    | Generate Gate 1 preview HTML and visual review artifacts from IR.   |
+| `npm run test:sketch` from the repo root        | Run Sketch provider tests through the root workspace.               |
+| `npm run typecheck:sketch` from the repo root   | Type-check Sketch provider scripts through the root workspace.      |
 
-### Future — not Stage 2
+### Future — not implemented yet
 
-These describe the eventual full provider (SketchMCP extraction, frame selection,
-normalization) and are **out of scope now**:
+These describe the eventual full provider and shared pipeline:
 
-| Command | Purpose |
-|---|---|
-| `extract` via SketchMCP / frame selection | Extract a selected frame, assets, and a reference image. |
-| `generate` | Normalize provider artifacts into `design-ir.json` and hand off to the shared pipeline. |
+| Capability                                | Purpose                                                                   |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| `extract` via SketchMCP / frame selection | Extract a selected remote/open Sketch frame, assets, and reference image. |
+| Gate 2 contract generation                | Draft semantic view, interaction spec, and component plan for review.     |
+| Target package generation                 | Emit React/TS/BEM package output after Gate 2 approval.                   |
 
-Command names may evolve as the provider matures; outputs must still follow the global architecture.
+Command names may evolve as the provider matures; outputs must still follow the
+global architecture.
 
 ## Gates
 

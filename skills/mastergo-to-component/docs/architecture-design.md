@@ -40,17 +40,17 @@ For this reference, `layer_id=2:0031` has previously represented the root page `
 
 The MasterGo provider owns only provider-specific work:
 
-| Responsibility | Provider rule |
-|---|---|
-| URL parsing | Parse `https://mastergo.com/file/{fileId}` and decode URL-encoded `layer_id` values such as `2%3A0031` into `2:0031`. |
-| Authentication | Read `MASTERGO_TOKEN` from the shell environment and never print the token value. |
-| DSL fetch | Request MasterGo DSL for the resolved `fileId` and `layerId`. |
-| Raw preservation | Save provider data as `output/ir/raw-dsl.json` when running the full pipeline. |
-| Source trace | Preserve source ids, source names, node types, file id, page id, and layer id under the canonical IR `source` or trace records. |
-| Asset export | Export or record MasterGo images, SVGs, icons, masks, and unresolved asset placeholders. |
-| Reference frame | Export a provider-rendered frame or layer image for screenshot diff when MasterGo supports it. |
-| Normalization | Convert MasterGo-specific nodes into the canonical `output/ir/design-ir.json` target described by the global architecture. |
-| Warnings | Emit warnings for lossy conversion, unsupported node types, missing assets, low-confidence semantic candidates, and skipped screenshot diff. |
+| Responsibility   | Provider rule                                                                                                                                |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| URL parsing      | Parse `https://mastergo.com/file/{fileId}` and decode URL-encoded `layer_id` values such as `2%3A0031` into `2:0031`.                        |
+| Authentication   | Read `MASTERGO_TOKEN` from the shell environment and never print the token value.                                                            |
+| DSL fetch        | Request MasterGo DSL for the resolved `fileId` and `layerId`.                                                                                |
+| Raw preservation | Save provider data as `output/ir/raw-dsl.json` when running the full pipeline.                                                               |
+| Source trace     | Preserve source ids, source names, node types, file id, page id, and layer id under the canonical IR `source` or trace records.              |
+| Asset export     | Export or record MasterGo images, SVGs, icons, masks, and unresolved asset placeholders.                                                     |
+| Reference frame  | Export a provider-rendered frame or layer image for screenshot diff when MasterGo supports it.                                               |
+| Normalization    | Convert MasterGo-specific nodes into the canonical `output/ir/design-ir.json` target described by the global architecture.                   |
+| Warnings         | Emit warnings for lossy conversion, unsupported node types, missing assets, low-confidence semantic candidates, and skipped screenshot diff. |
 
 All provider-specific fields must remain isolated under `source` metadata or trace records. Downstream preview and target code generation must consume canonical IR views and contracts, not raw MasterGo DSL.
 
@@ -79,16 +79,16 @@ scripts/src/
   types.ts
 ```
 
-| Module | Responsibility |
-|---|---|
-| `parse-url.ts` | Extract `fileId`, `pageId` when available, and decoded `layerId`. |
-| `fetch-dsl.ts` | Read `MASTERGO_TOKEN` safely and fetch MasterGo raw DSL. |
-| `export-assets.ts` | Export or ledger image, SVG, icon, mask, and placeholder assets. |
-| `export-reference-frame.ts` | Export the reference frame/layer image used by screenshot diff. |
-| `normalize-design-ir.ts` | Convert MasterGo raw DSL into the canonical `output/ir/design-ir.json` shape. |
+| Module                        | Responsibility                                                                                                                |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `parse-url.ts`                | Extract `fileId`, `pageId` when available, and decoded `layerId`.                                                             |
+| `fetch-dsl.ts`                | Read `MASTERGO_TOKEN` safely and fetch MasterGo raw DSL.                                                                      |
+| `export-assets.ts`            | Export or ledger image, SVG, icon, mask, and placeholder assets.                                                              |
+| `export-reference-frame.ts`   | Export the reference frame/layer image used by screenshot diff.                                                               |
+| `normalize-design-ir.ts`      | Convert MasterGo raw DSL into the canonical `output/ir/design-ir.json` shape.                                                 |
 | `write-provider-artifacts.ts` | Write `raw-dsl.json`, provider traces, assets, and reference-frame artifacts without overwriting unless explicitly requested. |
-| `types.ts` | Define MasterGo raw adapter types and provider trace helpers only. Canonical IR types belong to the shared pipeline. |
-| `cli.ts` | Expose provider entrypoints that hand off to the shared preview, contract, and package generation pipeline. |
+| `types.ts`                    | Define MasterGo raw adapter types and provider trace helpers only. Canonical IR types belong to the shared pipeline.          |
+| `cli.ts`                      | Expose provider entrypoints that hand off to the shared preview, contract, and package generation pipeline.                   |
 
 ## Execution Flow
 

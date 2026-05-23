@@ -96,12 +96,12 @@
 
 旧的 Python 命令仍在 git 历史中可查；用户的 muscle memory 命令需做以下替换：
 
-| 旧 | 新 |
-|---|---|
+| 旧                                                         | 新                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------- |
 | `python3 design-to-spec/scripts/validate-contracts.py ...` | `node design-to-spec/scripts/validate-contracts.js ...` |
-| `python3 design-to-spec/scripts/generate-output.py ...` | `node design-to-spec/scripts/generate-output.js ...` |
-| `python3 design-to-spec/scripts/validate-output.py ...` | `node design-to-spec/scripts/validate-output.js ...` |
-| `python3 design-to-spec/scripts/test-*.py` | `cd design-to-spec && npm test` |
+| `python3 design-to-spec/scripts/generate-output.py ...`    | `node design-to-spec/scripts/generate-output.js ...`    |
+| `python3 design-to-spec/scripts/validate-output.py ...`    | `node design-to-spec/scripts/validate-output.js ...`    |
+| `python3 design-to-spec/scripts/test-*.py`                 | `cd design-to-spec && npm test`                         |
 
 CLI 标志（`--ui`、`--api`、`--mapping`、`--out-dir`、`--strict`、`--notes`、`--data-fetching`、`--spec`）名字、退出码和错误消息格式与原 Python 实现保持一致。
 

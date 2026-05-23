@@ -11,9 +11,13 @@ This file explains how `skill-collections` is organized and how skill developmen
 ```
 skill-collections/
 ├── README.md                       # Top-level orientation
+├── CONTRIBUTING.md                  # Contributor setup and review checklist
+├── AGENTS.md                        # Coding-agent operating notes
 ├── package.json                    # npm workspace declaration
 ├── package-lock.json               # Root workspace lockfile
 ├── .gitignore                      # Shared local/build artifact ignores
+├── eslint.config.mjs                # Repo lint policy
+├── lefthook.yml                     # Local Git hooks
 │
 ├── packages/                       # Shared code consumed across skills
 │   └── d2c-core/                   # @skill-collections/d2c-core — D2C pipeline core
@@ -56,6 +60,7 @@ skill-collections/
 └── docs/                           # Top-level cross-cutting documentation
     ├── repo-workflow.md
     ├── sample-authoring.md
+    ├── commenting-guide.md
     ├── design-source-to-component-architecture.md        # D2C 架构总纲（含 -zh 中文版）
     ├── design-source-to-component-implementation-plan.md # D2C 实施计划与进度
     └── superpowers/
@@ -97,15 +102,15 @@ Not every skill needs every folder. Add a folder only when the skill actually ha
 
 The repo deliberately separates two concepts that are easy to conflate:
 
-| | Golden regression samples | Hands-on samples |
-|---|---|---|
-| **Lives in** | `skills/design-to-spec/examples/` | `samples/design-to-spec/<name>/` |
-| **Purpose** | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
-| **Audience** | The skill's own tests | Skill users / reviewers / readers |
-| **Owned by** | `design-to-spec` maintainers | Sample authors |
-| **Editable?** | No; test scripts assert exact output | Yes; samples evolve over time |
-| **Contains** | Contracts + generated markdown | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
-| **Failure means** | The skill regressed | The sample drifted from its spec |
+|                   | Golden regression samples                                  | Hands-on samples                                          |
+| ----------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
+| **Lives in**      | `skills/design-to-spec/examples/`                          | `samples/design-to-spec/<name>/`                          |
+| **Purpose**       | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
+| **Audience**      | The skill's own tests                                      | Skill users / reviewers / readers                         |
+| **Owned by**      | `design-to-spec` maintainers                               | Sample authors                                            |
+| **Editable?**     | No; test scripts assert exact output                       | Yes; samples evolve over time                             |
+| **Contains**      | Contracts + generated markdown                             | `inputs/` + `design-spec/` + `src/` + `walkthrough.md`    |
+| **Failure means** | The skill regressed                                        | The sample drifted from its spec                          |
 
 Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
 
@@ -166,16 +171,34 @@ npm run build:samples
 
 Runs sample builds for the workspaces under `samples/<skill>/<sample>/`.
 
+### Format and lint
+
+```bash
+npm run format:check
+npm run lint
+```
+
+Use `npm run format` and `npm run lint:fix` for local fixes.
+
+### Type-check all typed workspaces
+
+```bash
+npm run typecheck
+```
+
+This covers `d2c-core`, `image-to-component` scripts, `sketch-to-component`
+scripts, and the HTML article TypeScript build.
+
 ### Pre-merge full check
 
 ```bash
-npm run check
+npm run check:full
 ```
 
-Runs in order: skill tests -> sample lints -> sample builds. Fail fast.
+Runs in order: lint -> format check -> typecheck -> all tests -> sample builds
+-> fixture lint/build. This is the local equivalent of CI.
 
-`npm run check` does not yet cover the `d2c-core` package — run `npm run test:d2c`
-separately until it is folded into `check` (Stage 7).
+For a slightly narrower repo check that excludes fixtures, run `npm run check`.
 
 ### Work on a single sample
 
@@ -211,4 +234,13 @@ One folder that still doesn't exist but might:
 
 ## 8. CI
 
-There is currently no GitHub Actions workflow. For now, run `npm run check` locally before pushing. If multiple contributors start pushing regularly or `main` is broken by unverified merges, promote the local check into CI.
+GitHub Actions runs the same gate as local development:
+
+```bash
+npm ci
+npm ci --prefix fixtures
+npm run check:full
+```
+
+Local `lefthook` hooks run `npm run format:check` and `npm run lint` on commit,
+then `npm run check:full` before push.

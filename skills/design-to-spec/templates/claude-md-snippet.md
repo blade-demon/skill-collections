@@ -18,11 +18,11 @@
 ### 项目上下文（skill 阶段一会读取）
 
 ```yaml
-tech_stack: miniprogram          # miniprogram / react / vue / flutter / agnostic
-design_system: none              # tdesign / nutui / vant / antd / shadcn / none
-output_dir: design-spec          # 生成文件的根目录（相对项目根）
-components_dir: src/components   # 现有原子组件目录（阶段一 Glob 发现可复用组件）
-openspec_dir: openspec           # OpenSpec 规格目录（无则可省略）
+tech_stack: miniprogram # miniprogram / react / vue / flutter / agnostic
+design_system: none # tdesign / nutui / vant / antd / shadcn / none
+output_dir: design-spec # 生成文件的根目录（相对项目根）
+components_dir: src/components # 现有原子组件目录（阶段一 Glob 发现可复用组件）
+openspec_dir: openspec # OpenSpec 规格目录（无则可省略）
 ```
 
 ### 触发方式
@@ -71,6 +71,7 @@ node scripts/validate-output.js --strict \
 ### 跑不通时
 
 按顺序查：
+
 1. `design-to-spec/references/troubleshooting.md` — 按症状 grep
 2. `design-to-spec/references/glossary.md` — 术语速查
 3. `design-to-spec/references/operator-guide.md` — 真实场景策略（多视觉稿、context 受限等）

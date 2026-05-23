@@ -88,13 +88,13 @@ design-spec/SearchPanel/
 
 实际项目里你拿到的不一定是一张图。先按下表对号入座：
 
-| 你的多张图属于…… | 例子 | 操作策略 | 是否同会话 |
-|---|---|---|---|
-| 同组件的不同状态 | loading / empty / error 各一张 | 一次性传入，合并到一份 ui-schema 的 `states[]` | **同一次会话** |
-| 同组件的不同断点 | mobile / tablet / desktop | 选主断点为基线，差异点写进 `layout.responsive` 或 open_questions | **同一次会话** |
-| 同页面的不同区域 | header + list + footer 拆图 | 作为一个 Container 的 children，统一 ui-schema | **同一次会话** |
-| 多个独立组件 | 首页、详情页、设置页 | 每个组件跑一遍完整四阶段，输出到不同目录 | **拆多次会话** |
-| 流程的多个步骤 | 向导 step1 → step2 → step3 | 每步当作一个组件，mapping 阶段引用前后 step 事件 | **拆多次会话** |
+| 你的多张图属于…… | 例子                           | 操作策略                                                         | 是否同会话     |
+| ---------------- | ------------------------------ | ---------------------------------------------------------------- | -------------- |
+| 同组件的不同状态 | loading / empty / error 各一张 | 一次性传入，合并到一份 ui-schema 的 `states[]`                   | **同一次会话** |
+| 同组件的不同断点 | mobile / tablet / desktop      | 选主断点为基线，差异点写进 `layout.responsive` 或 open_questions | **同一次会话** |
+| 同页面的不同区域 | header + list + footer 拆图    | 作为一个 Container 的 children，统一 ui-schema                   | **同一次会话** |
+| 多个独立组件     | 首页、详情页、设置页           | 每个组件跑一遍完整四阶段，输出到不同目录                         | **拆多次会话** |
+| 流程的多个步骤   | 向导 step1 → step2 → step3     | 每步当作一个组件，mapping 阶段引用前后 step 事件                 | **拆多次会话** |
 
 ### 判断口诀
 
@@ -216,12 +216,12 @@ skill 会照常生成 YAML，并把字段加入 `api.open_questions`，标注"�
 
 这几样东西**第一次产出后保留为独立文件**，后续会话直接粘贴或附加：
 
-| 沉淀物 | 来源 | 何时复用 |
-|---|---|---|
-| 接口文档摘要 | 第一个组件阶段二的 endpoint 列表 | 第二个组件起,省去重新读原始 OpenAPI |
-| 设计 token 表 | 颜色、字号、间距、圆角 | 阶段一让模型直接引用,避免每次重新枚举 |
-| 错误码字典 | NETWORK_ERROR / FORBIDDEN 等枚举 | 阶段二、阶段三复用,避免不一致 |
-| 状态命名约定 | loading / empty / success / error 的具体语义 | 跨组件保持一致 |
+| 沉淀物        | 来源                                         | 何时复用                              |
+| ------------- | -------------------------------------------- | ------------------------------------- |
+| 接口文档摘要  | 第一个组件阶段二的 endpoint 列表             | 第二个组件起,省去重新读原始 OpenAPI   |
+| 设计 token 表 | 颜色、字号、间距、圆角                       | 阶段一让模型直接引用,避免每次重新枚举 |
+| 错误码字典    | NETWORK_ERROR / FORBIDDEN 等枚举             | 阶段二、阶段三复用,避免不一致         |
+| 状态命名约定  | loading / empty / success / error 的具体语义 | 跨组件保持一致                        |
 
 skill 当前没有自动复用机制,靠你手动维护。建议在项目里建一个 `design-spec/_shared/` 目录存这些。
 
@@ -283,8 +283,8 @@ requests:
     endpoint: GET /api/orders/:id
     trigger:
       type: prop_change
-      source: props.selectedOrderId      # 显式声明依赖外部 prop
-      depends_on_component: OrderList    # 标注上游组件名
+      source: props.selectedOrderId # 显式声明依赖外部 prop
+      depends_on_component: OrderList # 标注上游组件名
 ```
 
 **位置 B：`mapping.open_questions` 中登记跨组件契约**
@@ -293,9 +293,9 @@ requests:
 open_questions:
   - id: cross-component-selection-sync
     priority: P0
-    text: "OrderList 选中行后通过什么方式通知 OrderDetail 刷新？
-           候选：URL 参数 / 全局 store / 父组件 prop。
-           需在实现规划阶段统一决定。"
+    text: 'OrderList 选中行后通过什么方式通知 OrderDetail 刷新？
+      候选：URL 参数 / 全局 store / 父组件 prop。
+      需在实现规划阶段统一决定。'
 ```
 
 这两处锚点都会被 `/plan` 阶段读到，跨组件协作不会被静默吞掉。
@@ -304,11 +304,11 @@ open_questions:
 
 所有组件跑完后，做一次跨组件一致性检查。当前 skill 没有内建脚本，按下面三条规则人工抽查：
 
-| 检查项 | 怎么查 | 出问题怎么办 |
-|---|---|---|
+| 检查项                                  | 怎么查                                                                  | 出问题怎么办                                          |
+| --------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- |
 | 同 endpoint id 在不同组件的字段定义一致 | 对比所有 `api-schema.yaml` 中相同 `endpoints[].id` 的 `response_fields` | 以 catalog 为准，更新各组件契约后重跑 generate-output |
-| 同枚举（如 status）取值一致 | 对比所有 `api-schema.yaml` 中相同字段的 `enums` | 以 catalog 为准，对齐后重跑 |
-| 共享 endpoint 的 cache_policy 不冲突 | 对比所有 `mapping-logic.yaml` 中相同 endpoint 的 cache_policy | 决定唯一负责方，其他组件改为消费缓存而非重复拉取 |
+| 同枚举（如 status）取值一致             | 对比所有 `api-schema.yaml` 中相同字段的 `enums`                         | 以 catalog 为准，对齐后重跑                           |
+| 共享 endpoint 的 cache_policy 不冲突    | 对比所有 `mapping-logic.yaml` 中相同 endpoint 的 cache_policy           | 决定唯一负责方，其他组件改为消费缓存而非重复拉取      |
 
 简易命令（手工 grep 即可）：
 
@@ -341,14 +341,14 @@ Step 4: 把整个 design-spec/（含 _shared/）交给 /plan
 
 ## 6. 常见错误和补救
 
-| 现象 | 原因 | 补救 |
-|---|---|---|
-| 阶段一漏掉了某个按钮 | 图太小或被遮挡 | 直接回复"还有一个 X 按钮在右上角，请补充"，skill 会更新 ui-schema |
-| 阶段二把不相关的字段也提取了 | 接口文档没事前筛选 | 回复"results 接口里只用 id/title/status 三个字段，其他请删除" |
-| 阶段三状态机少了一条转换 | 你的描述不够具体 | 直接补一句"还有一种情况：data.results.length > 100 时显示分页提示" |
-| 生成的 spec.md 里 Scenario 太空泛 | render_assertion 缺失 | 检查 `ui-schema.yaml` 的 `states[].render_assertion`，补上具体 DOM 断言（如 `renders .empty-state`），重跑生成脚本 |
-| validate-output 报错 trace 锚点缺失 | 手动改 markdown 时删掉了 `state:<id>` 之类标记 | 把锚点加回去；它们是机器校验用的，不是装饰 |
-| context 爆了，会话无响应 | 累积太多 | 开新会话，把 `contracts/*.yaml` 粘给它，从阶段四接续 |
+| 现象                                | 原因                                           | 补救                                                                                                               |
+| ----------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 阶段一漏掉了某个按钮                | 图太小或被遮挡                                 | 直接回复"还有一个 X 按钮在右上角，请补充"，skill 会更新 ui-schema                                                  |
+| 阶段二把不相关的字段也提取了        | 接口文档没事前筛选                             | 回复"results 接口里只用 id/title/status 三个字段，其他请删除"                                                      |
+| 阶段三状态机少了一条转换            | 你的描述不够具体                               | 直接补一句"还有一种情况：data.results.length > 100 时显示分页提示"                                                 |
+| 生成的 spec.md 里 Scenario 太空泛   | render_assertion 缺失                          | 检查 `ui-schema.yaml` 的 `states[].render_assertion`，补上具体 DOM 断言（如 `renders .empty-state`），重跑生成脚本 |
+| validate-output 报错 trace 锚点缺失 | 手动改 markdown 时删掉了 `state:<id>` 之类标记 | 把锚点加回去；它们是机器校验用的，不是装饰                                                                         |
+| context 爆了，会话无响应            | 累积太多                                       | 开新会话，把 `contracts/*.yaml` 粘给它，从阶段四接续                                                               |
 
 ---
 

@@ -34,12 +34,19 @@ export function getMasterForInstance(
   if (typeof node.symbolID !== 'string') return undefined;
   const master = symbols.mastersBySymbolId.get(node.symbolID);
   if (!master) {
-    addWarning(warnings, 'missing-symbol-master', `Missing symbol master for ${node.symbolID}`, node);
+    addWarning(
+      warnings,
+      'missing-symbol-master',
+      `Missing symbol master for ${node.symbolID}`,
+      node,
+    );
   }
   return master;
 }
 
-export function extractOverrides(node: SketchNode): Array<{ path: string; value: unknown }> | undefined {
+export function extractOverrides(
+  node: SketchNode,
+): Array<{ path: string; value: unknown }> | undefined {
   if (!Array.isArray(node.overrideValues)) return undefined;
   return node.overrideValues.map((override, index) => ({
     path:

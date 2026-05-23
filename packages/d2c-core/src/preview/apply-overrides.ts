@@ -26,14 +26,26 @@ export function applySymbolOverrides(visual: VisualBlock): ApplyOverridesResult 
       const textTargetId = parseTextOverrideTarget(override.path);
       if (!textTargetId || typeof override.value !== 'string') {
         stats.overrideUnsupported += 1;
-        warnings.push(makeWarning('unsupported-symbol-override', node, `Unsupported symbol override "${override.path}"`));
+        warnings.push(
+          makeWarning(
+            'unsupported-symbol-override',
+            node,
+            `Unsupported symbol override "${override.path}"`,
+          ),
+        );
         continue;
       }
 
       const target = findTextNode(node, textTargetId);
       if (!target?.text) {
         stats.overrideUnmapped += 1;
-        warnings.push(makeWarning('unmapped-symbol-override', node, `Could not map text override "${override.path}"`));
+        warnings.push(
+          makeWarning(
+            'unmapped-symbol-override',
+            node,
+            `Could not map text override "${override.path}"`,
+          ),
+        );
         continue;
       }
 

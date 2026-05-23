@@ -24,10 +24,10 @@ design-to-component
 
 Design-to-code 存在两个不同的保真层。它们应当分别建模、分别评审。
 
-| 层级 | 目标 | 主要输入 | 主要输出 | 评审门禁 |
-|---|---|---|---|---|
-| 视觉保真层 | 让结果看起来与设计稿一致 | 设计 DSL、布局、样式、token、资源 | `ir/views/visual-view.json`、`preview/index.html`、`preview/preview.css`、`preview/assets/` | HTML 预览审批 |
-| 契约保真层 | 让结果具备可维护的组件契约 | 标注、图层名、项目规则、开发者契约 | `ir/views/semantic-view.json`、`ir/interaction-spec.json`、`ir/component-plan.json` | 组件方案审批 |
+| 层级       | 目标                       | 主要输入                           | 主要输出                                                                                    | 评审门禁      |
+| ---------- | -------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- | ------------- |
+| 视觉保真层 | 让结果看起来与设计稿一致   | 设计 DSL、布局、样式、token、资源  | `ir/views/visual-view.json`、`preview/index.html`、`preview/preview.css`、`preview/assets/` | HTML 预览审批 |
+| 契约保真层 | 让结果具备可维护的组件契约 | 标注、图层名、项目规则、开发者契约 | `ir/views/semantic-view.json`、`ir/interaction-spec.json`、`ir/component-plan.json`         | 组件方案审批  |
 
 视觉保真层回答“看起来对不对”。契约保真层回答“生成的组件边界、API、状态和事件契约能不能用”。
 
@@ -61,14 +61,14 @@ ir/
 
 术语必须保持一致：
 
-| 术语 | 含义 |
-|---|---|
-| Raw DSL | MasterGo、Figma、Sketch 或其他连接器返回的、provider 专有的数据 |
-| Normalized Design IR | 存放于 `ir/design-ir.json` 的、经 provider 规范化的权威契约 |
-| Visual View | 权威 IR 的派生视图，供预览渲染器使用 |
-| Semantic View | 权威 IR 的派生视图，供组件规划使用 |
-| Interaction Spec | 由开发者授权的事件、payload、状态与数据契约 |
-| Component Plan | 在目标技术栈输出前已批准的最终代码生成方案 |
+| 术语                 | 含义                                                            |
+| -------------------- | --------------------------------------------------------------- |
+| Raw DSL              | MasterGo、Figma、Sketch 或其他连接器返回的、provider 专有的数据 |
+| Normalized Design IR | 存放于 `ir/design-ir.json` 的、经 provider 规范化的权威契约     |
+| Visual View          | 权威 IR 的派生视图，供预览渲染器使用                            |
+| Semantic View        | 权威 IR 的派生视图，供组件规划使用                              |
+| Interaction Spec     | 由开发者授权的事件、payload、状态与数据契约                     |
+| Component Plan       | 在目标技术栈输出前已批准的最终代码生成方案                      |
 
 `design-ir.json` 必须包含 schema 版本：
 
@@ -216,21 +216,21 @@ flowchart TD
 
 ## 职责与交付物
 
-| 阶段 | 负责人 | 输入 | 交付物 |
-|---|---|---|---|
-| 设计准备 | 设计师 | 设计文件 | 可访问的设计源与可导出的资源 |
-| 语义标注 | 设计师 + 开发者 | 设计文件与业务意图 | 可选的 `@component`、`@state`、`@event`、`@slot`、`@data` 标注 |
-| 项目规则设置 | 开发者 | 目标代码库规范 | 技术栈规则、token 映射、BEM 规则、导出规则 |
-| DSL 提取 | MCP / 连接器 | 设计 URL、文件、页面或图层 id | `ir/raw-dsl.json`、资源、参考帧图片、源 trace |
-| IR 规范化 | D2C 引擎 | raw DSL、资源、项目 token | `ir/design-ir.json` |
-| 视觉视图派生 | D2C 引擎 | 权威 IR | `ir/views/visual-view.json` |
-| HTML 预览 | D2C 引擎 | 由权威 IR 派生的 Visual View | `preview/index.html`、`preview/preview.css`、`preview/assets/` |
-| 视觉评审 | 设计师 + 开发者 | HTML 预览与截图比对 | `preview/visual-review-report.md` 与门禁 1 审批 |
-| 语义映射 | D2C 引擎 + 开发者 | 权威 IR、标注、项目规则 | `ir/views/semantic-view.json` |
-| 交互建模 | 开发者 + D2C 引擎 | 交互契约与 Semantic View | `ir/interaction-spec.json` |
-| 组件规划 | 开发者 + D2C 引擎 | Semantic View 与 Interaction Spec | `ir/component-plan.json` 与门禁 2 审批 |
-| 代码生成 | D2C 引擎 | 已批准的 Component Plan | 带 barrel 导出的目标组件包 |
-| 工程校验 | 开发者 + 工具 | 生成的代码 | 类型检查、构建、渲染与截图比对报告 |
+| 阶段         | 负责人            | 输入                              | 交付物                                                         |
+| ------------ | ----------------- | --------------------------------- | -------------------------------------------------------------- |
+| 设计准备     | 设计师            | 设计文件                          | 可访问的设计源与可导出的资源                                   |
+| 语义标注     | 设计师 + 开发者   | 设计文件与业务意图                | 可选的 `@component`、`@state`、`@event`、`@slot`、`@data` 标注 |
+| 项目规则设置 | 开发者            | 目标代码库规范                    | 技术栈规则、token 映射、BEM 规则、导出规则                     |
+| DSL 提取     | MCP / 连接器      | 设计 URL、文件、页面或图层 id     | `ir/raw-dsl.json`、资源、参考帧图片、源 trace                  |
+| IR 规范化    | D2C 引擎          | raw DSL、资源、项目 token         | `ir/design-ir.json`                                            |
+| 视觉视图派生 | D2C 引擎          | 权威 IR                           | `ir/views/visual-view.json`                                    |
+| HTML 预览    | D2C 引擎          | 由权威 IR 派生的 Visual View      | `preview/index.html`、`preview/preview.css`、`preview/assets/` |
+| 视觉评审     | 设计师 + 开发者   | HTML 预览与截图比对               | `preview/visual-review-report.md` 与门禁 1 审批                |
+| 语义映射     | D2C 引擎 + 开发者 | 权威 IR、标注、项目规则           | `ir/views/semantic-view.json`                                  |
+| 交互建模     | 开发者 + D2C 引擎 | 交互契约与 Semantic View          | `ir/interaction-spec.json`                                     |
+| 组件规划     | 开发者 + D2C 引擎 | Semantic View 与 Interaction Spec | `ir/component-plan.json` 与门禁 2 审批                         |
+| 代码生成     | D2C 引擎          | 已批准的 Component Plan           | 带 barrel 导出的目标组件包                                     |
+| 工程校验     | 开发者 + 工具     | 生成的代码                        | 类型检查、构建、渲染与截图比对报告                             |
 
 ## 为什么拆分这些工作流
 
@@ -252,12 +252,12 @@ flowchart TD
 
 ## 工作流角色
 
-| 工作流 | 输入 | 主要输出 | 保真目标 |
-|---|---|---|---|
-| `image-to-component` | UI 截图或设计稿图片 | 类型化骨架、状态模型、资源清单 | 低到中 |
-| `sketch-to-component` | Sketch 文件或 Sketch MCP/IR | 规范化设计 IR、预览、目标组件包 | 中到高 |
-| `figma-to-component` | Figma API/MCP 数据 | 规范化设计 IR、预览、目标组件包 | 中到高 |
-| `mastergo-to-component` | MasterGo DSL | 规范化设计 IR、预览、目标组件包 | 中到高 |
+| 工作流                  | 输入                        | 主要输出                        | 保真目标 |
+| ----------------------- | --------------------------- | ------------------------------- | -------- |
+| `image-to-component`    | UI 截图或设计稿图片         | 类型化骨架、状态模型、资源清单  | 低到中   |
+| `sketch-to-component`   | Sketch 文件或 Sketch MCP/IR | 规范化设计 IR、预览、目标组件包 | 中到高   |
+| `figma-to-component`    | Figma API/MCP 数据          | 规范化设计 IR、预览、目标组件包 | 中到高   |
+| `mastergo-to-component` | MasterGo DSL                | 规范化设计 IR、预览、目标组件包 | 中到高   |
 
 ## 共享设计源管线
 
@@ -560,32 +560,32 @@ output/
 根导出：
 
 ```ts
-export * from './components/ChatAssistantPage'
+export * from './components/ChatAssistantPage';
 ```
 
 页面组件导出：
 
 ```ts
-export { ChatAssistantPage } from './ChatAssistantPage'
-export type { ChatAssistantPageProps } from './ChatAssistantPage.types'
+export { ChatAssistantPage } from './ChatAssistantPage';
+export type { ChatAssistantPageProps } from './ChatAssistantPage.types';
 
-export * from './components/ChatHeader'
-export * from './components/MessageList'
-export * from './components/InputComposer'
+export * from './components/ChatHeader';
+export * from './components/MessageList';
+export * from './components/InputComposer';
 ```
 
 子组件导出：
 
 ```ts
-export { MessageList } from './MessageList'
-export type { MessageItem, MessageListProps } from './MessageList.types'
+export { MessageList } from './MessageList';
+export type { MessageItem, MessageListProps } from './MessageList.types';
 ```
 
 资源导出：
 
 ```ts
-export { default as assistantAvatar } from './assistant-avatar.png'
-export { default as sendIcon } from './send.svg'
+export { default as assistantAvatar } from './assistant-avatar.png';
+export { default as sendIcon } from './send.svg';
 ```
 
 React 输出必须使用这种组件包与 barrel 导出形态。避免生成单个页面 `.tsx` 文件加一个巨大的 CSS 文件。

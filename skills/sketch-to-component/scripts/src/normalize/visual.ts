@@ -24,11 +24,7 @@ import {
   readNumber,
   type SketchNode,
 } from './sketch-nodes.js';
-import {
-  extractOverrides,
-  getMasterForInstance,
-  type SymbolIndex,
-} from './symbols.js';
+import { extractOverrides, getMasterForInstance, type SymbolIndex } from './symbols.js';
 
 export interface BuildVisualBlockInput {
   model: SketchRawModel;
@@ -77,7 +73,13 @@ function normalizeNode(
   options: NormalizeNodeOptions,
 ): VisualNode | undefined {
   if (!isVisible(node)) {
-    addWarning(context.warnings, 'hidden-node-skipped', `Skipped hidden node "${getNodeName(node)}"`, node, 'info');
+    addWarning(
+      context.warnings,
+      'hidden-node-skipped',
+      `Skipped hidden node "${getNodeName(node)}"`,
+      node,
+      'info',
+    );
     return undefined;
   }
 
@@ -89,7 +91,9 @@ function normalizeNode(
   const kind = mapKind(nodeClass, context.warnings, node);
   const frame = readFrame(node);
   const rawChildren = getLayers(node)
-    .map((child) => normalizeNode(child, context, { visitedSymbols: new Set(options.visitedSymbols) }))
+    .map((child) =>
+      normalizeNode(child, context, { visitedSymbols: new Set(options.visitedSymbols) }),
+    )
     .filter((child): child is VisualNode => Boolean(child));
   const children = cleanChildren(rawChildren, context.warnings);
 
@@ -103,9 +107,7 @@ function normalizeNode(
       originalType: nodeClass,
       provider: 'sketch',
     },
-    layout: options.isRoot
-      ? { x: 0, y: 0, width: frame.width, height: frame.height }
-      : frame,
+    layout: options.isRoot ? { x: 0, y: 0, width: frame.width, height: frame.height } : frame,
     children,
   };
 
@@ -131,7 +133,12 @@ function normalizeSymbolInstance(
   let children: VisualNode[] = [];
 
   if (symbolId && options.visitedSymbols.has(symbolId)) {
-    addWarning(context.warnings, 'symbol-cycle', `Stopped cyclic symbol expansion for ${symbolId}`, node);
+    addWarning(
+      context.warnings,
+      'symbol-cycle',
+      `Stopped cyclic symbol expansion for ${symbolId}`,
+      node,
+    );
   } else if (master) {
     const nextVisited = new Set(options.visitedSymbols);
     if (symbolId) nextVisited.add(symbolId);
@@ -170,18 +177,25 @@ function normalizeSymbolInstance(
 }
 
 function mapKind(nodeClass: string, warnings: Warning[], node: SketchNode): VisualNodeKind {
-  if (nodeClass === 'artboard' || nodeClass === 'frame' || nodeClass === 'symbolMaster') return 'frame';
+  if (nodeClass === 'artboard' || nodeClass === 'frame' || nodeClass === 'symbolMaster')
+    return 'frame';
   if (nodeClass === 'group') return 'group';
   if (nodeClass === 'text') return 'text';
   if (nodeClass === 'bitmap') return 'image';
   if (['shapePath', 'oval', 'rectangle', 'shapeGroup'].includes(nodeClass)) return 'shape';
   if (nodeClass.startsWith('svg') || nodeClass === 'path') return 'vector';
-  addWarning(warnings, 'unknown-node-class', `Mapped unknown Sketch class "${nodeClass}" to group`, node);
+  addWarning(
+    warnings,
+    'unknown-node-class',
+    `Mapped unknown Sketch class "${nodeClass}" to group`,
+    node,
+  );
   return 'group';
 }
 
 function registerImageAsset(node: SketchNode, context: VisualContext): AssetEntry {
-  const image = node.image && typeof node.image === 'object' ? (node.image as Record<string, unknown>) : {};
+  const image =
+    node.image && typeof node.image === 'object' ? (node.image as Record<string, unknown>) : {};
   const ref = typeof image._ref === 'string' ? image._ref : `missing-image/${getNodeId(node)}`;
   const rawAsset = context.model.assets.find((asset) => asset.path === ref);
   if (!rawAsset) {
@@ -205,7 +219,8 @@ function extractText(node: SketchNode): TextContent {
     node.attributedString && typeof node.attributedString === 'object'
       ? (node.attributedString as Record<string, unknown>)
       : {};
-  const content = typeof attributedString.string === 'string' ? attributedString.string : getNodeName(node);
+  const content =
+    typeof attributedString.string === 'string' ? attributedString.string : getNodeName(node);
   const encoded = getTextAttributes(node);
   const textStyle: NonNullable<TextContent['style']> = {};
   const font = encoded.MSAttributedStringFontAttribute as Record<string, unknown> | undefined;
@@ -239,7 +254,10 @@ function getTextAttributes(node: SketchNode): Record<string, unknown> {
     return attributes.attributes as Record<string, unknown>;
   }
   const style = node.style && typeof node.style === 'object' ? node.style : {};
-  const textStyle = style.textStyle && typeof style.textStyle === 'object' ? (style.textStyle as Record<string, unknown>) : {};
+  const textStyle =
+    style.textStyle && typeof style.textStyle === 'object'
+      ? (style.textStyle as Record<string, unknown>)
+      : {};
   return textStyle.encodedAttributes && typeof textStyle.encodedAttributes === 'object'
     ? (textStyle.encodedAttributes as Record<string, unknown>)
     : {};
@@ -310,7 +328,8 @@ function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined
   if (effects.length > 0) result.effects = effects;
   const contextSettings = style.contextSettings as Record<string, unknown> | undefined;
   if (typeof contextSettings?.opacity === 'number') result.opacity = contextSettings.opacity;
-  if (typeof node.fixedRadius === 'number' && node.fixedRadius >= 0) result.radius = node.fixedRadius;
+  if (typeof node.fixedRadius === 'number' && node.fixedRadius >= 0)
+    result.radius = node.fixedRadius;
   if (typeof style.do_objectID === 'string') result.raw = { sketchStyleId: style.do_objectID };
   return Object.keys(result).length > 0 ? result : undefined;
 }
@@ -318,7 +337,10 @@ function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined
 function normalizeFills(value: unknown): Fill[] {
   if (!Array.isArray(value)) return [];
   return value
-    .filter((fill) => fill && typeof fill === 'object' && (fill as Record<string, unknown>).isEnabled !== false)
+    .filter(
+      (fill) =>
+        fill && typeof fill === 'object' && (fill as Record<string, unknown>).isEnabled !== false,
+    )
     .map((fill) => {
       const f = fill as Record<string, unknown>;
       // Gradient fills collapse to a single fallback `color`; keep the raw
@@ -337,7 +359,12 @@ function normalizeFills(value: unknown): Fill[] {
 function normalizeBorders(value: unknown): Border[] {
   if (!Array.isArray(value)) return [];
   return value
-    .filter((border) => border && typeof border === 'object' && (border as Record<string, unknown>).isEnabled !== false)
+    .filter(
+      (border) =>
+        border &&
+        typeof border === 'object' &&
+        (border as Record<string, unknown>).isEnabled !== false,
+    )
     .map((border) => {
       const b = border as Record<string, unknown>;
       return {

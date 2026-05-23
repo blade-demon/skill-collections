@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  DESIGN_IR_SCHEMA_VERSION,
-  isCompatible,
-  parseSchemaVersion,
-} from '../version';
+import { DESIGN_IR_SCHEMA_VERSION, isCompatible, parseSchemaVersion } from '../version';
 
 describe('parseSchemaVersion', () => {
   it('parses a well-formed version', () => {

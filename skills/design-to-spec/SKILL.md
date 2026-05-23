@@ -3,8 +3,8 @@ name: design-to-spec
 metadata:
   version: 0.10.1
   compatibility:
-    - opencode      # 原生支持：question tool / Plan mode / AGENTS.md / SQLite 会话持久化
-    - claude-code   # 原生支持：AskUserQuestion / 文件读写
+    - opencode # 原生支持：question tool / Plan mode / AGENTS.md / SQLite 会话持久化
+    - claude-code # 原生支持：AskUserQuestion / 文件读写
 description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
 ---
 
@@ -79,11 +79,11 @@ WAITING_FOR_UI → WAITING_FOR_API → WAITING_FOR_MAPPING → GENERATING_SPEC
 ```markdown
 ## design-to-spec 项目上下文
 
-- tech_stack: miniprogram       # miniprogram / react / vue / flutter / agnostic
-- design_system: none           # tdesign / nutui / vant / antd / shadcn / none
-- output_dir: design-spec       # 生成文件的根目录（相对项目根）
+- tech_stack: miniprogram # miniprogram / react / vue / flutter / agnostic
+- design_system: none # tdesign / nutui / vant / antd / shadcn / none
+- output_dir: design-spec # 生成文件的根目录（相对项目根）
 - components_dir: src/components # 现有原子组件目录，阶段一自动 Glob 发现可复用组件
-- openspec_dir: openspec        # OpenSpec 规格目录
+- openspec_dir: openspec # OpenSpec 规格目录
 ```
 
 skill 读取优先级：AGENTS.md 声明 > 用户对话中提供 > 阶段一默认询问。
@@ -92,12 +92,12 @@ skill 读取优先级：AGENTS.md 声明 > 用户对话中提供 > 阶段一默�
 
 OpenCode 支持通过 Tab 键切换 Plan / Execute 模式。建议按以下模式运行：
 
-| 阶段 | 模式 | 原因 |
-|---|---|---|
-| 阶段一（视觉提纯）| **Plan** | 纯分析，不写文件 |
-| 阶段二（接口提纯）| **Plan** | 纯分析，不写文件 |
-| 阶段三（逻辑映射）| **Plan** | 纯分析，不写文件 |
-| 阶段四（规格组装）| **Execute** | 需要写入 contracts/ 和三份输出文件 |
+| 阶段               | 模式        | 原因                               |
+| ------------------ | ----------- | ---------------------------------- |
+| 阶段一（视觉提纯） | **Plan**    | 纯分析，不写文件                   |
+| 阶段二（接口提纯） | **Plan**    | 纯分析，不写文件                   |
+| 阶段三（逻辑映射） | **Plan**    | 纯分析，不写文件                   |
+| 阶段四（规格组装） | **Execute** | 需要写入 contracts/ 和三份输出文件 |
 
 三个分析阶段在 Plan mode 下运行，确认后切换到 Execute 进行阶段四的文件写入。
 
@@ -292,10 +292,10 @@ mapping:
 
 **节标记约定**（由 `generate-output.js` 写入生成文件，LLM 必须遵守）：
 
-| 标记 | 含义 | 4B 阶段允许做什么 |
-|---|---|---|
+| 标记                        | 含义                 | 4B 阶段允许做什么                              |
+| --------------------------- | -------------------- | ---------------------------------------------- |
 | `<!-- CONTRACT_DERIVED -->` | 从 YAML 契约机械生成 | 只读；不得修改字段名、类型、枚举、trace anchor |
-| `<!-- NARRATIVE -->` | 背景/决策/解释性文字 | 可补充措辞、背景、决策理由；不得引入契约外实体 |
+| `<!-- NARRATIVE -->`        | 背景/决策/解释性文字 | 可补充措辞、背景、决策理由；不得引入契约外实体 |
 
 **进入阶段四时先输出状态行**：
 
@@ -381,16 +381,16 @@ Glob 检查是否存在同名组件文件或已有 spec
 
 从三份 YAML 直接读取，不二次加工：
 
-| 目标字段                     | 来源                                                                                                                              |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 数据契约字段名 / 类型 / 枚举 | `API_Schema.response_fields`（直接抄写，不改名）                                                                                  |
+| 目标字段                     | 来源                                                                                                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 数据契约字段名 / 类型 / 枚举 | `API_Schema.response_fields`（直接抄写，不改名）                                                                                                            |
 | 字段来源标注                 | `Mapping_Logic.bindings.direction`：`ui_to_api` → `source: prop`；`api_to_ui` → `source: api`；`ui_to_event` → `Events`；有 `transform` → `source: derived` |
-| 状态枚举触发条件             | `Mapping_Logic.state_machine`（逐条读取 event 值）                                                                                |
-| 状态可断言结果               | `Mapping_Logic.state_machine.render_assertion`，缺失时回退到 `UI_Schema.states[].render_assertion`                                |
-| 开放问题                     | `API_Schema.open_questions` + `Mapping_Logic.open_questions`（直接搬运，不二次加工）                                              |
-| 数据获取请求                 | `Mapping_Logic.data_fetching.requests[]` + cache/retry/concurrency policy                                                        |
-| API 元信息                   | `API_Schema.request_body` + `pagination` + `error_shape` + `cache_key_fields` + `auth_required`                                  |
-| 组件分解表                   | `UI_Schema.components`（id + parent_id + type + semantic_type + role + interactive + repeat_source）                             |
+| 状态枚举触发条件             | `Mapping_Logic.state_machine`（逐条读取 event 值）                                                                                                          |
+| 状态可断言结果               | `Mapping_Logic.state_machine.render_assertion`，缺失时回退到 `UI_Schema.states[].render_assertion`                                                          |
+| 开放问题                     | `API_Schema.open_questions` + `Mapping_Logic.open_questions`（直接搬运，不二次加工）                                                                        |
+| 数据获取请求                 | `Mapping_Logic.data_fetching.requests[]` + cache/retry/concurrency policy                                                                                   |
+| API 元信息                   | `API_Schema.request_body` + `pagination` + `error_shape` + `cache_key_fields` + `auth_required`                                                             |
+| 组件分解表                   | `UI_Schema.components`（id + parent_id + type + semantic_type + role + interactive + repeat_source）                                                        |
 
 ### 4.3 Scenario 生成规则
 
@@ -456,14 +456,14 @@ error: api_error（FORBIDDEN 处理待确认 P0）
 
 **运行时常见问题——出现时主动输出以下提示，不要等用户翻文档：**
 
-| 触发条件 | 输出给用户的补救提示 |
-|---|---|
-| 阶段一确认后用户说"漏了某个元素" | `直接告诉我：还有 [位置] 的 [组件类型]，我会更新 ui-schema 后继续。` |
-| 阶段二提取了用户不需要的字段 | `回复：只保留 [字段A / 字段B / 字段C]，其余删除。` |
-| 阶段三状态机缺少某条转换 | `回复补充条件，例如："还有一种情况：data.results.length > 100 时显示分页提示"` |
-| spec.md 的 Scenario THEN 子句太空泛 | `⚠️ render_assertion 缺失导致 THEN 无法断言。请在 contracts/ui-schema.yaml 的对应 state 下补写 render_assertion（如 renders .empty-state），然后重跑 generate-output.js。` |
-| validate-output 报 trace 锚点缺失 | `⚠️ trace 锚点（state:<id> / component:<id>）被误删。请把对应锚点加回 notes.md 或 spec.md，它们是机器校验用的，不是装饰。` |
-| context 不足（门控触发或会话无响应） | `⚠️ context 不足，已停止生成。三份契约已落盘。请开新会话并发送：把 design-spec/<组件名>/contracts/ 目录路径告诉我，我从阶段四接续。` |
+| 触发条件                             | 输出给用户的补救提示                                                                                                                                                       |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 阶段一确认后用户说"漏了某个元素"     | `直接告诉我：还有 [位置] 的 [组件类型]，我会更新 ui-schema 后继续。`                                                                                                       |
+| 阶段二提取了用户不需要的字段         | `回复：只保留 [字段A / 字段B / 字段C]，其余删除。`                                                                                                                         |
+| 阶段三状态机缺少某条转换             | `回复补充条件，例如："还有一种情况：data.results.length > 100 时显示分页提示"`                                                                                             |
+| spec.md 的 Scenario THEN 子句太空泛  | `⚠️ render_assertion 缺失导致 THEN 无法断言。请在 contracts/ui-schema.yaml 的对应 state 下补写 render_assertion（如 renders .empty-state），然后重跑 generate-output.js。` |
+| validate-output 报 trace 锚点缺失    | `⚠️ trace 锚点（state:<id> / component:<id>）被误删。请把对应锚点加回 notes.md 或 spec.md，它们是机器校验用的，不是装饰。`                                                 |
+| context 不足（门控触发或会话无响应） | `⚠️ context 不足，已停止生成。三份契约已落盘。请开新会话并发送：把 design-spec/<组件名>/contracts/ 目录路径告诉我，我从阶段四接续。`                                       |
 
 ---
 

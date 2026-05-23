@@ -32,9 +32,7 @@ export type SchemaVersionCheck =
 export const SCHEMA_VERSION_FORMAT = /^(.+)\/v(\d+)\.(\d+)\.(\d+)$/;
 
 /** Parse a `<family>/v<major>.<minor>.<patch>` string, or `null` if malformed. */
-export function parseSchemaVersion(
-  value: string,
-): { family: string; version: SemVer } | null {
+export function parseSchemaVersion(value: string): { family: string; version: SemVer } | null {
   const m = SCHEMA_VERSION_FORMAT.exec(value);
   if (!m) return null;
   return {

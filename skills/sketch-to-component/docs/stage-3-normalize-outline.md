@@ -187,11 +187,11 @@ asset 对应不上、低置信候选、symbol 环、节点超量截断等。
 
 ## 12. 执行顺序 — 3A / 3B / 3C(仍是一个 Stage)
 
-| 子段 | 内容 |
-|---|---|
-| **3A** | d2c-core v0.2.0 schema(§3/§4)+ 脱敏 fixture(§14)+ d2c-core schema 单测 |
+| 子段   | 内容                                                                         |
+| ------ | ---------------------------------------------------------------------------- |
+| **3A** | d2c-core v0.2.0 schema(§3/§4)+ 脱敏 fixture(§14)+ d2c-core schema 单测       |
 | **3B** | Sketch `visual` normalize(§5–§8)+ 产 `design-ir.json` + `Provider.normalize` |
-| **3C** | very thin `semantic` 候选(§9)+ 组装 `SketchProvider` + CLI `normalize` 命令 |
+| **3C** | very thin `semantic` 候选(§9)+ 组装 `SketchProvider` + CLI `normalize` 命令  |
 
 3A 先行(契约 + fixture 是 3B/3C 的地基)。
 
@@ -202,18 +202,18 @@ asset 对应不上、低置信候选、symbol 环、节点超量截断等。
 
 **Sketch provider**(`skills/sketch-to-component/scripts/src/`):
 
-| 文件 | 职责 |
-|---|---|
-| `normalize/select-artboard.ts` | 选目标画板(§待定 → §17 已定) |
-| `normalize/sketch-nodes.ts` | Sketch `_class` 原始节点类型与读取助手 |
-| `normalize/clean-tree.ts` | 节点树清理(§7) |
-| `normalize/visual.ts` | 构建 `visual` 树(kind/layout/style/text/asset) |
-| `normalize/symbols.ts` | symbol 解析 + trace 保留 + 循环保护(§8) |
-| `normalize/semantic.ts` | thin 语义候选(§9) |
-| `normalize/names.ts` | 稳定命名 + id(§10) |
-| `normalize.ts` | 编排 `RawArtifact` → `DesignIR`;实现 `Provider.normalize` |
-| `provider.ts` | 组装 `SketchProvider implements Provider`(`extractRaw` + `normalize`) |
-| `cli.ts` | 加 `normalize` 命令(`raw-dsl.json` → `design-ir.json`) |
+| 文件                           | 职责                                                                  |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `normalize/select-artboard.ts` | 选目标画板(§待定 → §17 已定)                                          |
+| `normalize/sketch-nodes.ts`    | Sketch `_class` 原始节点类型与读取助手                                |
+| `normalize/clean-tree.ts`      | 节点树清理(§7)                                                        |
+| `normalize/visual.ts`          | 构建 `visual` 树(kind/layout/style/text/asset)                        |
+| `normalize/symbols.ts`         | symbol 解析 + trace 保留 + 循环保护(§8)                               |
+| `normalize/semantic.ts`        | thin 语义候选(§9)                                                     |
+| `normalize/names.ts`           | 稳定命名 + id(§10)                                                    |
+| `normalize.ts`                 | 编排 `RawArtifact` → `DesignIR`;实现 `Provider.normalize`             |
+| `provider.ts`                  | 组装 `SketchProvider implements Provider`(`extractRaw` + `normalize`) |
+| `cli.ts`                       | 加 `normalize` 命令(`raw-dsl.json` → `design-ir.json`)                |
 
 ## 14. fixture 脱敏(关键前置 — 实现前先做)
 

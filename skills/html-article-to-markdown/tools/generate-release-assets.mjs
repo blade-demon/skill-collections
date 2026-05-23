@@ -1,36 +1,36 @@
-import { execFile } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
+import { execFile } from 'node:child_process';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const tmpDir = "/private/tmp/html-article-to-markdown-assets";
-const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const tmpDir = '/private/tmp/html-article-to-markdown-assets';
+const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const palette = {
-  ink: "#132238",
-  muted: "#5b677a",
-  blue: "#2f6df6",
-  teal: "#19b6a4",
-  amber: "#f5b642",
-  red: "#ee5f5b",
-  bg: "#f6f8fb",
-  panel: "#ffffff",
-  line: "#d9e2ef",
-  dark: "#101827",
+  ink: '#132238',
+  muted: '#5b677a',
+  blue: '#2f6df6',
+  teal: '#19b6a4',
+  amber: '#f5b642',
+  red: '#ee5f5b',
+  bg: '#f6f8fb',
+  panel: '#ffffff',
+  line: '#d9e2ef',
+  dark: '#101827',
 };
 
 function esc(value) {
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-function htmlPage({ width, height, body, title = "asset" }) {
+function htmlPage({ width, height, body, title = 'asset' }) {
   return `<!doctype html>
 <html>
 <head>
@@ -205,11 +205,10 @@ function banner({ title, eyebrow, subtitle, mock }) {
 function featureMocks() {
   return [
     {
-      file: "assets/feature-01-article-extraction.png",
-      title: "正文结构提取",
-      eyebrow: "清爽 Markdown",
-      subtitle:
-        "保留文章正文、标题、引用、列表和图片，同时移除页面壳层与推广噪音。",
+      file: 'assets/feature-01-article-extraction.png',
+      title: '正文结构提取',
+      eyebrow: '清爽 Markdown',
+      subtitle: '保留文章正文、标题、引用、列表和图片，同时移除页面壳层与推广噪音。',
       mock: `<div class="panel" style="left:10px; top:20px; width:420px; height:470px;">
           <div class="panel-head"><span class="light"></span><span class="light"></span><span class="light"></span></div>
           <div style="padding:26px;">
@@ -240,11 +239,10 @@ function featureMocks() {
         </div>`,
     },
     {
-      file: "assets/feature-02-local-image-archive.png",
-      title: "本地图片归档",
-      eyebrow: "自包含输出",
-      subtitle:
-        "将文章图片复制或下载到稳定的本地资源目录，避免外链失效后图片丢失。",
+      file: 'assets/feature-02-local-image-archive.png',
+      title: '本地图片归档',
+      eyebrow: '自包含输出',
+      subtitle: '将文章图片复制或下载到稳定的本地资源目录，避免外链失效后图片丢失。',
       mock: `<div class="panel" style="left:20px; top:56px; width:360px; height:390px;">
           <div class="panel-head"><span class="mini-title">远程页面</span></div>
           <div style="padding:26px; display:grid; gap:18px;">
@@ -257,12 +255,7 @@ function featureMocks() {
         <div class="panel" style="left:496px; top:28px; width:490px; height:480px;">
           <div class="panel-head"><span class="mini-title">assets/example-article</span></div>
           <div style="padding:26px; display:grid; gap:15px;">
-            ${[
-              "01-cover.webp",
-              "02-diagram.png",
-              "03-photo.jpg",
-              "04-screenshot.png",
-            ]
+            ${['01-cover.webp', '02-diagram.png', '03-photo.jpg', '04-screenshot.png']
               .map(
                 (
                   name,
@@ -272,16 +265,15 @@ function featureMocks() {
               <div class="code" style="font-size:21px;">${name}</div>
             </div>`,
               )
-              .join("")}
+              .join('')}
           </div>
         </div>`,
     },
     {
-      file: "assets/feature-03-remote-recovery.png",
-      title: "下载与截图恢复",
-      eyebrow: "图片韧性",
-      subtitle:
-        "当远程图片无法直接下载时，转换器可在浏览器中渲染图片，并保存本地 PNG 兜底。",
+      file: 'assets/feature-03-remote-recovery.png',
+      title: '下载与截图恢复',
+      eyebrow: '图片韧性',
+      subtitle: '当远程图片无法直接下载时，转换器可在浏览器中渲染图片，并保存本地 PNG 兜底。',
       mock: `<div class="panel" style="left:10px; top:65px; width:380px; height:360px;">
           <div class="panel-head"><span class="mini-title">HTTP 下载</span></div>
           <div style="padding:34px; text-align:center;">
@@ -304,11 +296,10 @@ function featureMocks() {
         </div>`,
     },
     {
-      file: "assets/feature-06-inline-base64.png",
-      title: "图片内联 Base64",
-      eyebrow: "单文件 Markdown",
-      subtitle:
-        "本地 HTML 和远程 URL 都可把恢复后的图片写入 Markdown，无需携带 assets 目录。",
+      file: 'assets/feature-06-inline-base64.png',
+      title: '图片内联 Base64',
+      eyebrow: '单文件 Markdown',
+      subtitle: '本地 HTML 和远程 URL 都可把恢复后的图片写入 Markdown，无需携带 assets 目录。',
       mock: `<div class="panel" style="left:10px; top:52px; width:372px; height:410px;">
           <div class="panel-head"><span class="mini-title">输入来源</span></div>
           <div style="padding:26px; display:grid; gap:18px;">
@@ -341,11 +332,10 @@ verification:
         </div>`,
     },
     {
-      file: "assets/feature-04-strict-verification.png",
-      title: "严格结果校验",
-      eyebrow: "放心分享",
-      subtitle:
-        "内置检查会在 Markdown 离开本机前报告 raw 目录引用、远程图片链接和缺失的本地资源。",
+      file: 'assets/feature-04-strict-verification.png',
+      title: '严格结果校验',
+      eyebrow: '放心分享',
+      subtitle: '内置检查会在 Markdown 离开本机前报告 raw 目录引用、远程图片链接和缺失的本地资源。',
       mock: `<div class="panel" style="left:48px; top:34px; width:830px; height:480px;">
           <div class="panel-head"><span class="pill">--verify</span></div>
           <div class="code" style="padding:34px; font-size:25px;">verification:
@@ -355,16 +345,15 @@ verification:
   远程图片: 0
   缺失图片: 0</div>
           <div style="position:absolute; right:34px; bottom:34px; display:grid; grid-template-columns:repeat(2, 154px); gap:14px;">
-            ${["raw 清理完成", "8 张本地图", "8 张内联图", "0 张缺失图"].map((label) => `<div style="height:58px; border-radius:16px; background:#edfdf9; color:#0a8d7e; display:grid; place-items:center; font-weight:800; font-size:20px;">${label}</div>`).join("")}
+            ${['raw 清理完成', '8 张本地图', '8 张内联图', '0 张缺失图'].map((label) => `<div style="height:58px; border-radius:16px; background:#edfdf9; color:#0a8d7e; display:grid; place-items:center; font-weight:800; font-size:20px;">${label}</div>`).join('')}
           </div>
         </div>`,
     },
     {
-      file: "assets/feature-05-size-aware-output.png",
-      title: "保留图片尺寸",
-      eyebrow: "布局还原",
-      subtitle:
-        "使用 HTML 图片标签保留原文章中显式声明的宽高和尺寸相关 inline style。",
+      file: 'assets/feature-05-size-aware-output.png',
+      title: '保留图片尺寸',
+      eyebrow: '布局还原',
+      subtitle: '使用 HTML 图片标签保留原文章中显式声明的宽高和尺寸相关 inline style。',
       mock: `<div class="panel" style="left:12px; top:70px; width:450px; height:400px;">
           <div class="panel-head"><span class="mini-title">原始 HTML</span></div>
           <div style="padding:30px;">
@@ -391,7 +380,7 @@ function logoHtml() {
   return htmlPage({
     width: 256,
     height: 256,
-    title: "logo",
+    title: 'logo',
     body: `<main style="width:256px; height:256px; background:linear-gradient(135deg,#10213a,#216cf6 56%,#18b6a4); display:grid; place-items:center;">
       <div style="position:relative; width:196px; height:164px;">
         <div style="position:absolute; left:0; top:18px; width:106px; height:128px; border-radius:28px; background:rgba(255,255,255,.95); box-shadow:0 22px 50px rgba(0,0,0,.22); display:grid; place-items:center;">
@@ -412,27 +401,24 @@ function logoHtml() {
 
 async function renderPng(relativeOutput, html, width, height) {
   const outputPath = resolve(root, relativeOutput);
-  const htmlPath = resolve(
-    tmpDir,
-    `${relativeOutput.replaceAll("/", "-")}.html`,
-  );
+  const htmlPath = resolve(tmpDir, `${relativeOutput.replaceAll('/', '-')}.html`);
   await mkdir(dirname(outputPath), { recursive: true });
   await mkdir(dirname(htmlPath), { recursive: true });
-  await writeFile(htmlPath, html, "utf8");
+  await writeFile(htmlPath, html, 'utf8');
   await execFileAsync(chrome, [
-    "--headless=new",
-    "--disable-gpu",
-    "--hide-scrollbars",
-    "--no-first-run",
-    "--no-default-browser-check",
-    "--force-device-scale-factor=1",
+    '--headless=new',
+    '--disable-gpu',
+    '--hide-scrollbars',
+    '--no-first-run',
+    '--no-default-browser-check',
+    '--force-device-scale-factor=1',
     `--window-size=${width},${height}`,
     `--screenshot=${outputPath}`,
     `file://${htmlPath}`,
   ]);
 }
 
-await renderPng("logo.png", logoHtml(), 256, 256);
+await renderPng('logo.png', logoHtml(), 256, 256);
 for (const feature of featureMocks()) {
   await renderPng(feature.file, banner(feature), 1864, 800);
 }

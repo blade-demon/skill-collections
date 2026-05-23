@@ -5,6 +5,7 @@ Use this optional workflow only when the user selected write-file mode and the g
 ## Trigger
 
 Run render verification when all are true:
+
 - Files were written to the project.
 - The target project exposes Storybook or a Vite app route suitable for preview.
 - Playwright or an equivalent browser automation path is available.
@@ -14,17 +15,18 @@ If no local render path exists, state that render verification was skipped and w
 
 ## Setup Preference
 
-| Available path | Use |
-|---|---|
-| Existing Storybook | Add or use a story for each status/step variant |
-| Existing Vite app | Add or use a temporary route/demo page only if safe in the project conventions |
-| Neither | Skip render verification; do not invent project infrastructure |
+| Available path     | Use                                                                            |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Existing Storybook | Add or use a story for each status/step variant                                |
+| Existing Vite app  | Add or use a temporary route/demo page only if safe in the project conventions |
+| Neither            | Skip render verification; do not invent project infrastructure                 |
 
 Do not add new rendering infrastructure unless the user explicitly asks.
 
 ## Required Screenshots
 
 Capture each meaningful variant:
+
 - Every status union member, e.g. `pending`, `used`, `expired`.
 - Every `step` or `phase` value for sequential flows.
 - Overlay open/closed states when O-slot output exists.
@@ -39,13 +41,14 @@ Use this format:
 ```markdown
 ## Render Verification
 
-| Variant | Screenshot | Result | Notes |
-|---|---|---|---|
-| pending | artifacts/OrderPage-pending.png | pass | Matches planned structure |
-| used | artifacts/OrderPage-used.png | review | Footer action wraps differently than expected |
-| expired + modal | artifacts/OrderPage-expired-modal.png | pass | Overlay renders |
+| Variant         | Screenshot                            | Result | Notes                                         |
+| --------------- | ------------------------------------- | ------ | --------------------------------------------- |
+| pending         | artifacts/OrderPage-pending.png       | pass   | Matches planned structure                     |
+| used            | artifacts/OrderPage-used.png          | review | Footer action wraps differently than expected |
+| expired + modal | artifacts/OrderPage-expired-modal.png | pass   | Overlay renders                               |
 
 ### Differences
+
 - `used`: Footer action wraps to two lines; confirm whether this is acceptable.
 - `expired + modal`: No structural differences found.
 ```

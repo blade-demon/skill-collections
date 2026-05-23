@@ -11,22 +11,22 @@ Single image → one independent component `RiskAssessmentResult`.
 Must contain a status union for the risk level:
 
 ```ts
-export type RiskLevel = 'C1' | 'C2' | 'C3' | 'C4' | 'C5'
+export type RiskLevel = 'C1' | 'C2' | 'C3' | 'C4' | 'C5';
 ```
 
 Must contain root props equivalent to:
 
 ```ts
 export interface RiskAssessmentResultProps {
-  riskLevel: RiskLevel
-  riskLabel: string
-  validUntil: string
-  suitableRanks: string[]
-  taxResidency: string
-  monthlyRemaining: number
-  dailyRemaining: number
-  onReassess?: () => void
-  onViewHistory?: () => void
+  riskLevel: RiskLevel;
+  riskLabel: string;
+  validUntil: string;
+  suitableRanks: string[];
+  taxResidency: string;
+  monthlyRemaining: number;
+  dailyRemaining: number;
+  onReassess?: () => void;
+  onViewHistory?: () => void;
 }
 ```
 

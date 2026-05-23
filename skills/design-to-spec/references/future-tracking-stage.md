@@ -15,13 +15,13 @@
 
 ## 已经定下来的关键决策
 
-| 决策 | 选择 | 否决理由 |
-|---|---|---|
-| 是否独立阶段 | **方案 A：独立第 5 阶段 + 独立 YAML 契约** | 否决 B（扩展 Mapping_Logic）：埋点服务的是 PM/数据/增长团队，独立确认门 + 独立校验更对称；和 i18n / 性能预算等未来扩展同一架构模式 |
-| 平台扩展策略 | **契约 platform-agnostic + 输出 adapter 插件** | 不硬编码任何 SDK；新增平台只需加一个 adapter 文件 |
-| 首期 adapter | `internal-sdk` + `generic`（兜底） | 后续按需增加 `sensors` / `ga4` / `mixpanel` |
-| 早退闸门 | 阶段 5 入口先问 yes/no/later | 纯展示组件零成本跳过，避免仪式感 |
-| 事件触发引用方式 | 复用现有 trace 锚点（binding/state/component） | 不重复定义事实，跨契约可机器校验 |
+| 决策             | 选择                                           | 否决理由                                                                                                                           |
+| ---------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 是否独立阶段     | **方案 A：独立第 5 阶段 + 独立 YAML 契约**     | 否决 B（扩展 Mapping_Logic）：埋点服务的是 PM/数据/增长团队，独立确认门 + 独立校验更对称；和 i18n / 性能预算等未来扩展同一架构模式 |
+| 平台扩展策略     | **契约 platform-agnostic + 输出 adapter 插件** | 不硬编码任何 SDK；新增平台只需加一个 adapter 文件                                                                                  |
+| 首期 adapter     | `internal-sdk` + `generic`（兜底）             | 后续按需增加 `sensors` / `ga4` / `mixpanel`                                                                                        |
+| 早退闸门         | 阶段 5 入口先问 yes/no/later                   | 纯展示组件零成本跳过，避免仪式感                                                                                                   |
+| 事件触发引用方式 | 复用现有 trace 锚点（binding/state/component） | 不重复定义事实，跨契约可机器校验                                                                                                   |
 
 ---
 
@@ -30,7 +30,7 @@
 **调用签名**：
 
 ```js
-trackEvent("", {})
+trackEvent('', {});
 ```
 
 即 `trackEvent(eventName: string, properties: object)` 形式。这是 `internal-sdk` adapter 的 `renderEventSnippet` 出口模板：
@@ -38,9 +38,9 @@ trackEvent("", {})
 ```ts
 // internal-sdk adapter renderEventSnippet 输出
 trackEvent('search_submit', {
-    user_id: global.user.id,
-    page_id: route.name,
-    keyword: searchInput.value,
+  user_id: global.user.id,
+  page_id: route.name,
+  keyword: searchInput.value,
 });
 ```
 
@@ -60,13 +60,13 @@ trackEvent('search_submit', {
 ```yaml
 tracking:
   # 必填：平台 + 命名约定
-  platform: internal-sdk             # 选 adapter
-  naming_convention: snake_case      # adapter 提供默认值，可覆盖
+  platform: internal-sdk # 选 adapter
+  naming_convention: snake_case # adapter 提供默认值，可覆盖
 
   # 早退闸门（与 events 互斥）
-  skipped: false                     # true 时其余字段可省
-  reason: ""                         # 跳过原因
-  deferred: false                    # true = 暂缓，进 open_questions
+  skipped: false # true 时其余字段可省
+  reason: '' # 跳过原因
+  deferred: false # true = 暂缓，进 open_questions
 
   # 跨事件共享属性字典
   shared_properties:
@@ -82,18 +82,19 @@ tracking:
 
   # 事件清单（核心）
   events:
-    - id: search_submit              # 平台无关稳定 ID
-      name: search_submit            # 平台事件名（默认 = id）
-      type: click                    # click | exposure | page_view | state_change | api_event | custom
+    - id: search_submit # 平台无关稳定 ID
+      name: search_submit # 平台事件名（默认 = id）
+      type: click # click | exposure | page_view | state_change | api_event | custom
 
       # 触发器：引用前 3 份契约的 trace 锚点
       trigger:
-        kind: binding                # binding | state_transition | viewport | lifecycle | manual
-        ref: "binding:1:ui_to_event"
+        kind: binding # binding | state_transition | viewport | lifecycle | manual
+        ref: 'binding:1:ui_to_event'
 
       # 触发时机精度
-      fire_timing: on_click          # on_click | after_api_success | after_api_error
-                                     # | debounced_500ms | on_visible | once_per_session
+      fire_timing:
+        on_click # on_click | after_api_success | after_api_error
+        # | debounced_500ms | on_visible | once_per_session
 
       properties:
         - name: keyword
@@ -109,16 +110,16 @@ tracking:
       funnel: search_v1
       owner: growth-team
       priority: P0
-      notes: "评估搜索词覆盖率"
+      notes: '评估搜索词覆盖率'
 
     - id: result_card_view
       type: exposure
       trigger:
         kind: viewport
-        ref: "component:resultCard"
+        ref: 'component:resultCard'
       fire_timing: on_visible
       debounce_ms: 500
-      dedupe: per_session            # never | per_render | per_session
+      dedupe: per_session # never | per_render | per_session
       properties:
         - name: card_id
           source: item.id
@@ -128,7 +129,7 @@ tracking:
   # 漏斗串联
   funnels:
     - id: search_v1
-      name: "搜索主流程"
+      name: '搜索主流程'
       steps: [page_view, search_submit, result_card_view, result_card_click]
       conversion_window: 30m
 
@@ -136,7 +137,7 @@ tracking:
   open_questions:
     - id: tracking-q1
       priority: P1
-      content: "登出时是否需要 logout 事件？"
+      content: '登出时是否需要 logout 事件？'
 ```
 
 ---
@@ -145,26 +146,24 @@ tracking:
 
 每个 adapter 是 `scripts/lib/tracking-adapters/<name>.js`：
 
-```js
+````js
 // scripts/lib/tracking-adapters/internal-sdk.js
 export default {
-  name: "internal-sdk",
+  name: 'internal-sdk',
 
   defaults: {
-    naming_convention: "snake_case",
-    auto_inject_properties: ["user_id", "device_id", "session_id", "ts"],
+    naming_convention: 'snake_case',
+    auto_inject_properties: ['user_id', 'device_id', 'session_id', 'ts'],
   },
 
   // 平台特定校验
   validate(trackingDoc, context) {
     const errors = [];
-    const sharedNames = new Set(
-      (trackingDoc.shared_properties ?? []).map((p) => p.name)
-    );
+    const sharedNames = new Set((trackingDoc.shared_properties ?? []).map((p) => p.name));
     for (const required of this.defaults.auto_inject_properties) {
       if (!sharedNames.has(required)) {
         errors.push(
-          `internal-sdk: shared_properties must include '${required}' (auto-injected by SDK)`
+          `internal-sdk: shared_properties must include '${required}' (auto-injected by SDK)`,
         );
       }
     }
@@ -174,40 +173,38 @@ export default {
   // 渲染单个事件的代码片段
   renderEventSnippet(event, sharedProps, ctx) {
     const allProps = [...sharedProps, ...(event.properties ?? [])];
-    const propLines = allProps
-      .map((p) => `    ${p.name}: ${p.source},`)
-      .join("\n");
+    const propLines = allProps.map((p) => `    ${p.name}: ${p.source},`).join('\n');
     return [
-      "```ts",
+      '```ts',
       `// fire timing: ${event.fire_timing}`,
       `trackEvent('${event.name}', {`,
       propLines,
-      "});",
-      "```",
-    ].join("\n");
+      '});',
+      '```',
+    ].join('\n');
   },
 
   // 验证清单
   renderTestPlan(events) {
     return [
-      "## 埋点验证方法",
-      "",
-      "1. 打开内部埋点 Debugger 工具",
-      "2. 触发各事件后检查 console 输出",
-      "3. 上报后到内部数据平台 verify 看板查询事件名是否落库（5 分钟内）",
-    ].join("\n");
+      '## 埋点验证方法',
+      '',
+      '1. 打开内部埋点 Debugger 工具',
+      '2. 触发各事件后检查 console 输出',
+      '3. 上报后到内部数据平台 verify 看板查询事件名是否落库（5 分钟内）',
+    ].join('\n');
   },
 };
-```
+````
 
 **注册表** (`scripts/lib/tracking-adapters/index.js`)：
 
 ```js
-import internalSdk from "./internal-sdk.js";
-import generic from "./generic.js";
+import internalSdk from './internal-sdk.js';
+import generic from './generic.js';
 
 const REGISTRY = {
-  "internal-sdk": internalSdk,
+  'internal-sdk': internalSdk,
   generic,
   // sensors, ga4, mixpanel 后续按需添加
 };
@@ -216,7 +213,7 @@ export function getAdapter(name) {
   const adapter = REGISTRY[name];
   if (!adapter) {
     throw new Error(
-      `unsupported tracking platform '${name}'. supported: ${Object.keys(REGISTRY).join(", ")}`
+      `unsupported tracking platform '${name}'. supported: ${Object.keys(REGISTRY).join(', ')}`,
     );
   }
   return adapter;
@@ -242,10 +239,10 @@ export function getAdapter(name) {
 
 新增锚点：
 
-| 锚点 | 含义 | 校验 |
-|---|---|---|
-| `event:<id>` | 一个埋点事件 | 必须在 tracking.md Traceability 出现；trigger.ref 必须是已存在锚点 |
-| `funnel:<id>` | 一个漏斗 | steps[] 必须全部是已存在的 event:<id> |
+| 锚点          | 含义         | 校验                                                               |
+| ------------- | ------------ | ------------------------------------------------------------------ |
+| `event:<id>`  | 一个埋点事件 | 必须在 tracking.md Traceability 出现；trigger.ref 必须是已存在锚点 |
+| `funnel:<id>` | 一个漏斗     | steps[] 必须全部是已存在的 event:<id>                              |
 
 **spec.md 自动多出"埋点 Requirement"**：
 
@@ -313,19 +310,19 @@ The system SHALL fire each contract-defined tracking event with required propert
 
 ## 实施清单
 
-| 工作项 | 工时 |
-|---|---|
-| `schemas/tracking-schema.json`（含早退闸门 oneOf） | 1.5h |
-| `scripts/lib/tracking-adapters/{index, internal-sdk, generic}.js` | 4h |
-| `validate-contracts.js` 增加第 4 份契约 + adapter.validate 调用 + 跨契约引用 | 3h |
-| `generate-output.js` 增加 `generateTracking()` + spec 加埋点 Scenario | 5h |
-| `validate-output.js` tracking.md 校验 + event/funnel trace 锚点 | 2h |
-| `templates/tracking-schema.yaml` + `templates/tracking.md` + `references/tracking-fields.md` | 2h |
-| SKILL.md 增加阶段 5 章节 | 1.5h |
-| Today-windvane golden 增加 tracking 维度 | 1h |
-| 5 个测试套件 | 3h |
-| CHANGELOG / README / operator-guide / contracts.md | 1.5h |
-| **合计** | **约 24.5h（≈3 工作日）** |
+| 工作项                                                                                       | 工时                      |
+| -------------------------------------------------------------------------------------------- | ------------------------- |
+| `schemas/tracking-schema.json`（含早退闸门 oneOf）                                           | 1.5h                      |
+| `scripts/lib/tracking-adapters/{index, internal-sdk, generic}.js`                            | 4h                        |
+| `validate-contracts.js` 增加第 4 份契约 + adapter.validate 调用 + 跨契约引用                 | 3h                        |
+| `generate-output.js` 增加 `generateTracking()` + spec 加埋点 Scenario                        | 5h                        |
+| `validate-output.js` tracking.md 校验 + event/funnel trace 锚点                              | 2h                        |
+| `templates/tracking-schema.yaml` + `templates/tracking.md` + `references/tracking-fields.md` | 2h                        |
+| SKILL.md 增加阶段 5 章节                                                                     | 1.5h                      |
+| Today-windvane golden 增加 tracking 维度                                                     | 1h                        |
+| 5 个测试套件                                                                                 | 3h                        |
+| CHANGELOG / README / operator-guide / contracts.md                                           | 1.5h                      |
+| **合计**                                                                                     | **约 24.5h（≈3 工作日）** |
 
 ---
 

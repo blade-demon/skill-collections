@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo \"(lint not configured)\""
+    "lint": "eslint \"src/**/*.js\" \"tests/**/*.js\" --no-error-on-unmatched-pattern"
   },
   "devDependencies": {
     "vite": "^5.4.0"

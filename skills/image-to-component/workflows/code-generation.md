@@ -7,6 +7,7 @@
 > The output is a `[{path, content}]` JSON array. Use this array as the file list for Step 11. Do **not** read `templates/` — those files have been removed.
 >
 > **SkeletonConfig shape:**
+>
 > ```json
 > {
 >   "framework": "react|vue3|vue2",
@@ -15,7 +16,7 @@
 >   "rootComponent": {
 >     "name": "ComponentName",
 >     "element": "article",
->     "discriminator": { "propName": "status", "type": "Status", "variants": ["a","b"] },
+>     "discriminator": { "propName": "status", "type": "Status", "variants": ["a", "b"] },
 >     "props": [{ "name": "title", "type": "string", "required": true }],
 >     "children": [{ "name": "Header", "element": "header", "props": [], "children": [] }]
 >   },
@@ -83,16 +84,16 @@ Vue generation may ignore `stylePlan` until Vue style support is implemented. Do
 
 Read exactly one template based on Step 1 choices:
 
-| Framework | Language | Style stack | Template |
-|---|---|---|---|
-| React | TypeScript | CSS Modules | `templates/react-tsx-css-modules.md` |
-| React | TypeScript | plain CSS + BEM | `templates/react-tsx-bem.md` |
-| React | JavaScript | CSS Modules | `templates/react-jsx-css-modules.md` |
-| React | JavaScript | plain CSS + BEM | `templates/react-jsx-bem.md` |
-| Vue 3 | TypeScript or JavaScript | CSS Modules | `templates/vue3-sfc-css-modules.md` |
-| Vue 3 | TypeScript or JavaScript | plain CSS + BEM | `templates/vue3-sfc-bem.md` |
-| Vue 2 | TypeScript or JavaScript | CSS Modules | `templates/vue2-sfc-css-modules.md` |
-| Vue 2 | TypeScript or JavaScript | plain CSS + BEM | `templates/vue2-sfc-bem.md` |
+| Framework | Language                 | Style stack     | Template                             |
+| --------- | ------------------------ | --------------- | ------------------------------------ |
+| React     | TypeScript               | CSS Modules     | `templates/react-tsx-css-modules.md` |
+| React     | TypeScript               | plain CSS + BEM | `templates/react-tsx-bem.md`         |
+| React     | JavaScript               | CSS Modules     | `templates/react-jsx-css-modules.md` |
+| React     | JavaScript               | plain CSS + BEM | `templates/react-jsx-bem.md`         |
+| Vue 3     | TypeScript or JavaScript | CSS Modules     | `templates/vue3-sfc-css-modules.md`  |
+| Vue 3     | TypeScript or JavaScript | plain CSS + BEM | `templates/vue3-sfc-bem.md`          |
+| Vue 2     | TypeScript or JavaScript | CSS Modules     | `templates/vue2-sfc-css-modules.md`  |
+| Vue 2     | TypeScript or JavaScript | plain CSS + BEM | `templates/vue2-sfc-bem.md`          |
 
 Never mix TypeScript and JavaScript syntax. If the user selected an unsupported framework, run `degraded-mode.md` and output only structural guidance.
 

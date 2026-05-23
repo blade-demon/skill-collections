@@ -40,6 +40,7 @@ function isEmptyContainer(node: VisualNode): boolean {
 }
 
 function isAnonymousPassthroughGroup(node: VisualNode): boolean {
-  if (node.kind !== 'group' || node.children.length !== 1 || node.style || node.symbol) return false;
+  if (node.kind !== 'group' || node.children.length !== 1 || node.style || node.symbol)
+    return false;
   return /^编组|^Group\s*\d*$/i.test(node.source.name ?? node.name);
 }

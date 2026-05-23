@@ -41,13 +41,14 @@ interface <ComponentName>Events {
 >
 > **枚举字段处理原则**：枚举值必须全部列出，不得省略。每个枚举值在「UI 展示含义」列写明对应的视觉呈现（颜色 / 文案 / 图标 / 显隐规则）。枚举值缺失或不全的字段在「备注」列标 `needs_human_input: 枚举值未完整确认`，并在「开放问题」节补充追问。
 
-| 接口字段名 | 接口类型 | 枚举值（全量） | UI 中展示为 | 来源标注 | 备注 |
-|-----------|---------|--------------|------------|---------|------|
+| 接口字段名    | 接口类型                      | 枚举值（全量）        | UI 中展示为                                      | 来源标注                   | 备注                                    |
+| ------------- | ----------------------------- | --------------------- | ------------------------------------------------ | -------------------------- | --------------------------------------- |
 | `<fieldName>` | `string \| number \| boolean` | `VAL_A` / `VAL_B` / — | <每个枚举值对应的视觉规则，或「连续值，见备注」> | `api` / `derived` / `prop` | <可空性 / 格式约束 / needs_human_input> |
 
 ### Java DTO 草稿（仅当用户明确要求时输出）
 
 > 根据推断的 Props 生成后端参考结构。类型映射规则：
+>
 > - 基础类型：`string → String`、`number → Double` 或 `Integer`（看精度）、`boolean → Boolean`、`string[] → List<String>`
 > - **枚举字段 → 独立 Java `enum`**，枚举常量使用接口原始值的 UPPER_SNAKE_CASE 形式，并附 `@JsonValue` 标注原始值（字符串枚举）或序数（整型枚举）
 > - 嵌套对象 → 独立内部 `record`
@@ -77,12 +78,13 @@ public record <ComponentName>DTO(
 > 描述组件如何调用接口拿到数据。如果数据由父组件通过 Props 传入（纯展示组件），此节写「由父组件传入，无直接接口调用」并跳过下表。
 >
 > **字段说明**
+>
 > - **触发时机**：组件挂载时 / 用户操作触发 / 轮询 / 父组件调用方法 / 其他
 > - **缓存策略**：无缓存 / 内存缓存（TTL） / 持久化缓存（storage） / SWR / 其他
 > - **幂等性**：重复调用是否安全（对 GET 通常是，对 POST 需确认）
 
-| 接口/方法名 | 调用时机 | 请求关键参数 | 响应关键字段 | 缓存策略 | 补充说明 |
-| --------- | ------- | ---------- | ---------- | ------- | ------- |
+| 接口/方法名           | 调用时机                              | 请求关键参数     | 响应关键字段     | 缓存策略                | 补充说明                     |
+| --------------------- | ------------------------------------- | ---------------- | ---------------- | ----------------------- | ---------------------------- |
 | `<endpoint 或方法名>` | <挂载时 / 用户点击 / 滚动到底 / 其他> | <param1, param2> | <field1, field2> | <无缓存 / TTL=Xs / SWR> | <needs_human_input 或已确认> |
 
 ### 数据获取补充说明
@@ -98,21 +100,21 @@ public record <ComponentName>DTO(
 
 枚举此组件所有可观察的运行时状态。**每个 `required: true` 的状态在 `spec.md` 中至少要有 1 条对应 Scenario**；未在 mockup 中体现但按组件策略必需的状态保留 `required: true`，并在备注里写「mockup 未提供 → needs_human_input」。
 
-| 状态         | 触发条件                          | UI 表现           | required | source | render_assertion |
-| ---------- | ----------------------------- | --------------- | -------- | ------ | ---------------- |
-| `loading`  | 数据请求中 / 首次挂载未拿到数据             | <骨架屏 / spinner / 占位> | true | policy | <renders loadingState> |
-| `empty`    | 数据合法但内容为空（如 `tags: []`）       | <空文案 / 占位插画>    | true | policy | <renders emptyState and hides contentList> |
-| `partial`  | 部分可选字段缺失                      | <降级展示规则>        | false | inferred | <renders partial fallback> |
-| `success`  | 完整数据可渲染                       | <主视觉，对应 mockup 默认态> | true | visible | <renders main content matching the mockup> |
-| `stale`    | 缓存过期但仍展示旧数据                   | <角标 / 灰化 / 不变化>  | false | inferred | <renders stale indicator or keeps prior content> |
-| `error`    | 请求失败 / 数据校验失败                 | <错误兜底 / 重试入口>   | true | policy | <renders errorState with retry affordance> |
-| `offline`  | 网络不可达                         | <离线提示>          | false | inferred | <renders offline notice> |
-| `disabled` | 业务禁用（限购 / 黑名单）                | <CTA 灰化 + 文案替换> | false | inferred | <renders disabled affordance> |
+| 状态       | 触发条件                            | UI 表现                      | required | source   | render_assertion                                 |
+| ---------- | ----------------------------------- | ---------------------------- | -------- | -------- | ------------------------------------------------ |
+| `loading`  | 数据请求中 / 首次挂载未拿到数据     | <骨架屏 / spinner / 占位>    | true     | policy   | <renders loadingState>                           |
+| `empty`    | 数据合法但内容为空（如 `tags: []`） | <空文案 / 占位插画>          | true     | policy   | <renders emptyState and hides contentList>       |
+| `partial`  | 部分可选字段缺失                    | <降级展示规则>               | false    | inferred | <renders partial fallback>                       |
+| `success`  | 完整数据可渲染                      | <主视觉，对应 mockup 默认态> | true     | visible  | <renders main content matching the mockup>       |
+| `stale`    | 缓存过期但仍展示旧数据              | <角标 / 灰化 / 不变化>       | false    | inferred | <renders stale indicator or keeps prior content> |
+| `error`    | 请求失败 / 数据校验失败             | <错误兜底 / 重试入口>        | true     | policy   | <renders errorState with retry affordance>       |
+| `offline`  | 网络不可达                          | <离线提示>                   | false    | inferred | <renders offline notice>                         |
+| `disabled` | 业务禁用（限购 / 黑名单）           | <CTA 灰化 + 文案替换>        | false    | inferred | <renders disabled affordance>                    |
 
 ## 组件分解
 
-| 组件       | parent_id | role | repeat_source | 目的     | 复用信号             |
-| -------- | --------- | ---- | ------------- | ------ | ---------------- |
+| 组件     | parent_id         | role                         | repeat_source         | 目的       | 复用信号     |
+| -------- | ----------------- | ---------------------------- | --------------------- | ---------- | ------------ |
 | `<名称>` | `<父组件或 root>` | `<primary/action/container>` | `<data.items[] 或空>` | <一行目的> | `<复用信号>` |
 
 ## 布局陷阱
@@ -121,9 +123,9 @@ public record <ComponentName>DTO(
 
 ## 置信度地图
 
-| 元素 / 行为 | 状态                                      | 备注  |
-| ------- | --------------------------------------- | --- |
-| <元素>    | identified / inferred / needs_human_input | <备注> |
+| 元素 / 行为 | 状态                                      | 备注   |
+| ----------- | ----------------------------------------- | ------ |
+| <元素>      | identified / inferred / needs_human_input | <备注> |
 
 ## 开放问题
 
@@ -149,11 +151,11 @@ public record <ComponentName>DTO(
 
 > 机器校验锚点。润色文案时不要修改 `trace_id`。
 
-| trace_id | kind | source | target | notes |
-| -------- | ---- | ------ | ------ | ----- |
-| `component:<componentId>` | component | `<componentId>` | `<parent_id>` | <type / semantic_type> |
-| `binding:<index>:<direction>` | binding | `<source>` | `<target>` | <transform> |
-| `state:<stateId>` | state | `<stateId>` | `<scope_components 或 component>` | <required> |
+| trace_id                      | kind      | source          | target                            | notes                  |
+| ----------------------------- | --------- | --------------- | --------------------------------- | ---------------------- |
+| `component:<componentId>`     | component | `<componentId>` | `<parent_id>`                     | <type / semantic_type> |
+| `binding:<index>:<direction>` | binding   | `<source>`      | `<target>`                        | <transform>            |
+| `state:<stateId>`             | state     | `<stateId>`     | `<scope_components 或 component>` | <required>             |
 
 ## 埋点锚点
 
@@ -161,6 +163,6 @@ public record <ComponentName>DTO(
 >
 > **覆盖原则**：spec.md 中所有以 `tap-` / `view-` / `enter-` / `submit-` 等前缀的事件，以及任何视为"主转化"或"主曝光"的 Scenario，都必须在此表中至少出现 1 行。明确不埋点的也要显式标 `not-tracked`，不要漏。
 
-| 锚点 ID                           | 触发 Scenario（对应 spec.md 标题或 Requirement） | 类型                                    | 关键参数（语义层）           | 备注           |
-| ------------------------------- | ----------------------------------------- | ------------------------------------- | -------------------- | ------------ |
-| `<snake_case_id>`               | <Scenario 标题>                            | exposure / click / dwell / impression / not-tracked | <字段语义名，不是埋点 key>     | <业务问题 / 决策原因> |
+| 锚点 ID           | 触发 Scenario（对应 spec.md 标题或 Requirement） | 类型                                                | 关键参数（语义层）         | 备注                  |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------- | -------------------------- | --------------------- |
+| `<snake_case_id>` | <Scenario 标题>                                  | exposure / click / dwell / impression / not-tracked | <字段语义名，不是埋点 key> | <业务问题 / 决策原因> |

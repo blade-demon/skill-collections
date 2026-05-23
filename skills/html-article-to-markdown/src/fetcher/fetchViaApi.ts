@@ -1,7 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-import { safeFilename } from "../utils/slug.js";
+import { safeFilename } from '../utils/slug.js';
 
 export interface FetchViaApiOptions {
   outDir: string;
@@ -19,20 +19,20 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_ENDPOINT = (url: string) => `https://defuddle.md/${url}`;
 
 function extractTitle(markdown: string): string {
-  const normalized = markdown.replace(/\r\n/g, "\n");
+  const normalized = markdown.replace(/\r\n/g, '\n');
 
   const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n?/);
   if (fmMatch) {
-    const titleLine = fmMatch[1].split("\n").find((line) => /^title:\s*/i.test(line));
+    const titleLine = fmMatch[1].split('\n').find((line) => /^title:\s*/i.test(line));
     if (titleLine) {
-      const raw = titleLine.replace(/^title:\s*/i, "").trim();
-      const unquoted = raw.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+      const raw = titleLine.replace(/^title:\s*/i, '').trim();
+      const unquoted = raw.replace(/^"(.*)"$/, '$1').replace(/^'(.*)'$/, '$1');
       if (unquoted) return unquoted;
     }
   }
 
   const headingMatch = normalized.match(/^#\s+(.+)$/m);
-  return headingMatch?.[1]?.trim() ?? "";
+  return headingMatch?.[1]?.trim() ?? '';
 }
 
 export async function fetchMarkdownViaApi(
@@ -49,7 +49,7 @@ export async function fetchMarkdownViaApi(
   let response: Response;
   try {
     response = await doFetch(apiUrl, {
-      headers: { accept: "text/markdown,text/plain;q=0.9,*/*;q=0.1" },
+      headers: { accept: 'text/markdown,text/plain;q=0.9,*/*;q=0.1' },
       signal: controller.signal,
     });
   } finally {
@@ -60,15 +60,15 @@ export async function fetchMarkdownViaApi(
     throw new Error(`Reader API returned ${response.status} ${response.statusText} for ${apiUrl}`);
   }
 
-  const markdown = (await response.text()).replace(/\r\n/g, "\n").trim();
+  const markdown = (await response.text()).replace(/\r\n/g, '\n').trim();
   if (!markdown) {
     throw new Error(`Reader API returned empty markdown for ${apiUrl}`);
   }
 
-  const title = extractTitle(markdown) || "article";
+  const title = extractTitle(markdown) || 'article';
   await mkdir(options.outDir, { recursive: true });
-  const outFile = join(options.outDir, `${safeFilename(title, "article")}.md`);
-  await writeFile(outFile, `${markdown}\n`, "utf8");
+  const outFile = join(options.outDir, `${safeFilename(title, 'article')}.md`);
+  await writeFile(outFile, `${markdown}\n`, 'utf8');
   return { outFile, title };
 }
 

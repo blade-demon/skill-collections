@@ -26,15 +26,15 @@ Build a candidate set before defining props:
 
 Role hints:
 
-| Signature role | Candidate names |
-|---|---|
-| `action` | `Button`, `IconButton`, `LinkButton`, `ActionButton` |
-| `card` | `Card`, `Panel`, `Tile`, domain object cards |
-| `list(card)` | `ListItem`, `ItemCard`, repeated row/card components |
-| `O` slot / overlay | `Modal`, `Drawer`, `Toast`, `Sheet` |
-| `nav` | `Tabs`, `Breadcrumb`, `NavBar`, `SegmentedControl` |
-| `form` | `Input`, `Select`, `Switch`, field wrappers |
-| `media` | `Image`, `Avatar`, `Icon`, media/asset wrappers |
+| Signature role     | Candidate names                                      |
+| ------------------ | ---------------------------------------------------- |
+| `action`           | `Button`, `IconButton`, `LinkButton`, `ActionButton` |
+| `card`             | `Card`, `Panel`, `Tile`, domain object cards         |
+| `list(card)`       | `ListItem`, `ItemCard`, repeated row/card components |
+| `O` slot / overlay | `Modal`, `Drawer`, `Toast`, `Sheet`                  |
+| `nav`              | `Tabs`, `Breadcrumb`, `NavBar`, `SegmentedControl`   |
+| `form`             | `Input`, `Select`, `Switch`, field wrappers          |
+| `media`            | `Image`, `Avatar`, `Icon`, media/asset wrappers      |
 
 Do not invent a reuse candidate from a name alone. Candidate files must exist and be readable.
 
@@ -83,11 +83,11 @@ Prefer reuse of primitives (`Button`, `Card`, `Modal`, `ListItem`) when coverage
 
 Estimate practical coverage as a percentage. This is a judgment aid, not a mathematical proof:
 
-| Coverage | Meaning | Default decision |
-|---|---|---|
-| 85-100% | Candidate can render the role with existing public API and rules compliance | `reuse` |
-| 60-84% | Candidate is close but needs small additive API or variant changes | `extend` |
-| 0-59% | Candidate misses major structure, state, styling, or accessibility needs | `create` |
+| Coverage | Meaning                                                                     | Default decision |
+| -------- | --------------------------------------------------------------------------- | ---------------- |
+| 85-100%  | Candidate can render the role with existing public API and rules compliance | `reuse`          |
+| 60-84%   | Candidate is close but needs small additive API or variant changes          | `extend`         |
+| 0-59%    | Candidate misses major structure, state, styling, or accessibility needs    | `create`         |
 
 Coverage factors:
 
@@ -106,11 +106,11 @@ Before Step 9, output a table and wait for confirmation:
 ```markdown
 Image Connect candidates:
 
-| Region / role | Signature source | Candidate | Path | Extracted API | Coverage | Decision | Notes |
-|---|---|---|---|---|---:|---|---|
-| Action buttons | `B: action + action` | `Button` | `src/components/Button/Button.tsx` | `variant?`, `disabled?`, `onClick?`, `children` | 92% | reuse | Add `aria-label` at call site |
-| Main card | `M: card(...)` | `Card` | `src/components/Card/Card.tsx` | `children`, `className?` | 88% | reuse | Use existing wrapper |
-| Status stamp | `M.card.status` | none | - | - | 0% | create | Domain-specific state marker |
+| Region / role  | Signature source     | Candidate | Path                               | Extracted API                                   | Coverage | Decision | Notes                         |
+| -------------- | -------------------- | --------- | ---------------------------------- | ----------------------------------------------- | -------: | -------- | ----------------------------- |
+| Action buttons | `B: action + action` | `Button`  | `src/components/Button/Button.tsx` | `variant?`, `disabled?`, `onClick?`, `children` |      92% | reuse    | Add `aria-label` at call site |
+| Main card      | `M: card(...)`       | `Card`    | `src/components/Card/Card.tsx`     | `children`, `className?`                        |      88% | reuse    | Use existing wrapper          |
+| Status stamp   | `M.card.status`      | none      | -                                  | -                                               |       0% | create   | Domain-specific state marker  |
 ```
 
 When no candidate exists, use `none`, `-`, and `0%`.
@@ -130,11 +130,11 @@ Do not proceed to prop definition or code generation until the user confirms A, 
 
 User choice handling:
 
-| Choice | Action |
-|---|---|
-| A | Record the decisions and continue to Step 9. |
-| B | Apply the user's row-level changes, update the decision table, and ask for confirmation again if any decision is ambiguous. |
-| C | Record that Image Connect was skipped; mark every generated region as `create`; continue to Step 9. |
+| Choice | Action                                                                                                                      |
+| ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| A      | Record the decisions and continue to Step 9.                                                                                |
+| B      | Apply the user's row-level changes, update the decision table, and ask for confirmation again if any decision is ambiguous. |
+| C      | Record that Image Connect was skipped; mark every generated region as `create`; continue to Step 9.                         |
 
 If a decision is `extend`, ask for confirmation before editing the existing component unless the user already asked for direct file changes and the change is within the assigned output scope. If extension would modify files outside the allowed scope, stop and report the blocker.
 

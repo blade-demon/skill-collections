@@ -10,47 +10,47 @@
 #   - 复合图片资产（渐变背景 + 堆叠文字）默认 type: Image，不拆成 rect + text
 
 ui:
-  name: ComponentName            # PascalCase 组件名
+  name: ComponentName # PascalCase 组件名
   components:
-    - id: componentId            # camelCase，全局唯一
-      parent_id: root            # 父组件 id；顶层写 root
-      type: Input                # Input / Button / List / Card / Tab / Badge / Icon / Image / Text / Table / Form / Modal / Dropdown / Switch / Tooltip / Chart / Avatar / Skeleton / Toast / Custom
-      semantic_type: ""          # 可选，真实业务语义；type=Custom 时必填，例如 data-table / dropdown-filter
-      role: primary              # primary / secondary / action / decoration / container / data_field
-      label: 可见文本             # 设计稿中的文本（逐字，含省略号）；无文本写 ""
-      interactive: true          # true = 有用户交互；false = 纯展示
-      confidence: identified     # identified / inferred / needs_human_input
-      repeat_source: ""          # 列表项绑定的数据源，例如 data.items[]；非重复写 ""
-      notes: ""                  # 补充说明（尺寸约束、placeholder、颜色等）
+    - id: componentId # camelCase，全局唯一
+      parent_id: root # 父组件 id；顶层写 root
+      type: Input # Input / Button / List / Card / Tab / Badge / Icon / Image / Text / Table / Form / Modal / Dropdown / Switch / Tooltip / Chart / Avatar / Skeleton / Toast / Custom
+      semantic_type: '' # 可选，真实业务语义；type=Custom 时必填，例如 data-table / dropdown-filter
+      role: primary # primary / secondary / action / decoration / container / data_field
+      label: 可见文本 # 设计稿中的文本（逐字，含省略号）；无文本写 ""
+      interactive: true # true = 有用户交互；false = 纯展示
+      confidence: identified # identified / inferred / needs_human_input
+      repeat_source: '' # 列表项绑定的数据源，例如 data.items[]；非重复写 ""
+      notes: '' # 补充说明（尺寸约束、placeholder、颜色等）
 
   states:
     - id: loading
       trigger: api_call_pending
-      required: true             # true = spec.md 必须有 Scenario；false = 只记录为可选状态
-      source: policy             # visible / inferred / policy
-      confidence: inferred       # 设计稿未画时标 needs_human_input
-      render_assertion: "renders loadingState"
-      scope: component           # component / region / element / global
-      scope_components: []       # 局部状态影响的组件 id；整组件状态写 []
+      required: true # true = spec.md 必须有 Scenario；false = 只记录为可选状态
+      source: policy # visible / inferred / policy
+      confidence: inferred # 设计稿未画时标 needs_human_input
+      render_assertion: 'renders loadingState'
+      scope: component # component / region / element / global
+      scope_components: [] # 局部状态影响的组件 id；整组件状态写 []
     - id: empty
       trigger: data.xxx.length === 0
       required: true
       source: policy
       confidence: inferred
-      render_assertion: "renders emptyState and hides contentList"
+      render_assertion: 'renders emptyState and hides contentList'
     - id: success
       trigger: data 完整可渲染
       required: true
       source: visible
       confidence: identified
-      render_assertion: "renders main content matching the mockup"
+      render_assertion: 'renders main content matching the mockup'
     - id: error
       trigger: api_error
       required: true
       source: policy
       confidence: needs_human_input
-      render_assertion: "renders errorState with retry affordance"
+      render_assertion: 'renders errorState with retry affordance'
 
   layout:
-    structure: vertical          # vertical / horizontal / grid / overlay
-    notes: ""                    # 布局说明（陷阱、约束、响应式规则）
+    structure: vertical # vertical / horizontal / grid / overlay
+    notes: '' # 布局说明（陷阱、约束、响应式规则）

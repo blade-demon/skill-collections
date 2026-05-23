@@ -1,7 +1,7 @@
-import { basename } from "node:path";
+import { basename } from 'node:path';
 
 export interface HtmlToken {
-  type: "start" | "end" | "text";
+  type: 'start' | 'end' | 'text';
   tagName?: string;
   attrs?: Record<string, string>;
   text?: string;
@@ -9,7 +9,7 @@ export interface HtmlToken {
 }
 
 function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function rawTextRanges(html: string): Array<[number, number]> {
@@ -28,7 +28,7 @@ function isInsideRange(index: number, ranges: Array<[number, number]>): boolean 
 export function extractElementById(html: string, elementId: string): string {
   const startRe = new RegExp(
     `<(?<tag>[a-zA-Z][\\w:-]*)\\b[^>]*\\bid\\s*=\\s*(["'])${escapeRegExp(elementId)}\\2[^>]*>`,
-    "i",
+    'i',
   );
   const match = startRe.exec(html);
   if (!match?.groups?.tag) {
@@ -36,7 +36,10 @@ export function extractElementById(html: string, elementId: string): string {
   }
 
   const elementTag = match.groups.tag;
-  const tagRe = new RegExp(`<${escapeRegExp(elementTag)}\\b[^>]*>|</${escapeRegExp(elementTag)}\\s*>`, "gi");
+  const tagRe = new RegExp(
+    `<${escapeRegExp(elementTag)}\\b[^>]*>|</${escapeRegExp(elementTag)}\\s*>`,
+    'gi',
+  );
   tagRe.lastIndex = match.index + match[0].length;
   const ignoredRanges = rawTextRanges(html);
 
@@ -59,22 +62,24 @@ export function extractElementById(html: string, elementId: string): string {
   throw new Error(`Cannot find closing ${elementTag} for #${elementId}`);
 }
 
-export function pick(html: string, pattern: RegExp, defaultValue = ""): string {
+export function pick(html: string, pattern: RegExp, defaultValue = ''): string {
   const match = pattern.exec(html);
   if (!match?.[1]) {
     return defaultValue;
   }
-  return match[1].replace(/\s+/g, " ").trim();
+  return match[1].replace(/\s+/g, ' ').trim();
 }
 
 export function decodeHtmlEntities(value: string): string {
   return value
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16)),
+    )
     .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number.parseInt(dec, 10)))
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'");
 }
@@ -84,7 +89,7 @@ export function parseAttributes(raw: string): Record<string, string> {
   const attrRe = /([^\s"'=<>`]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
   for (let match = attrRe.exec(raw); match; match = attrRe.exec(raw)) {
     const [, name, doubleQuoted, singleQuoted, bare] = match;
-    attrs[name.toLowerCase()] = decodeHtmlEntities(doubleQuoted ?? singleQuoted ?? bare ?? "");
+    attrs[name.toLowerCase()] = decodeHtmlEntities(doubleQuoted ?? singleQuoted ?? bare ?? '');
   }
   return attrs;
 }
@@ -94,52 +99,53 @@ export function tokenizeHtml(html: string): HtmlToken[] {
   let cursor = 0;
 
   while (cursor < html.length) {
-    const lt = html.indexOf("<", cursor);
+    const lt = html.indexOf('<', cursor);
     if (lt === -1) {
-      tokens.push({ type: "text", text: decodeHtmlEntities(html.slice(cursor)) });
+      tokens.push({ type: 'text', text: decodeHtmlEntities(html.slice(cursor)) });
       break;
     }
     if (lt > cursor) {
-      tokens.push({ type: "text", text: decodeHtmlEntities(html.slice(cursor, lt)) });
+      tokens.push({ type: 'text', text: decodeHtmlEntities(html.slice(cursor, lt)) });
     }
 
-    if (html.startsWith("<!--", lt)) {
-      const endComment = html.indexOf("-->", lt + 4);
+    if (html.startsWith('<!--', lt)) {
+      const endComment = html.indexOf('-->', lt + 4);
       cursor = endComment === -1 ? html.length : endComment + 3;
       continue;
     }
 
-    const gt = html.indexOf(">", lt + 1);
+    const gt = html.indexOf('>', lt + 1);
     if (gt === -1) {
-      tokens.push({ type: "text", text: decodeHtmlEntities(html.slice(lt)) });
+      tokens.push({ type: 'text', text: decodeHtmlEntities(html.slice(lt)) });
       break;
     }
 
     const inside = html.slice(lt + 1, gt).trim();
     cursor = gt + 1;
-    if (!inside || inside.startsWith("!") || inside.startsWith("?")) {
+    if (!inside || inside.startsWith('!') || inside.startsWith('?')) {
       continue;
     }
 
-    if (inside.startsWith("/")) {
+    if (inside.startsWith('/')) {
       const tagName = inside.slice(1).trim().split(/\s+/)[0]?.toLowerCase();
       if (tagName) {
-        tokens.push({ type: "end", tagName });
+        tokens.push({ type: 'end', tagName });
       }
       continue;
     }
 
-    const tagName = inside.split(/\s+/, 1)[0].replace(/\/$/, "").toLowerCase();
-    const attrSource = inside.slice(tagName.length).replace(/\/\s*$/, "");
-    const selfClosing = /\/\s*$/.test(inside) || ["br", "hr", "img", "meta", "link", "input"].includes(tagName);
-    tokens.push({ type: "start", tagName, attrs: parseAttributes(attrSource), selfClosing });
+    const tagName = inside.split(/\s+/, 1)[0].replace(/\/$/, '').toLowerCase();
+    const attrSource = inside.slice(tagName.length).replace(/\/\s*$/, '');
+    const selfClosing =
+      /\/\s*$/.test(inside) || ['br', 'hr', 'img', 'meta', 'link', 'input'].includes(tagName);
+    tokens.push({ type: 'start', tagName, attrs: parseAttributes(attrSource), selfClosing });
 
-    if (tagName === "script" || tagName === "style") {
-      const closeRe = new RegExp(`</${escapeRegExp(tagName)}\\s*>`, "i");
+    if (tagName === 'script' || tagName === 'style') {
+      const closeRe = new RegExp(`</${escapeRegExp(tagName)}\\s*>`, 'i');
       const closeMatch = closeRe.exec(html.slice(cursor));
       if (closeMatch) {
         cursor += closeMatch.index + closeMatch[0].length;
-        tokens.push({ type: "end", tagName });
+        tokens.push({ type: 'end', tagName });
       } else {
         cursor = html.length;
       }
@@ -150,5 +156,5 @@ export function tokenizeHtml(html: string): HtmlToken[] {
 }
 
 export function titleFallbackFromPath(htmlPath: string): string {
-  return basename(htmlPath).replace(/\.[^.]+$/, "") || "article";
+  return basename(htmlPath).replace(/\.[^.]+$/, '') || 'article';
 }

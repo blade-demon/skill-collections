@@ -56,7 +56,7 @@ samples/<skill-name>/<sample-name>/
 
 - `inputs/` is immutable after the sample lands. If you need to evolve, fork the sample (e.g. `search-panel-v2`).
 - `design-spec/` is the skill's output. Regenerate it whenever contracts change; commit the result.
-- `src/` consumes `design-spec/` only. Not `inputs/` directly. This enforces the skill's value proposition: *spec is the contract*.
+- `src/` consumes `design-spec/` only. Not `inputs/` directly. This enforces the skill's value proposition: _spec is the contract_.
 - `walkthrough.md` records what happened during sample creation. Future readers learn from it.
 
 ---
@@ -181,15 +181,19 @@ Skill output (abbreviated):
 \`\`\`
 
 Notes / surprises:
+
 - ...
 
 ## Stage 2 — API extraction (WAITING_FOR_API)
+
 ...
 
 ## Stage 3 — Logic mapping (WAITING_FOR_MAPPING)
+
 ...
 
 ## Stage 4 — Generation (GENERATING_SPEC)
+
 ...
 
 ## Open questions that remain
@@ -236,7 +240,7 @@ Before opening a PR for a new sample:
 - [ ] `src/` builds (if it has a build) and runs locally
 - [ ] `walkthrough.md` is written and ≤ 200 lines
 - [ ] `samples/<skill-name>/<sample-name>/README.md` explains the goal in 1 paragraph
-- [ ] Top-level `npm run check` passes
+- [ ] Top-level `npm run check:full` passes, or any skipped fixture check is explained
 - [ ] Either added a regression test or documented why none was needed
 - [ ] No proprietary content, no copyrighted images, no real customer data
 

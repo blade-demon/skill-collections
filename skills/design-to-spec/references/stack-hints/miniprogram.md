@@ -17,7 +17,7 @@
 
 ## 布局陷阱
 
-- `**min-width: 0` 在 flex 子元素上** 对于包含单行截断文本的任何子元素是必需的。没有它，`text-overflow: ellipsis` 会静默失败。对于任何具有 `flex: 1` 加截断的行，明确指出这一点。
+- `**min-width: 0` 在 flex 子元素上\*\* 对于包含单行截断文本的任何子元素是必需的。没有它，`text-overflow: ellipsis` 会静默失败。对于任何具有 `flex: 1` 加截断的行，明确指出这一点。
 - **单行省略号使用 `text` vs `view`**：`<text>` 有怪癖的换行行为；使用 `<view>` 加 `overflow: hidden; white-space: nowrap; text-overflow: ellipsis;` 更可靠。
 - **每行两个固定宽度的标签**：对每个标签使用 `display: flex` + `flex: 0 0 50%`（或显式 `rpx` 宽度）+ 每个标签 `overflow: hidden`。当内容混合长度时，朴素的 `inline-block` 会破坏。
 - **发丝线边框**（`1rpx` 或 `1px`）：在 iOS 变体渲染上，发丝线可能消失或加倍。基于 transform 的发丝线技巧（通过 `transform: scale(0.5)` 的 0.5px）是安全的 fallback。

@@ -5,11 +5,23 @@
 > ```
 >
 > **CoverageInput shape:**
+>
 > ```json
 > {
 >   "entries": [
->     { "signaturePath": "T", "files": ["Header.tsx"], "components": ["Header"], "status": "covered" },
->     { "signaturePath": "O.modal", "files": [], "components": [], "status": "pending", "note": "out of scope" }
+>     {
+>       "signaturePath": "T",
+>       "files": ["Header.tsx"],
+>       "components": ["Header"],
+>       "status": "covered"
+>     },
+>     {
+>       "signaturePath": "O.modal",
+>       "files": [],
+>       "components": [],
+>       "status": "pending",
+>       "note": "out of scope"
+>     }
 >   ]
 > }
 > ```
@@ -36,11 +48,11 @@ After the tree, run `coverage-table.md` and include a signature coverage table.
 
 ## Output Modes
 
-| Mode | Action |
-|---|---|
+| Mode        | Action                                    |
+| ----------- | ----------------------------------------- |
 | Chat output | Print skeletons directly; create no files |
-| Write files | Check for conflicts before writing |
-| Unspecified | Default to chat output |
+| Write files | Check for conflicts before writing        |
+| Unspecified | Default to chat output                    |
 
 Before writing any file, check whether the target exists. If any target exists, ask:
 

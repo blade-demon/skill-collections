@@ -30,7 +30,10 @@
                 "required": ["type"],
                 "additionalProperties": false,
                 "properties": {
-                  "type": { "type": "string", "enum": ["none", "page", "cursor", "offset", "unknown"] },
+                  "type": {
+                    "type": "string",
+                    "enum": ["none", "page", "cursor", "offset", "unknown"]
+                  },
                   "request_fields": {
                     "type": "array",
                     "items": { "type": "string", "minLength": 1 }
@@ -50,7 +53,10 @@
                   "additionalProperties": false,
                   "properties": {
                     "name": { "type": "string", "minLength": 1 },
-                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "boolean", "array", "object"]
+                    },
                     "required": { "type": "boolean" },
                     "notes": { "type": "string" }
                   }
@@ -64,7 +70,10 @@
                   "additionalProperties": false,
                   "properties": {
                     "name": { "type": "string", "minLength": 1 },
-                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "boolean", "array", "object"]
+                    },
                     "item_type": { "type": "string" },
                     "required": { "type": "boolean" },
                     "nullable": { "type": "boolean" },
@@ -84,7 +93,10 @@
                   "additionalProperties": false,
                   "properties": {
                     "name": { "type": "string", "minLength": 1 },
-                    "type": { "type": "string", "enum": ["string", "number", "boolean", "array", "object"] },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "boolean", "array", "object"]
+                    },
                     "item_type": { "type": "string" },
                     "nullable": { "type": "boolean" },
                     "enums": {

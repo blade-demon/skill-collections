@@ -21,7 +21,12 @@ Add `stylePlan` to the `SkeletonConfig` passed to `generate-skeleton`:
         "component": "RiskPage",
         "declarations": [
           { "property": "display", "value": "grid", "source": "inferred" },
-          { "property": "gap", "value": "var(--space-md)", "source": "token-ledger", "comment": "Confirmed in token-ledger.md" }
+          {
+            "property": "gap",
+            "value": "var(--space-md)",
+            "source": "token-ledger",
+            "comment": "Confirmed in token-ledger.md"
+          }
         ],
         "variants": [
           {
@@ -49,14 +54,14 @@ Add `stylePlan` to the `SkeletonConfig` passed to `generate-skeleton`:
 
 ## Default Mapping Guidance
 
-| Style hint | StylePlan use |
-|---|---|
-| `density` | Select spacing/gap token family, e.g. `--space-sm`, `--space-md`, `--space-lg` |
-| `corner_radius` | Select border-radius token, e.g. `--radius-sm`, `--radius-md`, `--radius-lg` |
-| `shadow_presence` | Select elevation/shadow token if confirmed |
-| `type_hierarchy_levels` | Add typography TODO comments only unless project tokens are confirmed |
-| `primary_action_count` | Prefer existing button/component APIs; do not infer color without token confirmation |
-| `is_mobile_viewport` | Use layout comments or mobile-first container styles, not fixed viewport dimensions |
+| Style hint              | StylePlan use                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `density`               | Select spacing/gap token family, e.g. `--space-sm`, `--space-md`, `--space-lg`       |
+| `corner_radius`         | Select border-radius token, e.g. `--radius-sm`, `--radius-md`, `--radius-lg`         |
+| `shadow_presence`       | Select elevation/shadow token if confirmed                                           |
+| `type_hierarchy_levels` | Add typography TODO comments only unless project tokens are confirmed                |
+| `primary_action_count`  | Prefer existing button/component APIs; do not infer color without token confirmation |
+| `is_mobile_viewport`    | Use layout comments or mobile-first container styles, not fixed viewport dimensions  |
 
 ## Exit
 

@@ -14,7 +14,8 @@
 Stage 4 = 把 canonical `design-ir.json` 派生成可视觉评审的 **HTML 预览**,并停在**门禁 1**。
 
 **做**:`design-ir.json` → `visual-view.json`(派生视图)→ `preview/index.html` + `preview.css`
-+ `visual-review-report.md`;停在门禁 1,返回 `requiresApproval`。
+
+- `visual-review-report.md`;停在门禁 1,返回 `requiresApproval`。
 
 **不做**:`semantic-view` / `interaction-spec` / `component-plan`(Stage 5);代码生成(Stage 6);
 自动截图 diff(见 §3 决策,后置)。
@@ -131,23 +132,23 @@ Stage 3 把 symbol 实例**就地展开成 master 默认子树**,override 只存
 
 ## 11. 执行顺序 — 4A / 4B / 4C(一个 Stage)
 
-| 子段 | 内容 |
-|---|---|
+| 子段   | 内容                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------- |
 | **4A** | d2c-core `VisualViewSchema.body` 收紧 + `derive-visual-view`(含 symbol override 应用)+ 单测 |
-| **4B** | `generate-preview`(HTML/CSS 映射)+ `visual-review-report` + 单测 |
-| **4C** | `runPreview` 薄入口 + CLI `preview` 子命令 + 门禁 1 信号 |
+| **4B** | `generate-preview`(HTML/CSS 映射)+ `visual-review-report` + 单测                            |
+| **4C** | `runPreview` 薄入口 + CLI `preview` 子命令 + 门禁 1 信号                                    |
 
 ## 12. 模块与文件
 
 **d2c-core**(`packages/d2c-core/src/preview/`,新目录):
 
-| 文件 | 职责 |
-|---|---|
-| `derive-visual-view.ts` | `design-ir.json` → `visual-view`(应用 override、解析 asset) |
-| `apply-overrides.ts` | symbol override 应用(§6) |
-| `generate-preview.ts` | `visual-view` → `index.html` + `preview.css` |
-| `visual-review-report.ts` | 生成 `visual-review-report.md` |
-| `run-preview.ts` | 薄入口:`design-ir` → 全部预览产物 + `requiresApproval` |
+| 文件                      | 职责                                                        |
+| ------------------------- | ----------------------------------------------------------- |
+| `derive-visual-view.ts`   | `design-ir.json` → `visual-view`(应用 override、解析 asset) |
+| `apply-overrides.ts`      | symbol override 应用(§6)                                    |
+| `generate-preview.ts`     | `visual-view` → `index.html` + `preview.css`                |
+| `visual-review-report.ts` | 生成 `visual-review-report.md`                              |
+| `run-preview.ts`          | 薄入口:`design-ir` → 全部预览产物 + `requiresApproval`      |
 
 d2c-core `ir/views.ts`:收紧 `VisualViewSchema.body`。
 

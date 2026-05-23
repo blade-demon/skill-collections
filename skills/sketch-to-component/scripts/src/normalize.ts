@@ -13,7 +13,7 @@ import { buildSymbolIndex } from './normalize/symbols.js';
 import { getNodeName } from './normalize/sketch-nodes.js';
 import { buildVisualBlock } from './normalize/visual.js';
 
-export interface NormalizeSketchOptions extends SelectArtboardOptions {}
+export type NormalizeSketchOptions = SelectArtboardOptions;
 
 export async function normalizeSketchRaw(
   input: unknown,
@@ -68,7 +68,9 @@ export async function normalizeParsedSketchRaw(
 
   const result = validateDesignIR(ir);
   if (!result.ok) {
-    throw new Error(`Sketch normalize produced invalid DesignIR:\n  - ${result.errors.join('\n  - ')}`);
+    throw new Error(
+      `Sketch normalize produced invalid DesignIR:\n  - ${result.errors.join('\n  - ')}`,
+    );
   }
   return result.value;
 }

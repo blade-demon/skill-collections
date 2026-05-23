@@ -61,11 +61,9 @@ export const RECOMMENDED_SOURCE_REF_KEYS = [
  * Design IR `source` and the raw artifact so both anchor back to a real design
  * file/node. See {@link RECOMMENDED_SOURCE_REF_KEYS} for key names.
  */
-export const TraceRefSchema = z
-  .record(z.string())
-  .refine((r) => Object.keys(r).length > 0, {
-    message: 'must contain at least one tracing key (e.g. fileId / nodeId / url)',
-  });
+export const TraceRefSchema = z.record(z.string()).refine((r) => Object.keys(r).length > 0, {
+  message: 'must contain at least one tracing key (e.g. fileId / nodeId / url)',
+});
 export type TraceRef = z.infer<typeof TraceRefSchema>;
 
 export const SourceSchema = z

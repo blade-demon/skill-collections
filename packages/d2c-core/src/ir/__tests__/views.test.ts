@@ -16,8 +16,7 @@ describe('derived view envelopes', () => {
         kind: 'visual-view',
         generatedFrom,
         body: makeVisualBlock(),
-      })
-        .success,
+      }).success,
     ).toBe(true);
   });
 
@@ -27,8 +26,7 @@ describe('derived view envelopes', () => {
         kind: 'semantic-view',
         generatedFrom,
         body: makeVisualBlock(),
-      })
-        .success,
+      }).success,
     ).toBe(false);
   });
 

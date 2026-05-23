@@ -17,29 +17,29 @@ This is a **screenshot-to-skeleton** workflow. It can infer structure, variants,
 
 Load supporting docs only when their trigger applies:
 
-| Area | File |
-|---|---|
-| Project rules init | `workflows/init-project-rules.md` |
-| Large directories and two-stage reading | `workflows/large-directory.md` |
-| Subagent unavailable / unsupported framework | `workflows/degraded-mode.md` |
-| Coarse Stage A protocol | `protocols/coarse-signature-format.md` |
-| Full signature JSON protocol | `protocols/subagent-return-format.md` |
-| Optional style hints protocol | `protocols/style-context-spec.md` |
-| Signature validation redispatch | `workflows/diagnostic-redispatch.md` |
-| Signature summary and JSX tree output | `workflows/summarize-signatures.md` |
-| Structural comparison | `workflows/structural-comparison.md` |
-| Manual structural review | `workflows/manual-review-exit.md` |
-| Candidate group conflicts | `workflows/candidate-group-conflicts.md` |
-| Image Connect reuse/extend/create mapping | `workflows/image-connect.md` |
-| Style Connect token mapping and ledger | `workflows/style-connect.md` |
-| Style Plan CSS generation input | `workflows/style-plan.md` |
-| Prop modeling | `workflows/prop-modeling.md` |
-| Asset and icon hard rules | `workflows/asset-handling.md` |
-| Code generation and templates | `workflows/code-generation.md` — calls `scripts/generate-skeleton` |
-| Output and file writing | `workflows/output-and-writing.md` |
-| Scripts package | `scripts/` — validate-signature, validate-coarse, coverage-table, generate-skeleton |
-| Signature coverage table | `workflows/coverage-table.md` |
-| Optional render verification | `workflows/render-verification.md` |
+| Area                                         | File                                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Project rules init                           | `workflows/init-project-rules.md`                                                   |
+| Large directories and two-stage reading      | `workflows/large-directory.md`                                                      |
+| Subagent unavailable / unsupported framework | `workflows/degraded-mode.md`                                                        |
+| Coarse Stage A protocol                      | `protocols/coarse-signature-format.md`                                              |
+| Full signature JSON protocol                 | `protocols/subagent-return-format.md`                                               |
+| Optional style hints protocol                | `protocols/style-context-spec.md`                                                   |
+| Signature validation redispatch              | `workflows/diagnostic-redispatch.md`                                                |
+| Signature summary and JSX tree output        | `workflows/summarize-signatures.md`                                                 |
+| Structural comparison                        | `workflows/structural-comparison.md`                                                |
+| Manual structural review                     | `workflows/manual-review-exit.md`                                                   |
+| Candidate group conflicts                    | `workflows/candidate-group-conflicts.md`                                            |
+| Image Connect reuse/extend/create mapping    | `workflows/image-connect.md`                                                        |
+| Style Connect token mapping and ledger       | `workflows/style-connect.md`                                                        |
+| Style Plan CSS generation input              | `workflows/style-plan.md`                                                           |
+| Prop modeling                                | `workflows/prop-modeling.md`                                                        |
+| Asset and icon hard rules                    | `workflows/asset-handling.md`                                                       |
+| Code generation and templates                | `workflows/code-generation.md` — calls `scripts/generate-skeleton`                  |
+| Output and file writing                      | `workflows/output-and-writing.md`                                                   |
+| Scripts package                              | `scripts/` — validate-signature, validate-coarse, coverage-table, generate-skeleton |
+| Signature coverage table                     | `workflows/coverage-table.md`                                                       |
+| Optional render verification                 | `workflows/render-verification.md`                                                  |
 
 Always use `protocols/signature-spec.md` for grammar and role vocabulary. Read `examples/golden-cases.md` when manual review triggers or when comparing 4+ signatures with mixed leaf additions/removals.
 
@@ -47,12 +47,12 @@ Always use `protocols/signature-spec.md` for grammar and role vocabulary. Read `
 
 Run all commands from `skills/image-to-component/scripts/`. Requires Node.js 20+ and `npm install` once on first use.
 
-| Script | Usage |
-|---|---|
-| Validate full signature batch | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
-| Validate coarse signature batch | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png` |
-| Generate coverage table | `echo '<json>' \| npm run coverage-table` |
-| Generate component skeleton | `echo '<json>' \| npm run generate-skeleton` |
+| Script                          | Usage                                                                                         |
+| ------------------------------- | --------------------------------------------------------------------------------------------- |
+| Validate full signature batch   | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
+| Validate coarse signature batch | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png`    |
+| Generate coverage table         | `echo '<json>' \| npm run coverage-table`                                                     |
+| Generate component skeleton     | `echo '<json>' \| npm run generate-skeleton`                                                  |
 
 Output format: `validate-*` scripts print `{"valid":true}` or `{"valid":false,"errors":[...]}` and exit non-zero on failure. `coverage-table` prints a markdown table. `generate-skeleton` prints a `[{path,content}]` JSON array.
 
@@ -89,9 +89,11 @@ If subagent dispatch is unavailable, run `workflows/degraded-mode.md`.
 ### Step 5 — Validate And Summarize Signatures
 
 > **Script:** After receiving subagent JSON, run validation from `skills/image-to-component/scripts/`:
+>
 > ```bash
 > echo '<subagent return JSON>' | npm run validate-signature -- --batch batch-1 --expected-files file1.png file2.png
 > ```
+>
 > A non-zero exit means validation failed; the printed `errors` array describes what to fix. For Stage A coarse batches, use `npm run validate-coarse` instead.
 
 Validate all subagent JSON before comparison. On first validation failure, run `workflows/diagnostic-redispatch.md`; never resend an unchanged prompt. On second failure, ask for corrected JSON, skip the batch, or stop.
@@ -129,9 +131,11 @@ The output is a `[{path, content}]` JSON array. Use this array as the file list 
 ### Step 11 — Output Or Write Files
 
 > **Script:** Build a `CoverageInput` JSON object (entries with signaturePath, files, components, status, optional note), then run:
+>
 > ```bash
 > echo '<CoverageInput JSON>' | npm run coverage-table
 > ```
+>
 > Paste the output markdown directly into the response.
 
 Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, include `asset-ledger.md` when pending assets exist, and include `token-ledger.md` when pending token decisions exist.
@@ -142,21 +146,21 @@ Only in write-file mode, run `workflows/render-verification.md` when a Storybook
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---|---|
+| Mistake                                        | Fix                                                                                             |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Promise high-fidelity styling from screenshots | Explain the screenshot limitation and route to a design-source workflow when source data exists |
-| Skip `.image-to-component.rules.md` | Run init first when missing |
-| Parse free-text signatures | Require JSON from `protocols/subagent-return-format.md` |
-| Treat Stage A coarse signatures as final | Use them only to select Stage B files |
-| Re-dispatch the same bad prompt | Diagnose with `workflows/diagnostic-redispatch.md` |
-| Skip structural comparison | Run `workflows/structural-comparison.md` before props/code |
-| Create files without being asked | Default to chat output |
-| Main agent reads images | Dispatch subagents or use degraded-mode menu |
-| Let style hints alter structure | Keep `style_hints` separate |
-| Invent icon names from screenshots | Use `workflows/asset-handling.md` and asset ledger |
-| Add new icon packages | Obey `.image-to-component.rules.md`; default is only `@iconify/react` |
-| Split props into status-specific objects | Keep flat discriminator props |
-| Mix TS syntax in JS output | Match the selected language |
-| Hardcode style values without ledger | Use `workflows/style-connect.md` and token-ledger when style hints enabled |
-| Invent new tokens without user approval | Require Style Connect decision-gate before code generation |
-| Skip style-connect gate and guess tokens | Run `workflows/style-connect.md` and wait for confirmation A/B/C |
+| Skip `.image-to-component.rules.md`            | Run init first when missing                                                                     |
+| Parse free-text signatures                     | Require JSON from `protocols/subagent-return-format.md`                                         |
+| Treat Stage A coarse signatures as final       | Use them only to select Stage B files                                                           |
+| Re-dispatch the same bad prompt                | Diagnose with `workflows/diagnostic-redispatch.md`                                              |
+| Skip structural comparison                     | Run `workflows/structural-comparison.md` before props/code                                      |
+| Create files without being asked               | Default to chat output                                                                          |
+| Main agent reads images                        | Dispatch subagents or use degraded-mode menu                                                    |
+| Let style hints alter structure                | Keep `style_hints` separate                                                                     |
+| Invent icon names from screenshots             | Use `workflows/asset-handling.md` and asset ledger                                              |
+| Add new icon packages                          | Obey `.image-to-component.rules.md`; default is only `@iconify/react`                           |
+| Split props into status-specific objects       | Keep flat discriminator props                                                                   |
+| Mix TS syntax in JS output                     | Match the selected language                                                                     |
+| Hardcode style values without ledger           | Use `workflows/style-connect.md` and token-ledger when style hints enabled                      |
+| Invent new tokens without user approval        | Require Style Connect decision-gate before code generation                                      |
+| Skip style-connect gate and guess tokens       | Run `workflows/style-connect.md` and wait for confirmation A/B/C                                |

@@ -92,13 +92,21 @@ src/
 
 ```ts
 // sketch-raw-model.ts —— payload 的形状,normalize 唯一认它
-interface SketchPage { id: string; path: string; data: Record<string, unknown> }
-interface SketchAssetEntry { path: string; kind: 'image'|'font'|'preview'|'other'; byteLength: number }
+interface SketchPage {
+  id: string;
+  path: string;
+  data: Record<string, unknown>;
+}
+interface SketchAssetEntry {
+  path: string;
+  kind: 'image' | 'font' | 'preview' | 'other';
+  byteLength: number;
+}
 interface SketchRawModel {
-  meta:     Record<string, unknown>;   // meta.json
-  document: Record<string, unknown>;   // document.json
-  pages:    SketchPage[];              // 整文档全部页;含 zip 路径,按 path 排序
-  assets:   SketchAssetEntry[];        // 二进制条目清单(不含字节),按 path 排序
+  meta: Record<string, unknown>; // meta.json
+  document: Record<string, unknown>; // document.json
+  pages: SketchPage[]; // 整文档全部页;含 zip 路径,按 path 排序
+  assets: SketchAssetEntry[]; // 二进制条目清单(不含字节),按 path 排序
 }
 // SketchRawModelSchema:.strict();meta/document 非空对象;pages ≥1;内层一律 record(unknown)
 //   —— Stage 1 "顶层严、内层宽" 克制原则,_class 模型留给 Stage 3
@@ -123,14 +131,14 @@ normalize / diff / 错误定位。
 
 `ExtractError`(全 fatal,6 码):
 
-| code | 触发 |
-|---|---|
-| `file-not-found` | `.sketch` 路径不存在(ENOENT) |
-| `read-failed` | 其他读文件失败:权限不足、路径是目录等(EACCES / EISDIR …) |
-| `not-a-sketch-zip` | 不是 ZIP(无 `PK` magic) |
-| `corrupt-archive` | 是 ZIP 但解压失败 |
-| `missing-entry` | 缺 `document.json` / `meta.json` / 任何 `pages/*`(消息指明哪个) |
-| `bad-entry` | 必需 JSON 解析失败 / `document.do_objectID` 缺失 / `SketchRawModel` 不过 schema |
+| code               | 触发                                                                            |
+| ------------------ | ------------------------------------------------------------------------------- |
+| `file-not-found`   | `.sketch` 路径不存在(ENOENT)                                                    |
+| `read-failed`      | 其他读文件失败:权限不足、路径是目录等(EACCES / EISDIR …)                        |
+| `not-a-sketch-zip` | 不是 ZIP(无 `PK` magic)                                                         |
+| `corrupt-archive`  | 是 ZIP 但解压失败                                                               |
+| `missing-entry`    | 缺 `document.json` / `meta.json` / 任何 `pages/*`(消息指明哪个)                 |
+| `bad-entry`        | 必需 JSON 解析失败 / `document.do_objectID` 缺失 / `SketchRawModel` 不过 schema |
 
 ## 8. `extractRaw` 编排 + 确定性
 
@@ -143,6 +151,7 @@ normalize / diff / 错误定位。
 **确定性**:zip 条目遍历、`pages`、`assets` 一律**按 path 排序后输出**,保证 `raw-dsl.json` 稳定可 diff。
 
 **ZIP 条目归类规则**(`acquire-from-file` 用,避免实现自由发挥):
+
 - `document.json` → `model.document`;`meta.json` → `model.meta`(缺任一 → `missing-entry`)。
 - 匹配 `^pages/[^/]+\.json$` 的条目 → `model.pages[]`(无任何匹配 → `missing-entry`)。
 - 目录条目(路径以 `/` 结尾)一律跳过。

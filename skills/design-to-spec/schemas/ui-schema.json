@@ -105,7 +105,10 @@
           "required": ["structure", "notes"],
           "additionalProperties": false,
           "properties": {
-            "structure": { "type": "string", "enum": ["vertical", "horizontal", "grid", "overlay"] },
+            "structure": {
+              "type": "string",
+              "enum": ["vertical", "horizontal", "grid", "overlay"]
+            },
             "notes": { "type": "string" }
           }
         }

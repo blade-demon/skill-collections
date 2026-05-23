@@ -6,14 +6,14 @@
 
 ## 与 search-panel 的形态对照
 
-| | search-panel | feedback-form |
-|---|---|---|
-| 主导 binding | `api_to_ui`（接口→UI） | `ui_to_api`（多个 UI 字段→请求体） |
-| 接口字段位置 | `params`（GET query） | `request_body`（POST 提交体） |
-| 表单字段数 | 1 | 3 |
-| validation 层次 | 单层（后端 INVALID_KEYWORD） | 双层（前端 + 后端 VALIDATION_FAILED） |
-| 字段级状态 | invalidKeyword（element-scoped 1 个） | emailInvalid + commentInvalid 2 个，element-scoped |
-| success 渲染什么 | 列表 + 计数 | 完全替换表单为感谢页 |
+|                  | search-panel                          | feedback-form                                      |
+| ---------------- | ------------------------------------- | -------------------------------------------------- |
+| 主导 binding     | `api_to_ui`（接口→UI）                | `ui_to_api`（多个 UI 字段→请求体）                 |
+| 接口字段位置     | `params`（GET query）                 | `request_body`（POST 提交体）                      |
+| 表单字段数       | 1                                     | 3                                                  |
+| validation 层次  | 单层（后端 INVALID_KEYWORD）          | 双层（前端 + 后端 VALIDATION_FAILED）              |
+| 字段级状态       | invalidKeyword（element-scoped 1 个） | emailInvalid + commentInvalid 2 个，element-scoped |
+| success 渲染什么 | 列表 + 计数                           | 完全替换表单为感谢页                               |
 
 抓这些差异点读 contracts 比读全文更高效。
 
@@ -65,6 +65,7 @@
 **关键决策**：
 
 1. **多个 `ui_to_api` binding 指向同一个 endpoint 的不同 body 字段**
+
    ```yaml
    - direction: ui_to_api
      source_ui: ratingGroup
@@ -76,11 +77,11 @@
      source_ui: emailField
      target_api: email
    ```
+
    这是契约第一次出现"同 endpoint，多个 ui_to_api 平行 binding"的形态。validate-contracts.js 的 cross-ref 校验通过 — 因为它对每条 binding 单独检查 source_ui 在 components、target_api 在 params/request_body 里存在即可。验证了多 binding 的 schema 表达没问题。
 
 2. **15 条 state_machine transitions**
    比 search-panel 的 9 条多得多。原因：
-
    - 5 种业务响应分支（success / validationFailed / rateLimited / error / forbidden）= 5 条 from submitting
    - validationFailed → idle（用户编辑字段）= 1 条
    - error → submitting（用户重提）= 1 条
@@ -119,14 +120,14 @@ OK: output files are valid
 
 ## 关键 open questions
 
-| ID | 优先级 | 内容 |
-|---|---|---|
-| `mapping-q1` | P1 | RATE_LIMITED 30s 倒计时视觉（按钮上数字 / 进度条）|
-| `mapping-q2` | P1 | feedbackIdText 是否可复制；样式待设计签收（与 ui.feedbackIdText.confidence: needs_human_input 配对登记）|
-| `api-q1` | P2 | VALIDATION_FAILED.data.field_errors 后端字段名是否与前端字段名严格一致 |
-| `api-q2` | P2 | data.submitted_at 是否在 v1 schema 中保留 |
-| `mapping-q3` | P2 | 是否需要提交确认弹窗 |
-| `mapping-q4` | P2 | rating 取消（同颗第二次点击）的语义是否需要顶层 Scenario |
+| ID           | 优先级 | 内容                                                                                                     |
+| ------------ | ------ | -------------------------------------------------------------------------------------------------------- |
+| `mapping-q1` | P1     | RATE_LIMITED 30s 倒计时视觉（按钮上数字 / 进度条）                                                       |
+| `mapping-q2` | P1     | feedbackIdText 是否可复制；样式待设计签收（与 ui.feedbackIdText.confidence: needs_human_input 配对登记） |
+| `api-q1`     | P2     | VALIDATION_FAILED.data.field_errors 后端字段名是否与前端字段名严格一致                                   |
+| `api-q2`     | P2     | data.submitted_at 是否在 v1 schema 中保留                                                                |
+| `mapping-q3` | P2     | 是否需要提交确认弹窗                                                                                     |
+| `mapping-q4` | P2     | rating 取消（同颗第二次点击）的语义是否需要顶层 Scenario                                                 |
 
 P0 一个都没有 —— 这个 sample 的设计稿和接口文档在准备时就比较完整，反而是 search-panel 当时 INVALID_KEYWORD 视觉缺失暴露了真问题。**P0 缺失不代表 sample 质量更高**；只代表准备阶段没踩坑。
 

@@ -40,7 +40,9 @@ export function generateVisualReviewReport(input: GenerateVisualReviewReportInpu
   }
 
   lines.push('', '## Known Limitations', '');
-  lines.push('- Image content is represented by deterministic placeholders; real image export is out of scope for Stage 4.');
+  lines.push(
+    '- Image content is represented by deterministic placeholders; real image export is out of scope for Stage 4.',
+  );
   lines.push('- Automated screenshot diff is not run in Stage 4.');
   lines.push('');
 

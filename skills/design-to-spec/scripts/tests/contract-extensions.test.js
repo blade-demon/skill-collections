@@ -1,8 +1,8 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { makeTmpDir, runNodeScript } from "./helpers.js";
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { makeTmpDir, runNodeScript } from './helpers.js';
 
 const UI_CONTRACT = `\
 ui:
@@ -170,63 +170,63 @@ mapping:
   open_questions: []
 `;
 
-test("rich frontend contracts validate and generate policy details", () => {
+test('rich frontend contracts validate and generate policy details', () => {
   const tmp = makeTmpDir();
-  const ui = resolve(tmp, "ui-schema.yaml");
-  const api = resolve(tmp, "api-schema.yaml");
-  const mapping = resolve(tmp, "mapping-logic.yaml");
-  const outDir = resolve(tmp, "out");
+  const ui = resolve(tmp, 'ui-schema.yaml');
+  const api = resolve(tmp, 'api-schema.yaml');
+  const mapping = resolve(tmp, 'mapping-logic.yaml');
+  const outDir = resolve(tmp, 'out');
 
-  writeFileSync(ui, UI_CONTRACT, "utf8");
-  writeFileSync(api, API_CONTRACT, "utf8");
-  writeFileSync(mapping, MAPPING_CONTRACT, "utf8");
+  writeFileSync(ui, UI_CONTRACT, 'utf8');
+  writeFileSync(api, API_CONTRACT, 'utf8');
+  writeFileSync(mapping, MAPPING_CONTRACT, 'utf8');
 
-  const validate = runNodeScript("validate-contracts.js", [
-    "--ui",
+  const validate = runNodeScript('validate-contracts.js', [
+    '--ui',
     ui,
-    "--api",
+    '--api',
     api,
-    "--mapping",
+    '--mapping',
     mapping,
   ]);
   assert.equal(validate.status, 0, validate.stderr + validate.stdout);
 
-  const generate = runNodeScript("generate-output.js", [
-    "--ui",
+  const generate = runNodeScript('generate-output.js', [
+    '--ui',
     ui,
-    "--api",
+    '--api',
     api,
-    "--mapping",
+    '--mapping',
     mapping,
-    "--out-dir",
+    '--out-dir',
     outDir,
   ]);
   assert.equal(generate.status, 0, generate.stderr + generate.stdout);
 
-  const notesText = readFileSync(resolve(outDir, "notes.md"), "utf8");
-  const dataFetchingText = readFileSync(resolve(outDir, "data-fetching.md"), "utf8");
-  assert.ok(notesText.includes("dropdown-filter"));
-  assert.ok(notesText.includes("scope_components"));
-  assert.ok(notesText.includes("request_body"));
-  assert.ok(notesText.includes("RATE_LIMITED"));
-  assert.ok(dataFetchingText.includes("cursor"));
-  assert.ok(dataFetchingText.includes("query_cache"));
-  assert.ok(dataFetchingText.includes("abortable"));
+  const notesText = readFileSync(resolve(outDir, 'notes.md'), 'utf8');
+  const dataFetchingText = readFileSync(resolve(outDir, 'data-fetching.md'), 'utf8');
+  assert.ok(notesText.includes('dropdown-filter'));
+  assert.ok(notesText.includes('scope_components'));
+  assert.ok(notesText.includes('request_body'));
+  assert.ok(notesText.includes('RATE_LIMITED'));
+  assert.ok(dataFetchingText.includes('cursor'));
+  assert.ok(dataFetchingText.includes('query_cache'));
+  assert.ok(dataFetchingText.includes('abortable'));
 
-  const outputValidate = runNodeScript("validate-output.js", [
-    "--strict",
-    "--ui",
-    resolve(outDir, "contracts", "ui-schema.yaml"),
-    "--api",
-    resolve(outDir, "contracts", "api-schema.yaml"),
-    "--mapping",
-    resolve(outDir, "contracts", "mapping-logic.yaml"),
-    "--notes",
-    resolve(outDir, "notes.md"),
-    "--data-fetching",
-    resolve(outDir, "data-fetching.md"),
-    "--spec",
-    resolve(outDir, "specs", "admin-orders-table", "spec.md"),
+  const outputValidate = runNodeScript('validate-output.js', [
+    '--strict',
+    '--ui',
+    resolve(outDir, 'contracts', 'ui-schema.yaml'),
+    '--api',
+    resolve(outDir, 'contracts', 'api-schema.yaml'),
+    '--mapping',
+    resolve(outDir, 'contracts', 'mapping-logic.yaml'),
+    '--notes',
+    resolve(outDir, 'notes.md'),
+    '--data-fetching',
+    resolve(outDir, 'data-fetching.md'),
+    '--spec',
+    resolve(outDir, 'specs', 'admin-orders-table', 'spec.md'),
   ]);
   assert.equal(outputValidate.status, 0, outputValidate.stderr + outputValidate.stdout);
 });

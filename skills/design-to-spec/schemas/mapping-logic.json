@@ -20,7 +20,14 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["id", "trigger", "endpoint", "call_type", "loading_state", "depends_on"],
+                "required": [
+                  "id",
+                  "trigger",
+                  "endpoint",
+                  "call_type",
+                  "loading_state",
+                  "depends_on"
+                ],
                 "additionalProperties": false,
                 "properties": {
                   "id": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
@@ -75,7 +82,10 @@
               "properties": {
                 "abortable": { "type": "boolean" },
                 "dedupe_key": { "type": "string" },
-                "stale_response": { "type": "string", "enum": ["ignore", "apply_latest", "block_new", "needs_human_input"] },
+                "stale_response": {
+                  "type": "string",
+                  "enum": ["ignore", "apply_latest", "block_new", "needs_human_input"]
+                },
                 "notes": { "type": "string" }
               }
             }

@@ -26,17 +26,17 @@
 
 ### 1.1 时间线
 
-| 阶段 | 工作 | 估时 |
-|---|---|---|
-| 评审会前 | 自己读设计稿 + 接口文档；把疑问写进飞书评论 | 0.5h |
-| 评审会 | 与 PM / 后端 / 设计 / QA 拉会，过设计稿和接口 | 1h |
-| 评审会后 | 整理会议记录，转发给相关人 | 0.5h |
-| 实现 | 写 form / 状态机 / 校验 / 错误处理 / submit 流 | 4–6h |
-| 联调 | 与后端对错误码、字段名、限流响应；改 1–2 轮 | 1.5h |
-| 测试 | QA 写用例时回头问"empty 态什么样"、"rateLimit 视觉"、"email 可选时怎么传" | 0.5–1h |
-| 埋点补 | 上线前一天数据团队来要求加 4 个事件，覆盖原代码的 onClick / onSubmit | 1h |
-| 修复回归 | 埋点改动破坏了原本能跑的 form clear 逻辑 | 0.5h |
-| **小计** | | **9.5–12h** |
+| 阶段     | 工作                                                                      | 估时        |
+| -------- | ------------------------------------------------------------------------- | ----------- |
+| 评审会前 | 自己读设计稿 + 接口文档；把疑问写进飞书评论                               | 0.5h        |
+| 评审会   | 与 PM / 后端 / 设计 / QA 拉会，过设计稿和接口                             | 1h          |
+| 评审会后 | 整理会议记录，转发给相关人                                                | 0.5h        |
+| 实现     | 写 form / 状态机 / 校验 / 错误处理 / submit 流                            | 4–6h        |
+| 联调     | 与后端对错误码、字段名、限流响应；改 1–2 轮                               | 1.5h        |
+| 测试     | QA 写用例时回头问"empty 态什么样"、"rateLimit 视觉"、"email 可选时怎么传" | 0.5–1h      |
+| 埋点补   | 上线前一天数据团队来要求加 4 个事件，覆盖原代码的 onClick / onSubmit      | 1h          |
+| 修复回归 | 埋点改动破坏了原本能跑的 form clear 逻辑                                  | 0.5h        |
+| **小计** |                                                                           | **9.5–12h** |
 
 ### 1.2 实际会漂移的事项（90% 项目都会发生 ≥ 2 个）
 
@@ -49,12 +49,12 @@
 
 ### 1.3 上述漂移的真实代价
 
-| 漂移项 | 平均代价 |
-|---|---|
+| 漂移项                 | 平均代价                               |
+| ---------------------- | -------------------------------------- |
 | 上线前一天发现需要回炉 | 0.5 工作日（同步沟通 + 改代码 + 重测） |
-| 联调多 1 轮 | 1–2 小时 + 后端工时 |
-| 上线后埋点回补 | 0.5 工作日（含发布流程） |
-| 状态语义返工 | 1–3 小时 |
+| 联调多 1 轮            | 1–2 小时 + 后端工时                    |
+| 上线后埋点回补         | 0.5 工作日（含发布流程）               |
+| 状态语义返工           | 1–3 小时                               |
 
 合计：**额外 4–8 工时**散落在多个时间节点，且每次都让心智重新切回这个组件。
 
@@ -64,30 +64,30 @@
 
 ### 2.1 时间线
 
-| 阶段 | 工作 | 估时 |
-|---|---|---|
-| 跑 skill | 4 阶段对话：上传设计稿 + 接口 + 描述交互；每阶段确认 | 0.5–1h |
-| 自动产出 | `contracts/*.yaml` + `notes.md` + `data-fetching.md` + `spec.md` 写盘 | 0（脚本秒级） |
-| 评审会 | 拉会，但每人**只看自己角色对应的产物**（见 [reviewer-guide.md](../references/reviewer-guide.md)）；P0 / P1 当场认领 | 0.5h |
-| 评审后 | 改 contracts → 重跑 generator；不再"会议纪要分发" | 0.25h |
-| 实现 | 按 `data-fetching.md` 状态机 + `spec.md` Scenario 写代码 | 3–4h |
-| 联调 | 错误码、字段名都在 `api-schema.yaml` 里写死了，后端拿同一份；几乎不需要回头扯皮 | 0.25h |
-| 测试 | QA 直接拿 spec.md 的 Scenario 写用例，每个枚举值都已展开 | 0（QA 自己跑） |
-| 埋点 | `notes.md §埋点锚点` 表已列出所有事件名；上线前数据团队 review 即可 | 0.25h |
-| **小计** | | **4.75–6.25h** |
+| 阶段     | 工作                                                                                                                | 估时           |
+| -------- | ------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 跑 skill | 4 阶段对话：上传设计稿 + 接口 + 描述交互；每阶段确认                                                                | 0.5–1h         |
+| 自动产出 | `contracts/*.yaml` + `notes.md` + `data-fetching.md` + `spec.md` 写盘                                               | 0（脚本秒级）  |
+| 评审会   | 拉会，但每人**只看自己角色对应的产物**（见 [reviewer-guide.md](../references/reviewer-guide.md)）；P0 / P1 当场认领 | 0.5h           |
+| 评审后   | 改 contracts → 重跑 generator；不再"会议纪要分发"                                                                   | 0.25h          |
+| 实现     | 按 `data-fetching.md` 状态机 + `spec.md` Scenario 写代码                                                            | 3–4h           |
+| 联调     | 错误码、字段名都在 `api-schema.yaml` 里写死了，后端拿同一份；几乎不需要回头扯皮                                     | 0.25h          |
+| 测试     | QA 直接拿 spec.md 的 Scenario 写用例，每个枚举值都已展开                                                            | 0（QA 自己跑） |
+| 埋点     | `notes.md §埋点锚点` 表已列出所有事件名；上线前数据团队 review 即可                                                 | 0.25h          |
+| **小计** |                                                                                                                     | **4.75–6.25h** |
 
 ### 2.2 漂移被前移到了哪一步
 
 每个原本会"上线前才暴露"的问题都在跑 skill 时被**显式登记**：
 
-| 原漂移项 | 在 skill 里登记成什么 | 何时关闭 |
-|---|---|---|
-| rate-limited 倒计时视觉 | `mapping-logic.yaml.open_questions.mapping-q1: P1` | 评审会当场认领设计师 |
-| `email` 空怎么传 | 写进 `mapping-logic.yaml.bindings[email].transform: "if empty omit field"` | 阶段三确认时落契约 |
-| 错误码不全 | `api-schema.yaml.endpoints[].error_shape.error.code.enums` 当场过一遍 | 阶段二接口提纯时 |
-| field-level invalid 语义 | `ui-schema.yaml.states.emailInvalid.scope: element + scope_components: [emailField, emailHint]` | 阶段一视觉提纯时 |
-| 埋点缺漏 | `notes.md §埋点锚点` 表自动从 `ui_to_event` binding 派生 | 评审时 |
-| success 是替换还是叠加 | `ui-schema.yaml.states.success.render_assertion: "hides ratingGroup, commentField, emailField, submitBtn"` | 阶段一时 |
+| 原漂移项                 | 在 skill 里登记成什么                                                                                      | 何时关闭             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- | -------------------- |
+| rate-limited 倒计时视觉  | `mapping-logic.yaml.open_questions.mapping-q1: P1`                                                         | 评审会当场认领设计师 |
+| `email` 空怎么传         | 写进 `mapping-logic.yaml.bindings[email].transform: "if empty omit field"`                                 | 阶段三确认时落契约   |
+| 错误码不全               | `api-schema.yaml.endpoints[].error_shape.error.code.enums` 当场过一遍                                      | 阶段二接口提纯时     |
+| field-level invalid 语义 | `ui-schema.yaml.states.emailInvalid.scope: element + scope_components: [emailField, emailHint]`            | 阶段一视觉提纯时     |
+| 埋点缺漏                 | `notes.md §埋点锚点` 表自动从 `ui_to_event` binding 派生                                                   | 评审时               |
+| success 是替换还是叠加   | `ui-schema.yaml.states.success.render_assertion: "hides ratingGroup, commentField, emailField, submitBtn"` | 阶段一时             |
 
 `open_questions` 里 P0 一个都没有（feedback-form 的设计稿和接口文档准备质量较高），P1 / P2 共 6 条全部在评审会上当场认领或答复。
 

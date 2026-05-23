@@ -9,44 +9,44 @@
 
 api:
   endpoints:
-    - id: endpointId             # 短标识符，camelCase，在 Mapping_Logic 中引用
+    - id: endpointId # 短标识符，camelCase，在 Mapping_Logic 中引用
       url: /api/v1/resource
-      method: GET                # GET / POST / PUT / DELETE / PATCH
-      auth_required: false       # 鉴权会影响 UI 分支时必须填写 true
-      cache_key_fields: []       # 参与缓存 key 的 params/request_body 字段，例如 [keyword, cursor]
+      method: GET # GET / POST / PUT / DELETE / PATCH
+      auth_required: false # 鉴权会影响 UI 分支时必须填写 true
+      cache_key_fields: [] # 参与缓存 key 的 params/request_body 字段，例如 [keyword, cursor]
       pagination:
-        type: none               # none / page / cursor / offset / unknown
-        request_fields: []       # 例如 [cursor, limit]
-        response_fields: []      # 例如 [data.nextCursor, data.hasMore]
-        notes: ""
+        type: none # none / page / cursor / offset / unknown
+        request_fields: [] # 例如 [cursor, limit]
+        response_fields: [] # 例如 [data.nextCursor, data.hasMore]
+        notes: ''
       params:
         - name: paramName
-          type: string           # string / number / boolean / array / object
+          type: string # string / number / boolean / array / object
           required: true
-          notes: ""              # 参数含义或约束
+          notes: '' # 参数含义或约束
       request_body:
         - name: bodyFieldName
-          type: string           # string / number / boolean / array / object
-          item_type: ""          # 仅 type=array 时填写
+          type: string # string / number / boolean / array / object
+          item_type: '' # 仅 type=array 时填写
           required: false
           nullable: true
-          enums: []              # 枚举值列表；非枚举写 []
-          notes: ""              # 字段含义或约束
+          enums: [] # 枚举值列表；非枚举写 []
+          notes: '' # 字段含义或约束
       response_fields:
-        - name: data.fieldName   # 点号路径，例如 data.results / data.items[].id
-          type: string           # string / number / boolean / array / object
-          item_type: ""          # 仅 type=array 时填写，例如 object / string
+        - name: data.fieldName # 点号路径，例如 data.results / data.items[].id
+          type: string # string / number / boolean / array / object
+          item_type: '' # 仅 type=array 时填写，例如 object / string
           nullable: false
-          enums: []              # 枚举值列表，例如 [ACTIVE, SUSPENDED, CLOSED]；非枚举写 []
-          notes: ""              # 字段含义、格式约束、单位
-      status_codes: []           # 影响 UI 的 HTTP 状态码，例如 [401, 403, 429]
+          enums: [] # 枚举值列表，例如 [ACTIVE, SUSPENDED, CLOSED]；非枚举写 []
+          notes: '' # 字段含义、格式约束、单位
+      status_codes: [] # 影响 UI 的 HTTP 状态码，例如 [401, 403, 429]
       error_shape:
         - code: ERROR_CODE
           message_field: error.message
           retryable: true
           ui_state: error
-          notes: ""              # 对应 UI 降级或重试策略
+          notes: '' # 对应 UI 降级或重试策略
   open_questions:
     - id: oq_api_1
-      content: "具体待确认问题，例如：status 枚举值是否完整"
-      priority: P0               # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认
+      content: '具体待确认问题，例如：status 枚举值是否完整'
+      priority: P0 # P0 = 阻塞实现；P1 = 影响细节；P2 = 可后续确认

@@ -9,9 +9,7 @@ export type ValidationResult<T> =
 
 /** Format a `ZodError` into readable `path: message` strings. */
 export function formatZodIssues(error: z.ZodError): string[] {
-  return error.issues.map(
-    (issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`,
-  );
+  return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`);
 }
 
 /**

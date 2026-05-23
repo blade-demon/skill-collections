@@ -1,7 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createInterface } from "node:readline";
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 
 export interface FetchUrlOptions {
   waitMode?: boolean;
@@ -112,44 +112,46 @@ async function launchBrowser(
 ): Promise<PlaywrightBrowser> {
   // Prefer system Chrome to avoid downloading bundled Chromium.
   try {
-    return await chromium.launch({ headless: options.headless, channel: "chrome" });
+    return await chromium.launch({ headless: options.headless, channel: 'chrome' });
   } catch (chromeError) {
-    const fallbackMessage = chromeError instanceof Error ? chromeError.message : String(chromeError);
+    const fallbackMessage =
+      chromeError instanceof Error ? chromeError.message : String(chromeError);
     try {
       return await chromium.launch({ headless: options.headless });
     } catch (bundledError) {
-      const bundledMessage = bundledError instanceof Error ? bundledError.message : String(bundledError);
+      const bundledMessage =
+        bundledError instanceof Error ? bundledError.message : String(bundledError);
       throw new Error(
         `Could not launch a browser. System Chrome failed: ${fallbackMessage}. ` +
-        `Bundled Chromium failed: ${bundledMessage}. ` +
-        "Install Google Chrome, or run `npx playwright install chromium`.",
+          `Bundled Chromium failed: ${bundledMessage}. ` +
+          'Install Google Chrome, or run `npx playwright install chromium`.',
       );
     }
   }
 }
 
 async function loadPlaywright(): Promise<{ chromium: PlaywrightChromium }> {
-  const moduleName = "playwright";
+  const moduleName = 'playwright';
   try {
     const mod = (await import(moduleName)) as { chromium?: PlaywrightChromium };
     if (!mod.chromium) {
-      throw new Error("Playwright chromium runtime is unavailable");
+      throw new Error('Playwright chromium runtime is unavailable');
     }
     return { chromium: mod.chromium };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
       `Playwright is required for --url mode but failed to load: ${message}. ` +
-      "Run `npm install` and `npx playwright install chromium`.",
+        'Run `npm install` and `npx playwright install chromium`.',
     );
   }
 }
 
 async function waitForUserSignal(): Promise<void> {
-  console.log("Browser opened. Press Enter when the page is ready to capture...");
+  console.log('Browser opened. Press Enter when the page is ready to capture...');
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   await new Promise<void>((resolve) => {
-    rl.once("line", () => {
+    rl.once('line', () => {
       rl.close();
       resolve();
     });
@@ -158,25 +160,28 @@ async function waitForUserSignal(): Promise<void> {
 
 function buildSyntheticHtml(headHtml: string, bodyInner: string, sourceUrl: string): string {
   return [
-    "<!doctype html>",
-    "<html>",
-    "<head>",
-    `<meta name="source-url" content="${sourceUrl.replace(/"/g, "&quot;")}">`,
+    '<!doctype html>',
+    '<html>',
+    '<head>',
+    `<meta name="source-url" content="${sourceUrl.replace(/"/g, '&quot;')}">`,
     headHtml,
-    "</head>",
-    "<body>",
+    '</head>',
+    '<body>',
     `<div id="js_content">${bodyInner}</div>`,
-    "</body>",
-    "</html>",
-  ].join("\n");
+    '</body>',
+    '</html>',
+  ].join('\n');
 }
 
-export async function fetchUrlToHtml(url: string, options: FetchUrlOptions = {}): Promise<FetchUrlResult> {
+export async function fetchUrlToHtml(
+  url: string,
+  options: FetchUrlOptions = {},
+): Promise<FetchUrlResult> {
   const timeoutMs = options.timeoutMs ?? 30_000;
   const waitMode = options.waitMode ?? false;
 
   const { chromium } = await loadPlaywright();
-  const tmpDir = await mkdtemp(join(tmpdir(), "html-article-fetch-"));
+  const tmpDir = await mkdtemp(join(tmpdir(), 'html-article-fetch-'));
 
   const cleanup = async (): Promise<void> => {
     try {
@@ -190,7 +195,7 @@ export async function fetchUrlToHtml(url: string, options: FetchUrlOptions = {})
   try {
     browser = await launchBrowser(chromium, { headless: !waitMode });
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-    await page.goto(url, { waitUntil: "networkidle", timeout: timeoutMs });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: timeoutMs });
 
     if (waitMode) {
       await waitForUserSignal();
@@ -201,8 +206,8 @@ export async function fetchUrlToHtml(url: string, options: FetchUrlOptions = {})
     );
 
     const html = buildSyntheticHtml(captured.headHtml, captured.bodyInner, url);
-    const htmlPath = join(tmpDir, "article.html");
-    await writeFile(htmlPath, html, "utf8");
+    const htmlPath = join(tmpDir, 'article.html');
+    await writeFile(htmlPath, html, 'utf8');
     return { htmlPath, cleanup };
   } catch (error) {
     await cleanup();
