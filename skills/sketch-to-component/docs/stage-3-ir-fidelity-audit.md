@@ -89,9 +89,13 @@
   `resizingConstraint`**。
 - **codegen 影响**:**这是 Stage 5 前置阻断项**。若不修,被错位子树喂给 semantic /
   component-plan,会基于错误布局做错误的组件抽象与列表项识别,codegen 把偏差一路放大。
-- **批次**:Batch 2,**单独做** —— 涉及 master 子树坐标换算、嵌套 symbol、override path、
-  可能还有 `resizingConstraint`;需专门 fixture + 回归测试。动代码前先单独深挖一次,确认
-  Sketch transform / resize 的换算公式。
+- **批次**:Batch 2,**单独做** —— ✅ 已完成(2026-05-24):新增 `normalize/symbol-scale.ts`
+  纯模块(`decodeResizingConstraint` + 8-case `applyConstraintAxis` + `applyConstraint` +
+  `isResized`),`normalize/visual.ts` 通过 `containerResize` 上下文级联;`unsupported-symbol-
+transform` warning 标 rotation/flip 子节点。验证:`img/bg` 375×812 → 375×1465 正确铺满;
+  嵌套 `AI星星` 继承外层 1.143× 横向缩放(frame 22.857×20);`猜你想要` chip 按 181/182/247
+  各自宽度铺开;scale-induced OOB 7→0(剩余 OOB 为 rotation warning + 设计意图溢出 + 非 symbol
+  容器的合法溢出)。详细公式与级联算法见 [`batch-2-symbol-scale-investigation.md`](./batch-2-symbol-scale-investigation.md)。
 
 ### A6 — 部分 symbol override 未应用
 
@@ -135,7 +139,7 @@ grid)的能力与边界。建议在 Stage 5 蓝图开一节"布局推断能力�
 | 批次        | 内容                                                            | 性质                                                             | 状态                                  |
 | ----------- | --------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
 | **Batch 1** | A1 lineHeight、A2 fontWeight、A3 gradient → `fill.raw.gradient` | 必修,小而准;`extractText` / `normalizeFills`                     | ✅ 已完成(2026-05-22,test:sketch 33)  |
-| **Batch 2** | A5 symbol instance scale transform                              | 必修,**单独做**;需专门 fixture + 回归测试;动代码前先深挖换算公式 | ⬜ 下一批                             |
+| **Batch 2** | A5 symbol instance scale transform                              | 必修,**单独做**;需专门 fixture + 回归测试;动代码前先深挖换算公式 | ✅ 已完成(2026-05-24,test:sketch 54)  |
 | **Batch 3** | A4 mask / clipping                                              | 须先设计 `VisualNode` mask schema 语义,再实现                    | ⬜ schema 设计先行                    |
 | **Batch 4** | A6 symbolID / color / border override                           | 已知限制,保留 warning                                            | ⬜ 顺延(Stage 6 / 独立 override 批次) |
 
