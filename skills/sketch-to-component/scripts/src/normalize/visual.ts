@@ -24,6 +24,12 @@ import {
   readNumber,
   type SketchNode,
 } from './sketch-nodes.js';
+import {
+  applyConstraint,
+  DEFAULT_RESIZING_CONSTRAINT,
+  isResized,
+  type ContainerSize,
+} from './symbol-scale.js';
 import { extractOverrides, getMasterForInstance, type SymbolIndex } from './symbols.js';
 
 export interface BuildVisualBlockInput {
@@ -65,6 +71,12 @@ export function buildVisualBlock(input: BuildVisualBlockInput): VisualBlock {
 interface NormalizeNodeOptions {
   isRoot?: boolean;
   visitedSymbols: Set<string>;
+  /**
+   * When set, this node's parent container has been resized; this node's
+   * frame must be re-laid via its `resizingConstraint` (see symbol-scale.ts
+   * and batch-2-symbol-scale-investigation.md).
+   */
+  containerResize?: { old: ContainerSize; new: ContainerSize };
 }
 
 function normalizeNode(
@@ -89,10 +101,35 @@ function normalizeNode(
   }
 
   const kind = mapKind(nodeClass, context.warnings, node);
-  const frame = readFrame(node);
+  const rawFrame = readFrame(node);
+  const rc = readNumber(node.resizingConstraint, DEFAULT_RESIZING_CONSTRAINT);
+  const newFrame = options.containerResize
+    ? applyConstraint(options.containerResize.old, options.containerResize.new, rawFrame, rc)
+    : rawFrame;
+  if (options.containerResize && hasUnsupportedTransform(node)) {
+    addWarning(
+      context.warnings,
+      'unsupported-symbol-transform',
+      `Layer "${getNodeName(node)}" has rotation/flip inside a resized symbol; layout uses planar transform only`,
+      node,
+    );
+  }
+
+  const childContainerResize = isResized(
+    { width: rawFrame.width, height: rawFrame.height },
+    { width: newFrame.width, height: newFrame.height },
+  )
+    ? {
+        old: { width: rawFrame.width, height: rawFrame.height },
+        new: { width: newFrame.width, height: newFrame.height },
+      }
+    : undefined;
   const rawChildren = getLayers(node)
     .map((child) =>
-      normalizeNode(child, context, { visitedSymbols: new Set(options.visitedSymbols) }),
+      normalizeNode(child, context, {
+        visitedSymbols: new Set(options.visitedSymbols),
+        containerResize: childContainerResize,
+      }),
     )
     .filter((child): child is VisualNode => Boolean(child));
   const children = cleanChildren(rawChildren, context.warnings);
@@ -107,7 +144,9 @@ function normalizeNode(
       originalType: nodeClass,
       provider: 'sketch',
     },
-    layout: options.isRoot ? { x: 0, y: 0, width: frame.width, height: frame.height } : frame,
+    layout: options.isRoot
+      ? { x: 0, y: 0, width: newFrame.width, height: newFrame.height }
+      : newFrame,
     children,
   };
 
@@ -129,7 +168,19 @@ function normalizeSymbolInstance(
 ): VisualNode {
   const symbolId = typeof node.symbolID === 'string' ? node.symbolID : undefined;
   const master = getMasterForInstance(node, context.symbols, context.warnings);
-  const frame = readFrame(node);
+  const rawFrame = readFrame(node);
+  const rc = readNumber(node.resizingConstraint, DEFAULT_RESIZING_CONSTRAINT);
+  const newFrame = options.containerResize
+    ? applyConstraint(options.containerResize.old, options.containerResize.new, rawFrame, rc)
+    : rawFrame;
+  if (options.containerResize && hasUnsupportedTransform(node)) {
+    addWarning(
+      context.warnings,
+      'unsupported-symbol-transform',
+      `Symbol instance "${getNodeName(node)}" has rotation/flip inside a resized container; layout uses planar transform only`,
+      node,
+    );
+  }
   let children: VisualNode[] = [];
 
   if (symbolId && options.visitedSymbols.has(symbolId)) {
@@ -142,9 +193,20 @@ function normalizeSymbolInstance(
   } else if (master) {
     const nextVisited = new Set(options.visitedSymbols);
     if (symbolId) nextVisited.add(symbolId);
+    const masterFrame = readFrame(master);
+    const masterSize: ContainerSize = { width: masterFrame.width, height: masterFrame.height };
+    const instanceSize: ContainerSize = { width: newFrame.width, height: newFrame.height };
+    const masterContainerResize = isResized(masterSize, instanceSize)
+      ? { old: masterSize, new: instanceSize }
+      : undefined;
     children = cleanChildren(
       getLayers(master)
-        .map((child) => normalizeNode(child, context, { visitedSymbols: nextVisited }))
+        .map((child) =>
+          normalizeNode(child, context, {
+            visitedSymbols: nextVisited,
+            containerResize: masterContainerResize,
+          }),
+        )
         .filter((child): child is VisualNode => Boolean(child)),
       context.warnings,
     );
@@ -163,7 +225,7 @@ function normalizeSymbolInstance(
       originalType: 'symbolInstance',
       provider: 'sketch',
     },
-    layout: frame,
+    layout: newFrame,
     symbol: {
       instanceId: getNodeId(node),
       masterId: symbolId,
@@ -174,6 +236,15 @@ function normalizeSymbolInstance(
   const style = extractStyle(node, kind);
   if (style) visualNode.style = style;
   return visualNode;
+}
+
+/** A child carrying rotation or flip inside a resized container can't be laid
+ *  out perfectly by planar `applyConstraint`. We still emit a useful frame,
+ *  but warn so reviewers know geometry isn't authoritative for that node. */
+function hasUnsupportedTransform(node: SketchNode): boolean {
+  if (typeof node.rotation === 'number' && node.rotation !== 0) return true;
+  if (node.isFlippedHorizontal === true || node.isFlippedVertical === true) return true;
+  return false;
 }
 
 function mapKind(nodeClass: string, warnings: Warning[], node: SketchNode): VisualNodeKind {
