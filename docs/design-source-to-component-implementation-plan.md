@@ -160,17 +160,41 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 - `d2c-core`：标注提取器 + 启发式语义推断 + `derive-semantic-view` + 交互建模器
   （草稿 + `confidence`，引擎只起草、开发者补全）+ `component-plan` 生成。
+- **产出顺序固定为：** `semantic-view.json` → `interaction-spec.json`（带显式
+  `status`） → `component-plan.json`（固化 `mode`）。
+- `interaction-spec.json` 是必需工件，缺文件即报错。`status` 取
+  `draft | approved | omitted | deferred`，其中 `approved | omitted | deferred`
+  能过门禁 2；`omitted`/`deferred` 都要求填 `reason` 与 `approvedBy`。
+- `component-plan.json` 携带 `mode: 'presentational' | 'interactive'`，门禁 2 审批
+  记录里带 `level` 字段（不开两个 gate id）。允许组合详见架构总纲
+  "Interaction status and codegen mode" 节。
 - Gate 2 同样由 pipeline 返回 `requiresApproval`，交互留给 skill / CLI。
 
 ### 阶段 6 — 共享：目标代码生成 → `output/package/` ⬜
 
 - `d2c-core` 的 `src/codegen/react/`，置于 `TargetGenerator` 抽象之下（首版只实现 React + TS + BEM）。
 - 严格按总纲目录结构与 barrel 导出形态。
+- Codegen **只消费 `component-plan.mode`**，不接收外部 mode 参数。两档输出：
+  - `mode === 'interactive'` —— 完整业务组件包；要求
+    `interaction-spec.status === 'approved'`。
+  - `mode === 'presentational'` —— 视觉级包，行为占位；要求
+    `interaction-spec.status` 为 `omitted` 或 `deferred`。必须落齐四处元信息
+    （`package.json` `d2c` 块 / README banner / 每文件头注释 /
+    `interaction-coverage.md`），详见架构总纲 "Presentational package metadata" 节。
+- presentational → interactive 升级时原地重写 `output/package/`，并**再过一次门禁 2**。
+  不维护并行的 `output/package@presentational/` 目录。
 
 ### 阶段 7 — 共享：工程校验 + 收尾 ⬜
 
 - `d2c-core`：typecheck / build / 截图 diff。
 - 接入根 `npm run check`；首发 provider 的 `SKILL.md` 升级为完整管线描述。
+
+### 阶段 8 — 后置：消费侧防线 ⬜（非阻断）
+
+- `check:d2c-consumption`：扫描业务代码，flag 任何 import 自
+  `package.json.d2c.mode === 'presentational'` 包的位置。允许的场景（sandbox /
+  Storybook / demo / 视觉评审）通过 allowlist 放行。
+- 该项是对 Stage 6 四处包内元信息的加固，不阻断 Stage 6 交付。
 
 ---
 
@@ -211,6 +235,11 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 ⚠️ **A5 是 Stage 5 前置阻断项**:symbol 缩放不修,semantic / component-plan 会基于错位
 子树做错误抽象。Batch 1→2 修完方可进 **阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)**
 (Batch 3 可顺延);Stage 5 开工前先出蓝图供 review,蓝图须开一节承接 B 类"布局推断能力缺口"。
+
+⚠️ **presentational 模式不绕过 A5。** Stage 6 的 presentational 档绕开的是
+`interaction-spec` 的完整建模(走 `omitted` / `deferred` 通道),不是 IR 保真审计。
+symbol 缩放错位会污染 visual-view 与 semantic-view 的组件边界判断,任何 mode 的
+codegen 输出都会被带坏。Batch 2 仍是 Stage 5 / Stage 6 通用硬前置。
 
 ## 5. 贯穿原则
 
