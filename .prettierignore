@@ -16,3 +16,4 @@ docs/superpowers/plans/
 skills/design-to-spec/examples/
 samples/**/design-spec/
 skills/sketch-to-component/scripts/src/__tests__/fixtures/*.json
+skills/sketch-to-component/output/

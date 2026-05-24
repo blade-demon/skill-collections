@@ -22,32 +22,32 @@ A5 是 **Stage 5 前置阻断项** —— 不修,后续 semantic / component-pla
 
 ### 2.1 9 个被缩放的实例
 
-| 实例名 | inst | master | scaleX | scaleY |
-|---|---|---|---|---|
-| icon/首页/输入框/更多 | 18×18 | 36×36 | 0.500 | 0.500 |
-| 组件/首页/底部功能推荐备份 | 96×32 | 84×32 | 1.143 | 1.000 |
-| 组件/首页/底部功能推荐备份 4 | 96×32 | 84×32 | 1.143 | 1.000 |
-| img/bg | 375×1465 | 375×812 | 1.000 | 1.804 |
-| 猜你想要 ×3 | 181/182/247×48 | 311×48 | 0.582–0.794 | 1.000 |
-| icon/其他/声音备份 5 | 16×16 | 32×32 | 0.500 | 0.500 |
-| icon/首页/星星 | 20×20 | 16×16 | 1.250 | 1.250 |
+| 实例名                       | inst           | master  | scaleX      | scaleY |
+| ---------------------------- | -------------- | ------- | ----------- | ------ |
+| icon/首页/输入框/更多        | 18×18          | 36×36   | 0.500       | 0.500  |
+| 组件/首页/底部功能推荐备份   | 96×32          | 84×32   | 1.143       | 1.000  |
+| 组件/首页/底部功能推荐备份 4 | 96×32          | 84×32   | 1.143       | 1.000  |
+| img/bg                       | 375×1465       | 375×812 | 1.000       | 1.804  |
+| 猜你想要 ×3                  | 181/182/247×48 | 311×48  | 0.582–0.794 | 1.000  |
+| icon/其他/声音备份 5         | 16×16          | 32×32   | 0.500       | 0.500  |
+| icon/首页/星星               | 20×20          | 16×16   | 1.250       | 1.250  |
 
 **覆盖到的模式**:等比缩小 / 等比放大 / 仅 X 拉伸 / 仅 Y 拉伸 —— 都有。Batch 2 必须支持
 所有这些。
 
 ### 2.2 全项目 `resizingConstraint` 分布
 
-| rc 值 | 出现次数 | 解码(set = 自由 / cleared = 固定) |
-|---|---|---|
-| 63 | 259 | right:free｜width:flex｜left:free｜top:free｜height:flex｜bottom:free(全自由,默认) |
-| 45 | 24 | 仅 width 固定 + height 固定,四边都自由(定尺寸、按中心比例平移) |
-| 9 | 8 | left:pin + bottom:pin + width/height fix(锚定左下角,定尺寸) |
-| 10 | 3 | left + right + bottom 三边 pin + height fix(横向铺满 + 底对齐) |
-| 12 | 3 | right:pin + bottom:pin + width/height fix(锚定右下角,定尺寸) |
-| 41 | 3 | left:pin + width/height fix(锚定左上角,定尺寸,垂直自由) |
-| 36 | 2 | right:pin + top:pin + width/height fix(锚定右上角,定尺寸) |
-| 54 | 2 | right:pin + top:pin,W/H 都 flex |
-| 37 | 1 | top:pin + width/height fix(顶部锚定,定尺寸,水平按中心比例) |
+| rc 值 | 出现次数 | 解码(set = 自由 / cleared = 固定)                                                  |
+| ----- | -------- | ---------------------------------------------------------------------------------- |
+| 63    | 259      | right:free｜width:flex｜left:free｜top:free｜height:flex｜bottom:free(全自由,默认) |
+| 45    | 24       | 仅 width 固定 + height 固定,四边都自由(定尺寸、按中心比例平移)                     |
+| 9     | 8        | left:pin + bottom:pin + width/height fix(锚定左下角,定尺寸)                        |
+| 10    | 3        | left + right + bottom 三边 pin + height fix(横向铺满 + 底对齐)                     |
+| 12    | 3        | right:pin + bottom:pin + width/height fix(锚定右下角,定尺寸)                       |
+| 41    | 3        | left:pin + width/height fix(锚定左上角,定尺寸,垂直自由)                            |
+| 36    | 2        | right:pin + top:pin + width/height fix(锚定右上角,定尺寸)                          |
+| 54    | 2        | right:pin + top:pin,W/H 都 flex                                                    |
+| 37    | 1        | top:pin + width/height fix(顶部锚定,定尺寸,水平按中心比例)                         |
 
 实现必须按位解码、覆盖**所有 9 种**实际出现的值(不能写一个等比缩放就交差)。
 
@@ -82,14 +82,14 @@ Bottom = 31   (63 − 32,bit 5 清零)
 
 **规则:bit 置位 = 自由,bit 清零 = 固定 / 锚定。**
 
-| bit | 值 | 清零含义 |
-|---|---|---|
-| 0 | 1  | Right 锚定(右边距固定) |
-| 1 | 2  | Width 固定(宽度不变) |
-| 2 | 4  | Left 锚定(左边距固定) |
-| 3 | 8  | Top 锚定(上边距固定) |
-| 4 | 16 | Height 固定(高度不变) |
-| 5 | 32 | Bottom 锚定(下边距固定) |
+| bit | 值  | 清零含义                |
+| --- | --- | ----------------------- |
+| 0   | 1   | Right 锚定(右边距固定)  |
+| 1   | 2   | Width 固定(宽度不变)    |
+| 2   | 4   | Left 锚定(左边距固定)   |
+| 3   | 8   | Top 锚定(上边距固定)    |
+| 4   | 16  | Height 固定(高度不变)   |
+| 5   | 32  | Bottom 锚定(下边距固定) |
 
 实现里用 6 个 bool flag 解码后再走单轴公式(§4),不要直接 switch rc 值。
 
@@ -101,33 +101,33 @@ X 轴与 Y 轴**独立计算**(只取该轴 3 个 flag:`startPin`、`endPin`、`
 记号:`M` = 父在该轴的 master 尺寸,`I` = 父在该轴的 instance 尺寸,`c` = 子起点(master
 内),`s` = 子尺寸,`tail = M − c − s`(子距末端 margin)。求 `c'`, `s'`。
 
-| start | end | size | c′ | s′ | 含义 |
-|---|---|---|---|---|---|
-| pin | pin | flex | `c` | `s + (I − M)` | 两端固定,中间随父尺寸拉伸 |
-| pin | pin | fix  | `c` | `s` | 过约束,startPin 优先 |
-| pin | free | flex | `c` | `s * I/M` | 左锚 + 宽度按比例 |
-| pin | free | fix  | `c` | `s` | 左锚 + 定尺寸 |
-| free | pin | flex | `I − tail − s'` | `s * I/M` | 右锚 + 宽度按比例 |
-| free | pin | fix  | `I − M + c` | `s` | 右锚 + 定尺寸(等价 `I − tail − s`) |
-| free | free | flex | `c * I/M` | `s * I/M` | **全自由** = 按比例缩放(rc=63 默认) |
-| free | free | fix  | `(c + s/2) * I/M − s/2` | `s` | 定尺寸 + 中心按比例(rc=45) |
+| start | end  | size | c′                      | s′            | 含义                                |
+| ----- | ---- | ---- | ----------------------- | ------------- | ----------------------------------- |
+| pin   | pin  | flex | `c`                     | `s + (I − M)` | 两端固定,中间随父尺寸拉伸           |
+| pin   | pin  | fix  | `c`                     | `s`           | 过约束,startPin 优先                |
+| pin   | free | flex | `c`                     | `s * I/M`     | 左锚 + 宽度按比例                   |
+| pin   | free | fix  | `c`                     | `s`           | 左锚 + 定尺寸                       |
+| free  | pin  | flex | `I − tail − s'`         | `s * I/M`     | 右锚 + 宽度按比例                   |
+| free  | pin  | fix  | `I − M + c`             | `s`           | 右锚 + 定尺寸(等价 `I − tail − s`)  |
+| free  | free | flex | `c * I/M`               | `s * I/M`     | **全自由** = 按比例缩放(rc=63 默认) |
+| free  | free | fix  | `(c + s/2) * I/M − s/2` | `s`           | 定尺寸 + 中心按比例(rc=45)          |
 
 边界:**M = 0** 时所有按比例的公式坍缩 → 该子节点跳过缩放、落 `unsupported-symbol-transform`
 warning(理论上不该发生:master 维度为 0 是异常数据)。
 
 ## 5. 我们 9 个实际 rc 值对应的行为(逐项推导自 §4)
 
-| rc | 含义 |
-|---|---|
-| 63 | X、Y 两轴都"free+free+flex" → 整体按 (I/M) 等比缩放(位置 + 尺寸) |
-| 45 | 两轴 size 固定 + 两端自由 → 尺寸不变,位置按中心比例平移 |
-| 9  | X:left pin + width fix(`c'=c, s'=s`)｜Y:bottom pin + height fix(`c'=I−M+c, s'=s`) |
-| 10 | X:left+right pin + width flex(`c'=c, s'=s+(I−M)`)｜Y:bottom pin + height fix |
-| 12 | X:right pin + width fix(`c'=I−M+c, s'=s`)｜Y:bottom pin + height fix |
-| 41 | X:left pin + width fix(`c'=c, s'=s`)｜Y:free+free+fix(`c'=(c+s/2)*I/M−s/2, s'=s`) |
-| 36 | X:right pin + width fix｜Y:top pin + height fix(`c'=c, s'=s`) |
-| 54 | X:right pin + width flex｜Y:top pin + height flex |
-| 37 | X:free+free+fix(中心比例)｜Y:top pin + height fix |
+| rc  | 含义                                                                              |
+| --- | --------------------------------------------------------------------------------- |
+| 63  | X、Y 两轴都"free+free+flex" → 整体按 (I/M) 等比缩放(位置 + 尺寸)                  |
+| 45  | 两轴 size 固定 + 两端自由 → 尺寸不变,位置按中心比例平移                           |
+| 9   | X:left pin + width fix(`c'=c, s'=s`)｜Y:bottom pin + height fix(`c'=I−M+c, s'=s`) |
+| 10  | X:left+right pin + width flex(`c'=c, s'=s+(I−M)`)｜Y:bottom pin + height fix      |
+| 12  | X:right pin + width fix(`c'=I−M+c, s'=s`)｜Y:bottom pin + height fix              |
+| 41  | X:left pin + width fix(`c'=c, s'=s`)｜Y:free+free+fix(`c'=(c+s/2)*I/M−s/2, s'=s`) |
+| 36  | X:right pin + width fix｜Y:top pin + height fix(`c'=c, s'=s`)                     |
+| 54  | X:right pin + width flex｜Y:top pin + height flex                                 |
+| 37  | X:free+free+fix(中心比例)｜Y:top pin + height fix                                 |
 
 ## 6. 嵌套 symbol 级联
 
@@ -203,6 +203,7 @@ v1 范围内:
    (`symbol-master-zero-dim`)。
 
 **不动的部分**:
+
 - symbol override 应用(在 Stage 4 `apply-overrides`,独立)。
 - `symbol.overrides` trace 保留(继续走 `extractOverrides`)。
 - text / style / asset 提取(Batch 1 修过,正交)。
