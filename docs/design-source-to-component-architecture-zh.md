@@ -477,6 +477,50 @@ Token 映射是视觉保真的核心变量，必须是确定性的。
 
 引擎可以起草这份文件，但开发者负责批准。门禁 2 确认组件边界、props、插槽、状态、事件、数据契约和公开导出。
 
+### 交互状态与 codegen 模式
+
+`interaction-spec.json` 是必需工件——文件缺失时 codegen 直接拒绝运行。是否要建模交互通过显式 `status` 字段表达，而不是用文件缺失隐式表达：
+
+| `status`     | 含义                                                                 | 是否通过门禁 2？ |
+| ------------ | -------------------------------------------------------------------- | ---------------- |
+| `draft`      | 引擎起草，开发者尚未签字                                             | 否               |
+| `approved`   | 开发者已评审的完整交互契约                                           | 是               |
+| `omitted`    | 开发者确认本次交付不建模交互（例如 sandbox/视觉评审包）              | 是               |
+| `deferred`   | 推迟到后续迭代再补建模，本次交付仅视觉层                             | 是               |
+
+`omitted` 和 `deferred` 都会得到 presentational 交付。区别是意图：`omitted` 表示"本包不计划补交互"，`deferred` 表示"以后会升级"。两者都必须填 `reason` 和 `approvedBy`。
+
+`component-plan.json` 携带一个 `mode` 字段，是 codegen 唯一消费的开关：
+
+```json
+{
+  "mode": "presentational",
+  "interactionSpecRef": "ir/interaction-spec.json",
+  "approval": {
+    "gate": "gate-2",
+    "level": "presentational",
+    "acknowledgedBehaviorStubbed": true,
+    "approvedBy": "<developer>"
+  }
+}
+```
+
+允许的组合：
+
+| `interaction-spec.status` | `component-plan.mode` | 结果                                  |
+| ------------------------- | --------------------- | ------------------------------------- |
+| `approved`                | `interactive`         | 完整交互包                            |
+| `omitted` 或 `deferred`   | `presentational`      | 视觉级包，行为占位                    |
+| 其它组合                  | —                     | Schema 报错；管线拒绝进入 Stage 6     |
+
+门禁 2 仍是单一门禁。审批记录里带一个 `level` 字段（`presentational` 或 `interactive`），让 tooling 只需问"门禁 2 通过了吗"，契约本身保留了具体批准的内容。
+
+Codegen 只读取 `component-plan.mode`——不接收外部 mode 参数。模式是已批准方案的属性，不是运行期开关。
+
+#### 升级路径
+
+`presentational → interactive` 是风险最高的过渡：可选占位 prop 会变成必填 handler，每个 consumer 的调用点都可能出错。升级必须在原地重写同一个 `output/package/` 目录，让 diff 可审，并且**必须再过一次门禁 2**——新的审批记录替换 presentational 那次。不要保留并行的 `output/package@presentational/` 目录；磁盘上残留的 presentational 副本会诱发误 import。
+
 ## 目标组件包输出
 
 两个门禁都通过后，设计源工作流生成目标组件包。
@@ -497,6 +541,53 @@ React 输出的默认组件包要求：
 - 包根 barrel 导出；
 - 组件与子组件的 barrel 导出；
 - 如果生成了资源，则提供资源 barrel 导出。
+
+### Presentational 包元信息
+
+当 `component-plan.mode === "presentational"` 时，发布包必须在四处显式标注。单一 TODO 文件不够——读者和 consumer 一定会漏看。
+
+1. **`package.json`** 增加 `d2c` 块：
+
+   ```json
+   {
+     "d2c": {
+       "mode": "presentational",
+       "interactionStatus": "omitted",
+       "generatedBy": "d2c-core@<version>"
+     }
+   }
+   ```
+
+2. **`README.md`** 在任何使用文档之前先出 banner：
+
+   > **本包为 presentational / 行为占位包。** 交互处理函数与数据绑定都是占位。未走完 interactive Gate 2 流程之前，不要 import 进业务代码。
+
+3. **每个组件文件头**带注释：
+
+   ```ts
+   /**
+    * D2C generated presentational component.
+    * Behavior is stubbed; see ../interaction-coverage.md.
+    */
+   ```
+
+4. **`interaction-coverage.md`** 放在包根，列出所有缺口：
+
+   ```md
+   ## Interaction coverage
+
+   | Aspect       | Status   | Notes                                            |
+   | ------------ | -------- | ------------------------------------------------ |
+   | states       | omitted  | 未建模状态机                                     |
+   | events       | omitted  | Handler props 是占位，未连接                     |
+   | dataBinding  | omitted  | 渲染数据来自 defaultProps                        |
+
+   Approved by: <developer> at Gate 2 (presentational level).
+   ```
+
+presentational 标记的唯一来源是 `component-plan.mode`；生成时由它扩散到上述四处。不要新增冗余字段。
+
+后续会补一道 `check:d2c-consumption` CI 扫描（列入 Stage 8 后置项），用来在业务代码 import presentational 包时报警；在此之前，这四处元信息是唯一防线。
 
 推荐结构：
 

@@ -477,6 +477,50 @@ Example:
 
 The engine may draft this file, but the developer owns approval. Gate 2 confirms component boundaries, props, slots, states, events, data contracts, and public exports.
 
+### Interaction status and codegen mode
+
+`interaction-spec.json` is a required artifact — codegen will refuse to run if the file is missing. Behavior is conveyed by an explicit `status` field, not by file absence:
+
+| `status`     | Meaning                                                                                       | Passes Gate 2? |
+| ------------ | --------------------------------------------------------------------------------------------- | -------------- |
+| `draft`      | Engine-drafted, developer has not signed off                                                  | No             |
+| `approved`   | Developer-reviewed full interaction contract                                                  | Yes            |
+| `omitted`    | Developer-acknowledged that behavior is intentionally not modeled for this delivery           | Yes            |
+| `deferred`   | Behavior modeling postponed to a later iteration; current delivery must be visual-only        | Yes            |
+
+`omitted` and `deferred` both produce a presentational delivery. The distinction is intent: `omitted` says "we do not plan to add behavior to this package" (e.g., a sandbox-only artifact); `deferred` says "we will upgrade later". Both require a `reason` and an `approvedBy` field.
+
+`component-plan.json` then carries a single `mode` field that codegen consumes:
+
+```json
+{
+  "mode": "presentational",
+  "interactionSpecRef": "ir/interaction-spec.json",
+  "approval": {
+    "gate": "gate-2",
+    "level": "presentational",
+    "acknowledgedBehaviorStubbed": true,
+    "approvedBy": "<developer>"
+  }
+}
+```
+
+Allowed combinations:
+
+| `interaction-spec.status` | `component-plan.mode` | Result                                           |
+| ------------------------- | --------------------- | ------------------------------------------------ |
+| `approved`                | `interactive`         | Full interactive package                         |
+| `omitted` or `deferred`   | `presentational`      | Visual-only package, behavior stubbed            |
+| any other pairing         | —                     | Schema error; pipeline refuses to enter Stage 6  |
+
+Gate 2 remains a single gate. The approval record carries a `level` field (`presentational` or `interactive`) so tooling only has to ask "has Gate 2 passed?" while the contract retains the substance of what was approved.
+
+Codegen consumes `component-plan.mode` only — it does not take an external mode parameter. Mode is a property of the approved plan, not a runtime switch.
+
+#### Upgrade path
+
+`presentational → interactive` is the highest-risk transition: optional placeholder props become required handlers, and every consumer's call sites may break. The upgrade rewrites the same `output/package/` directory in place so that the diff is reviewable, and **must re-run Gate 2** — the new approval record replaces the presentational one. Do not maintain parallel `output/package@presentational/` directories; a stale presentational copy on disk invites accidental imports.
+
 ## Target Package Output
 
 After both gates pass, design-source workflows generate the target component package.
@@ -497,6 +541,53 @@ Default package requirements for React output:
 - package-root barrel export;
 - component and child component barrel exports;
 - asset barrel export when assets are generated.
+
+### Presentational package metadata
+
+When `component-plan.mode === "presentational"`, the published package must surface that fact in four places. A single TODO file is not enough — readers and consumers will miss it.
+
+1. **`package.json`** carries a `d2c` block:
+
+   ```json
+   {
+     "d2c": {
+       "mode": "presentational",
+       "interactionStatus": "omitted",
+       "generatedBy": "d2c-core@<version>"
+     }
+   }
+   ```
+
+2. **`README.md`** opens with a banner before any usage docs:
+
+   > **This package is presentational / behavior-stubbed.** Interaction handlers and data bindings are placeholders. Do not import into business code without upgrading via the interactive Gate 2 flow.
+
+3. **Each component file header** carries a comment:
+
+   ```ts
+   /**
+    * D2C generated presentational component.
+    * Behavior is stubbed; see ../interaction-coverage.md.
+    */
+   ```
+
+4. **`interaction-coverage.md`** lives at the package root and enumerates the gaps:
+
+   ```md
+   ## Interaction coverage
+
+   | Aspect       | Status   | Notes                                            |
+   | ------------ | -------- | ------------------------------------------------ |
+   | states       | omitted  | No state machine modeled                         |
+   | events       | omitted  | Handler props are placeholders, never wired      |
+   | dataBinding  | omitted  | Render data comes from defaultProps              |
+
+   Approved by: <developer> at Gate 2 (presentational level).
+   ```
+
+The presentational flag is the single source of truth: `component-plan.mode` propagates to all four surfaces during generation; do not add redundant fields.
+
+A follow-up `check:d2c-consumption` CI scan (Stage 8 backlog) will flag any business code that imports a presentational package; until then, the four-surface metadata is the only line of defense.
 
 Recommended structure:
 
