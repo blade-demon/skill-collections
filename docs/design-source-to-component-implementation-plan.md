@@ -161,6 +161,7 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ### 阶段 5 — 共享：语义 / 交互 / 方案 → 门禁 2 ⬜
 
+- 蓝图:[`stage-5-component-contract-outline.md`](./stage-5-component-contract-outline.md)。
 - `d2c-core`：标注提取器 + 启发式语义推断 + `derive-semantic-view` + 交互建模器
   （草稿 + `confidence`，引擎只起草、开发者补全）+ `component-plan` 生成。
 - **产出顺序固定为：** `semantic-view.json` → `interaction-spec.json`（带显式
@@ -231,16 +232,17 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 (见 [`stage-3-ir-fidelity-audit.md`](../skills/sketch-to-component/docs/stage-3-ir-fidelity-audit.md)),
 按批次推进:
 
-1. **Batch 1**(必修,小而准):A1 行高 / A2 字重 / A3 渐变保留 —— 改 `extractText` /
+1. ✅ **Batch 1**(必修,小而准):A1 行高 / A2 字重 / A3 渐变保留 —— 改 `extractText` /
    `normalizeFills`,补单测。
-2. **Batch 2**(必修,**单独做**):A5 symbol 实例缩放时子节点坐标换算 —— 需专门 fixture +
+2. ✅ **Batch 2**(必修,**单独做**):A5 symbol 实例缩放时子节点坐标换算 —— 需专门 fixture +
    回归测试。
 3. **Batch 3**(schema 设计先行):A4 蒙版 / 裁剪建模 —— 先定 `VisualNode` mask 语义。
 4. **Batch 4**(已知限制,顺延):A6 部分 symbol override。
 
-⚠️ **A5 是 Stage 5 前置阻断项**:symbol 缩放不修,semantic / component-plan 会基于错位
-子树做错误抽象。Batch 1→2 修完方可进 **阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)**
-(Batch 3 可顺延);Stage 5 开工前先出蓝图供 review,蓝图须开一节承接 B 类"布局推断能力缺口"。
+✅ **A5 前置阻断已解除**:Batch 2 已修 symbol 缩放坐标换算,可进入
+**阶段 5 — 语义视图 / 交互规格 / 组件方案(门禁 2)** 的蓝图评审与实现计划。
+Batch 3 可顺延但须在 Stage 5 蓝图中体现为 layout / clipping caveat;Batch 4 继续作为已知限制保留
+warning。Stage 5 蓝图已单独承接 B 类"布局推断能力缺口"。
 
 ⚠️ **presentational 模式不绕过 A5。** Stage 6 的 presentational 档绕开的是
 `interaction-spec` 的完整建模(走 `omitted` / `deferred` 通道),不是 IR 保真审计。
