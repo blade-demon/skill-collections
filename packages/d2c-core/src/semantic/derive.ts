@@ -24,6 +24,7 @@
  */
 import {
   type DesignIR,
+  type SemanticView,
   type VisualNode,
   type VisualView,
   type Warning,
@@ -60,26 +61,15 @@ export interface DeriveSemanticViewInput {
   visualView: VisualView;
 }
 
-/**
- * Stage 5A output envelope. Named `Stage5aSemanticView` (rather than reusing
- * the existing `SemanticView` from `../ir/views`) so this PR does not collide
- * with the loose `body: z.record(z.unknown())` shape Stage 4 carries. 5A-PR-3
- * will swap `SemanticViewSchema.body` over to `SemanticViewBodySchema` and
- * this type can converge with the canonical name.
- */
-export interface Stage5aSemanticView {
-  kind: 'semantic-view';
-  generatedFrom: {
-    schemaVersion: string;
-    sourceRef?: Record<string, string>;
-    designIrHash: string;
-    visualViewHash: string;
-  };
-  body: SemanticViewBody;
-}
-
 export interface DeriveSemanticViewResult {
-  semanticView: Stage5aSemanticView;
+  /**
+   * Stage 5A output envelope. Reuses the canonical `SemanticView` type from
+   * `../ir`, which 5A-PR-3 tightened to carry the typed `SemanticViewBody`
+   * (replacing the previous loose `z.record(z.unknown())`). Both
+   * `generatedFrom.designIrHash` and `generatedFrom.visualViewHash` are
+   * always populated by derive, even though the schema marks them optional.
+   */
+  semanticView: SemanticView;
   warnings: Warning[];
 }
 
@@ -170,7 +160,7 @@ export function deriveSemanticView(input: DeriveSemanticViewInput): DeriveSemant
   }
   assertSemanticViewIntegrity(parsed.data);
 
-  const generatedFrom: Stage5aSemanticView['generatedFrom'] = {
+  const generatedFrom: SemanticView['generatedFrom'] = {
     schemaVersion: input.designIr.schemaVersion,
     designIrHash: computedIrHash,
     visualViewHash: stableSha256(stableJson(input.visualView)),
