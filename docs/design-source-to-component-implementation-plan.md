@@ -166,11 +166,14 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 - **产出顺序固定为：** `semantic-view.json` → `interaction-spec.json`（带显式
   `status`） → `component-plan.json`（固化 `mode`）。
 - `interaction-spec.json` 是必需工件，缺文件即报错。`status` 取
-  `draft | approved | omitted | deferred`，其中 `approved | omitted | deferred`
-  能过门禁 2；`omitted`/`deferred` 都要求填 `reason` 与 `approvedBy`。
-- `component-plan.json` 携带 `mode: 'presentational' | 'interactive'`，门禁 2 审批
-  记录里带 `level` 字段（不开两个 gate id）。允许组合详见架构总纲
+  `draft | in-review | approved | omitted | deferred`，其中 `approved | omitted | deferred`
+  能过门禁 2；`omitted`/`deferred` 都要求填 `reason`、`approvedBy` 与 `approvedAt`。
+- `component-plan.json` 携带 `status: 'draft' | 'in-review' | 'approved'` 与
+  `mode: 'presentational' | 'interactive'`，门禁 2 审批记录里带 `level` 字段（不开两个 gate id）。
+  允许组合详见架构总纲
   "Interaction status and codegen mode" 节。
+- Stage 5 输出形成 hash 链:`design-ir` → `visual-view` → `semantic-view` →
+  `interaction-spec` → `component-plan`。`approvedAt` 是审计元数据,不参与 contract hash。
 - Gate 2 同样由 pipeline 返回 `requiresApproval`，交互留给 skill / CLI。
 
 ### 阶段 6 — 共享：目标代码生成 → `output/package/` ⬜

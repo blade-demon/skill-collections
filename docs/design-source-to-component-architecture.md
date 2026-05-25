@@ -87,7 +87,11 @@ Use these terms consistently:
       "id": "node-root",
       "kind": "frame",
       "name": "ExampleScreen",
-      "source": { "nodeId": "root-1", "originalType": "artboard", "provider": "sketch" },
+      "source": {
+        "nodeId": "root-1",
+        "originalType": "artboard",
+        "provider": "sketch"
+      },
       "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
       "children": []
     }
@@ -481,41 +485,50 @@ The engine may draft this file, but the developer owns approval. Gate 2 confirms
 
 `interaction-spec.json` is a required artifact — codegen will refuse to run if the file is missing. Behavior is conveyed by an explicit `status` field, not by file absence:
 
-| `status`     | Meaning                                                                                       | Passes Gate 2? |
-| ------------ | --------------------------------------------------------------------------------------------- | -------------- |
-| `draft`      | Engine-drafted, developer has not signed off                                                  | No             |
-| `approved`   | Developer-reviewed full interaction contract                                                  | Yes            |
-| `omitted`    | Developer-acknowledged that behavior is intentionally not modeled for this delivery           | Yes            |
-| `deferred`   | Behavior modeling postponed to a later iteration; current delivery must be visual-only        | Yes            |
+| `status`    | Meaning                                                                                | Passes Gate 2? |
+| ----------- | -------------------------------------------------------------------------------------- | -------------- |
+| `draft`     | Engine-drafted, developer has not signed off                                           | No             |
+| `in-review` | Submitted to Gate 2 review, developer has not approved yet                             | No             |
+| `approved`  | Developer-reviewed full interaction contract                                           | Yes            |
+| `omitted`   | Developer-acknowledged that behavior is intentionally not modeled for this delivery    | Yes            |
+| `deferred`  | Behavior modeling postponed to a later iteration; current delivery must be visual-only | Yes            |
 
-`omitted` and `deferred` both produce a presentational delivery. The distinction is intent: `omitted` says "we do not plan to add behavior to this package" (e.g., a sandbox-only artifact); `deferred` says "we will upgrade later". Both require a `reason` and an `approvedBy` field.
+`omitted` and `deferred` both produce a presentational delivery. The distinction is intent: `omitted` says "we do not plan to add behavior to this package" (e.g., a sandbox-only artifact); `deferred` says "we will upgrade later". Both require `reason`, `approvedBy`, and `approvedAt`.
 
-`component-plan.json` then carries a single `mode` field that codegen consumes:
+`component-plan.json` carries a top-level `status` plus the single `mode` field that codegen consumes. `status` tracks the plan lifecycle (`draft` → `in-review` → `approved`); Stage 6 may only consume an approved plan.
 
 ```json
 {
+  "status": "approved",
   "mode": "presentational",
   "interactionSpecRef": "ir/interaction-spec.json",
   "approval": {
     "gate": "gate-2",
     "level": "presentational",
     "acknowledgedBehaviorStubbed": true,
-    "approvedBy": "<developer>"
+    "approvedBy": "<developer>",
+    "approvedAt": "<iso-8601>"
   }
 }
 ```
 
+When `mode === "presentational"`, `acknowledgedBehaviorStubbed: true` is required by the Gate 2 validator.
+
 Allowed combinations:
 
-| `interaction-spec.status` | `component-plan.mode` | Result                                           |
-| ------------------------- | --------------------- | ------------------------------------------------ |
-| `approved`                | `interactive`         | Full interactive package                         |
-| `omitted` or `deferred`   | `presentational`      | Visual-only package, behavior stubbed            |
-| any other pairing         | —                     | Schema error; pipeline refuses to enter Stage 6  |
+| `interaction-spec.status` | `component-plan.mode` | Result                                          |
+| ------------------------- | --------------------- | ----------------------------------------------- |
+| `approved`                | `interactive`         | Full interactive package                        |
+| `omitted` or `deferred`   | `presentational`      | Visual-only package, behavior stubbed           |
+| any other pairing         | —                     | Schema error; pipeline refuses to enter Stage 6 |
+
+All rows assume `component-plan.status === "approved"`; any unapproved plan is rejected before mode validation.
 
 Gate 2 remains a single gate. The approval record carries a `level` field (`presentational` or `interactive`) so tooling only has to ask "has Gate 2 passed?" while the contract retains the substance of what was approved.
 
 Codegen consumes `component-plan.mode` only — it does not take an external mode parameter. Mode is a property of the approved plan, not a runtime switch.
+
+The Gate 2 artifact chain must be hash-pinned end to end: `semantic-view` pins the `visual-view`, `interaction-spec` pins the `semantic-view`, and `component-plan` pins both `semantic-view` and `interaction-spec`. Generated bodies and contract hashes must be deterministic for the same inputs. Approval timestamps such as `approvedAt` are audit metadata and are excluded from contract hashes, but validators still require the fields when the gate is approved.
 
 #### Upgrade path
 
@@ -576,14 +589,16 @@ When `component-plan.mode === "presentational"`, the published package must surf
    ```md
    ## Interaction coverage
 
-   | Aspect       | Status   | Notes                                            |
-   | ------------ | -------- | ------------------------------------------------ |
-   | states       | omitted  | No state machine modeled                         |
-   | events       | omitted  | Handler props are placeholders, never wired      |
-   | dataBinding  | omitted  | Render data comes from defaultProps              |
+   | Aspect      | Status  | Notes                                       |
+   | ----------- | ------- | ------------------------------------------- |
+   | states      | omitted | No state machine modeled                    |
+   | events      | omitted | Handler props are placeholders, never wired |
+   | dataBinding | omitted | Render data comes from defaultProps         |
 
    Approved by: <developer> at Gate 2 (presentational level).
    ```
+
+   Stage 6 generates this file by formatting `interaction-spec.body.coverage` as markdown; it never invents coverage data.
 
 The presentational flag is the single source of truth: `component-plan.mode` propagates to all four surfaces during generation; do not add redundant fields.
 

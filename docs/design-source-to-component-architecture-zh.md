@@ -87,7 +87,11 @@ ir/
       "id": "node-root",
       "kind": "frame",
       "name": "ExampleScreen",
-      "source": { "nodeId": "root-1", "originalType": "artboard", "provider": "sketch" },
+      "source": {
+        "nodeId": "root-1",
+        "originalType": "artboard",
+        "provider": "sketch"
+      },
       "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
       "children": []
     }
@@ -481,41 +485,50 @@ Token 映射是视觉保真的核心变量，必须是确定性的。
 
 `interaction-spec.json` 是必需工件——文件缺失时 codegen 直接拒绝运行。是否要建模交互通过显式 `status` 字段表达，而不是用文件缺失隐式表达：
 
-| `status`     | 含义                                                                 | 是否通过门禁 2？ |
-| ------------ | -------------------------------------------------------------------- | ---------------- |
-| `draft`      | 引擎起草，开发者尚未签字                                             | 否               |
-| `approved`   | 开发者已评审的完整交互契约                                           | 是               |
-| `omitted`    | 开发者确认本次交付不建模交互（例如 sandbox/视觉评审包）              | 是               |
-| `deferred`   | 推迟到后续迭代再补建模，本次交付仅视觉层                             | 是               |
+| `status`    | 含义                                                    | 是否通过门禁 2？ |
+| ----------- | ------------------------------------------------------- | ---------------- |
+| `draft`     | 引擎起草，开发者尚未签字                                | 否               |
+| `in-review` | 已提交门禁 2 评审，开发者尚未批准                       | 否               |
+| `approved`  | 开发者已评审的完整交互契约                              | 是               |
+| `omitted`   | 开发者确认本次交付不建模交互（例如 sandbox/视觉评审包） | 是               |
+| `deferred`  | 推迟到后续迭代再补建模，本次交付仅视觉层                | 是               |
 
-`omitted` 和 `deferred` 都会得到 presentational 交付。区别是意图：`omitted` 表示"本包不计划补交互"，`deferred` 表示"以后会升级"。两者都必须填 `reason` 和 `approvedBy`。
+`omitted` 和 `deferred` 都会得到 presentational 交付。区别是意图：`omitted` 表示"本包不计划补交互"，`deferred` 表示"以后会升级"。两者都必须填 `reason`、`approvedBy` 和 `approvedAt`。
 
-`component-plan.json` 携带一个 `mode` 字段，是 codegen 唯一消费的开关：
+`component-plan.json` 携带顶层 `status` 与一个 `mode` 字段。`status` 表达方案生命周期（`draft` → `in-review` → `approved`）；Stage 6 只能消费已批准的 plan。`mode` 是 codegen 唯一消费的开关：
 
 ```json
 {
+  "status": "approved",
   "mode": "presentational",
   "interactionSpecRef": "ir/interaction-spec.json",
   "approval": {
     "gate": "gate-2",
     "level": "presentational",
     "acknowledgedBehaviorStubbed": true,
-    "approvedBy": "<developer>"
+    "approvedBy": "<developer>",
+    "approvedAt": "<iso-8601>"
   }
 }
 ```
 
+当 `mode === "presentational"` 时，Gate 2 校验要求 `acknowledgedBehaviorStubbed: true` 必填。
+
 允许的组合：
 
-| `interaction-spec.status` | `component-plan.mode` | 结果                                  |
-| ------------------------- | --------------------- | ------------------------------------- |
-| `approved`                | `interactive`         | 完整交互包                            |
-| `omitted` 或 `deferred`   | `presentational`      | 视觉级包，行为占位                    |
-| 其它组合                  | —                     | Schema 报错；管线拒绝进入 Stage 6     |
+| `interaction-spec.status` | `component-plan.mode` | 结果                              |
+| ------------------------- | --------------------- | --------------------------------- |
+| `approved`                | `interactive`         | 完整交互包                        |
+| `omitted` 或 `deferred`   | `presentational`      | 视觉级包，行为占位                |
+| 其它组合                  | —                     | Schema 报错；管线拒绝进入 Stage 6 |
+
+表中所有行都以 `component-plan.status === "approved"` 为前提；未批准的 plan 在 mode 校验前即被拒绝。
 
 门禁 2 仍是单一门禁。审批记录里带一个 `level` 字段（`presentational` 或 `interactive`），让 tooling 只需问"门禁 2 通过了吗"，契约本身保留了具体批准的内容。
 
 Codegen 只读取 `component-plan.mode`——不接收外部 mode 参数。模式是已批准方案的属性，不是运行期开关。
+
+Gate 2 产物链必须端到端 hash 钉死:`semantic-view` 钉住 `visual-view`,`interaction-spec` 钉住 `semantic-view`,`component-plan` 同时钉住 `semantic-view` 与 `interaction-spec`。同一输入生成的 body 与 contract hash 必须确定性一致。`approvedAt` 这类审批时间戳是审计元数据,不参与 contract hash,但 gate 已批准时 validator 仍必须检查这些字段存在。
 
 #### 升级路径
 
@@ -576,14 +589,16 @@ React 输出的默认组件包要求：
    ```md
    ## Interaction coverage
 
-   | Aspect       | Status   | Notes                                            |
-   | ------------ | -------- | ------------------------------------------------ |
-   | states       | omitted  | 未建模状态机                                     |
-   | events       | omitted  | Handler props 是占位，未连接                     |
-   | dataBinding  | omitted  | 渲染数据来自 defaultProps                        |
+   | Aspect      | Status  | Notes                        |
+   | ----------- | ------- | ---------------------------- |
+   | states      | omitted | 未建模状态机                 |
+   | events      | omitted | Handler props 是占位，未连接 |
+   | dataBinding | omitted | 渲染数据来自 defaultProps    |
 
    Approved by: <developer> at Gate 2 (presentational level).
    ```
+
+   Stage 6 通过把 `interaction-spec.body.coverage` 格式化成 markdown 生成此文件；不重新发明 coverage 结构。
 
 presentational 标记的唯一来源是 `component-plan.mode`；生成时由它扩散到上述四处。不要新增冗余字段。
 
