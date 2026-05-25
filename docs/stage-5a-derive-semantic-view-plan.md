@@ -337,12 +337,19 @@ function deriveSemanticView(input: {
 | ----------------------- | ---------------------------------------------------------- | --------------------- |
 | `symbol`                | `VisualNode.symbol.instanceId` 存在                        | `high`                |
 | `annotation`            | 5A 不产出                                                  | —                     |
-| `repeat-pattern`        | 由 §6.6 的 repeated pattern 升格而来,所有 item 同 kind     | `medium`              |
+| `repeat-pattern`        | 由 §6.6 的 repeated pattern 升格而来,**且**所有 item 的 `SemanticNode.kind` ∈ `{region, component, repeated-item}` | `medium`              |
 | `visual-region`         | 命中前缀约定(§3.4)                                        | `medium`              |
 | `developer-provided`    | 5A 不产出(开发者契约 5B/5C 才能传入)                     | —                     |
 
 任何 boundary 不满足 → 不产出 ComponentCandidate,只留 SemanticNode。warning 写
 `low-confidence-component`。
+
+**repeat-pattern 升格的 kind 白名单**:`text` / `icon` / `media` / `decorative` /
+`control` 永远**不**升格成 ComponentCandidate,哪怕重复结构再规整。一组重复文案、
+重复图标、重复装饰条本身是"重复内容",不是"重复组件"。
+碰到这些情况,只产出 `RepeatedPattern`(§6.6 仍会产出)+ `LayoutCandidate`,**不**产出
+`ComponentCandidate`,并记 warning `repeated-pattern-not-promoted`,说明被白名单挡掉。
+这与"保守 derive、没证据不升格"的主基调一致。
 
 ### 6.6 RepeatedPattern 检测
 
@@ -383,17 +390,39 @@ function deriveSemanticView(input: {
 packages/d2c-core/
   src/
     semantic/
-      index.ts              # barrel: schema + derive + evidence
-      schema.ts             # Zod schemas (§4)
+      index.ts              # barrel: schema + evidence + validate + derive
+      schema.ts             # Zod schemas (§4) - shape only
       evidence.ts           # evidence constructors (§5)
-      derive.ts             # deriveSemanticView (§6)
+      validate.ts           # assertSemanticViewIntegrity (§7.1) - graph-level
+      derive.ts             # deriveSemanticView (§6); 内部调 validate 自检
     ir/
       views.ts              # 改:SemanticViewSchema.body 用 SemanticViewBodySchema
                             #    GeneratedFromSchema 加 visualViewHash
 ```
 
 barrel(`src/index.ts`)更新:从 `src/semantic` re-export `deriveSemanticView`、
-`SemanticViewBodySchema`、`SemanticNodeSchema`、`SemanticEvidenceSchema`、`WarningSchema`。
+`SemanticViewBodySchema`、`SemanticNodeSchema`、`SemanticEvidenceSchema`、`WarningSchema`、
+`assertSemanticViewIntegrity`。
+
+### 7.1 schema-level vs graph-level 分工
+
+`SemanticViewBodySchema`(§4)只承担 **shape 级**校验:字段存在、类型正确、enum 合法、
+discriminated union 选对、`min(1)` 等基本约束。Zod 天然能拒的就到此为止。
+
+**graph 级约束**——节点 id 唯一、父子互指、跨节点引用解析、screen 指针指向正确
+kind 的节点等——独立放 `semantic/validate.ts`,导出:
+
+```ts
+export function assertSemanticViewIntegrity(view: SemanticView): void;
+// 失败抛 Error,带具体违规位置(node id / 字段路径 / 原因)。
+```
+
+`deriveSemanticView` 在产出 SemanticView 后**强制调用一次** `assertSemanticViewIntegrity`,
+任何 graph 级错误都是 derive bug,直接 throw(不写 warning)。
+未来 5B/5C/外部消费者手工构造 SemanticView 时也用这个 helper 自检。
+
+这样 Zod 错误信息保持精准(指向具体字段),graph 检查的失败也有专门函数和测试边界,
+不会把跨节点约束的责任错挂在 schema 上。
 
 ## 8. Fixture 计划
 
@@ -419,8 +448,9 @@ barrel(`src/index.ts`)更新:从 `src/semantic` re-export `deriveSemanticView`�
 
 | 文件 | 测试点 |
 | --- | --- |
-| `schema.test.ts` | SemanticViewBodySchema 正例;反例:缺 source、空 evidence、非法 confidence、缺 screen、重复 SemanticNode.id、childIds 引用不存在的 id |
+| `schema.test.ts` | **仅 shape 级约束**(Zod 能拒的)。正例;反例:缺 source、空 evidence、非法 confidence、缺 screen、`min(1)` 字段为空、SemanticEvidence discriminator 缺 `kind`。不测跨节点引用 |
 | `evidence.test.ts` | 四个 constructor 返回结构 + discriminated union 校验 |
+| `validate.test.ts` | **graph 级约束**(由新 `semantic/validate.ts` 强制)。反例:重复 `SemanticNode.id`、`childIds` 引用不存在的 id、`parentId` 与 `childIds` 不互指、`body.screen.semanticNodeId` 指向的不是 kind=screen 节点、`primaryVisualNodeId` 不在 `visualNodeIds` 里 |
 | `derive-symbol.test.ts` | makeSymbolHeavyView → 验证 component candidates 数量、boundary、confidence、id 稳定 |
 | `derive-list.test.ts` | makeListView → 验证 repeated pattern + layout candidate |
 | `derive-ambiguous.test.ts` | makeAmbiguousGroupView → 不升格 + warning |
@@ -447,13 +477,15 @@ barrel(`src/index.ts`)更新:从 `src/semantic` re-export `deriveSemanticView`�
 
 拆 **3 个 PR**(2 个太糊、4 个最后一个信息密度不够):
 
-1. **5A-PR-1 — schema + evidence + utils move**:`semantic/schema.ts`、
-   `semantic/evidence.ts`、`semantic/index.ts`(初版只导出 schema/evidence)+
-   `__tests__/schema.test.ts`、`__tests__/evidence.test.ts`。**不动 views.ts**。
+1. **5A-PR-1 — schema + evidence + validate + utils move**:`semantic/schema.ts`、
+   `semantic/evidence.ts`、`semantic/validate.ts`、`semantic/index.ts`(初版导出
+   schema/evidence/validate)+ `__tests__/schema.test.ts`、`__tests__/evidence.test.ts`、
+   `__tests__/validate.test.ts`。**不动 views.ts**。
    同 PR 顺手把 `preview/stable-json.ts` → `utils/stable-json.ts`(见 §3.5),改
    `derive-visual-view.ts` 与对应测试的 import 路径,行为不变。
    Review 重点:Zod 形态、字段命名、`SemanticEvidence` discriminated union 是否够用、
-   §3.5 id 表是否覆盖所有 5A 需求、utils 提升是否破坏 Stage 4 测试。
+   §3.5 id 表是否覆盖所有 5A 需求、schema/validate 分工是否清晰、utils 提升是否破坏
+   Stage 4 测试。
 2. **5A-PR-2 — derive(walker + promotion + heuristics)**:`semantic/derive.ts` 完整实现
    §6 全套(walker / hash 校验 / kind 启发式 / component 升格 / repeated pattern /
    layout candidate)+ `__tests__/fixtures.ts`(5 个 maker)+ derive 行为单测
