@@ -69,7 +69,7 @@ type SemanticEvidence =
 
 // Warning
 type Warning = {
-  code: string;          // 稳定枚举,例如 'low-confidence-component'
+  code: string; // 稳定枚举,例如 'low-confidence-component'
   severity: 'info' | 'warn' | 'error';
   message: string;
   nodeIds?: string[];
@@ -139,12 +139,12 @@ semantic 不应该 import preview(语义层向下依赖反了)。改动只涉及
 
 **id 输入必须是 canonical record,字段固定枚举,不留笼统 `extra`。** 现期形态:
 
-| id 类型              | 前缀  | hash 输入 record                                                                  |
-| -------------------- | ----- | --------------------------------------------------------------------------------- |
-| `SemanticNode.id`    | `s_`  | `{ form: 'node', primaryVisualNodeId, kind }`                                     |
-| `ComponentCandidate.id` | `cc_` | `{ form: 'candidate', rootSemanticNodeId, boundary }`                          |
-| `RepeatedPattern.id` | `rp_` | `{ form: 'pattern', parentSemanticNodeId, axis, itemSemanticNodeIds: [..sorted] }` |
-| `LayoutCandidate.id` | `lc_` | `{ form: 'layout', semanticNodeId, kind }`                                        |
+| id 类型                 | 前缀  | hash 输入 record                                                                   |
+| ----------------------- | ----- | ---------------------------------------------------------------------------------- |
+| `SemanticNode.id`       | `s_`  | `{ form: 'node', primaryVisualNodeId, kind }`                                      |
+| `ComponentCandidate.id` | `cc_` | `{ form: 'candidate', rootSemanticNodeId, boundary }`                              |
+| `RepeatedPattern.id`    | `rp_` | `{ form: 'pattern', parentSemanticNodeId, axis, itemSemanticNodeIds: [..sorted] }` |
+| `LayoutCandidate.id`    | `lc_` | `{ form: 'layout', semanticNodeId, kind }`                                         |
 
 公式:`<prefix> + stableSha256(stableJson(input)).slice(0, 12)`。
 
@@ -163,27 +163,50 @@ fixture 的 id 全体漂移、stability test 失效。
 export const ConfidenceSchema = z.enum(['low', 'medium', 'high', 'developer-provided']);
 
 export const SemanticEvidenceSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('visual-node'),         nodeId: z.string(), reason: z.string() }).strict(),
-  z.object({ kind: z.literal('design-ir-candidate'), candidateName: z.string(), nodeId: z.string(), reason: z.string() }).strict(),
-  z.object({ kind: z.literal('annotation'),          annotationKey: z.string(), nodeId: z.string(), reason: z.string() }).strict(),
-  z.object({ kind: z.literal('project-rule'),        ruleName: z.string(), reason: z.string() }).strict(),
+  z.object({ kind: z.literal('visual-node'), nodeId: z.string(), reason: z.string() }).strict(),
+  z
+    .object({
+      kind: z.literal('design-ir-candidate'),
+      candidateName: z.string(),
+      nodeId: z.string(),
+      reason: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('annotation'),
+      annotationKey: z.string(),
+      nodeId: z.string(),
+      reason: z.string(),
+    })
+    .strict(),
+  z.object({ kind: z.literal('project-rule'), ruleName: z.string(), reason: z.string() }).strict(),
 ]);
 
-export const WarningSchema = z.object({
-  code: z.string(),
-  severity: z.enum(['info', 'warn', 'error']),
-  message: z.string(),
-  nodeIds: z.array(z.string()).optional(),
-}).strict();
+export const WarningSchema = z
+  .object({
+    code: z.string(),
+    severity: z.enum(['info', 'warn', 'error']),
+    message: z.string(),
+    nodeIds: z.array(z.string()).optional(),
+  })
+  .strict();
 
-const BoundsSchema = z.object({
-  x: z.number(), y: z.number(), width: z.number(), height: z.number(),
-}).strict();
+const BoundsSchema = z
+  .object({
+    x: z.number(),
+    y: z.number(),
+    width: z.number(),
+    height: z.number(),
+  })
+  .strict();
 
-const SemanticSourceSchema = z.object({
-  nodeIds: z.array(z.string()).min(1),
-  provider: z.string().optional(),
-}).strict();
+const SemanticSourceSchema = z
+  .object({
+    nodeIds: z.array(z.string()).min(1),
+    provider: z.string().optional(),
+  })
+  .strict();
 
 const SemanticNodeBase = {
   id: z.string(),
@@ -200,58 +223,74 @@ const SemanticNodeBase = {
 };
 
 export const SemanticNodeSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('screen'),         ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('region'),         ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('component'),      ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('repeated-item'),  ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('text'),           ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('media'),          ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('icon'),           ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('control'),        ...SemanticNodeBase }).strict(),
-  z.object({ kind: z.literal('decorative'),     ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('screen'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('region'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('component'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('repeated-item'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('text'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('media'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('icon'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('control'), ...SemanticNodeBase }).strict(),
+  z.object({ kind: z.literal('decorative'), ...SemanticNodeBase }).strict(),
 ]);
 
-export const ComponentCandidateSchema = z.object({
-  id: z.string(),
-  rootSemanticNodeId: z.string(),
-  suggestedName: z.string(),
-  boundary: z.enum(['symbol', 'annotation', 'repeat-pattern', 'visual-region', 'developer-provided']),
-  confidence: ConfidenceSchema,
-  evidence: z.array(SemanticEvidenceSchema).min(1),
-}).strict();
+export const ComponentCandidateSchema = z
+  .object({
+    id: z.string(),
+    rootSemanticNodeId: z.string(),
+    suggestedName: z.string(),
+    boundary: z.enum([
+      'symbol',
+      'annotation',
+      'repeat-pattern',
+      'visual-region',
+      'developer-provided',
+    ]),
+    confidence: ConfidenceSchema,
+    evidence: z.array(SemanticEvidenceSchema).min(1),
+  })
+  .strict();
 
-export const RepeatedPatternSchema = z.object({
-  id: z.string(),
-  itemSemanticNodeIds: z.array(z.string()).min(3),  // 至少 3 个,见 §3.4
-  axis: z.enum(['x', 'y', 'grid', 'unknown']),
-  itemCount: z.number().int().min(3),
-  similarity: z.number().min(0).max(1),
-  confidence: ConfidenceSchema,
-  evidence: z.array(SemanticEvidenceSchema).min(1),
-}).strict();
+export const RepeatedPatternSchema = z
+  .object({
+    id: z.string(),
+    itemSemanticNodeIds: z.array(z.string()).min(3), // 至少 3 个,见 §3.4
+    axis: z.enum(['x', 'y', 'grid', 'unknown']),
+    itemCount: z.number().int().min(3),
+    similarity: z.number().min(0).max(1),
+    confidence: ConfidenceSchema,
+    evidence: z.array(SemanticEvidenceSchema).min(1),
+  })
+  .strict();
 
-export const LayoutCandidateSchema = z.object({
-  id: z.string(),
-  semanticNodeId: z.string(),
-  kind: z.enum(['absolute', 'stack', 'inline', 'grid', 'overlay']),
-  confidence: ConfidenceSchema,
-  constraints: z.array(z.string()),
-  caveats: z.array(z.string()),
-}).strict();
+export const LayoutCandidateSchema = z
+  .object({
+    id: z.string(),
+    semanticNodeId: z.string(),
+    kind: z.enum(['absolute', 'stack', 'inline', 'grid', 'overlay']),
+    confidence: ConfidenceSchema,
+    constraints: z.array(z.string()),
+    caveats: z.array(z.string()),
+  })
+  .strict();
 
-export const SemanticScreenSchema = z.object({
-  semanticNodeId: z.string(),
-  name: z.string(),
-}).strict();
+export const SemanticScreenSchema = z
+  .object({
+    semanticNodeId: z.string(),
+    name: z.string(),
+  })
+  .strict();
 
-export const SemanticViewBodySchema = z.object({
-  screen: SemanticScreenSchema,
-  nodes: z.array(SemanticNodeSchema).min(1),
-  componentCandidates: z.array(ComponentCandidateSchema),
-  repeatedPatterns: z.array(RepeatedPatternSchema),
-  layoutCandidates: z.array(LayoutCandidateSchema),
-  warnings: z.array(WarningSchema),
-}).strict();
+export const SemanticViewBodySchema = z
+  .object({
+    screen: SemanticScreenSchema,
+    nodes: z.array(SemanticNodeSchema).min(1),
+    componentCandidates: z.array(ComponentCandidateSchema),
+    repeatedPatterns: z.array(RepeatedPatternSchema),
+    layoutCandidates: z.array(LayoutCandidateSchema),
+    warnings: z.array(WarningSchema),
+  })
+  .strict();
 ```
 
 `SemanticScreen` 是顶层屏指针,引用 `nodes` 中 `kind === 'screen'` 的那个节点(精确一个);
@@ -264,11 +303,17 @@ schema 不在 type 层强制单一性(避免膨胀),由 `deriveSemanticView` 保
 
 export function evidenceFromVisualNode(nodeId: string, reason: string): SemanticEvidence;
 export function evidenceFromDesignIrCandidate(
-  candidateName: string, nodeId: string, reason: string,
+  candidateName: string,
+  nodeId: string,
+  reason: string,
 ): SemanticEvidence;
 
 // 5A 留入口但 derive 不产出:
-export function evidenceFromAnnotation(annotationKey: string, nodeId: string, reason: string): SemanticEvidence;
+export function evidenceFromAnnotation(
+  annotationKey: string,
+  nodeId: string,
+  reason: string,
+): SemanticEvidence;
 export function evidenceFromProjectRule(ruleName: string, reason: string): SemanticEvidence;
 ```
 
@@ -280,10 +325,10 @@ export function evidenceFromProjectRule(ruleName: string, reason: string): Seman
 ### 6.1 输入校验
 
 ```ts
-function deriveSemanticView(input: {
-  designIr: DesignIR;
-  visualView: VisualView;
-}): { semanticView: SemanticView; warnings: Warning[] }
+function deriveSemanticView(input: { designIr: DesignIR; visualView: VisualView }): {
+  semanticView: SemanticView;
+  warnings: Warning[];
+};
 ```
 
 - `validateDesignIR(designIr)` 必须成功(deriveSemanticView 不做完整校验,由 caller 保证)。
@@ -317,29 +362,29 @@ function deriveSemanticView(input: {
 
 ### 6.4 VisualNode.kind → SemanticNode.kind 启发式
 
-| VisualNode               | SemanticNode.kind | 条件                                                    |
-| ------------------------ | ----------------- | ------------------------------------------------------- |
-| `frame` 根               | `screen`          | 是 `visualView.body.root`                               |
-| `frame` / `group` 有子   | `region`          | 默认                                                    |
-| `frame` / `group` 命前缀 | `component`       | 见 §3.4 前缀约定                                        |
-| 任意有 `symbol.instanceId` | `component`     | symbol 实例                                             |
-| `text`                   | `text`            |                                                         |
-| `image`                  | `media`           |                                                         |
-| `image` 且 size < 32px   | `icon`            | 启发式,带 warning                                       |
-| `vector` / `shape` 叶子  | `decorative`      | 无文本、无 asset、无 symbol、无子                       |
-| `vector` 大面积或带 fill | `media`           | 启发式;由 derive 函数决定,带 warning                    |
+| VisualNode                 | SemanticNode.kind | 条件                                 |
+| -------------------------- | ----------------- | ------------------------------------ |
+| `frame` 根                 | `screen`          | 是 `visualView.body.root`            |
+| `frame` / `group` 有子     | `region`          | 默认                                 |
+| `frame` / `group` 命前缀   | `component`       | 见 §3.4 前缀约定                     |
+| 任意有 `symbol.instanceId` | `component`       | symbol 实例                          |
+| `text`                     | `text`            |                                      |
+| `image`                    | `media`           |                                      |
+| `image` 且 size < 32px     | `icon`            | 启发式,带 warning                    |
+| `vector` / `shape` 叶子    | `decorative`      | 无文本、无 asset、无 symbol、无子    |
+| `vector` 大面积或带 fill   | `media`           | 启发式;由 derive 函数决定,带 warning |
 
 `control` kind 5A 不主动产出(button / tab / input 识别 5B 起做 interaction draft 时再说)。
 
 ### 6.5 ComponentCandidate 升格规则
 
-| boundary                | 触发条件                                                   | confidence            |
-| ----------------------- | ---------------------------------------------------------- | --------------------- |
-| `symbol`                | `VisualNode.symbol.instanceId` 存在                        | `high`                |
-| `annotation`            | 5A 不产出                                                  | —                     |
-| `repeat-pattern`        | 由 §6.6 的 repeated pattern 升格而来,**且**所有 item 的 `SemanticNode.kind` ∈ `{region, component, repeated-item}` | `medium`              |
-| `visual-region`         | 命中前缀约定(§3.4)                                        | `medium`              |
-| `developer-provided`    | 5A 不产出(开发者契约 5B/5C 才能传入)                     | —                     |
+| boundary             | 触发条件                                                                                                           | confidence |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
+| `symbol`             | `VisualNode.symbol.instanceId` 存在                                                                                | `high`     |
+| `annotation`         | 5A 不产出                                                                                                          | —          |
+| `repeat-pattern`     | 由 §6.6 的 repeated pattern 升格而来,**且**所有 item 的 `SemanticNode.kind` ∈ `{region, component, repeated-item}` | `medium`   |
+| `visual-region`      | 命中前缀约定(§3.4)                                                                                                 | `medium`   |
+| `developer-provided` | 5A 不产出(开发者契约 5B/5C 才能传入)                                                                               | —          |
 
 任何 boundary 不满足 → 不产出 ComponentCandidate,只留 SemanticNode。warning 写
 `low-confidence-component`。
@@ -430,13 +475,13 @@ export function assertSemanticViewIntegrity(view: SemanticView): void;
 无法测 5A。新增/扩两套 fixture(放 `packages/d2c-core/src/semantic/__tests__/fixtures.ts`,
 **内联 TS 而非 JSON**——与现有约定一致,见 `preview/__tests__/fixtures.ts`):
 
-| Fixture | 内容 | 覆盖的 5A 行为 |
-| --- | --- | --- |
-| `makeSymbolHeavyView()` | 1 root + 2 symbol 实例(不同 master,带 text override) | symbol → ComponentCandidate(boundary='symbol', confidence='high') |
-| `makeListView()` | 1 root + 5 同 kind 同结构 sibling(等间距 y 轴) | RepeatedPattern(axis='y', similarity≈1) + LayoutCandidate(kind='stack') |
+| Fixture                    | 内容                                                      | 覆盖的 5A 行为                                                                           |
+| -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `makeSymbolHeavyView()`    | 1 root + 2 symbol 实例(不同 master,带 text override)      | symbol → ComponentCandidate(boundary='symbol', confidence='high')                        |
+| `makeListView()`           | 1 root + 5 同 kind 同结构 sibling(等间距 y 轴)            | RepeatedPattern(axis='y', similarity≈1) + LayoutCandidate(kind='stack')                  |
 | `makeAmbiguousGroupView()` | 1 root + 2 frame group(无前缀、无 symbol、无 description) | 不产出 ComponentCandidate,产出 SemanticNode region + warning('low-confidence-component') |
-| `makeDecorativeBgView()` | 1 root + 1 大面积 vector + 1 文本 | vector → media(带 warning), text → text |
-| `makeFullChatView()`(可选) | 综合:header / list / input | 端到端 smoke,验证整体 schema |
+| `makeDecorativeBgView()`   | 1 root + 1 大面积 vector + 1 文本                         | vector → media(带 warning), text → text                                                  |
+| `makeFullChatView()`(可选) | 综合:header / list / input                                | 端到端 smoke,验证整体 schema                                                             |
 
 不需要拿真 `.sketch` 文件;5A 测试用 `makeDesignIR()` + `makeVisualView()` 直接造内存对象。
 
@@ -446,17 +491,17 @@ export function assertSemanticViewIntegrity(view: SemanticView): void;
 
 文件 `packages/d2c-core/src/semantic/__tests__/`:
 
-| 文件 | 测试点 |
-| --- | --- |
-| `schema.test.ts` | **仅 shape 级约束**(Zod 能拒的)。正例;反例:缺 source、空 evidence、非法 confidence、缺 screen、`min(1)` 字段为空、SemanticEvidence discriminator 缺 `kind`。不测跨节点引用 |
-| `evidence.test.ts` | 四个 constructor 返回结构 + discriminated union 校验 |
-| `validate.test.ts` | **graph 级约束**(由新 `semantic/validate.ts` 强制)。反例:重复 `SemanticNode.id`、`childIds` 引用不存在的 id、`parentId` 与 `childIds` 不互指、`body.screen.semanticNodeId` 指向的不是 kind=screen 节点、`primaryVisualNodeId` 不在 `visualNodeIds` 里 |
-| `derive-symbol.test.ts` | makeSymbolHeavyView → 验证 component candidates 数量、boundary、confidence、id 稳定 |
-| `derive-list.test.ts` | makeListView → 验证 repeated pattern + layout candidate |
-| `derive-ambiguous.test.ts` | makeAmbiguousGroupView → 不升格 + warning |
-| `derive-determinism.test.ts` | 同输入跑 3 次,深度 equal;输入打乱 children 顺序后,id 与输出仍稳定 |
-| `derive-hash.test.ts` | designIrHash 不匹配 → throw;visualViewHash 与输入一致;输出可被 SemanticViewSchema parse |
-| `views-integration.test.ts` | `SemanticViewSchema.safeParse(deriveSemanticView(...).semanticView)` 全部 fixture 通过 |
+| 文件                         | 测试点                                                                                                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema.test.ts`             | **仅 shape 级约束**(Zod 能拒的)。正例;反例:缺 source、空 evidence、非法 confidence、缺 screen、`min(1)` 字段为空、SemanticEvidence discriminator 缺 `kind`。不测跨节点引用                                                                            |
+| `evidence.test.ts`           | 四个 constructor 返回结构 + discriminated union 校验                                                                                                                                                                                                  |
+| `validate.test.ts`           | **graph 级约束**(由新 `semantic/validate.ts` 强制)。反例:重复 `SemanticNode.id`、`childIds` 引用不存在的 id、`parentId` 与 `childIds` 不互指、`body.screen.semanticNodeId` 指向的不是 kind=screen 节点、`primaryVisualNodeId` 不在 `visualNodeIds` 里 |
+| `derive-symbol.test.ts`      | makeSymbolHeavyView → 验证 component candidates 数量、boundary、confidence、id 稳定                                                                                                                                                                   |
+| `derive-list.test.ts`        | makeListView → 验证 repeated pattern + layout candidate                                                                                                                                                                                               |
+| `derive-ambiguous.test.ts`   | makeAmbiguousGroupView → 不升格 + warning                                                                                                                                                                                                             |
+| `derive-determinism.test.ts` | 同输入跑 3 次,深度 equal;输入打乱 children 顺序后,id 与输出仍稳定                                                                                                                                                                                     |
+| `derive-hash.test.ts`        | designIrHash 不匹配 → throw;visualViewHash 与输入一致;输出可被 SemanticViewSchema parse                                                                                                                                                               |
+| `views-integration.test.ts`  | `SemanticViewSchema.safeParse(deriveSemanticView(...).semanticView)` 全部 fixture 通过                                                                                                                                                                |
 
 测试约定:用 `vitest`,沿用 `packages/d2c-core/src/preview/__tests__/` 同款 inline TS fixture
 模式(见调研报告 §6)。
