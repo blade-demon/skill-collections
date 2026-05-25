@@ -268,3 +268,84 @@ export function makeFullChatView(): Stage5aFixture {
   ]);
   return fixtureFromRoot(root, 'Chat');
 }
+
+/* ── 6) Design-IR-candidate-only view ──────────────────────────────────────
+ * A plain group with no symbol, no name prefix. The only thing pointing at
+ * it as component-worthy is an explicit entry in
+ * `designIr.semantic.candidates`. Targets the P1 finding: Stage 3 normalizers
+ * write `candidates[*].nodeId = VisualNode.id`, so derive must look up by
+ * `visualNode.id` (not `visualNode.source.nodeId`).
+ */
+export function makeDesignIrCandidateOnlyView(): Stage5aFixture {
+  const plain = group('plain-region', 'PlainRegion', { x: 0, y: 0, width: 320, height: 100 }, [
+    text('plain-label', 'Hello', { x: 10, y: 10, width: 100, height: 20 }),
+  ]);
+  const root = frame('root', 'CandidateRoot', { x: 0, y: 0, width: 320, height: 200 }, [plain]);
+  return fixtureFromRoot(root, 'CandidateOnly', [
+    {
+      /* matches plain.id which is `node-plain-region` */
+      nodeId: 'node-plain-region',
+      candidateName: 'PromotedFromIrCandidate',
+      confidence: 'medium',
+      reason: 'repeated-structure',
+    },
+  ]);
+}
+
+/* ── 7) Mismatched-shape repeat candidates ─────────────────────────────────
+ * 3 same-kind region siblings, each with exactly 1 child, BUT the children
+ * differ — text vs media-sized image vs nested group. Targets the P2 finding:
+ * a per-child-count-only conformity check passes this set, even though the
+ * subtrees look nothing alike. The §6.6 subtree signature (text count, asset
+ * count, max depth) must reject it.
+ */
+export function makeMismatchedShapeListView(): Stage5aFixture {
+  const root = frame('root', 'MismatchedRoot', { x: 0, y: 0, width: 320, height: 240 }, [
+    group('item-a', 'ItemA', { x: 0, y: 0, width: 320, height: 60 }, [
+      text('a-text', 'A', { x: 10, y: 10, width: 100, height: 20 }),
+    ]),
+    group('item-b', 'ItemB', { x: 0, y: 70, width: 320, height: 60 }, [
+      /* width 100, height 40 — both >= 32, so derive classifies as `media`, not icon */
+      image('b-img', { x: 10, y: 10, width: 100, height: 40 }),
+    ]),
+    group('item-c', 'ItemC', { x: 0, y: 140, width: 320, height: 60 }, [
+      group('c-inner', 'CInner', { x: 10, y: 10, width: 200, height: 40 }, [
+        text('c-deep', 'Deep', { x: 0, y: 0, width: 100, height: 20 }),
+      ]),
+    ]),
+  ]);
+  return fixtureFromRoot(root, 'Mismatched');
+}
+
+/* ── 8) Multi-kind repeat parent ───────────────────────────────────────────
+ * One parent hosting two promotable repeat sets: 3 plain region siblings AND
+ * 3 prefixed-component siblings (each prefixed with `Component/` so derive
+ * classifies them as `component` kind). Both kind groups pass the white-list
+ * and emit repeat-pattern ComponentCandidates rooted at the SAME parent.
+ * Targets the P3 finding: the candidate id formerly hashed only
+ * (parent.id, boundary), so the two candidates collided and the integrity
+ * validator hard-threw on duplicate ComponentCandidate id.
+ */
+export function makeMultiKindRepeatParentView(): Stage5aFixture {
+  const regions: VisualNode[] = [];
+  for (let i = 0; i < 3; i++) {
+    regions.push(
+      group(`region-${i}`, `Region-${i}`, { x: 0, y: i * 50, width: 320, height: 40 }, [
+        text(`region-${i}-text`, `R${i}`, { x: 10, y: 10, width: 100, height: 20 }),
+      ]),
+    );
+  }
+  const components: VisualNode[] = [];
+  for (let i = 0; i < 3; i++) {
+    components.push(
+      frame(`comp-${i}`, `Component/Comp-${i}`, { x: 0, y: 200 + i * 50, width: 320, height: 40 }, [
+        text(`comp-${i}-text`, `C${i}`, { x: 10, y: 10, width: 100, height: 20 }),
+      ]),
+    );
+  }
+  const root = frame('root', 'MultiKindRoot', { x: 0, y: 0, width: 320, height: 400 }, [
+    ...regions,
+    ...components,
+  ]);
+  return fixtureFromRoot(root, 'MultiKind');
+}

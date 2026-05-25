@@ -195,7 +195,12 @@ function walkVisualNode(
   const evidence: SemanticEvidence[] = [
     evidenceFromVisualNode(visualNode.id, classification.evidenceReason),
   ];
-  const matchedCandidate = ctx.candidatesByVisualNodeId.get(visualNode.source.nodeId);
+  /* Stage 3 normalizers (Sketch / future MasterGo) write
+   * `semantic.candidates[*].nodeId` as the canonical `VisualNode.id`, NOT
+   * the provider `source.nodeId`. See skills/sketch-to-component/scripts/src/
+   * normalize/semantic.ts — `nodeId: node.id`. We index and look up the same
+   * way; otherwise no Sketch input ever connects to its IR-level candidates. */
+  const matchedCandidate = ctx.candidatesByVisualNodeId.get(visualNode.id);
   if (matchedCandidate !== undefined) {
     evidence.push(
       evidenceFromDesignIrCandidate(
@@ -355,7 +360,7 @@ function maybePromoteToComponentCandidate(
     return;
   }
 
-  const matched = ctx.candidatesByVisualNodeId.get(visualNode.source.nodeId);
+  const matched = ctx.candidatesByVisualNodeId.get(visualNode.id);
   if (matched !== undefined && visualNode.symbol?.instanceId === undefined) {
     ctx.componentCandidates.push({
       id: generateCandidateId(node.id, 'visual-region'),
@@ -454,12 +459,16 @@ function detectRepeatedPatternsForParent(
       continue;
     }
 
-    /* Shape conformity: identical child counts per item subtree. */
-    const childCountSet = new Set(sorted.map((it) => it.childIds.length));
-    if (childCountSet.size > 1) {
+    /* Shape conformity per plan §6.6 step 5 — every item's subtree must have
+     * identical (text count, asset-bearing count, max depth). Plain childCount
+     * equality (the prior implementation) was too weak: 3 regions each with
+     * exactly 1 child but the children being text / image / nested group
+     * would still slip through and be promoted as a pattern. */
+    const signatures = sorted.map((it) => subtreeSignature(it, nodesById));
+    if (new Set(signatures).size > 1) {
       ctx.warnings.push({
         code: 'repeated-pattern-shape-mismatch',
-        message: `parent ${parent.id}: ${items.length} same-kind '${kind}' siblings have varying child counts (${[...childCountSet].join(',')})`,
+        message: `parent ${parent.id}: ${items.length} same-kind '${kind}' siblings have differing subtree shapes (${[...new Set(signatures)].join(' vs ')})`,
         severity: 'info',
         sourceNodeId: parent.id,
       });
@@ -486,10 +495,12 @@ function detectRepeatedPatternsForParent(
     });
 
     /* §6.5 white-list — only promote to ComponentCandidate if every item's
-     * kind is in the promotable set. Otherwise emit a not-promoted warning. */
+     * kind is in the promotable set. Otherwise emit a not-promoted warning.
+     * The patternId is folded into the candidate id so multiple promotable
+     * patterns under the same parent (different kind sets) do not collide. */
     if (REPEAT_PROMOTABLE_KINDS.has(kind)) {
       ctx.componentCandidates.push({
-        id: generateCandidateId(parent.id, 'repeat-pattern'),
+        id: generateCandidateId(parent.id, 'repeat-pattern', patternId),
         rootSemanticNodeId: parent.id,
         suggestedName: `${parent.name}Item`,
         boundary: 'repeat-pattern',
@@ -536,8 +547,21 @@ function generateNodeId(primaryVisualNodeId: string, kind: SemanticNodeKind): st
 function generateCandidateId(
   rootSemanticNodeId: string,
   boundary: ComponentCandidate['boundary'],
+  /**
+   * Extra disambiguator. The single mandatory case today: `boundary ===
+   * 'repeat-pattern'` must include the RepeatedPattern id, because a single
+   * parent can host more than one promotable pattern (e.g. 3 region siblings
+   * AND 3 component siblings, both passing the white-list). Without this slot
+   * both candidates would hash to the same id and assertSemanticViewIntegrity
+   * would hard-throw on duplicate ComponentCandidate ids. symbol /
+   * visual-region candidates do not need it — those rootSemanticNodeIds are
+   * already 1-to-1 with the originating node.
+   */
+  discriminator?: string,
 ): string {
-  return 'cc_' + hashRecord({ form: 'candidate', rootSemanticNodeId, boundary });
+  const record: Record<string, unknown> = { form: 'candidate', rootSemanticNodeId, boundary };
+  if (discriminator !== undefined) record.discriminator = discriminator;
+  return 'cc_' + hashRecord(record);
 }
 
 function generatePatternId(
@@ -558,6 +582,35 @@ function generateLayoutId(semanticNodeId: string, kind: LayoutCandidateKind): st
 
 function hashRecord(input: Record<string, unknown>): string {
   return stableSha256(stableJson(input)).slice(0, 12);
+}
+
+/* ── subtree signature for repeat-pattern shape conformity ───────────────── */
+
+/**
+ * Per plan §6.6, two repeated-pattern items must have identical subtree shape:
+ * same number of text descendants, same number of asset-bearing descendants
+ * (media + icon), same max nesting depth. Encoded as `t<text>|a<asset>|d<depth>`
+ * so a single Set check rejects any divergence.
+ */
+function subtreeSignature(root: SemanticNode, nodesById: Map<string, SemanticNode>): string {
+  let textCount = 0;
+  let assetCount = 0;
+  let maxDepth = 0;
+
+  const walk = (node: SemanticNode, depth: number): void => {
+    if (depth > maxDepth) maxDepth = depth;
+    if (node !== root) {
+      if (node.kind === 'text') textCount++;
+      else if (node.kind === 'media' || node.kind === 'icon') assetCount++;
+    }
+    for (const childId of node.childIds) {
+      const child = nodesById.get(childId);
+      if (child !== undefined) walk(child, depth + 1);
+    }
+  };
+  walk(root, 0);
+
+  return `t${textCount}|a${assetCount}|d${maxDepth}`;
 }
 
 /* ── numerical helpers ───────────────────────────────────────────────────── */
