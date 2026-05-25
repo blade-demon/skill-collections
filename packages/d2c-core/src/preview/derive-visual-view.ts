@@ -6,7 +6,7 @@ import {
   type Warning,
 } from '../ir';
 import { applySymbolOverrides, type OverrideStats } from './apply-overrides';
-import { stableJson, stableSha256 } from './stable-json';
+import { stableJson, stableSha256 } from '../utils/stable-json';
 
 export interface DeriveVisualViewResult {
   visualView: VisualView;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveVisualView } from '../derive-visual-view';
-import { stableJson, stableSha256 } from '../stable-json';
+import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { makeDesignIR } from './fixtures';
 
 describe('deriveVisualView', () => {
