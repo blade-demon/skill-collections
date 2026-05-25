@@ -15,10 +15,18 @@
  *     B.childIds includes A);
  *   - `body.screen.semanticNodeId` points to a node whose `kind === 'screen'`;
  *   - `primaryVisualNodeId` is always present in the same node's
- *     `visualNodeIds` array.
+ *     `visualNodeIds` array;
+ *   - every `ComponentCandidate.rootSemanticNodeId`, every
+ *     `RepeatedPattern.itemSemanticNodeIds[*]`, and every
+ *     `LayoutCandidate.semanticNodeId` resolves to a node in `body.nodes`;
+ *   - `RepeatedPattern.itemCount` matches `itemSemanticNodeIds.length`;
+ *   - ids inside `componentCandidates` / `repeatedPatterns` / `layoutCandidates`
+ *     are unique within each array (per Stage 5A plan §3.5 prefixes already
+ *     give global uniqueness across arrays, so we only enforce within-array
+ *     uniqueness here).
  *
  * Any violation throws a `SemanticViewIntegrityError` whose `message`
- * names the offending node, the field, and the reason. `deriveSemanticView`
+ * names the offending id, the field, and the reason. `deriveSemanticView`
  * (5A-PR-2) will call this on its output — a graph-level violation there
  * is a derive bug, not user-actionable, so throw rather than warn.
  */
@@ -87,5 +95,51 @@ export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
     throw new SemanticViewIntegrityError(
       `body.screen.semanticNodeId ${body.screen.semanticNodeId} references a node of kind '${screenTarget.kind}', expected 'screen'`,
     );
+  }
+
+  const componentCandidateIds = new Set<string>();
+  for (const candidate of body.componentCandidates) {
+    if (componentCandidateIds.has(candidate.id)) {
+      throw new SemanticViewIntegrityError(`duplicate ComponentCandidate id: ${candidate.id}`);
+    }
+    componentCandidateIds.add(candidate.id);
+    if (!nodesById.has(candidate.rootSemanticNodeId)) {
+      throw new SemanticViewIntegrityError(
+        `componentCandidate ${candidate.id}: rootSemanticNodeId ${candidate.rootSemanticNodeId} does not exist in body.nodes`,
+      );
+    }
+  }
+
+  const repeatedPatternIds = new Set<string>();
+  for (const pattern of body.repeatedPatterns) {
+    if (repeatedPatternIds.has(pattern.id)) {
+      throw new SemanticViewIntegrityError(`duplicate RepeatedPattern id: ${pattern.id}`);
+    }
+    repeatedPatternIds.add(pattern.id);
+    if (pattern.itemCount !== pattern.itemSemanticNodeIds.length) {
+      throw new SemanticViewIntegrityError(
+        `repeatedPattern ${pattern.id}: itemCount ${pattern.itemCount} does not match itemSemanticNodeIds.length ${pattern.itemSemanticNodeIds.length}`,
+      );
+    }
+    for (const itemId of pattern.itemSemanticNodeIds) {
+      if (!nodesById.has(itemId)) {
+        throw new SemanticViewIntegrityError(
+          `repeatedPattern ${pattern.id}: itemSemanticNodeIds entry ${itemId} does not exist in body.nodes`,
+        );
+      }
+    }
+  }
+
+  const layoutCandidateIds = new Set<string>();
+  for (const layout of body.layoutCandidates) {
+    if (layoutCandidateIds.has(layout.id)) {
+      throw new SemanticViewIntegrityError(`duplicate LayoutCandidate id: ${layout.id}`);
+    }
+    layoutCandidateIds.add(layout.id);
+    if (!nodesById.has(layout.semanticNodeId)) {
+      throw new SemanticViewIntegrityError(
+        `layoutCandidate ${layout.id}: semanticNodeId ${layout.semanticNodeId} does not exist in body.nodes`,
+      );
+    }
   }
 }

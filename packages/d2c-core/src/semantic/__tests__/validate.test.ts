@@ -53,14 +53,66 @@ function regionNode(
   };
 }
 
-function bodyWith(nodes: SemanticViewBody['nodes'], screenId = 's_root'): SemanticViewBody {
+function bodyWith(
+  nodes: SemanticViewBody['nodes'],
+  overrides?: {
+    screenId?: string;
+    componentCandidates?: SemanticViewBody['componentCandidates'];
+    repeatedPatterns?: SemanticViewBody['repeatedPatterns'];
+    layoutCandidates?: SemanticViewBody['layoutCandidates'];
+  },
+): SemanticViewBody {
   return {
-    screen: { semanticNodeId: screenId, name: 'Screen' },
+    screen: { semanticNodeId: overrides?.screenId ?? 's_root', name: 'Screen' },
     nodes,
-    componentCandidates: [],
-    repeatedPatterns: [],
-    layoutCandidates: [],
+    componentCandidates: overrides?.componentCandidates ?? [],
+    repeatedPatterns: overrides?.repeatedPatterns ?? [],
+    layoutCandidates: overrides?.layoutCandidates ?? [],
     warnings: [],
+  };
+}
+
+function componentCandidate(
+  id: string,
+  rootSemanticNodeId: string,
+): SemanticViewBody['componentCandidates'][number] {
+  return {
+    id,
+    rootSemanticNodeId,
+    suggestedName: id,
+    boundary: 'visual-region',
+    confidence: 'medium',
+    evidence: [{ kind: 'visual-node', nodeId: 'v_x', reason: 'r' }],
+  };
+}
+
+function repeatedPattern(
+  id: string,
+  itemSemanticNodeIds: string[],
+  itemCountOverride?: number,
+): SemanticViewBody['repeatedPatterns'][number] {
+  return {
+    id,
+    itemSemanticNodeIds,
+    axis: 'y',
+    itemCount: itemCountOverride ?? itemSemanticNodeIds.length,
+    similarity: 1,
+    confidence: 'medium',
+    evidence: [{ kind: 'visual-node', nodeId: 'v_p', reason: 'r' }],
+  };
+}
+
+function layoutCandidate(
+  id: string,
+  semanticNodeId: string,
+): SemanticViewBody['layoutCandidates'][number] {
+  return {
+    id,
+    semanticNodeId,
+    kind: 'absolute',
+    confidence: 'high',
+    constraints: [],
+    caveats: [],
   };
 }
 
@@ -107,7 +159,7 @@ describe('assertSemanticViewIntegrity', () => {
   });
 
   it('throws when screen pointer references a non-existent node', () => {
-    const body = bodyWith([screenNode()], 's_nowhere');
+    const body = bodyWith([screenNode()], { screenId: 's_nowhere' });
     expect(() => assertSemanticViewIntegrity(body)).toThrowError(
       /body.screen.semanticNodeId s_nowhere does not exist/,
     );
@@ -126,6 +178,109 @@ describe('assertSemanticViewIntegrity', () => {
     ]);
     expect(() => assertSemanticViewIntegrity(body)).toThrowError(
       /primaryVisualNodeId v_other not in visualNodeIds \[v_root\]/,
+    );
+  });
+});
+
+describe('assertSemanticViewIntegrity — cross-array references', () => {
+  it('passes when componentCandidates, repeatedPatterns, layoutCandidates all reference valid nodes', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b', 's_c'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+      regionNode('s_c', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      componentCandidates: [componentCandidate('cc_1', 's_a')],
+      repeatedPatterns: [repeatedPattern('rp_1', ['s_a', 's_b', 's_c'])],
+      layoutCandidates: [layoutCandidate('lc_1', 's_a')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).not.toThrow();
+  });
+
+  it('throws when ComponentCandidate.rootSemanticNodeId is dangling', () => {
+    const body = bodyWith([screenNode()], {
+      componentCandidates: [componentCandidate('cc_1', 's_missing')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /componentCandidate cc_1: rootSemanticNodeId s_missing does not exist/,
+    );
+  });
+
+  it('throws on duplicate ComponentCandidate id', () => {
+    const body = bodyWith([screenNode()], {
+      componentCandidates: [
+        componentCandidate('cc_1', 's_root'),
+        componentCandidate('cc_1', 's_root'),
+      ],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /duplicate ComponentCandidate id: cc_1/,
+    );
+  });
+
+  it('throws when RepeatedPattern.itemSemanticNodeIds contains a dangling id', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      repeatedPatterns: [repeatedPattern('rp_1', ['s_a', 's_b', 's_ghost'])],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /repeatedPattern rp_1: itemSemanticNodeIds entry s_ghost does not exist/,
+    );
+  });
+
+  it('throws when RepeatedPattern.itemCount disagrees with itemSemanticNodeIds.length', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b', 's_c'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+      regionNode('s_c', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      repeatedPatterns: [repeatedPattern('rp_1', ['s_a', 's_b', 's_c'], 4)],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /repeatedPattern rp_1: itemCount 4 does not match itemSemanticNodeIds.length 3/,
+    );
+  });
+
+  it('throws on duplicate RepeatedPattern id', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b', 's_c'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+      regionNode('s_c', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      repeatedPatterns: [
+        repeatedPattern('rp_1', ['s_a', 's_b', 's_c']),
+        repeatedPattern('rp_1', ['s_a', 's_b', 's_c']),
+      ],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /duplicate RepeatedPattern id: rp_1/,
+    );
+  });
+
+  it('throws when LayoutCandidate.semanticNodeId is dangling', () => {
+    const body = bodyWith([screenNode()], {
+      layoutCandidates: [layoutCandidate('lc_1', 's_missing')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /layoutCandidate lc_1: semanticNodeId s_missing does not exist/,
+    );
+  });
+
+  it('throws on duplicate LayoutCandidate id', () => {
+    const body = bodyWith([screenNode()], {
+      layoutCandidates: [layoutCandidate('lc_1', 's_root'), layoutCandidate('lc_1', 's_root')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /duplicate LayoutCandidate id: lc_1/,
     );
   });
 });
