@@ -284,3 +284,50 @@ describe('assertSemanticViewIntegrity — cross-array references', () => {
     );
   });
 });
+
+describe('assertSemanticViewIntegrity — global id uniqueness across arrays', () => {
+  it('throws when a SemanticNode id collides with a ComponentCandidate id', () => {
+    // Same token 'x_1' used for both a node and a candidate. Prefix
+    // convention (s_ / cc_) is a derive contract; validator does not
+    // enforce prefixes but does enforce global uniqueness of the token.
+    const body = bodyWith([screenNode({ id: 'x_1' })], {
+      screenId: 'x_1',
+      componentCandidates: [componentCandidate('x_1', 'x_1')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /id x_1 is reused across body: appears as both SemanticNode and ComponentCandidate/,
+    );
+  });
+
+  it('throws when a ComponentCandidate id collides with a RepeatedPattern id', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b', 's_c'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+      regionNode('s_c', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      componentCandidates: [componentCandidate('shared_1', 's_a')],
+      repeatedPatterns: [repeatedPattern('shared_1', ['s_a', 's_b', 's_c'])],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /id shared_1 is reused across body: appears as both ComponentCandidate and RepeatedPattern/,
+    );
+  });
+
+  it('throws when a RepeatedPattern id collides with a LayoutCandidate id', () => {
+    const nodes = [
+      screenNode({ childIds: ['s_a', 's_b', 's_c'] }),
+      regionNode('s_a', 's_root'),
+      regionNode('s_b', 's_root'),
+      regionNode('s_c', 's_root'),
+    ];
+    const body = bodyWith(nodes, {
+      repeatedPatterns: [repeatedPattern('shared_2', ['s_a', 's_b', 's_c'])],
+      layoutCandidates: [layoutCandidate('shared_2', 's_a')],
+    });
+    expect(() => assertSemanticViewIntegrity(body)).toThrowError(
+      /id shared_2 is reused across body: appears as both RepeatedPattern and LayoutCandidate/,
+    );
+  });
+});

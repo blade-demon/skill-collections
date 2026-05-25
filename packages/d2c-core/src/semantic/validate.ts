@@ -20,10 +20,12 @@
  *     `RepeatedPattern.itemSemanticNodeIds[*]`, and every
  *     `LayoutCandidate.semanticNodeId` resolves to a node in `body.nodes`;
  *   - `RepeatedPattern.itemCount` matches `itemSemanticNodeIds.length`;
- *   - ids inside `componentCandidates` / `repeatedPatterns` / `layoutCandidates`
- *     are unique within each array (per Stage 5A plan §3.5 prefixes already
- *     give global uniqueness across arrays, so we only enforce within-array
- *     uniqueness here).
+ *   - every id token appearing on a node, component candidate, repeated
+ *     pattern, or layout candidate is unique across the whole body — both
+ *     within and across arrays. The prefix convention in plan §3.5 makes
+ *     this collision rare by construction, but enforcing it here keeps
+ *     downstream consumers from having to disambiguate when a derive bug
+ *     reuses the same id for two different kinds of artifact.
  *
  * Any violation throws a `SemanticViewIntegrityError` whose `message`
  * names the offending id, the field, and the reason. `deriveSemanticView`
@@ -39,13 +41,27 @@ export class SemanticViewIntegrityError extends Error {
   }
 }
 
-export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
-  const nodesById = new Map<string, SemanticViewBody['nodes'][number]>();
+type IdKind = 'SemanticNode' | 'ComponentCandidate' | 'RepeatedPattern' | 'LayoutCandidate';
 
-  for (const node of body.nodes) {
-    if (nodesById.has(node.id)) {
-      throw new SemanticViewIntegrityError(`duplicate SemanticNode id: ${node.id}`);
+export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
+  const idOwners = new Map<string, IdKind>();
+  const registerId = (id: string, kind: IdKind): void => {
+    const existing = idOwners.get(id);
+    if (existing === undefined) {
+      idOwners.set(id, kind);
+      return;
     }
+    if (existing === kind) {
+      throw new SemanticViewIntegrityError(`duplicate ${kind} id: ${id}`);
+    }
+    throw new SemanticViewIntegrityError(
+      `id ${id} is reused across body: appears as both ${existing} and ${kind}`,
+    );
+  };
+
+  const nodesById = new Map<string, SemanticViewBody['nodes'][number]>();
+  for (const node of body.nodes) {
+    registerId(node.id, 'SemanticNode');
     nodesById.set(node.id, node);
   }
 
@@ -97,12 +113,8 @@ export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
     );
   }
 
-  const componentCandidateIds = new Set<string>();
   for (const candidate of body.componentCandidates) {
-    if (componentCandidateIds.has(candidate.id)) {
-      throw new SemanticViewIntegrityError(`duplicate ComponentCandidate id: ${candidate.id}`);
-    }
-    componentCandidateIds.add(candidate.id);
+    registerId(candidate.id, 'ComponentCandidate');
     if (!nodesById.has(candidate.rootSemanticNodeId)) {
       throw new SemanticViewIntegrityError(
         `componentCandidate ${candidate.id}: rootSemanticNodeId ${candidate.rootSemanticNodeId} does not exist in body.nodes`,
@@ -110,12 +122,8 @@ export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
     }
   }
 
-  const repeatedPatternIds = new Set<string>();
   for (const pattern of body.repeatedPatterns) {
-    if (repeatedPatternIds.has(pattern.id)) {
-      throw new SemanticViewIntegrityError(`duplicate RepeatedPattern id: ${pattern.id}`);
-    }
-    repeatedPatternIds.add(pattern.id);
+    registerId(pattern.id, 'RepeatedPattern');
     if (pattern.itemCount !== pattern.itemSemanticNodeIds.length) {
       throw new SemanticViewIntegrityError(
         `repeatedPattern ${pattern.id}: itemCount ${pattern.itemCount} does not match itemSemanticNodeIds.length ${pattern.itemSemanticNodeIds.length}`,
@@ -130,12 +138,8 @@ export function assertSemanticViewIntegrity(body: SemanticViewBody): void {
     }
   }
 
-  const layoutCandidateIds = new Set<string>();
   for (const layout of body.layoutCandidates) {
-    if (layoutCandidateIds.has(layout.id)) {
-      throw new SemanticViewIntegrityError(`duplicate LayoutCandidate id: ${layout.id}`);
-    }
-    layoutCandidateIds.add(layout.id);
+    registerId(layout.id, 'LayoutCandidate');
     if (!nodesById.has(layout.semanticNodeId)) {
       throw new SemanticViewIntegrityError(
         `layoutCandidate ${layout.id}: semanticNodeId ${layout.semanticNodeId} does not exist in body.nodes`,
