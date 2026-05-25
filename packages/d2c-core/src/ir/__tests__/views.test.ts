@@ -6,8 +6,33 @@ import {
   VisualViewSchema,
 } from '../views';
 import { makeVisualBlock } from '../../preview/__tests__/fixtures';
+import type { SemanticViewBody } from '../../semantic/schema';
 
 const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.2.0' };
+
+function makeMinimalSemanticViewBody(): SemanticViewBody {
+  return {
+    screen: { semanticNodeId: 's_root', name: 'Screen' },
+    nodes: [
+      {
+        kind: 'screen',
+        id: 's_root',
+        name: 'Screen',
+        primaryVisualNodeId: 'v_root',
+        visualNodeIds: ['v_root'],
+        childIds: [],
+        bounds: { x: 0, y: 0, width: 100, height: 100 },
+        confidence: 'high',
+        evidence: [{ kind: 'visual-node', nodeId: 'v_root', reason: 'r' }],
+        source: { nodeIds: ['v_root'] },
+      },
+    ],
+    componentCandidates: [],
+    repeatedPatterns: [],
+    layoutCandidates: [],
+    warnings: [],
+  };
+}
 
 describe('derived view envelopes', () => {
   it('parses a minimal visual-view', () => {
@@ -35,7 +60,7 @@ describe('derived view envelopes', () => {
       SemanticViewSchema.safeParse({
         kind: 'semantic-view',
         generatedFrom,
-        body: {},
+        body: makeMinimalSemanticViewBody(),
         extra: 1,
       }).success,
     ).toBe(false);
@@ -61,6 +86,20 @@ describe('derived view envelopes', () => {
     ).toBe(true);
   });
 
+  it('accepts an optional visualViewHash in generatedFrom (added in Stage 5A)', () => {
+    expect(
+      SemanticViewSchema.safeParse({
+        kind: 'semantic-view',
+        generatedFrom: {
+          ...generatedFrom,
+          designIrHash: 'abc',
+          visualViewHash: 'def',
+        },
+        body: makeMinimalSemanticViewBody(),
+      }).success,
+    ).toBe(true);
+  });
+
   it('rejects an invalid visual-view body', () => {
     expect(
       VisualViewSchema.safeParse({
@@ -71,14 +110,24 @@ describe('derived view envelopes', () => {
     ).toBe(false);
   });
 
-  it('accepts arbitrary content inside the semantic-view loose body', () => {
+  it('parses a minimal semantic-view body (tightened in Stage 5A)', () => {
+    expect(
+      SemanticViewSchema.safeParse({
+        kind: 'semantic-view',
+        generatedFrom,
+        body: makeMinimalSemanticViewBody(),
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects an arbitrary record as semantic-view body now that the body is typed', () => {
     expect(
       SemanticViewSchema.safeParse({
         kind: 'semantic-view',
         generatedFrom,
         body: { candidates: [{ kind: 'card' }], anything: [1, 2] },
       }).success,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('interaction-spec and component-plan share the contract status enum', () => {

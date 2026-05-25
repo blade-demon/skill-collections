@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { ContractStatusSchema } from './schema';
 import { VisualBlockSchema } from './visual';
+import { SemanticViewBodySchema } from '../semantic/schema';
 
 /**
  * Provenance back-reference carried by every derived view and contract, so an
@@ -16,6 +17,13 @@ export const GeneratedFromSchema = z
      * Stage 1; populated for real once content hashing lands in Stage 4.
      */
     designIrHash: z.string().optional(),
+    /**
+     * Hash of the `visual-view.json` a downstream artifact (semantic-view,
+     * interaction-spec, component-plan) was derived from. Added in Stage 5A;
+     * `deriveSemanticView` writes it. Optional at the schema level so the
+     * field can be absent on the upstream `visual-view` itself.
+     */
+    visualViewHash: z.string().optional(),
   })
   .strict();
 export type GeneratedFrom = z.infer<typeof GeneratedFromSchema>;
@@ -36,7 +44,7 @@ export const SemanticViewSchema = z
   .object({
     kind: z.literal('semantic-view'),
     generatedFrom: GeneratedFromSchema,
-    body: z.record(z.unknown()),
+    body: SemanticViewBodySchema,
   })
   .strict();
 export type SemanticView = z.infer<typeof SemanticViewSchema>;
