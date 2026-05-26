@@ -100,6 +100,21 @@ describe('derived view envelopes', () => {
     ).toBe(true);
   });
 
+  it('accepts an optional semanticViewHash in generatedFrom (added in Stage 5B)', () => {
+    expect(
+      SemanticViewSchema.safeParse({
+        kind: 'semantic-view',
+        generatedFrom: {
+          ...generatedFrom,
+          designIrHash: 'abc',
+          visualViewHash: 'def',
+          semanticViewHash: 'ghi',
+        },
+        body: makeMinimalSemanticViewBody(),
+      }).success,
+    ).toBe(true);
+  });
+
   it('rejects an invalid visual-view body', () => {
     expect(
       VisualViewSchema.safeParse({

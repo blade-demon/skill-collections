@@ -24,6 +24,13 @@ export const GeneratedFromSchema = z
      * field can be absent on the upstream `visual-view` itself.
      */
     visualViewHash: z.string().optional(),
+    /**
+     * Hash of the `semantic-view.json` an interaction-spec or component-plan
+     * was derived from. Added in Stage 5B; `deriveInteractionSpec` writes
+     * it. Optional at the schema level so the field can be absent on
+     * upstream artifacts (visual-view / semantic-view themselves).
+     */
+    semanticViewHash: z.string().optional(),
   })
   .strict();
 export type GeneratedFrom = z.infer<typeof GeneratedFromSchema>;
