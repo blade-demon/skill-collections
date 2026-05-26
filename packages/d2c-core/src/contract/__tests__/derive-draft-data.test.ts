@@ -45,4 +45,22 @@ describe('deriveInteractionSpec — draft dataModel heuristic', () => {
     const { interactionSpec } = deriveInteractionSpec(makeMixedTextMediaView());
     expect(interactionSpec.body.coverage.dataBinding.status).toBe('draft');
   });
+
+  it('preserves PascalCase node names through camelCase for slot names — HeroImage → heroImage', () => {
+    const { interactionSpec } = deriveInteractionSpec(makeMixedTextMediaView());
+    const heroSlot = interactionSpec.body.dataModels.find((d) => d.slotName === 'heroImage');
+    const avatarSlot = interactionSpec.body.dataModels.find((d) => d.slotName === 'avatarImage');
+    expect(heroSlot).toBeDefined();
+    expect(avatarSlot).toBeDefined();
+  });
+
+  it('media + assetRef warnings persist on body.warnings (not only the function return value)', () => {
+    const { interactionSpec, warnings } = deriveInteractionSpec(makeMixedTextMediaView());
+    /* 2 media nodes with assetRef → 2 media-as-url warnings, each visible
+     * on both surfaces. */
+    expect(warnings.filter((w) => w.code === 'interaction-draft-media-as-url')).toHaveLength(2);
+    expect(
+      interactionSpec.body.warnings.filter((w) => w.code === 'interaction-draft-media-as-url'),
+    ).toHaveLength(2);
+  });
 });

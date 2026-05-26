@@ -14,10 +14,31 @@ describe('deriveInteractionSpec — draft event heuristic (button)', () => {
     for (const e of buttonEvents) {
       expect(e.confidence).toBe('low');
       expect(e.payload).toEqual({});
-      expect(e.handlerProp).toBe('on' + e.eventName.charAt(0).toUpperCase() + e.eventName.slice(1));
     }
 
     expect(warnings.filter((w) => w.code === 'interaction-draft-button-from-name')).toHaveLength(2);
+  });
+
+  it('preserves internal capitalization through camelCase — PrimaryButton → primaryButtonClick / onPrimaryButtonClick', () => {
+    /* Locks down the bug where camelCase('PrimaryButton') collapsed to
+     * 'primarybutton' (lost internal capital), making the event name
+     * 'primarybuttonClick' and the handler prop 'onPrimarybuttonClick'. */
+    const { interactionSpec } = deriveInteractionSpec(makeButtonyView());
+    const eventNames = interactionSpec.body.events.map((e) => e.eventName).sort();
+    expect(eventNames).toContain('primaryButtonClick');
+
+    const primaryEvent = interactionSpec.body.events.find(
+      (e) => e.eventName === 'primaryButtonClick',
+    );
+    expect(primaryEvent).toBeDefined();
+    expect(primaryEvent!.handlerProp).toBe('onPrimaryButtonClick');
+  });
+
+  it('normalizes non-alphanumeric separators in node names — "Send CTA" → sendCtaClick / onSendCtaClick', () => {
+    const { interactionSpec } = deriveInteractionSpec(makeButtonyView());
+    const sendCtaEvent = interactionSpec.body.events.find((e) => e.eventName === 'sendCtaClick');
+    expect(sendCtaEvent).toBeDefined();
+    expect(sendCtaEvent!.handlerProp).toBe('onSendCtaClick');
   });
 
   it('does NOT promote a text node literally named "Send" to an event (kind guard)', () => {
@@ -63,5 +84,23 @@ describe('deriveInteractionSpec — coverage reflects drafted events', () => {
      * input match → event candidate is produced. */
     const { interactionSpec } = deriveInteractionSpec(bridgedFullChat());
     expect(interactionSpec.body.coverage.events.status).toBe('draft');
+  });
+});
+
+describe('deriveInteractionSpec — draft warnings persist on body.warnings', () => {
+  it('writes heuristic warnings to both body.warnings and the return value', () => {
+    /* Earlier this PR shipped body.warnings as a hardcoded [], so the
+     * spec persisted to disk lost media-as-url and button/input-from-name
+     * caveats. Both surfaces should now agree. */
+    const { interactionSpec, warnings } = deriveInteractionSpec(makeButtonyView());
+
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(interactionSpec.body.warnings).toHaveLength(warnings.length);
+    expect(interactionSpec.body.warnings.map((w) => w.code).sort()).toEqual(
+      warnings.map((w) => w.code).sort(),
+    );
+    expect(
+      interactionSpec.body.warnings.some((w) => w.code === 'interaction-draft-button-from-name'),
+    ).toBe(true);
   });
 });

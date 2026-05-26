@@ -181,7 +181,11 @@ export function deriveInteractionSpec(
           notes: 'draft mode: state transitions require an annotated state machine',
         },
       },
-      warnings: [],
+      /* Persist heuristic warnings inside the spec body. The same list is
+       * also returned from this function (`warnings`), but downstream
+       * consumers serialize body.warnings — review caveats like
+       * `interaction-draft-media-as-url` must survive the round-trip. */
+      warnings: drafted.warnings,
     };
   }
 
@@ -411,9 +415,22 @@ function buildVisualNodeIndex(root: VisualNode): Map<string, VisualNode> {
   return out;
 }
 
-/** "Send Button" → "sendButton"; falls back to 'unnamed' for empty input. */
+/**
+ * Convert an arbitrary identifier-ish string into camelCase. Splits on
+ * non-alphanumeric runs AND on lowercase→uppercase boundaries, so PascalCase
+ * input is preserved:
+ *
+ *   "Send Button"   → "sendButton"
+ *   "PrimaryButton" → "primaryButton"  ← the bug-fixing case
+ *   "send-cta"      → "sendCta"
+ *   "HeroImage"     → "heroImage"
+ *
+ * Acronyms (consecutive capitals) are NOT specially handled — "XMLParser"
+ * becomes "xmlparser" — but 5B fixtures avoid that shape. Falls back to
+ * 'unnamed' for empty/symbol-only input.
+ */
 export function camelCase(input: string): string {
-  const parts = input.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  const parts = splitIdentifier(input);
   if (parts.length === 0) return 'unnamed';
   const [first, ...rest] = parts;
   return (
@@ -425,6 +442,25 @@ export function camelCase(input: string): string {
 export function pascalCase(input: string): string {
   const c = camelCase(input);
   return c.charAt(0).toUpperCase() + c.slice(1);
+}
+
+/**
+ * Split an identifier on (a) non-alphanumeric runs and then (b) on
+ * lowercase→uppercase boundaries. Step (b) is what makes camelCase work
+ * for PascalCase input without losing internal capitalization.
+ */
+function splitIdentifier(input: string): string[] {
+  const segments = input.split(/[^a-zA-Z0-9]+/).filter(Boolean);
+  const parts: string[] = [];
+  for (const segment of segments) {
+    /* Insert a separator before every uppercase letter that follows a
+     * lowercase letter or digit, then split on it. */
+    const expanded = segment.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+    for (const piece of expanded.split(' ')) {
+      if (piece.length > 0) parts.push(piece);
+    }
+  }
+  return parts;
 }
 
 /* ── id generation (plan §3.6) ───────────────────────────────────────────── */

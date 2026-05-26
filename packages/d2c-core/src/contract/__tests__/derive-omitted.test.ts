@@ -73,4 +73,15 @@ describe('deriveInteractionSpec — mode=omitted', () => {
       /mode='draft' must not carry an approval object/,
     );
   });
+
+  it('omitted mode leaves body.warnings empty (no heuristics ran)', () => {
+    const input = bridgedFullChat();
+    const { interactionSpec, warnings } = deriveInteractionSpec({
+      ...input,
+      mode: 'omitted',
+      approval,
+    });
+    expect(interactionSpec.body.warnings).toHaveLength(0);
+    expect(warnings).toHaveLength(0);
+  });
 });
