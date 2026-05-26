@@ -107,6 +107,32 @@ component-plan 用 3 档 status 表达 plan 生命周期,再用 mode 表达 code
 `draft` / `in-review` interaction-spec 不能生成 component-plan。它们可以作为 Stage 5B review
 产物存在,但 5C 的职责是把可进入 Gate 2 的组合固化为 codegen plan。
 
+#### 3.2.1 显式拒绝的两类组合 — 不是 oversight,是产品决策
+
+矩阵的 "其它组合" 一行覆盖两类真实场景,都被有意拒绝。这里把决策写明,方便 5D / Stage 6 review
+时直接当事实引用,而不是当作 5C 漏掉了一行。
+
+**A. `draft` / `in-review` interaction → 拒绝任何 mode**
+
+- 流程约束:若团队希望在 interaction-spec 尚未 sign-off 前先排 UI,**先把 interaction 显式落到
+  `omitted` 或 `deferred`**(写明 reason / approvedBy / approvedAt)再开 component-plan。
+- 理由:`component-plan` 进入 codegen + Gate 2 审批链;让一个 review 中的 interaction 上车意味着
+  下游 codegen 与 review artifact 都基于会被改写的事实,违反 5 阶段 hash chain 的契约语义。
+- 影响:`draft` interaction 想跑 5C → derive throw,错误信息提示先把 interaction 落到
+  `omitted` / `deferred`。
+
+**B. `approved` interaction + `presentational` mode → 拒绝**
+
+- 流程含义:`approved` 意味着团队对完整行为契约 sign-off;此时再选 `presentational` 等于人为
+  跳过已经 approved 的事实,把 plan 退化成 stub。
+- 5C 的选择:**拒绝**。要先发视觉版,把 interaction 显式落 `deferred`(明确 "建模暂缓");
+  要保留 interactive 履历,就走 `approved + interactive`。同一个 interaction-spec 不应该同时承担
+  "已 sign-off" 与 "请假装没设计完" 两种相反语义。
+- 可改性:这条是约束,不是技术天花板。如果团队后续真的需要 `approved + presentational`
+  (例如"行为已设计、本次发布只先发视觉,但保留 approved 履历不再走 deferred 回退"),
+  到时改两处:§3.2 矩阵加一行,validator 与 derive `mode × interaction.status` 校验放行;
+  无需改 schema。在改之前,5C derive 直接 throw。
+
 `omitted` 与 `deferred` 对 data model 的态度不同:
 
 - `interactionSpec.status === 'omitted'`:表示本次明确不建模交互,`body.dataModels` 应为空。
@@ -114,7 +140,9 @@ component-plan 用 3 档 status 表达 plan 生命周期,再用 mode 表达 code
   `presentational-stub` props;输出保持纯视觉骨架。
 - `interactionSpec.status === 'deferred'`:表示交互建模暂缓,`body.dataModels` 可以非空,并可被
   presentational plan 消费成 optional `presentational-stub` props,为后续 interactive 升级保留
-  prop 形状线索。
+  prop 形状线索。"optional" 落到 schema 上即
+  `PlannedPropSchema.required === false`(不是把字段做成 schema 级 optional);
+  `source` 仍写 `'presentational-stub'`。
 
 ### 3.3 approval 是 level discriminated union,由 status/mode 约束
 
@@ -416,7 +444,8 @@ export interface DeriveComponentPlanResult {
    - `interactionSpec.status === 'omitted'` 时不消费 `interactionSpec.body.dataModels`;若非空则
      warning,并保持纯视觉骨架;
    - `interactionSpec.status === 'deferred'` 时,从 `interactionSpec.body.dataModels` 生成
-     optional props,source 为 `presentational-stub`;
+     optional props(schema 层即 `PlannedPropSchema.required = false`),
+     `source = 'presentational-stub'`;
    - warnings 写明 behavior stubbed,并保留 `interactionCoverage`。
 6. interactive mode:
    - 从 `interactionSpec.body.events` 生成 `eventBindings` 与 handler props;
@@ -499,6 +528,29 @@ export function interactiveInput(makeInput = makeButtonyView): DeriveComponentPl
 `approveForInteractiveFixture()` 只在测试中使用,手动把 coverage 至少一项设为 `covered`,
 写 `approvedBy` / `approvedAt`,不改 production derive 逻辑。
 
+**实现注意**:`InteractionSpecSchema` 是 `z.discriminatedUnion('status', [...])`,且每条分支都
+`.strict()`。`approved` 分支带 `approvedBy` / `approvedAt`,`draft` 分支没有;`{ ...drafted, status: 'approved', approvedBy, approvedAt }`
+这种 spread 让 zod 的 discriminated-union narrowing 看到的是混合 shape,在某些 zod 版本下会被
+判成 `draft` 分支的 strict 残留导致 parse 失败。helper 必须重新组装 envelope:
+
+```ts
+const approved: InteractionSpec = {
+  kind: drafted.kind,
+  generatedFrom: drafted.generatedFrom,
+  body: withCoveredEntry(drafted.body),
+  status: 'approved',
+  approvedBy: 'alice',
+  approvedAt: '2026-05-26T00:00:00Z',
+};
+```
+
+而不是:
+
+```ts
+// ❌ 不要这样写,可能撞 strict 分支
+const approved = { ...drafted, status: 'approved', approvedBy: '…', approvedAt: '…' };
+```
+
 ## 9. 测试矩阵
 
 `packages/d2c-core/src/contract/__tests__/` 新增:
@@ -573,27 +625,48 @@ Review 重点:
 
 ### 5C-PR-3 — wiring + README
 
-文件:
+**Barrel 策略沿用 5B `InteractionSpec` 已验证的布局**(无 "或" 二选一,严格固定):
 
-- `packages/d2c-core/src/ir/views.ts`
-  - 删除本地老 `ComponentPlanSchema` + type;
-  - re-export canonical:
-    `export { ComponentPlanSchema, type ComponentPlan, ComponentPlanModeSchema, type ComponentPlanMode } from '../contract/component-plan-schema';`
-- `packages/d2c-core/src/ir/index.ts`
-  - 如果 root export 冲突,保持 `ComponentPlanSchema` 不从 `ir` barrel 输出,或改为明确从 contract 输出。
-- `packages/d2c-core/src/contract/index.ts`
-  - 导出 component-plan schema / validate / derive。
-- `packages/d2c-core/src/index.ts`
-  - 显式处理 contract 与 ir 的同名 export,避免 root `ComponentPlanSchema` ambiguity。
-- `packages/d2c-core/src/ir/__tests__/views.test.ts`
+1. canonical schema 唯一来源是 `packages/d2c-core/src/contract/component-plan-schema.ts`。
+2. `contract/index.ts` `export * from './component-plan-schema'`(同 derive / validate);
+   `ComponentPlanSchema` 通过这条路径成为 5C 公共面。
+3. `ir/views.ts` 删掉本地 `ComponentPlanSchema`,改为 re-export canonical,仅为兼容历史
+   直接 import `from '.../ir/views'` 的 caller(测试 / 内部模块):
+
+   ```ts
+   export {
+     ComponentPlanSchema,
+     type ComponentPlan,
+     ComponentPlanModeSchema,
+     type ComponentPlanMode,
+   } from '../contract/component-plan-schema';
+   ```
+
+4. `ir/index.ts` **从显式 re-export 清单里删除** `ComponentPlanSchema` / `type ComponentPlan`
+   两行(当前 `ir/index.ts` 用 `export { VisualViewSchema, …, ComponentPlanSchema, type ComponentPlan } from './views'`);删除后 ir barrel 不再向外导出 `ComponentPlanSchema`。
+5. `src/index.ts` 不需要改:它已经 `export * from './ir'` 与 `export * from './contract'`,在 (4) 之后
+   `ComponentPlanSchema` 只来自 `./contract`,root barrel 无 ambiguity。这条与 5B `InteractionSpecSchema` 走的是同一条规约。
+6. canonical `component-plan-schema.ts` 的依赖 **不许经过** `ir/views.ts`,只从下列三处直接 import:
+   - `WarningSchema` / `ConfidenceSchema` / `ContractStatusSchema` ← `../ir/schema`;
+   - `GeneratedFromSchema` ← `../ir/generated-from`;
+   - `InteractionCoverageSchema`(InteractionCoverage 字段类型)← `./interaction-schema`。
+     `derive-component-plan.ts` / `component-plan-validate.ts` 类似:跨 contract / ir 时走 schema 文件直链,不走 barrel,避免 5C / 5B 互相循环。
+
+涉及文件:
+
+- `packages/d2c-core/src/ir/views.ts`(删除老 `ComponentPlanSchema`,改 re-export canonical)
+- `packages/d2c-core/src/ir/index.ts`(从显式清单删 `ComponentPlanSchema` / `type ComponentPlan`)
+- `packages/d2c-core/src/contract/index.ts`(新增 `export * from './component-plan-schema'` 等三条)
+- `packages/d2c-core/src/ir/__tests__/views.test.ts`(按 §9 修)
 - `packages/d2c-core/src/contract/__tests__/component-plan-views-integration.test.ts`
 - `packages/d2c-core/README.md`
 
 Review 重点:
 
-- root barrel 只有一个可用 `ComponentPlanSchema` binding;
-- `ir/views.ts` direct import path 仍可用;
-- 5B InteractionSpec wiring 不 regress;
+- root barrel 上 `ComponentPlanSchema` 仅来自 `./contract`,无同名冲突;
+- `ir/views.ts` direct import 路径仍可用(回兼);
+- `component-plan-schema.ts` 没引用 `ir/views.ts`,无循环;
+- 5B `InteractionSpecSchema` wiring 不 regress;
 - README 清楚说明 5C 仍不生成 code。
 
 ## 11. 与 5D / Stage 6 的边界
