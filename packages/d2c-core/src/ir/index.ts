@@ -7,5 +7,13 @@ export * from './version';
 export * from './visual';
 export * from './semantic';
 export * from './schema';
-export * from './views';
+export * from './generated-from';
+export {
+  VisualViewSchema,
+  type VisualView,
+  SemanticViewSchema,
+  type SemanticView,
+  ComponentPlanSchema,
+  type ComponentPlan,
+} from './views';
 export * from './validate';

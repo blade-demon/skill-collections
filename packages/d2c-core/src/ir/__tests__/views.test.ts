@@ -1,14 +1,28 @@
 import { describe, it, expect } from 'vitest';
+import * as rootD2c from '../../index';
 import {
   ComponentPlanSchema,
   InteractionSpecSchema,
   SemanticViewSchema,
   VisualViewSchema,
 } from '../views';
+import { InteractionStatusSchema, type InteractionSpecBody } from '../../contract';
 import { makeVisualBlock } from '../../preview/__tests__/fixtures';
 import type { SemanticViewBody } from '../../semantic/schema';
 
 const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.2.0' };
+const interactionGeneratedFrom = {
+  ...generatedFrom,
+  designIrHash: 'a'.repeat(64),
+  visualViewHash: 'b'.repeat(64),
+  semanticViewHash: 'c'.repeat(64),
+};
+
+const approvalFields = {
+  reason: 'visual-only delivery for this review',
+  approvedBy: 'alice',
+  approvedAt: '2026-05-26T00:00:00Z',
+};
 
 function makeMinimalSemanticViewBody(): SemanticViewBody {
   return {
@@ -32,6 +46,50 @@ function makeMinimalSemanticViewBody(): SemanticViewBody {
     layoutCandidates: [],
     warnings: [],
   };
+}
+
+function makeEmptyInteractionBody(
+  coverageStatus: 'draft' | 'omitted' | 'deferred' = 'omitted',
+): InteractionSpecBody {
+  return {
+    components: [],
+    states: [],
+    events: [],
+    dataModels: [],
+    stateTransitions: [],
+    coverage: {
+      states: { status: coverageStatus, notes: '' },
+      events: { status: coverageStatus, notes: '' },
+      dataBinding: { status: coverageStatus, notes: '' },
+      stateTransitions: { status: coverageStatus, notes: '' },
+    },
+    warnings: [],
+  };
+}
+
+function minimalInteractionSpec(status: string): Record<string, unknown> {
+  const base = {
+    kind: 'interaction-spec',
+    generatedFrom: interactionGeneratedFrom,
+    status,
+    body: makeEmptyInteractionBody(
+      status === 'draft' || status === 'in-review' || status === 'approved'
+        ? 'draft'
+        : (status as 'omitted' | 'deferred'),
+    ),
+  };
+
+  if (status === 'approved') {
+    return {
+      ...base,
+      approvedBy: approvalFields.approvedBy,
+      approvedAt: approvalFields.approvedAt,
+    };
+  }
+  if (status === 'omitted' || status === 'deferred') {
+    return { ...base, ...approvalFields };
+  }
+  return base;
 }
 
 describe('derived view envelopes', () => {
@@ -145,16 +203,64 @@ describe('derived view envelopes', () => {
     ).toBe(false);
   });
 
-  it('interaction-spec and component-plan share the contract status enum', () => {
-    for (const status of ['draft', 'in-review', 'approved'] as const) {
+  it('parses interaction-spec envelopes for all five Stage 5B statuses', () => {
+    for (const status of ['draft', 'in-review', 'approved', 'omitted', 'deferred'] as const) {
+      expect(InteractionSpecSchema.safeParse(minimalInteractionSpec(status)).success).toBe(true);
+    }
+  });
+
+  it('rejects arbitrary records as interaction-spec body now that the body is typed', () => {
+    expect(
+      InteractionSpecSchema.safeParse({
+        kind: 'interaction-spec',
+        generatedFrom: interactionGeneratedFrom,
+        status: 'draft',
+        body: { anything: [1, 2], stillLoose: true },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects draft and in-review interaction specs carrying approval fields', () => {
+    for (const status of ['draft', 'in-review'] as const) {
       expect(
         InteractionSpecSchema.safeParse({
-          kind: 'interaction-spec',
-          generatedFrom,
-          status,
-          body: {},
+          ...minimalInteractionSpec(status),
+          approvedBy: approvalFields.approvedBy,
         }).success,
-      ).toBe(true);
+      ).toBe(false);
+    }
+  });
+
+  it('rejects approved interaction specs missing required approval fields', () => {
+    for (const missing of ['approvedBy', 'approvedAt'] as const) {
+      const spec = minimalInteractionSpec('approved');
+      delete spec[missing];
+      expect(InteractionSpecSchema.safeParse(spec).success).toBe(false);
+    }
+  });
+
+  it('rejects omitted and deferred interaction specs missing omission approval fields', () => {
+    for (const status of ['omitted', 'deferred'] as const) {
+      for (const missing of ['reason', 'approvedBy', 'approvedAt'] as const) {
+        const spec = minimalInteractionSpec(status);
+        delete spec[missing];
+        expect(InteractionSpecSchema.safeParse(spec).success).toBe(false);
+      }
+    }
+  });
+
+  it('accepts semanticViewHash in interaction-spec generatedFrom', () => {
+    expect(InteractionSpecSchema.safeParse(minimalInteractionSpec('draft')).success).toBe(true);
+  });
+
+  it('root barrel exposes the Stage 5B contract surface', () => {
+    const rootExports = rootD2c as unknown as Record<string, unknown>;
+    expect(rootExports.InteractionStatusSchema).toBe(InteractionStatusSchema);
+    expect(rootExports.InteractionSpecSchema).toBe(InteractionSpecSchema);
+  });
+
+  it('component-plan keeps the three-state contract status enum', () => {
+    for (const status of ['draft', 'in-review', 'approved'] as const) {
       expect(
         ComponentPlanSchema.safeParse({
           kind: 'component-plan',
@@ -167,6 +273,13 @@ describe('derived view envelopes', () => {
   });
 
   it('rejects an unknown status', () => {
+    expect(
+      InteractionSpecSchema.safeParse({
+        ...minimalInteractionSpec('draft'),
+        status: 'published',
+      }).success,
+    ).toBe(false);
+
     expect(
       ComponentPlanSchema.safeParse({
         kind: 'component-plan',
