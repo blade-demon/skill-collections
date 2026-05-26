@@ -24,7 +24,9 @@
   - public TS types。
 - 新建 `packages/d2c-core/src/contract/component-plan-validate.ts`:
   - `assertComponentPlanIntegrity(plan, { semanticNodeIds?, interactionSpec? })`;
-  - shape 之外的 graph / mode / approval / upstream 引用校验。
+  - shape 与 approval(status × mode × approval)之外的 graph / upstream 引用 / mode × interaction-status
+    组合校验;approval shape 由 `ComponentPlanSchema.superRefine()` 在 parse 阶段强制(§3.3),
+    validator 不重复实现。
 - 给 `GeneratedFromSchema` 加 `interactionSpecHash?: string`。5C derive 强制写入。
 - 新建 `packages/d2c-core/src/contract/derive-component-plan.ts`:
   `deriveComponentPlan({ designIr, visualView, semanticView, interactionSpec, mode })`
@@ -136,13 +138,19 @@ type ComponentPlanApproval =
 ```
 
 Schema 层使用 `ComponentPlanApprovalSchema = z.discriminatedUnion('level', [...])`,
-再在 `ComponentPlanSchema.superRefine()` 或 validator 中收紧:
+**status × mode × approval shape 一律由 `ComponentPlanSchema.superRefine()` 在 parse 阶段强制**,
+`assertComponentPlanIntegrity()` 不重复校验 approval shape,只负责 graph / 引用类校验
+(§6)。具体规则:
 
 - `status === 'draft' | 'in-review'`:不允许带 `approval`。
 - `status === 'approved' && mode === 'interactive'`:必须带
   `approval.level === 'interactive'`。
 - `status === 'approved' && mode === 'presentational'`:必须带
   `approval.level === 'presentational'` 且 `acknowledgedBehaviorStubbed === true`。
+
+这样 `ComponentPlanSchema.safeParse()` 单独可信:任何持有合法 parse 结果的 caller 不必再
+跑 validator 才能确定 approval shape 合法。validator 只回答 "id 是否互引一致 / 是否还匹配
+upstream semantic / interaction" 这类 schema 表达不出来的问题。
 
 5C derive 默认返回 `status: 'draft'`,不自动写 approval。审批字段由开发者或 5D CLI/Gate
 流程写入后再校验。
@@ -330,7 +338,9 @@ artifact 路径常量与可选 ref 字段由 5D CLI 与 schema 一起引入,避�
 - `PlannedComponent.childSemanticNodeIds` 不得包含自身 `semanticNodeId`。
 - `PlannedLayout.semanticNodeId` 在 `body.components[*].semanticNodeId` 或
   root component child set 中有使用。
-- `status` / `approval` 规则见 §3.3。
+- `status` / `mode` / `approval` shape 不在 validator 校验:由
+  `ComponentPlanSchema.superRefine()` 在 parse 阶段强制(§3.3)。validator 假设输入已经
+  通过 schema parse,不重复实现该约束。
 - `mode === 'presentational'` 时,任何 `PlannedProp.source === 'presentational-stub'`
   必须可由 `interactionCoverage` 解释;不能静默制造未记录行为 stub。
 
@@ -378,10 +388,29 @@ export interface DeriveComponentPlanResult {
    `semanticView.body.nodes[*]` 中按该 id 查到 `kind === 'screen'` 的节点,用它的 `id` /
    `name` / `childIds` 构造 `rootComponent`。
 4. 从 `semanticView.body.componentCandidates` 构造 planned components:
-   - `role` 由 upstream semantic node kind 映射;
-   - `renderAs = 'component'` for component candidates;
-   - `confidence` 透传 candidate confidence;
-   - `childSemanticNodeIds` 使用 upstream semantic node childIds。
+   - 用 `componentCandidate.rootSemanticNodeId` 在 `semanticView.body.nodes[*]` 中查到
+     根节点,按下表将 semantic node `kind` 映射到 `PlannedComponent.role`:
+
+     | semantic node kind                                   | PlannedComponent.role                                  |
+     | ---------------------------------------------------- | ------------------------------------------------------ |
+     | `component`                                          | `'component'`                                          |
+     | `region`                                             | `'region'`                                             |
+     | `repeated-item`                                      | `'repeated-item'`                                      |
+     | `screen`                                             | 不出现在 candidate 循环;screen → rootComponent(step 3) |
+     | `text` / `media` / `icon` / `control` / `decorative` | **derive throw**(非法 candidate root)                  |
+
+     primitive / asset 类节点不应被 semantic derive 选为 componentCandidate root;若上游
+     仍这么给,5C derive 直接 throw,而不是凭空映射成 `'component'`。错误信息必须包含
+     `componentCandidate.id` 与触发的 `kind`,便于回到 5A 修。
+
+   - `renderAs` 在 5C 一律写 `'component'`。schema 的 `renderAs` 枚举保留 `'markup'`
+     / `'slot'` 作为 Stage 6 后续扩展位,5C derive 不发这两个值;PR-2 不会因为漏分类而需要决定
+     何时切到 `'markup'` / `'slot'`。
+   - `confidence` 透传 `componentCandidate.confidence`;
+   - `childSemanticNodeIds` 使用 upstream semantic node 的 `childIds`。非 componentCandidate
+     的子节点(text / media / icon / control / decorative)合法出现在这里,但不会成为独立
+     `PlannedComponent`;它们由父 component 内嵌 markup 或 `assetPlan` 承接。
+
 5. presentational mode:
    - 不生成真实 event bindings;
    - `interactionSpec.status === 'omitted'` 时不消费 `interactionSpec.body.dataModels`;若非空则
@@ -395,11 +424,27 @@ export interface DeriveComponentPlanResult {
    - `states` / `stateTransitions` 暂只记录在 warnings / coverage 中,不编造额外 state API。
 7. 从 `semanticView.body.layoutCandidates` 生成 `layoutPlan`;
    没有 layout candidate 的 planned component 使用 `strategy: 'absolute'` caveat。
-8. 从 semantic media/icon nodes 生成 `assetPlan`;有 visual `assetRef` 时写入,否则写 warning。
+8. 从 `kind === 'media' | 'icon'` 的 semantic 节点生成 `assetPlan`:
+   - 用 `semanticNode.primaryVisualNodeId` 作为查 key,在 `visualView` 上查 `assetRef`;
+     `primaryVisualNodeId` 是上游 5A canonical 一对一引用,5C **不** 退化到
+     `visualNodeIds[*]` fallback,避免 "同一 semantic media 在 visual-view 对到两个不同
+     asset" 的歧义被静默吞掉;
+   - 命中:写入 `PlannedAsset.assetRef`;
+   - 未命中:写 warning(不 throw),`PlannedAsset.assetRef` 不写;
+   - `PlannedAsset.required` 按 semantic node 的 `kind` 决定(`media` / `icon` 都为
+     `true`),`usage` 暂只产 `'image'`(media)/ `'icon'`(icon),`'background'` 留给
+     Stage 6 视觉策略,5C derive 不发。
 9. 生成 exports:
-   - root component default export;
-   - component candidates named export;
-   - exportName 来自 planned component name,必须 deterministic。
+   - root component default export;exportName 取 `PascalCase(rootSemanticNode.name)`;
+     当 name 为空 / 全部非 ASCII 时 fallback 到字面量 `'Screen'`。
+   - component candidates named export;exportName 取
+     `PascalCase(componentCandidate.suggestedName)`。
+   - **同名冲突直接 throw**,不静默 dedup、不加 counter / id 后缀。
+     冲突意味着上游 semantic-view 给出了两个 `suggestedName` PascalCase 后同名的
+     `componentCandidate`,这属于 5A 的事实问题,应该回 semantic-view review 修;5C 把它
+     显式抛出来,避免 codegen 后才发现两个不同组件被 import 成同一个名字。
+   - 抛错信息必须包含两侧 `componentCandidate.id`、原 `suggestedName` 与冲突后的
+     exportName,便于回到 semantic-view 定位。
 10. 通过 `ComponentPlanSchema.safeParse()` 与 `assertComponentPlanIntegrity()`。
 
 ### 7.3 deterministic ids
@@ -458,15 +503,16 @@ export function interactiveInput(makeInput = makeButtonyView): DeriveComponentPl
 
 `packages/d2c-core/src/contract/__tests__/` 新增:
 
-| 文件                                       | 测试点                                                                                                                                                  |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `component-plan-schema.test.ts`            | mode enum、approval level union、presentational 必须 acknowledgedBehaviorStubbed、body shape 正反例                                                     |
-| `component-plan-validate.test.ts`          | duplicate id、export.plannedComponentId 指向缺失 component、approval/status 不一致、mode/interaction status 不一致                                      |
-| `derive-component-presentational.test.ts`  | omitted/deferred + presentational 通过;omitted 不消费 dataModels、deferred 生成 stub props;生成 root/components/exports/layout/assets/coverage snapshot |
-| `derive-component-interactive.test.ts`     | approved + interactive 通过;events/dataModels 映射为 handler props / required data props                                                                |
-| `derive-component-hash.test.ts`            | designIr / visualView / semanticView / interactionSpec hash mismatch 各自 throw;输出 interactionSpecHash                                                |
-| `derive-component-determinism.test.ts`     | 同输入多次 deep equal;semantic arrays 顺序变化时 deterministic ids 稳定                                                                                 |
-| `component-plan-views-integration.test.ts` | `ir/views.ts` 的 `ComponentPlanSchema.safeParse(deriveComponentPlan(...).componentPlan)` 通过                                                           |
+| 文件                                       | 测试点                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `component-plan-schema.test.ts`            | mode enum、approval level union、approved+interactive 缺 approval / approved+presentational 缺 `acknowledgedBehaviorStubbed` / draft+approval 三类 superRefine 拒绝、body shape 正反例           |
+| `component-plan-validate.test.ts`          | duplicate id、`export.plannedComponentId` 指向缺失 component、artifact-chain 下 `plan.mode === 'interactive' + interactionSpec.status !== 'approved'` 与反向组合;**不** 重复 approval shape 校验 |
+| `derive-component-presentational.test.ts`  | omitted/deferred + presentational 通过;omitted 不消费 dataModels、deferred 生成 stub props;生成 root/components/exports/layout/assets/coverage snapshot                                          |
+| `derive-component-interactive.test.ts`     | approved + interactive 通过;events/dataModels 映射为 handler props / required data props                                                                                                         |
+| `derive-component-illegal-input.test.ts`   | componentCandidate.rootSemanticNodeId 指向 `text` / `media` / `icon` / `control` / `decorative` 节点时 derive throw;`PascalCase(suggestedName)` 撞名时 derive throw,错误信息含两侧 id            |
+| `derive-component-hash.test.ts`            | designIr / visualView / semanticView / interactionSpec hash mismatch 各自 throw;输出 `interactionSpecHash`                                                                                       |
+| `derive-component-determinism.test.ts`     | 同输入多次 deep equal;semantic arrays 顺序变化时 deterministic ids 稳定                                                                                                                          |
+| `component-plan-views-integration.test.ts` | `ir/views.ts` 的 `ComponentPlanSchema.safeParse(deriveComponentPlan(...).componentPlan)` 通过                                                                                                    |
 
 现有 `ir/__tests__/views.test.ts` 的 ComponentPlan 测试要在 PR-3 改写:
 
@@ -497,6 +543,8 @@ Review 重点:
 - `ContractStatusSchema` 保持 3 档;
 - `ComponentPlanModeSchema` 不混入 status;
 - approval level discriminated union 是否正确;
+- status × mode × approval shape 由 `ComponentPlanSchema.superRefine()` 一处强制,
+  validator 不在 PR-1 重复实现;
 - validator 是否分清 intra-plan 与 artifact-chain;
 - `interactionSpecHash` 是 optional schema 字段,derive 才强制写。
 
