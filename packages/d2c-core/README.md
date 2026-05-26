@@ -27,6 +27,8 @@ src/
   preview/   visual view derivation, static HTML preview, review report helpers
   semantic/  Stage 5A: semantic-view body schema, evidence, integrity
              validator, and deriveSemanticView
+  contract/  Stage 5B: interaction-spec schema, integrity validator, and
+             deriveInteractionSpec
   utils/     cross-cutting helpers (stable JSON / hash)
 ```
 
@@ -35,8 +37,8 @@ Provider-specific extraction and normalization code stays in
 of `.sketch` ZIP JSON lives in `skills/sketch-to-component/scripts/`, then hands
 validated IR to this package.
 
-Not yet in scope: interaction modeling, component planning, target package
-codegen, screenshot diff automation, and a full resumable pipeline runner.
+Not yet in scope: component planning, target package codegen, screenshot diff
+automation, and a full resumable pipeline runner.
 
 ## Semantic View (Stage 5A)
 
@@ -93,6 +95,68 @@ pattern id. No `Date.now`, no UUID, no counters.
 (both optional at the schema level, but `deriveSemanticView` always
 writes both). Downstream `interaction-spec` and `component-plan` will
 pin to `semantic-view`'s body hash in 5B / 5C.
+
+## Interaction Spec (Stage 5B)
+
+`src/contract/` adds the interaction contract that sits between
+`SemanticView` and the future `ComponentPlan`. It provides
+`InteractionSpecSchema`, `InteractionSpecBodySchema`,
+`InteractionStatusSchema`, `assertInteractionSpecIntegrity()`, and
+`deriveInteractionSpec()`.
+
+### Status model
+
+`InteractionStatusSchema` has five values: `draft`, `in-review`, `approved`,
+`omitted`, and `deferred`. It is intentionally separate from
+`ContractStatusSchema`, which remains the three-state lifecycle
+(`draft | in-review | approved`) used by `component-plan`. Presentational vs
+interactive output is a component-plan `mode` decision in Stage 5C, not an
+extra `ContractStatusSchema` state.
+
+### Derive modes
+
+`deriveInteractionSpec()` is a pure function. It validates the upstream hash
+chain (`designIrHash`, `visualViewHash`, `semanticViewHash`) and returns the
+same artifact for the same inputs. It supports three modes:
+
+- `draft` (default): mirrors semantic component candidates, drafts heuristic
+  events and data slots, persists caveats in `body.warnings`, and leaves
+  `states` / `stateTransitions` empty.
+- `omitted`: requires caller-supplied `{ reason, approvedBy, approvedAt }`,
+  writes top-level approval fields, leaves behavior arrays empty, and pins all
+  coverage entries to `omitted`.
+- `deferred`: same approval requirements and empty behavior arrays as
+  `omitted`, but pins coverage entries to `deferred`.
+
+### Draft heuristics
+
+Stage 5B uses conservative name and kind checks only:
+
+- `button`, `btn`, `cta`, `submit`, `send` on region/component nodes draft
+  click events.
+- `tab`, `tabs`, `tabbar` on region/component nodes draft select events.
+- `input`, `field`, `search`, `composer` on region/component nodes draft a
+  change event plus a value slot.
+- Text nodes draft string data slots.
+- Media nodes with `assetRef` draft string URL data slots and emit a warning.
+
+All heuristic candidates have confidence `low` or `medium`; `high` and
+`developer-provided` are reserved for explicit annotations or developer
+overrides.
+
+### Known limitations
+
+- No state-machine inference: without explicit annotations, `states` and
+  `stateTransitions` stay empty.
+- Annotation evidence is not consumed yet, even though schema entry points are
+  present.
+- Payload and data slot types only reach the `'string'` level in 5B.
+- Real `.sketch` contract golden fixtures are reserved for 5D, when the CLI
+  `contract` command and Gate 2 signal are introduced.
+
+`body.coverage` is the single data source Stage 6 will use to generate
+`interaction-coverage.md`. Codegen should not infer coverage by re-reading
+events or states directly.
 
 ## Verification
 

@@ -7,4 +7,5 @@ export * from './ir';
 export * from './provider';
 export * from './preview';
 export * from './semantic';
+export * from './contract';
 export * from './utils';
