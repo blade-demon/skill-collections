@@ -19,17 +19,13 @@
  * presentational vs interactive through a separate `mode` field, never
  * through status.
  *
- * PR boundary note: this module is the canonical definition; `ir/views.ts`
- * still carries a parallel old 3-state + loose-body `InteractionSpecSchema`
- * for PR-1. Because the root barrel (`src/index.ts`) does not yet
- * `export * from './contract'`, the two same-name exports are isolated.
- * PR-3 deletes the local copy in `ir/views.ts` and adds the contract
- * module to the root barrel.
+ * PR-3 wires this canonical schema into `ir/views.ts` for legacy direct
+ * imports, and into the root barrel as the public Stage 5B contract surface.
  */
 import { z } from 'zod';
 
+import { GeneratedFromSchema } from '../ir/generated-from';
 import { ConfidenceSchema, WarningSchema } from '../ir/schema';
-import { GeneratedFromSchema } from '../ir/views';
 
 /* ── status (5 values, independent of ContractStatusSchema) ─────────────── */
 
