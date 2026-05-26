@@ -27,6 +27,14 @@ export const GeneratedFromSchema = z
      * upstream artifacts (visual-view / semantic-view themselves).
      */
     semanticViewHash: z.string().optional(),
+    /**
+     * Hash of the `interaction-spec.json` a component-plan was derived from.
+     * Added in Stage 5C; `deriveComponentPlan` writes it. Optional at the
+     * schema level so the field can be absent on upstream artifacts
+     * (visual-view / semantic-view / interaction-spec themselves), but the
+     * 5C derive entry enforces presence + match for downstream callers.
+     */
+    interactionSpecHash: z.string().optional(),
   })
   .strict();
 export type GeneratedFrom = z.infer<typeof GeneratedFromSchema>;
