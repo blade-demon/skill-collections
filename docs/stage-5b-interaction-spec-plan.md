@@ -283,17 +283,30 @@ export const InteractionSpecBodySchema = z
 export type InteractionSpecBody = z.infer<typeof InteractionSpecBodySchema>;
 ```
 
-`InteractionSpecSchema` 自身放回 `ir/views.ts`(与 SemanticView 同位),用 5 档 status
-做 discriminated union,引用上面的 body schema。具体形态见 §3.2。
+**`InteractionSpecSchema` 自身在 `contract/interaction-schema.ts` 落地**(用 5 档 status
+discriminated union,引用上面的 body schema,具体形态见 §3.2)。这样 5B-PR-1 就有一份
+完整、可测的 envelope schema 可以单测,**不需要等到 PR-3 改 `ir/views.ts` 才能 review
+5 档 discriminated union**。
+
+PR 流转:
+
+- **PR-1**:`InteractionSpecSchema` 的 canonical 定义在 `contract/`;`ir/views.ts` 的
+  老 `InteractionSpecSchema`(3 档 status + 松散 body)暂不动。两个同名 export 不冲突,
+  因为 `src/index.ts` 此时还未 `export * from './contract'`。
+- **PR-2**:`derive-interaction.ts` 从 `'../contract'` import canonical 版本使用。
+- **PR-3**:`ir/views.ts` 删掉本地老定义,改为
+  `export { InteractionSpecSchema, type InteractionSpec, InteractionStatusSchema, type InteractionStatus } from '../contract';`
+  同时把 `'./contract'` 加到 root barrel,`ir/__tests__/views.test.ts` 现有 InteractionSpec
+  反例改写成 tight body。
 
 ## 5. graph-level validator(`interaction-validate.ts`)
 
-shape 之外要求的跨字段约束:
+shape 之外要求的约束分两层。
 
-- 每个 `InteractionEvent.source` 必须能在 `semantic-view.body.nodes` 中找到(由 caller
-  传入的 semantic-view 做 cross-check)——但 5B validator 不接受 semantic-view 作为输入,
-  保持纯 shape + intra-spec 的整洁,**跨工件 hash 链**校验在 `deriveInteractionSpec` 入口完成,
-  足以保证一致性。
+### 5.1 intra-spec(本身就能跑)
+
+不需要任何外部上下文,光看 spec 本体就能判:
+
 - 每个 `InteractionTransition.from`/`to` 必须能在 `body.states[*].stateName` 中找到。
 - 每个 `InteractionTransition.on` 必须能在 `body.events[*].eventName` 中找到。
 - `body.components` / `body.events` / `body.dataModels` 的 id 在各自数组内唯一,
@@ -305,8 +318,32 @@ shape 之外要求的跨字段约束:
     `'covered'`(未签字不能宣称完整);
   - `status === 'approved'` → 任意组合,但至少一项必须是 `'covered'`(否则等于 omitted)。
 
-签名:`assertInteractionSpecIntegrity(spec: InteractionSpec): void`(整 spec 入参,包括
-status 与 body,因为 coverage-vs-status 是跨字段约束)。
+### 5.2 artifact-chain(需要 upstream semantic-view 才能跑)
+
+hash 链只能证明 provenance——证明 spec 是从某个 semantic-view 派生的,**不能**证明
+手编辑过的 `source: 's_missing'` 仍然有效。具体跨工件引用必须显式查:
+
+- 每个 `InteractionEvent.source` 必须 ∈ semantic-view 节点 id 集;
+- 每个 `InteractionDataModel.source` 必须 ∈ semantic-view 节点 id 集;
+- 每个 `InteractionComponent.semanticNodeId` 必须 ∈ semantic-view 节点 id 集。
+
+### 5.3 签名
+
+```ts
+export function assertInteractionSpecIntegrity(
+  spec: InteractionSpec,
+  /** Optional upstream context. When provided, enables §5.2 chain checks. */
+  semanticNodeIds?: ReadonlySet<string>,
+): void;
+```
+
+caller 只持有 spec 时,validator 跑 §5.1;持有上游 semantic-view 时,提取一份
+`new Set(semanticView.body.nodes.map((n) => n.id))` 传进来,同时跑 §5.2。
+`deriveInteractionSpec` 自然走"持有上游"路径,**始终带上 semanticNodeIds 自检**——
+任何跨工件引用失败都是 derive bug,直接 throw,不写 warning。
+
+不传 `semanticView` 整对象的原因:validator 不该建立"必须知道 semantic-view 内部结构"
+的依赖;只读 id 集就够,签名稳定、cycle-free,future 5C 也可以同款风格扩。
 
 ## 6. 起草算法(`derive-interaction.ts`)
 
@@ -375,22 +412,52 @@ body = {
 
 ### 6.5 mode='draft' 起草启发式
 
-按以下顺序遍历 `semantic-view.body.nodes`,把视觉信号转成 candidate event / dataModel。
-**整套规则在 §6.6 实现成可单测的纯函数**;表中每行对应一个独立判定:
+#### 准备工作:VisualNode 索引
 
-| 触发条件                              | 产出                                                                      | confidence | warning                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
-| `kind === 'text'`                     | `dataModel`: slotName=camelCase(name), type='string', source=node.id      | `medium`   | —                                                                 |
-| `kind === 'media'` 且有 assetRef      | `dataModel`: slotName=camelCase(name), type='string'(URL), source=node.id | `low`      | `interaction-draft-media-as-url`                                  |
-| `kind === 'icon'`                     | (skip — icon 通常是装饰,不产出 dataModel)                                 | —          | —                                                                 |
-| node.name 匹配 `/(button              | btn                                                                       | cta        | submit                                                            | send)/i`                                                                                                                                                 | `event`: eventName=camelCase(name)+'Click', handlerProp='on'+PascalCase(eventName), payload={} | `low`                               | `interaction-draft-button-from-name` |
-| node.name 匹配 `/(tab                 | tabs                                                                      | tabbar)/i` | `event`: eventName=camelCase(name)+'Select', handlerProp='on'+... | `low`                                                                                                                                                    | `interaction-draft-tab-from-name`                                                              |
-| node.name 匹配 `/(input               | field                                                                     | search     | composer)/i`                                                      | `event`: eventName=camelCase(name)+'Change', payload={ value: 'string' }, handlerProp=...; **加上** `dataModel`: slotName=camelCase(name), type='string' | `low`                                                                                          | `interaction-draft-input-from-name` |
-| `evidence` 含 `kind === 'annotation'` | (5B 不消费,但若 5B+ annotation 抽取上线,这里是 confidence: high 入口)     | —          | —                                                                 |
+`SemanticNode` 只带 trace 字段(`primaryVisualNodeId` 等),**没有** `assetRef` /
+`style` / `text.content` 这些 visual 层字段——那些只在 `VisualNode` 上。起草规则要看
+`assetRef`,所以 derive 入口先建一份 index:
 
-**起草规则统一遵循**:`confidence` 上限 `medium`;每个 candidate `evidenceMessage` 必须
-包含触发条件(`"text node 'Title'"` / `"name matches /button/i"` 等),让人 review 时能
-找回为什么起草了这个 candidate。
+```ts
+const visualNodeById = new Map<string, VisualNode>();
+const walk = (n: VisualNode): void => {
+  visualNodeById.set(n.id, n);
+  for (const c of n.children) walk(c);
+};
+walk(visualView.body.root);
+```
+
+然后 `lookupVisual(semanticNode) = visualNodeById.get(semanticNode.primaryVisualNodeId)`,
+返回值非空(`primaryVisualNodeId` 永远来自实际 visual 节点)。
+
+#### 触发表
+
+按 `semantic-view.body.nodes` 遍历顺序判定。表中 regex 用代码字面量,**反斜杠转义 `\|`**
+避免 markdown 误把竖线当成列分隔:
+
+| 触发条件                                                                            | 产出                                                                                                                                        | confidence | warning                              |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------ |
+| `kind === 'text'`                                                                   | `dataModel`:slotName=camelCase(name), type=`'string'`, source=node.id                                                                       | `medium`   | —                                    |
+| `kind === 'media'` **且** `lookupVisual(node).assetRef` 非空                        | `dataModel`:slotName=camelCase(name), type=`'string'`(URL), source=node.id                                                                  | `low`      | `interaction-draft-media-as-url`     |
+| `kind === 'icon'`                                                                   | (skip — icon 通常装饰,不产 dataModel)                                                                                                       | —          | —                                    |
+| `kind ∈ {region, component}` **且** name 匹配 `/(button\|btn\|cta\|submit\|send)/i` | `event`:eventName=camelCase(name)+`Click`, handlerProp=`on`+PascalCase, payload=`{}`                                                        | `low`      | `interaction-draft-button-from-name` |
+| `kind ∈ {region, component}` **且** name 匹配 `/(tab\|tabs\|tabbar)/i`              | `event`:eventName=camelCase(name)+`Select`, handlerProp=`on`+...                                                                            | `low`      | `interaction-draft-tab-from-name`    |
+| `kind ∈ {region, component}` **且** name 匹配 `/(input\|field\|search\|composer)/i` | `event`:eventName=camelCase(name)+`Change`, payload=`{ value: 'string' }`; **同时**产 `dataModel`:slotName=camelCase(name), type=`'string'` | `low`      | `interaction-draft-input-from-name`  |
+| `evidence` 含 `kind === 'annotation'`                                               | (5B 不消费,但 5B+ annotation 抽取上线后,这里是 `confidence: high` 入口)                                                                     | —          | —                                    |
+
+**event regex 的 `kind ∈ {region, component}` guard 至关重要**:不然一个内容写着 `"Send"`
+的 `text` 节点也会被误归为 event source。`text` 节点只走 dataModel 路径,**永远**不变 event。
+同理 `icon` 不变 event(就算名字含 button)。
+
+#### 通用规则
+
+- `confidence` 上限 `medium`;name-pattern 触发的全部是 `low`(纯名字推测,弱信号)。
+- 每个 candidate `evidenceMessage` 必须包含触发条件(`"text node 'Title'"` /
+  `"name matches /button/i (kind=region)"` 等),review 时能找回起草原因。
+- 同一节点只走一个分支(text → dataModel;media → dataModel;name regex → event/+/dataModel);
+  互斥,不会同时产出多份 candidate 引用同一 source+slot/eventName。
+- regex 是大小写不敏感(`/i`),命中即触发——后续可以接 `project-rule` evidence 让规则
+  可配,5B 先硬编码。
 
 ### 6.6 coverage 计算(draft 模式)
 
@@ -525,13 +592,18 @@ export function makeChatStage5bInput(): DeriveInteractionSpecInput {
 
 沿用 5A 拆分,**3 个 PR**:
 
-1. **5B-PR-1 — schema + validate**:`contract/interaction-schema.ts`、
-   `contract/interaction-validate.ts`、`contract/index.ts`(初版只导出 schema/validate)
-   - `__tests__/schema.test.ts`、`__tests__/validate.test.ts`。**不动 views.ts**,
-     不动 derive。同 PR 加 `InteractionStatusSchema` enum,但 views.ts 的 InteractionSpec
-     暂时仍是旧 3 档 ContractStatusSchema + 松散 body(以便 PR-1 不破现有测试)。
-     Review 重点:Zod 形态、5 档 status discriminated union 是否正确禁止/要求 approval 字段、
-     graph-level 校验覆盖(coverage-vs-status 一致性)。
+1. **5B-PR-1 — schema + validate**:`contract/interaction-schema.ts`(含
+   canonical `InteractionStatusSchema` 5 档 + `InteractionSpecBodySchema` +
+   **`InteractionSpecSchema`** 顶层 discriminated union)、`contract/interaction-validate.ts`
+   (`assertInteractionSpecIntegrity(spec, semanticNodeIds?)`,§5 两层)、
+   `contract/index.ts`(初版导出 schema/validate)+ `__tests__/schema.test.ts`、
+   `__tests__/validate.test.ts`。
+   **不动 `ir/views.ts`,也不动 `src/index.ts` 根 barrel**:`ir/views.ts` 的老
+   `InteractionSpecSchema`(3 档 status + 松散 body)继续存在,与 `contract/` 的同名
+   export 不冲突——因为根 barrel 此时还没 `export * from './contract'`。两个定义并存到
+   PR-3,PR-3 才删老的、连根 barrel。
+   Review 重点:Zod 形态、5 档 status discriminated union 是否正确禁止/要求 approval
+   字段、§5.1 / §5.2 validator 分层是否清晰、`semanticNodeIds` 可选参数的覆盖是否完整。
 
 2. **5B-PR-2 — derive + fixtures**:`contract/derive-interaction.ts` 完整实现 §6
    全套(三档 mode、起草启发式、hash 链校验、coverage 计算)+ `__tests__/fixtures.ts`(3
@@ -541,13 +613,16 @@ export function makeChatStage5bInput(): DeriveInteractionSpecInput {
    Review 重点:起草启发式是否保守、`confidence` 上限是否真到 medium、states/
    stateTransitions 在 draft 模式是否真为空。
 
-3. **5B-PR-3 — wiring + barrel + docs**:`ir/views.ts` 替换 `InteractionSpecSchema`
-   (改用 discriminated union 与 `InteractionStatusSchema`,body 改 `InteractionSpecBodySchema`),
-   `GeneratedFromSchema` 加 `semanticViewHash`,主 barrel(`src/index.ts`)同步,
-   `views-integration.test.ts`、`packages/d2c-core/README.md` 加 "Interaction Spec (Stage 5B)" 节,
-   updates `ir/__tests__/views.test.ts` 的 InteractionSpec 反例(松散 body 测试翻成 tight)。
+3. **5B-PR-3 — wiring + barrel + docs**:`ir/views.ts` 删掉本地老 `InteractionSpecSchema`,
+   改成 `export { InteractionSpecSchema, type InteractionSpec, InteractionStatusSchema, type InteractionStatus } from '../contract';`
+   `GeneratedFromSchema` 加 `semanticViewHash`,根 barrel(`src/index.ts`)加
+   `export * from './contract';`,加 `contract/__tests__/views-integration.test.ts`、
+   `packages/d2c-core/README.md` 加 "Interaction Spec (Stage 5B)" 节,改写
+   `ir/__tests__/views.test.ts` 的 InteractionSpec 反例(松散 body / 3 档 status 翻成
+   tight 5 档,新增 omitted/deferred 必填字段反例)。
    Review 重点:跨模块 import 是否清晰、对 5A semantic-view 不破坏、PR-2 的 derive 在
-   PR-3 改完后 envelope 仍可被 safeParse。
+   PR-3 改完后 envelope 仍可被 safeParse、ir/**tests** 的 InteractionSpec 测试集是否够
+   覆盖新形态。
 
 PR-1 合掉后,5C 的 ComponentPlan schema 设计可以并行起草(消费 InteractionSpec 形状)。
 
@@ -560,8 +635,10 @@ PR-1 合掉后,5C 的 ComponentPlan schema 设计可以并行起草(消费 Inter
 - **payload type 只到 string**:5B 不实现 TypeScript-style 类型推断;dataModel.type 与
   event.payload value 都默认 `'string'`,留 5B+ 补强。
 - **真 Sketch fixture**:5B 用合成 fixture,真 `.sketch` 端到端留到 5D。
-- **`assertInteractionSpecIntegrity` 不做跨工件 cross-check**:不接 semantic-view
-  作为入参(避免环依赖)。跨工件一致性(event.source 是不是 semantic node)由 hash 链 +
-  derive 内部的 semantic.nodes 索引保证。
+- **`assertInteractionSpecIntegrity` 两层调用**:不带 `semanticNodeIds` 入参时只跑
+  intra-spec 校验(§5.1),独立场景如 review fixture 时仍可用;带入参时同时跑
+  artifact-chain 校验(§5.2)。`deriveInteractionSpec` 始终带,catch 手编辑后 dangling
+  source 等"hash 链管不到"的场景。但 validator 不接 semantic-view 整对象,只读 id 集,
+  保持签名稳定 + cycle-free。
 - **Stage 6 接续**:5B coverage 形态稳定,Stage 6 直接读 `body.coverage` 并格式化为
   `interaction-coverage.md`。不重定义 coverage 分类。
