@@ -448,17 +448,25 @@ export function pascalCase(input: string): string {
  * Split an identifier on (a) non-alphanumeric runs and then (b) on
  * lowercase→uppercase boundaries. Step (b) is what makes camelCase work
  * for PascalCase input without losing internal capitalization.
+ *
+ * Implementation uses regex extraction instead of a sentinel-character
+ * split: an earlier iteration of this helper accidentally embedded
+ * literal NUL bytes into the source via the editor tooling, which made
+ * the .ts file get classified as binary by some scanners. Extracting
+ * tokens with `match()` keeps the source plain ASCII and is easier to
+ * read besides.
  */
 function splitIdentifier(input: string): string[] {
-  const segments = input.split(/[^a-zA-Z0-9]+/).filter(Boolean);
   const parts: string[] = [];
-  for (const segment of segments) {
-    /* Insert a separator before every uppercase letter that follows a
-     * lowercase letter or digit, then split on it. */
-    const expanded = segment.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-    for (const piece of expanded.split(' ')) {
-      if (piece.length > 0) parts.push(piece);
-    }
+  for (const segment of input.split(/[^a-zA-Z0-9]+/)) {
+    if (segment.length === 0) continue;
+    /* Each token is either a run of uppercase letters optionally followed
+     * by lowercase/digits (e.g. "Primary", "Button", "CTA") or a pure
+     * lowercase/digit run (e.g. "send", "cta"). Consecutive capitals stick
+     * together as one token — "XMLParser" → ["XMLParser"], which is a
+     * known 5B limitation documented on camelCase. */
+    const tokens = segment.match(/[A-Z]+[a-z0-9]*|[a-z0-9]+/g);
+    if (tokens !== null) parts.push(...tokens);
   }
   return parts;
 }
