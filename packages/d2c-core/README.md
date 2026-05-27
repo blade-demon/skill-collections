@@ -27,8 +27,9 @@ src/
   preview/   visual view derivation, static HTML preview, review report helpers
   semantic/  Stage 5A: semantic-view body schema, evidence, integrity
              validator, and deriveSemanticView
-  contract/  Stage 5B: interaction-spec schema, integrity validator, and
-             deriveInteractionSpec
+  contract/  Stages 5B / 5C: interaction-spec + component-plan schemas,
+             integrity validators, and the deriveInteractionSpec /
+             deriveComponentPlan pure functions
   utils/     cross-cutting helpers (stable JSON / hash)
 ```
 
@@ -157,6 +158,86 @@ overrides.
 `body.coverage` is the single data source Stage 6 will use to generate
 `interaction-coverage.md`. Codegen should not infer coverage by re-reading
 events or states directly.
+
+## Component Plan (Stage 5C)
+
+`src/contract/` also owns the Stage 5C component-plan contract that sits
+between `InteractionSpec` and Stage 6 codegen. It provides
+`ComponentPlanSchema`, `ComponentPlanBodySchema`, `ComponentPlanModeSchema`,
+`assertComponentPlanIntegrity()`, and `deriveComponentPlan()`.
+
+### Status, mode, and approval
+
+`component-plan.status` stays on the existing three-state
+`ContractStatusSchema` (`draft | in-review | approved`); presentational vs
+interactive is a separate axis — `ComponentPlanModeSchema =
+z.enum(['presentational', 'interactive'])` — so the plan never confuses
+lifecycle with codegen archetype.
+
+`ComponentPlanApprovalSchema` is a `level`-discriminated union: an
+`interactive` plan signs off with `{ gate: 'gate-2', level: 'interactive',
+approvedBy, approvedAt }`, and a `presentational` plan signs off with the
+same fields plus `acknowledgedBehaviorStubbed: true`. The literal-`true`
+field forces an approver to physically acknowledge the plan is a behavior
+stub, instead of letting a `false` slide through and pretend the plan is
+functionally complete.
+
+`status × mode × approval` consistency is owned by
+`ComponentPlanSchema.superRefine()` at parse time, not by the integrity
+validator. Holding a successful `ComponentPlanSchema.safeParse()` result is
+sufficient to know approval shape is consistent.
+
+### Derive
+
+`deriveComponentPlan({ designIr, visualView, semanticView, interactionSpec, mode })`
+is a pure function — no IO, no clock, no `Math.random`. It:
+
+- validates the full hash chain across all four upstream artifacts and
+  writes `interactionSpecHash` on output;
+- rejects illegal `mode × interactionSpec.status` combinations (interactive
+  needs an `approved` spec; presentational needs `omitted` or `deferred`;
+  `draft` / `in-review` specs never derive a plan);
+- builds `rootComponent` from `semanticView.body.screen`, then maps each
+  `componentCandidate` to a `PlannedComponent` (kind→role table; primitive
+  kinds — text, media, icon, control, decorative — throw rather than coerce
+  to `'component'`);
+- in presentational mode emits no event handlers; `deferred` upstream
+  converts `dataModels` into optional `presentational-stub` props,
+  `omitted` ignores them with a warning;
+- in interactive mode wires events → handler props and data models →
+  required data props, attributing each binding to the deepest planned
+  component whose semantic ownership covers the binding's source node;
+- generates `layoutPlan` from upstream `layoutCandidates` and fills an
+  `absolute` fallback so every planned component has at least one layout
+  entry;
+- generates `assetPlan` from `media` / `icon` semantic nodes, looking up
+  `assetRef` via `primaryVisualNodeId`; missing refs warn, do not throw;
+- generates exports — root default plus one named per candidate — and
+  throws on PascalCase collisions (with both candidate ids in the error
+  message) rather than silently dedup-ing.
+
+Deterministic ids use a `<prefix>` + `stableSha256(stableJson({ form,
+...canonical fields })).slice(0, 12)` scheme: `pc_` for
+`PlannedComponent`, `pe_` for `PlannedExport`, `pl_` for `PlannedLayout`,
+`pa_` for `PlannedAsset`. No `Date.now`, no UUID, no counters.
+
+### Wiring (Stage 5C-PR-3)
+
+The canonical `ComponentPlanSchema` lives in `src/contract/component-plan-schema.ts`.
+`src/contract/index.ts` exports the schema, validator, and derive together
+as the public Stage 5C surface. `src/ir/views.ts` re-exports the canonical
+binding (and `ComponentPlanModeSchema`) for the handful of historical
+callers that imported it from `ir/views`. `src/ir/index.ts` deliberately
+stops forwarding `ComponentPlanSchema`, so the root barrel exports it
+exactly once via `export * from './contract'`.
+
+### Not in scope
+
+5C still does not generate React / TS / BEM (Stage 6), does not provide a
+CLI entry (Stage 5D), and does not write artifacts to disk; the
+component-plan it returns is held in memory and round-trips through
+`ComponentPlanSchema` + `assertComponentPlanIntegrity` before being
+returned.
 
 ## Verification
 
