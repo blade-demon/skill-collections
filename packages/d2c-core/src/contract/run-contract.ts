@@ -101,6 +101,15 @@ export function runContract(input: RunContractInput): RunContractResult {
       'runContract: interactionSpec was provided together with interactionMode/approval — these are mutually exclusive (a provided spec is used as-is; interactionMode/approval only drive derivation)',
     );
   }
+  /* §2.1 constraint 3 — when the interaction spec is derived (not provided),
+   * interactionMode must be EXPLICIT. runContract refuses to fall through to
+   * deriveInteractionSpec's internal 'draft' default, because an implicit
+   * default would be exactly the hidden policy the plan forbids. */
+  if (!hasInteraction && input.interactionMode === undefined) {
+    throw new Error(
+      "runContract: interactionMode is required when interactionSpec is not provided — runContract does not default to 'draft' (plan §2.1 constraint 3: mode / interactionMode are caller-explicit, no built-in policy)",
+    );
+  }
 
   const designIrHash = stableSha256(stableJson(designIr));
   const warnings: Warning[] = [];

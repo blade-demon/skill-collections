@@ -194,6 +194,17 @@ describe('runContract — provided views must form a contiguous prefix', () => {
       }),
     ).toThrowError(/mutually exclusive/);
   });
+
+  it('throws when interactionMode is omitted while deriving the interaction spec (no implicit draft)', () => {
+    /* §2.1 constraint 3: runContract must not silently default to draft when
+     * it has to derive the interaction spec — the caller has to say which
+     * mode. Guards against a hidden default policy leaking in via
+     * deriveInteractionSpec's own 'draft' fallback. */
+    const { designIr } = bridgedFullChat();
+    expect(() => runContract({ designIr, mode: 'presentational' })).toThrowError(
+      /interactionMode is required when interactionSpec is not provided/,
+    );
+  });
 });
 
 describe('runContract — determinism + warnings merge', () => {
