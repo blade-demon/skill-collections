@@ -3,8 +3,15 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   runPreview as runCorePreview,
+  runContract as runCoreContract,
+  buildContractManifest,
+  ARTIFACT_FILENAMES,
+  MANIFEST_FILENAME,
   type DesignIR,
   type VisualNode,
+  type RunContractInput,
+  type ComponentPlanMode,
+  type DeriveInteractionMode,
 } from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
@@ -73,10 +80,90 @@ export function parsePreviewArgs(argv: string[]): PreviewCliArgs | undefined {
   return { command, designIrPath, outDir };
 }
 
+export interface ContractCliArgs {
+  command: 'contract';
+  /** Exactly one input source — a .sketch file (full chain) or an existing design-ir.json. */
+  source: { kind: 'file'; filePath: string } | { kind: 'design-ir'; designIrPath: string };
+  outDir: string;
+  /** Optional artboard selector, only meaningful for the `--file` source. */
+  artboard?: string;
+  mode: ComponentPlanMode;
+  interactionMode: DeriveInteractionMode;
+  /** Present only for interactionMode omitted | deferred. */
+  approval?: { reason: string; approvedBy: string; approvedAt: string };
+}
+
+const COMPONENT_PLAN_MODES: readonly ComponentPlanMode[] = ['presentational', 'interactive'];
+const DERIVE_INTERACTION_MODES: readonly DeriveInteractionMode[] = ['draft', 'omitted', 'deferred'];
+
+/**
+ * Structural parse only — returns `undefined` for a missing/ambiguous source,
+ * missing `--out`, or an invalid `--mode` / `--interaction-mode` enum value.
+ * Semantic checks (interactive unsupported here, approval required for
+ * omitted/deferred) are enforced by `runContractCommand` with specific
+ * messages rather than collapsing into the generic usage path.
+ */
+export function parseContractArgs(argv: string[]): ContractCliArgs | undefined {
+  const command = argv[2];
+  if (command !== 'contract') return undefined;
+
+  const filePath = argValue(argv, '--file');
+  const designIrPath = argValue(argv, '--design-ir');
+  /* exactly one source. */
+  if ((filePath === undefined) === (designIrPath === undefined)) return undefined;
+
+  const outDir = argValue(argv, '--out');
+  if (!outDir) return undefined;
+
+  const mode = argValue(argv, '--mode');
+  if (mode === undefined || !COMPONENT_PLAN_MODES.includes(mode as ComponentPlanMode)) {
+    return undefined;
+  }
+  const interactionMode = argValue(argv, '--interaction-mode');
+  if (
+    interactionMode === undefined ||
+    !DERIVE_INTERACTION_MODES.includes(interactionMode as DeriveInteractionMode)
+  ) {
+    return undefined;
+  }
+
+  const source: ContractCliArgs['source'] =
+    filePath !== undefined
+      ? { kind: 'file', filePath }
+      : { kind: 'design-ir', designIrPath: designIrPath! };
+
+  const args: ContractCliArgs = {
+    command: 'contract',
+    source,
+    outDir,
+    mode: mode as ComponentPlanMode,
+    interactionMode: interactionMode as DeriveInteractionMode,
+  };
+
+  const artboard = argValue(argv, '--artboard');
+  if (artboard !== undefined) args.artboard = artboard;
+
+  const reason = argValue(argv, '--approval-reason');
+  const approvedBy = argValue(argv, '--approved-by');
+  const approvedAt = argValue(argv, '--approved-at');
+  if (reason !== undefined || approvedBy !== undefined || approvedAt !== undefined) {
+    /* partial approval is a structural error — all three or none. */
+    if (reason === undefined || approvedBy === undefined || approvedAt === undefined) {
+      return undefined;
+    }
+    args.approval = { reason, approvedBy, approvedAt };
+  }
+
+  return args;
+}
+
 function printUsage(): void {
   console.error('Usage: npm run extract -- --file <path> --out <dir>');
   console.error('   or: npm run normalize -- --raw <path> --out <dir> [--artboard <id|name>]');
   console.error('   or: npm run preview -- --design-ir <path> --out <dir>');
+  console.error(
+    '   or: npm run contract -- (--file <path> [--artboard <id|name>] | --design-ir <path>) --out <dir> --mode presentational --interaction-mode <omitted|deferred> --approval-reason <str> --approved-by <str> --approved-at <iso>',
+  );
 }
 
 async function runExtract(): Promise<void> {
@@ -168,6 +255,141 @@ async function runPreview(): Promise<void> {
   );
 }
 
+/* ── contract (Stage 5D) ─────────────────────────────────────────────────── */
+
+export interface ContractArtifactFile {
+  /** Path relative to the `--out` directory. */
+  relativePath: string;
+  content: string;
+}
+
+/**
+ * Deterministic, sorted-key, pretty JSON with a trailing newline. Stable byte
+ * output is what lets the Stage 5D golden assert byte-for-byte equality across
+ * runs regardless of object key insertion order.
+ */
+function stableStringify(value: unknown): string {
+  return `${JSON.stringify(sortDeep(value), null, 2)}\n`;
+}
+
+function sortDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortDeep);
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as Record<string, unknown>).sort()) {
+      out[key] = sortDeep((value as Record<string, unknown>)[key]);
+    }
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Pure: run the contract chain in core, build the manifest, and serialize the
+ * four `design-spec/` artifacts + `manifest.json`. NO disk IO — the caller
+ * writes the returned files. This is the seam that keeps writes strictly in
+ * the CLI layer.
+ */
+export function planContractFiles(input: RunContractInput): ContractArtifactFile[] {
+  const result = runCoreContract(input);
+  const manifest = buildContractManifest(input, result);
+  const specDir = 'design-spec';
+  return [
+    {
+      relativePath: join(specDir, ARTIFACT_FILENAMES.visualView),
+      content: stableStringify(result.visualView),
+    },
+    {
+      relativePath: join(specDir, ARTIFACT_FILENAMES.semanticView),
+      content: stableStringify(result.semanticView),
+    },
+    {
+      relativePath: join(specDir, ARTIFACT_FILENAMES.interactionSpec),
+      content: stableStringify(result.interactionSpec),
+    },
+    {
+      relativePath: join(specDir, ARTIFACT_FILENAMES.componentPlan),
+      content: stableStringify(result.componentPlan),
+    },
+    { relativePath: join(specDir, MANIFEST_FILENAME), content: stableStringify(manifest) },
+  ];
+}
+
+/**
+ * Semantic validation beyond structural parsing. Returns an error message
+ * when the (structurally valid) args cannot be honored by the derive-only
+ * CLI, or `undefined` when they can. Pure — testable without process.argv.
+ */
+export function validateContractArgs(args: ContractCliArgs): string | undefined {
+  if (args.mode === 'interactive') {
+    return "[unsupported] --mode interactive is not available from the derive-only contract CLI: the interaction-spec is derived here and is never 'approved', which interactive mode requires. Provide a pre-approved interaction-spec via the reuse-input flow (planned) or use --mode presentational.";
+  }
+  if (
+    (args.interactionMode === 'omitted' || args.interactionMode === 'deferred') &&
+    !args.approval
+  ) {
+    return `[bad-args] --interaction-mode ${args.interactionMode} requires --approval-reason, --approved-by and --approved-at`;
+  }
+  if (args.interactionMode === 'draft' && args.approval) {
+    return '[bad-args] --interaction-mode draft must not carry approval flags';
+  }
+  return undefined;
+}
+
+async function loadContractDesignIr(args: ContractCliArgs): Promise<DesignIR> {
+  if (args.source.kind === 'design-ir') {
+    return JSON.parse(await readFile(args.source.designIrPath, 'utf8')) as DesignIR;
+  }
+  const raw = await extractRaw({ source: 'file', filePath: args.source.filePath });
+  return normalizeSketchRaw(raw, { artboard: args.artboard });
+}
+
+async function runContractCommand(): Promise<void> {
+  const args = parseContractArgs(process.argv);
+  if (!args) {
+    printUsage();
+    process.exitCode = 2;
+    return;
+  }
+
+  const validationError = validateContractArgs(args);
+  if (validationError !== undefined) {
+    console.error(validationError);
+    process.exitCode = 2;
+    return;
+  }
+
+  const designIr = await loadContractDesignIr(args);
+  const input: RunContractInput = {
+    designIr,
+    mode: args.mode,
+    interactionMode: args.interactionMode,
+    ...(args.approval ? { approval: args.approval } : {}),
+  };
+
+  const files = planContractFiles(input);
+
+  await mkdir(join(args.outDir, 'design-spec'), { recursive: true });
+  for (const file of files) {
+    await writeFile(join(args.outDir, file.relativePath), file.content, 'utf8');
+  }
+  /* For the --file source, persist the normalized IR so the output dir is a
+   * self-contained, re-runnable record (matches `normalize`'s ir/ layout). */
+  if (args.source.kind === 'file') {
+    const irDir = join(args.outDir, 'ir');
+    await mkdir(irDir, { recursive: true });
+    await writeFile(join(irDir, ARTIFACT_FILENAMES.designIr), stableStringify(designIr), 'utf8');
+  }
+
+  console.log(`mode: ${args.mode}`);
+  console.log(`interactionMode: ${args.interactionMode}`);
+  for (const file of files) {
+    console.log(
+      `${file.relativePath}: ${join(args.outDir, file.relativePath)} (${Buffer.byteLength(file.content, 'utf8')} bytes)`,
+    );
+  }
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === 'preview') {
     await runPreview();
@@ -175,6 +397,10 @@ async function main(): Promise<void> {
   }
   if (process.argv[2] === 'normalize') {
     await runNormalize();
+    return;
+  }
+  if (process.argv[2] === 'contract') {
+    await runContractCommand();
     return;
   }
   await runExtract();
