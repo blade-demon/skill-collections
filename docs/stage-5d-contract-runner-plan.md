@@ -47,7 +47,7 @@ runContract 输入:
   designIr         : validated DesignIR（必填)
   visualView?      : 缺省则 deriveVisualView(designIr)
   semanticView?    : 缺省则 deriveSemanticView
-  interactionSpec? : 缺省则 deriveInteractionSpec（按 interactionMode + approval)
+  interactionSpec? : 缺省则 deriveInteractionSpec(只产 draft | omitted | deferred)
   mode             : 'presentational' | 'interactive'（component-plan mode,必填)
   interactionMode? : 'draft' | 'omitted' | 'deferred'（仅当需要 derive interactionSpec 时)
   approval?        : omitted/deferred 所需 { reason, approvedBy, approvedAt }
@@ -56,6 +56,17 @@ runContract 输出:
   { visualView, semanticView, interactionSpec, componentPlan, warnings }
   纯内存对象;warnings 是四步 warnings 的有序合并。
 ```
+
+> **interactive happy path 只有一条:传入已 approved 的 `interactionSpec`。**
+> `runContract` **不**把 interaction spec 提升成 `approved` —— approval 是人工 / Gate 流程的事,
+> `deriveInteractionSpec` 永远只产 `draft | omitted | deferred`。所以:
+>
+> - `mode='interactive'` + 传入 `interactionSpec.status === 'approved'` → 成功;
+> - `mode='interactive'` 但**没**传 spec(或传入的是 draft/omitted/deferred)→ derive 出的 spec
+>   不是 approved,配 interactive 在 `deriveComponentPlan` 那步直接 throw(承接 5C §3.2);
+> - `mode='presentational'` + 传入 / derive 出 `omitted | deferred` spec → 成功。
+>
+> 一句话:runContract 永远不替你签字。要 interactive,先把 approved 的 interaction-spec 喂进来。
 
 ### 2.1 输入契约(已拍板:flexible,约束写死)
 
@@ -101,8 +112,8 @@ core 暴露一组**常量**(名称),skill 层用它们拼路径,避免 Stage 6 �
 ```ts
 // packages/d2c-core 暴露(只是名字,不含目录):
 export const ARTIFACT_FILENAMES = {
-  designIr: 'design-ir.json',
-  visualView: 'visual-view.json',
+  designIr: 'design-ir.json', // runContract 的输入根,落在 ir/(normalize 已产出)
+  visualView: 'visual-view.json', // ↓ 以下四个是 runContract 的输出,落在 design-spec/
   semanticView: 'semantic-view.json',
   interactionSpec: 'interaction-spec.json',
   componentPlan: 'component-plan.json',
@@ -123,12 +134,14 @@ CLI 落盘布局(在 `--out <dir>` 下):
     manifest.json           # 每个 artifact 的 hash + provenance(provided / derived)
 ```
 
-`manifest.json` 形态(由 `runContract` 在内存里构造,CLI 落盘):
+`manifest.json` 覆盖 `design-spec/` 下的**四个 contract artifact**(`runContract` 的输出);
+`design-ir.json` 是输入根,不进 `design-spec/`,但它的 hash 作为链根记在 visual-view 的
+`generatedFrom.designIrHash` 里。manifest 形态(由 `runContract` 在内存里构造,CLI 落盘):
 
 ```ts
-// 每个 artifact 一条 entry:
+// 四个 contract artifact 各一条 entry:
 {
-  filename: string;        // 来自 ARTIFACT_FILENAMES
+  filename: string;        // 来自 ARTIFACT_FILENAMES（visual/semantic/interaction/component)
   hash: string;            // stableSha256(stableJson(artifact))
   origin: 'provided' | 'derived'; // 本次是沿用传入物还是新 derive 的(§2.1 约束 5)
   generatedFrom: {...};    // 该 artifact 的上游 hash 链(原样取自 artifact.generatedFrom)
@@ -184,7 +197,7 @@ warnings 有序合并、错误传播。
 
 要点:常量 + manifest 形态(每条 entry 含 filename / hash / `origin` / generatedFrom 的纯构造
 函数,**不写盘**)。
-测试:常量稳定、manifest 构造确定性、manifest 覆盖全部五个 artifact、**`origin` 正确区分
+测试:常量稳定、manifest 构造确定性、manifest 覆盖四个 contract artifact、**`origin` 正确区分
 provided vs derived**(同一 view 传入 vs 重算时 hash 相同但 origin 不同)。
 
 ### 5D-PR-3 — Sketch CLI `contract` 子命令
@@ -211,12 +224,12 @@ provided vs derived**(同一 view 传入 vs 重算时 hash 相同但 origin 不�
 
 ## 5. 测试矩阵
 
-| 文件                     | 测试点                                                                                                                                                                      |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run-contract.test.ts`   | 全链 presentational / interactive happy path;hash chain 各步 mismatch throw;mode×interaction-status 非法 throw;determinism;warnings 合并;flexible 输入(传入 vs derive 上游) |
-| `artifact-paths.test.ts` | 常量稳定;manifest 构造确定性 + 覆盖五 artifact                                                                                                                              |
-| CLI 测试                 | `parseContractArgs` 正反例;落盘后 `design-spec/` 含五 artifact + manifest;同输入两跑 diff 空                                                                                |
-| golden 测试              | 真 `.sketch` → `design-spec/` 字节级匹配 expected                                                                                                                           |
+| 文件                     | 测试点                                                                                                                                                                                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run-contract.test.ts`   | presentational 全链 happy path;**interactive happy path 必须传入 approved spec**;**interactive 无 approved spec(没传 / 传 draft/omitted/deferred)→ throw**;hash chain 各步 mismatch throw;传入已校验中间物从该点续跑且不重 derive 上游;mode×interaction-status 非法 throw;determinism;warnings 合并 |
+| `artifact-paths.test.ts` | 常量稳定;manifest 构造确定性 + 覆盖四个 contract artifact;`origin` 正确区分 provided vs derived                                                                                                                                                                                                     |
+| CLI 测试                 | `parseContractArgs` 正反例;落盘后 `design-spec/` 含四个 contract artifact + manifest;同输入两跑 diff 空                                                                                                                                                                                             |
+| golden 测试              | 真 `.sketch` → `design-spec/` 字节级匹配 expected                                                                                                                                                                                                                                                   |
 
 ## 6. 与 Stage 6 边界
 
