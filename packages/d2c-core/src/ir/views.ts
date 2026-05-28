@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { ContractStatusSchema } from './schema';
 import { VisualBlockSchema } from './visual';
 import { GeneratedFromSchema } from './generated-from';
 import { SemanticViewBodySchema } from '../semantic/schema';
@@ -35,12 +34,17 @@ export {
   type InteractionStatus,
 } from '../contract/interaction-schema';
 
-export const ComponentPlanSchema = z
-  .object({
-    kind: z.literal('component-plan'),
-    generatedFrom: GeneratedFromSchema,
-    status: ContractStatusSchema,
-    body: z.record(z.unknown()),
-  })
-  .strict();
-export type ComponentPlan = z.infer<typeof ComponentPlanSchema>;
+/**
+ * Stage 5C — the canonical `ComponentPlanSchema` lives in
+ * `../contract/component-plan-schema`. This file re-exports it (and the
+ * `mode` enum) for the handful of legacy callers that imported the loose
+ * `ir/views.ts` schema directly. The root barrel resolves
+ * `ComponentPlanSchema` via `../contract`, so consumers reaching for it
+ * through `index.ts` already pick up the canonical binding.
+ */
+export {
+  ComponentPlanSchema,
+  type ComponentPlan,
+  ComponentPlanModeSchema,
+  type ComponentPlanMode,
+} from '../contract/component-plan-schema';

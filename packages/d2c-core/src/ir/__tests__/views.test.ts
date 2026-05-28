@@ -2,11 +2,16 @@ import { describe, it, expect } from 'vitest';
 import * as rootD2c from '../../index';
 import {
   ComponentPlanSchema,
+  ComponentPlanModeSchema,
   InteractionSpecSchema,
   SemanticViewSchema,
   VisualViewSchema,
 } from '../views';
-import { InteractionStatusSchema, type InteractionSpecBody } from '../../contract';
+import {
+  InteractionStatusSchema,
+  type ComponentPlanBody,
+  type InteractionSpecBody,
+} from '../../contract';
 import { makeVisualBlock } from '../../preview/__tests__/fixtures';
 import type { SemanticViewBody } from '../../semantic/schema';
 
@@ -16,6 +21,10 @@ const interactionGeneratedFrom = {
   designIrHash: 'a'.repeat(64),
   visualViewHash: 'b'.repeat(64),
   semanticViewHash: 'c'.repeat(64),
+};
+const componentPlanGeneratedFrom = {
+  ...interactionGeneratedFrom,
+  interactionSpecHash: 'd'.repeat(64),
 };
 
 const approvalFields = {
@@ -259,34 +268,135 @@ describe('derived view envelopes', () => {
     expect(rootExports.InteractionSpecSchema).toBe(InteractionSpecSchema);
   });
 
+  it('root barrel exposes the Stage 5C component-plan contract surface', () => {
+    const rootExports = rootD2c as unknown as Record<string, unknown>;
+    expect(rootExports.ComponentPlanSchema).toBe(ComponentPlanSchema);
+    expect(rootExports.ComponentPlanModeSchema).toBe(ComponentPlanModeSchema);
+  });
+
   it('component-plan keeps the three-state contract status enum', () => {
     for (const status of ['draft', 'in-review', 'approved'] as const) {
-      expect(
-        ComponentPlanSchema.safeParse({
-          kind: 'component-plan',
-          generatedFrom,
-          status,
-          body: {},
-        }).success,
-      ).toBe(true);
+      const plan: Record<string, unknown> = {
+        kind: 'component-plan',
+        generatedFrom: componentPlanGeneratedFrom,
+        status,
+        mode: 'presentational',
+        body: makeMinimalComponentPlanBody(),
+      };
+      if (status === 'approved') {
+        plan.approval = {
+          gate: 'gate-2',
+          level: 'presentational',
+          approvedBy: 'alice',
+          approvedAt: '2026-05-26T00:00:00Z',
+          acknowledgedBehaviorStubbed: true,
+        };
+      }
+      expect(ComponentPlanSchema.safeParse(plan).success).toBe(true);
     }
   });
 
-  it('rejects an unknown status', () => {
-    expect(
-      InteractionSpecSchema.safeParse({
-        ...minimalInteractionSpec('draft'),
-        status: 'published',
-      }).success,
-    ).toBe(false);
-
+  it('rejects an unknown status (Stage 5C tightened schema)', () => {
     expect(
       ComponentPlanSchema.safeParse({
         kind: 'component-plan',
-        generatedFrom,
+        generatedFrom: componentPlanGeneratedFrom,
         status: 'published',
-        body: {},
+        mode: 'presentational',
+        body: makeMinimalComponentPlanBody(),
       }).success,
     ).toBe(false);
   });
+
+  it('rejects a component-plan missing the mode field (Stage 5C tightened schema)', () => {
+    expect(
+      ComponentPlanSchema.safeParse({
+        kind: 'component-plan',
+        generatedFrom: componentPlanGeneratedFrom,
+        status: 'draft',
+        /* mode deliberately omitted */
+        body: makeMinimalComponentPlanBody(),
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a component-plan body that is a loose record (Stage 5C tightened schema)', () => {
+    expect(
+      ComponentPlanSchema.safeParse({
+        kind: 'component-plan',
+        generatedFrom: componentPlanGeneratedFrom,
+        status: 'draft',
+        mode: 'presentational',
+        body: { anything: [1, 2], stillLoose: true },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects an approved + presentational plan missing acknowledgedBehaviorStubbed', () => {
+    expect(
+      ComponentPlanSchema.safeParse({
+        kind: 'component-plan',
+        generatedFrom: componentPlanGeneratedFrom,
+        status: 'approved',
+        mode: 'presentational',
+        body: makeMinimalComponentPlanBody(),
+        approval: {
+          gate: 'gate-2',
+          level: 'presentational',
+          approvedBy: 'alice',
+          approvedAt: '2026-05-26T00:00:00Z',
+        },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('accepts an interactionSpecHash in component-plan generatedFrom (added in Stage 5C)', () => {
+    expect(
+      ComponentPlanSchema.safeParse({
+        kind: 'component-plan',
+        generatedFrom: componentPlanGeneratedFrom,
+        status: 'draft',
+        mode: 'interactive',
+        body: makeMinimalComponentPlanBody(),
+      }).success,
+    ).toBe(true);
+  });
 });
+
+/* ── helpers (Stage 5C) ───────────────────────────────────────────────────
+ *
+ * Minimal component-plan body for envelope-level shape tests: one root
+ * planned component, no children, no exports, no layout, no assets, and a
+ * coverage snapshot whose entries are all 'omitted'. Real derive output is
+ * exercised by component-plan-views-integration.test.ts.
+ */
+function makeMinimalComponentPlanBody(): ComponentPlanBody {
+  const root: ComponentPlanBody['rootComponent'] = {
+    id: 'pc_test00000000',
+    semanticNodeId: 's_root',
+    name: 'Screen',
+    role: 'root',
+    renderAs: 'component',
+    childSemanticNodeIds: [],
+    props: [],
+    eventBindings: [],
+    dataBindings: [],
+    confidence: 'high',
+    warnings: [],
+  };
+  return {
+    target: { framework: 'react', language: 'ts', styling: 'bem-css' },
+    rootComponent: root,
+    components: [root],
+    exports: [],
+    layoutPlan: [],
+    assetPlan: [],
+    interactionCoverage: {
+      states: { status: 'omitted', notes: '' },
+      events: { status: 'omitted', notes: '' },
+      dataBinding: { status: 'omitted', notes: '' },
+      stateTransitions: { status: 'omitted', notes: '' },
+    },
+    warnings: [],
+  };
+}
