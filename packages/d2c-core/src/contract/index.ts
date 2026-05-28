@@ -7,8 +7,9 @@
  * The canonical `InteractionSpecSchema` and `ComponentPlanSchema` both live
  * here. `ir/views.ts` re-exports both for legacy direct imports, while the
  * root barrel exports this module as the public Stage 5B/5C contract
- * surface. Stage 5D adds `runContract`, the pure orchestrator that chains
- * all four Stage 5 derive steps.
+ * surface. Stage 5D adds `runContract` (the pure orchestrator that chains all
+ * four Stage 5 derive steps) plus the stable artifact filenames and contract
+ * manifest builder.
  */
 export * from './interaction-schema';
 export * from './interaction-validate';
@@ -17,3 +18,4 @@ export * from './component-plan-schema';
 export * from './component-plan-validate';
 export * from './derive-component-plan';
 export * from './run-contract';
+export * from './artifact-paths';
