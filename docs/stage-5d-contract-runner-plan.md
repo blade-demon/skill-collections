@@ -57,14 +57,28 @@ runContract 输出:
   纯内存对象;warnings 是四步 warnings 的有序合并。
 ```
 
-> **设计决策(待 plan review 拍板):** runContract 接受**可选预算上游 view**(只有 `designIr`
-> 必填),缺省的 view 内部 derive,传入的 view 走 hash chain 校验。理由:5D-PR-3 CLI 需要支持
-> "从 `.sketch` 全链生成" 和 "复用已有中间物"(例如已审过的 `semantic-view.json`)两种入口,
-> flexible 输入直接覆盖。若 review 倾向更窄的 `designIr`-only 入口,可在 PR-1 收窄,代价是 CLI
-> 复用中间物时要自己 re-derive。
->
-> mode / interactionMode / approval **由 caller 显式传入**,runContract 不内置默认 policy
-> (承接 5C §3.2 "非法组合直接 throw" 的确定性原则)。
+### 2.1 输入契约(已拍板:flexible,约束写死)
+
+runContract 接受**可选预算上游 view**,但 flexible 不等于松。下面五条是硬约束,PR-1 必须按此实现,
+不允许"信任缓存":
+
+1. **`designIr` 必填。** 它是整条链的根锚点;其余 view 的 hash 都最终回链到它。
+2. **`visualView` / `semanticView` / `interactionSpec` 可选,但一旦传入就必须走完整 hash-chain
+   校验** —— 与从 `designIr` 重算的 hash 不一致即 throw,绝不"信任传入的缓存对象"。校验沿用 5A–5C
+   各 derive 入口已有的链式校验规则(designIrHash / visualViewHash / semanticViewHash /
+   interactionSpecHash)。
+3. **mode / interactionMode / approval intent 仍由 caller 显式传入**,runContract 不猜、不内置
+   默认 policy(承接 5C §3.2 "非法组合直接 throw")。
+4. **从传入点向后续补,不重算前面。** 若 caller 传入了一个已校验通过的 `semanticView`,runner 从该点
+   继续 derive `interactionSpec` / `componentPlan`,**不**重新 derive `visualView` / `semanticView`。
+   传入物在 hash 校验通过后被原样采用(provenance 见下条)。
+5. **输出 manifest 必须标清每个 artifact 是 `provided` 还是 `derived`**(见 §3.2),这样 PR-3 CLI
+   复用已有 `design-spec/` 中间物继续跑时,审计链不含糊:谁是这次新生成的、谁是沿用上游的,一目了然。
+
+> 为什么 flexible 比 `designIr`-only 更适合 5D:CLI 有两个真实入口 —— 全链从 `.sketch` 跑、以及
+> 复用已有 `design-spec/` 中间物继续跑。只要 hash-chain(约束 2)与 provenance(约束 4/5)写死,
+> flexible 不削弱契约,反而更贴近实际工作流。`designIr`-only 会逼 CLI 复用中间物时自己 re-derive,
+> 丢掉"已审过的中间物"这层语义。
 
 `runContract` 是纯函数:同输入 ⇒ 字节级相同输出。任何时钟 / 路径 / 落盘都在 CLI 层。
 
@@ -106,18 +120,37 @@ CLI 落盘布局(在 `--out <dir>` 下):
     semantic-view.json
     interaction-spec.json
     component-plan.json
-    manifest.json           # 列出本次产出的 artifact + 各自 hash,便于 Stage 6 校验链
+    manifest.json           # 每个 artifact 的 hash + provenance(provided / derived)
 ```
+
+`manifest.json` 形态(由 `runContract` 在内存里构造,CLI 落盘):
+
+```ts
+// 每个 artifact 一条 entry:
+{
+  filename: string;        // 来自 ARTIFACT_FILENAMES
+  hash: string;            // stableSha256(stableJson(artifact))
+  origin: 'provided' | 'derived'; // 本次是沿用传入物还是新 derive 的(§2.1 约束 5)
+  generatedFrom: {...};    // 该 artifact 的上游 hash 链(原样取自 artifact.generatedFrom)
+}
+```
+
+`origin` 是审计链的关键:CLI 复用已有中间物继续跑时(§2.1 约束 4),manifest 能直接区分"这次新生成的"
+与"沿用上游已审过的"。
 
 > `interaction-coverage.md` 的**生成**留给 Stage 6;5D 只在 `component-plan.body.interactionCoverage`
 > 里保留 coverage snapshot(已由 5C 落地),并在 5D 文档里写明 Stage 6 从这里读、不重判。
 
-### 3.3 hash chain 贯穿
+### 3.3 hash chain 贯穿 + provenance
 
 `runContract` 内部沿用 5A–5C 已建的 hash chain 校验:传入的任何上游 view 必须与重算 hash 一致,
-否则 throw(不降级 warning)。出口每个 artifact 的 `generatedFrom` 带齐它依赖的上游 hash。
-`manifest.json` 额外记录每个 artifact 的 `stableSha256(stableJson(artifact))`,给 Stage 6 做
-"输入链完整性" 校验的锚点。
+否则 throw(不降级 warning,§2.1 约束 2)。出口每个 artifact 的 `generatedFrom` 带齐它依赖的上游 hash。
+`manifest.json` 额外记录每个 artifact 的 `stableSha256(stableJson(artifact))` 与 `origin`
+(`provided` / `derived`,§2.1 约束 5),给 Stage 6 做"输入链完整性"校验的锚点。
+
+注意:无论 artifact 是 `provided` 还是 `derived`,它进入 manifest 的 hash 都是对**最终采用的对象**
+重算的,所以一个传入但 hash 校验通过的 view 与重新 derive 的同一 view 在 manifest 里 hash 必然一致 ——
+`origin` 只记录"这次是怎么来的",不改变 hash 语义。
 
 ### 3.4 错误传播
 
@@ -134,8 +167,10 @@ CLI 层捕获并以非零 exit code + 可读信息退出(沿用 `cli.ts` 既有 
 - `packages/d2c-core/src/contract/__tests__/run-contract.test.ts`(新)
 - `packages/d2c-core/src/contract/index.ts`(导出 `runContract` + 类型)
 
-要点:串联四步、flexible 输入、mode/status 显式、纯函数。
+要点:串联四步、flexible 输入(§2.1 五条硬约束)、mode/status 显式、纯函数。
 测试:全链 happy path(presentational + interactive)、hash chain mismatch 各步 throw、
+**传入已校验中间物时从该点续跑且不重 derive 上游**(断言传入的 view 对象被原样采用、上游 derive
+未被再次调用 / 输出与传入完全一致)、**传入 hash 不一致的中间物即 throw(不信任缓存)**、
 mode×status 非法组合 throw、determinism(同输入 deep-equal + stableJson 相同)、
 warnings 有序合并、错误传播。
 
@@ -147,8 +182,10 @@ warnings 有序合并、错误传播。
 - `packages/d2c-core/src/contract/index.ts`
 - `packages/d2c-core/src/contract/__tests__/artifact-paths.test.ts`
 
-要点:常量 + manifest 形态(artifact 名 → hash 映射的纯构造函数,**不写盘**)。
-测试:常量稳定、manifest 构造确定性、manifest 覆盖全部五个 artifact。
+要点:常量 + manifest 形态(每条 entry 含 filename / hash / `origin` / generatedFrom 的纯构造
+函数,**不写盘**)。
+测试:常量稳定、manifest 构造确定性、manifest 覆盖全部五个 artifact、**`origin` 正确区分
+provided vs derived**(同一 view 传入 vs 重算时 hash 相同但 origin 不同)。
 
 ### 5D-PR-3 — Sketch CLI `contract` 子命令
 
