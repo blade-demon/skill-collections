@@ -215,7 +215,7 @@ export function deriveComponentPlan(input: DeriveComponentPlanInput): DeriveComp
   });
 
   /* §7.2 step 7 — layouts. */
-  const layoutPlan = buildLayouts({ components, semanticView });
+  const layoutPlan = buildLayouts({ components, rootComponent, semanticView });
 
   /* §7.2 step 8 — assets. */
   const assetPlan = buildAssets({ semanticView, visualNodeById, warnings });
@@ -504,16 +504,26 @@ function findOwnerComponent(args: FindOwnerArgs): PlannedComponent {
 
 function buildLayouts(args: {
   components: PlannedComponent[];
+  rootComponent: PlannedComponent;
   semanticView: SemanticView;
 }): PlannedLayout[] {
-  const { components, semanticView } = args;
+  const { components, rootComponent, semanticView } = args;
 
+  /* §6.1.5 — mirror the integrity validator's allowed set EXACTLY: a layout
+   * is permitted only for a planned component's semanticNodeId, or a DIRECT
+   * child of the root component. 5A emits a default absolute layout candidate
+   * for every screen / region / component node anywhere in the tree, so a
+   * candidate for a nested region/component that is a child of a *non-root*
+   * planned component must NOT be promoted here — otherwise derive would
+   * fail its own assertComponentPlanIntegrity() call on a legal semantic
+   * view. Deeper nodes are carried inside their parent component's markup in
+   * Stage 6, not as top-level layout entries. */
   const allowedSemanticIds = new Set<string>();
   for (const component of components) {
     allowedSemanticIds.add(component.semanticNodeId);
-    for (const childId of component.childSemanticNodeIds) {
-      allowedSemanticIds.add(childId);
-    }
+  }
+  for (const childId of rootComponent.childSemanticNodeIds) {
+    allowedSemanticIds.add(childId);
   }
 
   const seen = new Set<string>();
