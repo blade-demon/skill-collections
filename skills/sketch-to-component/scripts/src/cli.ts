@@ -1,10 +1,16 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   runPreview as runCorePreview,
   runContract as runCoreContract,
   buildContractManifest,
+  verifyDesignSpec,
+  generateComponentPackage,
+  approveComponentPlan,
+  ComponentPlanSchema,
+  stableJson,
+  stableSha256,
   ARTIFACT_FILENAMES,
   MANIFEST_FILENAME,
   type DesignIR,
@@ -12,6 +18,10 @@ import {
   type RunContractInput,
   type ComponentPlanMode,
   type DeriveInteractionMode,
+  type ComponentPlanSignOff,
+  type ContractManifest,
+  type CodegenFilePlan,
+  type DesignSpecInput,
 } from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
@@ -163,6 +173,12 @@ function printUsage(): void {
   console.error('   or: npm run preview -- --design-ir <path> --out <dir>');
   console.error(
     '   or: npm run contract -- (--file <path> [--artboard <id|name>] | --design-ir <path>) --out <dir> --mode presentational --interaction-mode <omitted|deferred> --approval-reason <str> --approved-by <str> --approved-at <iso>',
+  );
+  console.error(
+    '   or: npm run codegen -- --spec <design-spec dir> --design-ir <path> --out <pkg dir>',
+  );
+  console.error(
+    '   or: npm run approve -- --spec <design-spec dir> --approved-by <str> --approved-at <iso> [--acknowledge-behavior-stubbed]',
   );
 }
 
@@ -390,6 +406,152 @@ async function runContractCommand(): Promise<void> {
   }
 }
 
+/* ── codegen + approve (Stage 6) ─────────────────────────────────────────── */
+
+export interface CodegenCliArgs {
+  command: 'codegen';
+  specDir: string;
+  designIrPath: string;
+  outDir: string;
+}
+
+export interface ApproveCliArgs {
+  command: 'approve';
+  specDir: string;
+  approvedBy: string;
+  approvedAt: string;
+  acknowledgedBehaviorStubbed: boolean;
+}
+
+/** Structural parse only. No `--mode`: codegen mode comes from the approved plan. */
+export function parseCodegenArgs(argv: string[]): CodegenCliArgs | undefined {
+  if (argv[2] !== 'codegen') return undefined;
+  const specDir = argValue(argv, '--spec');
+  const designIrPath = argValue(argv, '--design-ir');
+  const outDir = argValue(argv, '--out');
+  if (!specDir || !designIrPath || !outDir) return undefined;
+  return { command: 'codegen', specDir, designIrPath, outDir };
+}
+
+export function parseApproveArgs(argv: string[]): ApproveCliArgs | undefined {
+  if (argv[2] !== 'approve') return undefined;
+  const specDir = argValue(argv, '--spec');
+  const approvedBy = argValue(argv, '--approved-by');
+  const approvedAt = argValue(argv, '--approved-at');
+  if (!specDir || !approvedBy || !approvedAt) return undefined;
+  return {
+    command: 'approve',
+    specDir,
+    approvedBy,
+    approvedAt,
+    acknowledgedBehaviorStubbed: argv.includes('--acknowledge-behavior-stubbed'),
+  };
+}
+
+/**
+ * Pure Gate 2 + generate seam: validate the on-disk design-spec, then produce
+ * the in-memory package file plan. NO disk IO — the caller writes the files.
+ * Throws when the component-plan is not approved or the hash chain is broken.
+ */
+export function planCodegenFiles(input: DesignSpecInput): CodegenFilePlan {
+  const verified = verifyDesignSpec(input);
+  return generateComponentPackage({
+    componentPlan: verified.componentPlan,
+    semanticView: verified.semanticView,
+    interactionSpec: verified.interactionSpec,
+  });
+}
+
+/**
+ * Pure sign-off seam: promote the component-plan to approved and rewrite only
+ * its manifest hash entry (approval lives in the artifact, so its whole-artifact
+ * hash changes — plan §3.4 Option A). Returns the two files to persist; NO IO.
+ */
+export function planApproval(
+  componentPlanInput: unknown,
+  manifestInput: unknown,
+  signOff: ComponentPlanSignOff,
+): { componentPlanJson: string; manifestJson: string } {
+  const approved = approveComponentPlan(ComponentPlanSchema.parse(componentPlanInput), signOff);
+  const hash = stableSha256(stableJson(approved));
+
+  const manifest = manifestInput as ContractManifest;
+  if (!manifest || !Array.isArray(manifest.artifacts)) {
+    throw new Error('approve: manifest.json must contain an artifacts array');
+  }
+  if (!manifest.artifacts.some((entry) => entry.filename === ARTIFACT_FILENAMES.componentPlan)) {
+    throw new Error(
+      `approve: manifest has no '${ARTIFACT_FILENAMES.componentPlan}' entry to update`,
+    );
+  }
+  const updated: ContractManifest = {
+    ...manifest,
+    artifacts: manifest.artifacts.map((entry) =>
+      entry.filename === ARTIFACT_FILENAMES.componentPlan ? { ...entry, hash } : entry,
+    ),
+  };
+  return { componentPlanJson: stableStringify(approved), manifestJson: stableStringify(updated) };
+}
+
+async function runCodegenCommand(): Promise<void> {
+  const args = parseCodegenArgs(process.argv);
+  if (!args) {
+    printUsage();
+    process.exitCode = 2;
+    return;
+  }
+
+  const readJson = async (path: string): Promise<unknown> =>
+    JSON.parse(await readFile(path, 'utf8')) as unknown;
+  const specFile = (name: string): string => join(args.specDir, name);
+
+  const plan = planCodegenFiles({
+    designIr: await readJson(args.designIrPath),
+    visualView: await readJson(specFile(ARTIFACT_FILENAMES.visualView)),
+    semanticView: await readJson(specFile(ARTIFACT_FILENAMES.semanticView)),
+    interactionSpec: await readJson(specFile(ARTIFACT_FILENAMES.interactionSpec)),
+    componentPlan: await readJson(specFile(ARTIFACT_FILENAMES.componentPlan)),
+    manifest: await readJson(specFile(MANIFEST_FILENAME)),
+  });
+
+  for (const file of plan.files) {
+    const dest = join(args.outDir, file.path);
+    await mkdir(dirname(dest), { recursive: true });
+    await writeFile(dest, file.content, 'utf8');
+  }
+
+  console.log(`out: ${args.outDir}`);
+  console.log(`files: ${plan.files.length}`);
+  for (const warning of plan.warnings) console.log(`warning: ${warning}`);
+}
+
+async function runApproveCommand(): Promise<void> {
+  const args = parseApproveArgs(process.argv);
+  if (!args) {
+    printUsage();
+    process.exitCode = 2;
+    return;
+  }
+
+  const planPath = join(args.specDir, ARTIFACT_FILENAMES.componentPlan);
+  const manifestPath = join(args.specDir, MANIFEST_FILENAME);
+  const { componentPlanJson, manifestJson } = planApproval(
+    JSON.parse(await readFile(planPath, 'utf8')) as unknown,
+    JSON.parse(await readFile(manifestPath, 'utf8')) as unknown,
+    {
+      approvedBy: args.approvedBy,
+      approvedAt: args.approvedAt,
+      acknowledgedBehaviorStubbed: args.acknowledgedBehaviorStubbed,
+    },
+  );
+
+  await writeFile(planPath, componentPlanJson, 'utf8');
+  await writeFile(manifestPath, manifestJson, 'utf8');
+
+  console.log(`approved: ${planPath}`);
+  console.log(`manifest: ${manifestPath}`);
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === 'preview') {
     await runPreview();
@@ -401,6 +563,14 @@ async function main(): Promise<void> {
   }
   if (process.argv[2] === 'contract') {
     await runContractCommand();
+    return;
+  }
+  if (process.argv[2] === 'codegen') {
+    await runCodegenCommand();
+    return;
+  }
+  if (process.argv[2] === 'approve') {
+    await runApproveCommand();
     return;
   }
   await runExtract();
