@@ -38,8 +38,10 @@ Provider-specific extraction and normalization code stays in
 of `.sketch` ZIP JSON lives in `skills/sketch-to-component/scripts/`, then hands
 validated IR to this package.
 
-Not yet in scope: component planning, target package codegen, screenshot diff
-automation, and a full resumable pipeline runner.
+Not yet in scope: target package codegen (Stage 6), screenshot diff
+automation, and a fully resumable pipeline runner — the Stage 5D contract
+runner below chains the derive steps in one pure pass, but persisting and
+resuming partial runs is a later slice.
 
 ## Semantic View (Stage 5A)
 
@@ -238,6 +240,62 @@ CLI entry (Stage 5D), and does not write artifacts to disk; the
 component-plan it returns is held in memory and round-trips through
 `ComponentPlanSchema` + `assertComponentPlanIntegrity` before being
 returned.
+
+## Contract Runner (Stage 5D)
+
+`src/contract/run-contract.ts` chains the four Stage 5 derive steps into one
+pass, and `src/contract/artifact-paths.ts` defines the stable artifact names
+plus a manifest builder. Both are **pure** — `d2c-core` performs no file IO.
+The disk-writing CLI lives in the Sketch skill
+(`skills/sketch-to-component/scripts`), keeping provider/output concerns out
+of core.
+
+### `runContract`
+
+```ts
+runContract({ designIr, visualView?, semanticView?, interactionSpec?, mode, interactionMode?, approval? })
+  => { visualView, semanticView, interactionSpec, componentPlan, warnings }
+```
+
+Chains `deriveVisualView → deriveSemanticView → deriveInteractionSpec →
+deriveComponentPlan`. Same input ⇒ byte-identical output; no clock, no
+network, no IO. Input contract (flexible, but constraints are hard):
+
+- `designIr` is required — the root anchor of the hash chain.
+- `visualView` / `semanticView` / `interactionSpec` are optional, but a
+  provided view MUST pass full hash-chain validation against its upstream;
+  a mismatch throws (never trusts a cached object).
+- `mode` / `interactionMode` / `approval` are caller-explicit. When the
+  interaction spec is derived (not provided), `interactionMode` is
+  **required** — `runContract` does not fall back to a default.
+- Provided views must form a contiguous prefix from `designIr`; the runner
+  derives only past the last provided one and never re-derives a provided
+  view. Warnings are the ordered merge of the steps that actually ran.
+
+`runContract` never promotes an interaction spec to `approved`
+(`deriveInteractionSpec` only ever yields `draft | omitted | deferred`). So
+`mode='interactive'` succeeds only with a caller-provided `approved` spec;
+otherwise `deriveComponentPlan` throws (5C §3.2).
+
+### Artifact names + manifest
+
+```ts
+ARTIFACT_FILENAMES; // design-ir.json (input root, in ir/) + the four
+// runContract outputs (in design-spec/)
+MANIFEST_FILENAME; // 'manifest.json'
+buildContractManifest(input, result); // pure; one entry per contract artifact:
+// { filename, hash, origin: 'provided' | 'derived', generatedFrom }
+```
+
+`hash` is always `stableSha256(stableJson(artifact))` of the final adopted
+artifact, so a provided view that validated and the same view derived hash
+identically — `origin` records provenance only.
+
+### Not in scope (Stage 5D)
+
+No codegen (Stage 6). The CLI's `--file` / `--design-ir` entries derive the
+full chain; reuse-input entries (feeding a pre-approved interaction-spec for
+interactive mode) are a later slice.
 
 ## Verification
 

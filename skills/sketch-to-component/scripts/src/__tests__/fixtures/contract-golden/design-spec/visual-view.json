@@ -1,0 +1,92 @@
+{
+  "body": {
+    "artboard": {
+      "height": 812,
+      "width": 375
+    },
+    "assets": [],
+    "root": {
+      "children": [
+        {
+          "children": [],
+          "id": "node-header",
+          "kind": "frame",
+          "layout": {
+            "height": 80,
+            "width": 375,
+            "x": 0,
+            "y": 0
+          },
+          "name": "Component/Header",
+          "source": {
+            "name": "Component/Header",
+            "nodeId": "header-1",
+            "originalType": "group",
+            "provider": "sketch"
+          }
+        },
+        {
+          "children": [],
+          "id": "node-card",
+          "kind": "frame",
+          "layout": {
+            "height": 200,
+            "width": 375,
+            "x": 0,
+            "y": 100
+          },
+          "name": "Component/Card",
+          "source": {
+            "name": "Component/Card",
+            "nodeId": "card-1",
+            "originalType": "group",
+            "provider": "sketch"
+          }
+        },
+        {
+          "assetRef": "asset-hero",
+          "children": [],
+          "id": "node-hero",
+          "kind": "image",
+          "layout": {
+            "height": 200,
+            "width": 375,
+            "x": 0,
+            "y": 320
+          },
+          "name": "Hero",
+          "source": {
+            "name": "Hero",
+            "nodeId": "hero-1",
+            "originalType": "bitmap",
+            "provider": "sketch"
+          }
+        }
+      ],
+      "id": "node-root",
+      "kind": "frame",
+      "layout": {
+        "height": 812,
+        "width": 375,
+        "x": 0,
+        "y": 0
+      },
+      "name": "GoldenScreen",
+      "source": {
+        "name": "Golden Screen",
+        "nodeId": "root-1",
+        "originalType": "artboard",
+        "provider": "sketch"
+      }
+    }
+  },
+  "generatedFrom": {
+    "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "sourceRef": {
+      "documentId": "golden-doc-1",
+      "fileName": "contract-golden.sketch"
+    }
+  },
+  "kind": "visual-view"
+}
