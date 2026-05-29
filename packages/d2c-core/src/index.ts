@@ -8,4 +8,5 @@ export * from './provider';
 export * from './preview';
 export * from './semantic';
 export * from './contract';
+export * from './codegen';
 export * from './utils';
