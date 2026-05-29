@@ -38,8 +38,10 @@ Provider-specific extraction and normalization code stays in
 of `.sketch` ZIP JSON lives in `skills/sketch-to-component/scripts/`, then hands
 validated IR to this package.
 
-Not yet in scope: component planning, target package codegen, screenshot diff
-automation, and a full resumable pipeline runner.
+Not yet in scope: target package codegen (Stage 6), screenshot diff
+automation, and a fully resumable pipeline runner — the Stage 5D contract
+runner below chains the derive steps in one pure pass, but persisting and
+resuming partial runs is a later slice.
 
 ## Semantic View (Stage 5A)
 
