@@ -7,4 +7,8 @@ describe('codegen public surface (6-PR-1)', () => {
     expect(typeof codegen.approveComponentPlan).toBe('function');
     expect(typeof codegen.verifyDesignSpec).toBe('function');
   });
+
+  it('exports the codegen entry point (6-PR-2)', () => {
+    expect(typeof codegen.generateComponentPackage).toBe('function');
+  });
 });
