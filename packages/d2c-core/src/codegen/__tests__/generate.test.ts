@@ -1,26 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { bridgedFullChat } from '../../contract/__tests__/fixtures';
-import { runContract } from '../../contract/run-contract';
 import { generateComponentPackage } from '../generate';
-import type { CodegenInput } from '../target';
-
-const APPROVAL = {
-  reason: 'visual delivery first; interaction deferred',
-  approvedBy: 'alice',
-  approvedAt: '2026-05-26T00:00:00Z',
-} as const;
-
-function codegenInput(): CodegenInput {
-  const { designIr } = bridgedFullChat();
-  const { componentPlan, semanticView, interactionSpec } = runContract({
-    designIr,
-    mode: 'presentational',
-    interactionMode: 'deferred',
-    approval: APPROVAL,
-  });
-  return { componentPlan, semanticView, interactionSpec };
-}
+import { approvedCodegenInput as codegenInput } from './codegen-fixtures';
 
 describe('generateComponentPackage — presentational React', () => {
   it('returns a deterministic file plan with sorted, unique paths', () => {

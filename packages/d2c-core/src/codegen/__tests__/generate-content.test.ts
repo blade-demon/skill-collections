@@ -1,23 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { deriveComponentPlan } from '../../contract/derive-component-plan';
-import { presentationalInput } from '../../contract/__tests__/component-plan-fixtures';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { generateComponentPackage } from '../generate';
 import type { CodegenFilePlan, CodegenInput } from '../target';
-
-// presentationalInput()'s deferred interaction-spec carries dataModels, so the
-// derived plan has presentational-stub props (a production deferred run emits an
-// empty interaction body and therefore no stub props).
-function codegenInput(): CodegenInput {
-  const input = presentationalInput();
-  const { componentPlan } = deriveComponentPlan(input);
-  return {
-    componentPlan,
-    semanticView: input.semanticView,
-    interactionSpec: input.interactionSpec,
-  };
-}
+import { approvedStubPropsInput as codegenInput } from './codegen-fixtures';
 
 function fileFor(plan: CodegenFilePlan, path: string): string {
   const file = plan.files.find((f) => f.path === path);
