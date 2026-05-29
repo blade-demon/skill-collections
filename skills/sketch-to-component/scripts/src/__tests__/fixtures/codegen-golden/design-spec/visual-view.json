@@ -1,0 +1,73 @@
+{
+  "body": {
+    "artboard": {
+      "height": 812,
+      "width": 375
+    },
+    "assets": [],
+    "root": {
+      "children": [
+        {
+          "children": [],
+          "id": "node-header",
+          "kind": "frame",
+          "layout": {
+            "height": 80,
+            "width": 375,
+            "x": 0,
+            "y": 0
+          },
+          "name": "Component/Header",
+          "source": {
+            "name": "Component/Header",
+            "nodeId": "header-1",
+            "originalType": "group",
+            "provider": "sketch"
+          }
+        },
+        {
+          "children": [],
+          "id": "node-card",
+          "kind": "frame",
+          "layout": {
+            "height": 200,
+            "width": 375,
+            "x": 0,
+            "y": 100
+          },
+          "name": "Component/Card",
+          "source": {
+            "name": "Component/Card",
+            "nodeId": "card-1",
+            "originalType": "group",
+            "provider": "sketch"
+          }
+        }
+      ],
+      "id": "node-root",
+      "kind": "frame",
+      "layout": {
+        "height": 812,
+        "width": 375,
+        "x": 0,
+        "y": 0
+      },
+      "name": "GoldenScreen",
+      "source": {
+        "name": "Golden Screen",
+        "nodeId": "root-1",
+        "originalType": "artboard",
+        "provider": "sketch"
+      }
+    }
+  },
+  "generatedFrom": {
+    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "sourceRef": {
+      "documentId": "codegen-golden-doc-1",
+      "fileName": "codegen-golden.sketch"
+    }
+  },
+  "kind": "visual-view"
+}

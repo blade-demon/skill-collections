@@ -6,7 +6,10 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // src/golden is generated D2C codegen output (Stage 6 golden); it is verified
+  // byte-for-byte by the codegen-golden test and compiled by tsc -b / vite build,
+  // so it is not subject to hand-authored lint ergonomics (e.g. react-refresh).
+  globalIgnores(['dist', 'src/golden']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

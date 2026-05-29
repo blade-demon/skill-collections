@@ -8,7 +8,7 @@
  */
 import type { ComponentPlan } from '../contract/component-plan-schema';
 import type { InteractionSpec } from '../contract/interaction-schema';
-import type { SemanticView } from '../ir/views';
+import type { SemanticView, VisualView } from '../ir/views';
 
 /** One generated file; `path` is relative to the package root, POSIX-style. */
 export interface CodegenFile {
@@ -24,6 +24,7 @@ export interface CodegenFilePlan {
 
 export interface CodegenInput {
   componentPlan: ComponentPlan;
+  visualView: VisualView;
   semanticView: SemanticView;
   interactionSpec: InteractionSpec;
 }

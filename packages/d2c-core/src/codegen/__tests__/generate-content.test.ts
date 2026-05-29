@@ -64,13 +64,28 @@ describe('generateComponentPackage — React content', () => {
     }
   });
 
-  it('records a d2c provenance block (mode + component-plan hash) in package.json', () => {
+  it('records a d2c provenance block (mode + Gate 2 level + upstream hashes) in package.json', () => {
     const input = codegenInput();
     const pkg = JSON.parse(fileFor(generateComponentPackage(input), 'package.json')) as {
-      d2c?: { mode?: string; componentPlanHash?: string };
+      d2c?: {
+        mode?: string;
+        gate2Level?: string;
+        sourceHashes?: {
+          visualView?: string;
+          semanticView?: string;
+          interactionSpec?: string;
+          componentPlan?: string;
+        };
+      };
     };
     expect(pkg.d2c?.mode).toBe('presentational');
-    expect(pkg.d2c?.componentPlanHash).toBe(stableSha256(stableJson(input.componentPlan)));
+    expect(pkg.d2c?.gate2Level).toBe('presentational');
+    expect(pkg.d2c?.sourceHashes).toEqual({
+      visualView: stableSha256(stableJson(input.visualView)),
+      semanticView: stableSha256(stableJson(input.semanticView)),
+      interactionSpec: stableSha256(stableJson(input.interactionSpec)),
+      componentPlan: stableSha256(stableJson(input.componentPlan)),
+    });
   });
 
   it('includes the presentational behavior-stubbed banner in the README', () => {

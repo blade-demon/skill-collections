@@ -28,7 +28,7 @@ const SIGN_OFF = {
 /** Approved presentational input from the full runContract chain (no stub props). */
 export function approvedCodegenInput(): CodegenInput {
   const { designIr } = bridgedFullChat();
-  const { componentPlan, semanticView, interactionSpec } = runContract({
+  const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
     designIr,
     mode: 'presentational',
     interactionMode: 'deferred',
@@ -36,6 +36,7 @@ export function approvedCodegenInput(): CodegenInput {
   });
   return {
     componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
+    visualView,
     semanticView,
     interactionSpec,
   };
@@ -50,6 +51,7 @@ export function approvedStubPropsInput(): CodegenInput {
   const { componentPlan } = deriveComponentPlan(input);
   return {
     componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
+    visualView: input.visualView,
     semanticView: input.semanticView,
     interactionSpec: input.interactionSpec,
   };

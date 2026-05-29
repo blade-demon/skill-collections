@@ -2,6 +2,7 @@ import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
+import GoldenScreen, { ComponentCard, ComponentHeader } from './golden/src'
 import './App.css'
 
 function App() {
@@ -115,6 +116,14 @@ function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section>
+
+      {/* D2C Stage 6 golden package — compiled + bundled here to prove the
+          generated presentational package is tsc/build-clean (check:fixtures). */}
+      <section id="d2c-golden" hidden>
+        <GoldenScreen />
+        <ComponentHeader />
+        <ComponentCard />
+      </section>
     </>
   )
 }

@@ -461,6 +461,7 @@ export function planCodegenFiles(input: DesignSpecInput): CodegenFilePlan {
   const verified = verifyDesignSpec(input);
   return generateComponentPackage({
     componentPlan: verified.componentPlan,
+    visualView: verified.visualView,
     semanticView: verified.semanticView,
     interactionSpec: verified.interactionSpec,
   });

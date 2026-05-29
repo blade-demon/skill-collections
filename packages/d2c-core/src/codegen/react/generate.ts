@@ -91,14 +91,21 @@ function rootExportName(plan: ComponentPlan): string {
   return root?.exportName ?? 'Component';
 }
 
-function packageJson(plan: ComponentPlan): string {
+function packageJson(input: CodegenInput): string {
+  const { componentPlan: plan, visualView, semanticView, interactionSpec } = input;
   const pkg = {
     name: kebabCase(rootExportName(plan)),
     version: '0.0.0',
     private: true,
     d2c: {
       mode: plan.mode,
-      componentPlanHash: stableSha256(stableJson(plan)),
+      gate2Level: plan.approval?.level,
+      sourceHashes: {
+        visualView: stableSha256(stableJson(visualView)),
+        semanticView: stableSha256(stableJson(semanticView)),
+        interactionSpec: stableSha256(stableJson(interactionSpec)),
+        componentPlan: stableSha256(stableJson(plan)),
+      },
     },
   };
   return JSON.stringify(pkg, null, 2) + '\n';
@@ -173,7 +180,7 @@ export const reactGenerator: TargetGenerator = {
     }
 
     files.push({ path: 'src/index.ts', content: packageBarrel(componentPlan) });
-    files.push({ path: 'package.json', content: packageJson(componentPlan) });
+    files.push({ path: 'package.json', content: packageJson(input) });
     files.push({ path: 'README.md', content: readme(componentPlan) });
     files.push({ path: 'interaction-coverage.md', content: coverageMarkdown(componentPlan) });
 

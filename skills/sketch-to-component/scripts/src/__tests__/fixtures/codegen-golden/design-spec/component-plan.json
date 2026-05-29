@@ -1,0 +1,159 @@
+{
+  "approval": {
+    "acknowledgedBehaviorStubbed": true,
+    "approvedAt": "2026-05-30T00:00:00Z",
+    "approvedBy": "golden-bot",
+    "gate": "gate-2",
+    "level": "presentational"
+  },
+  "body": {
+    "assetPlan": [],
+    "components": [
+      {
+        "childSemanticNodeIds": [
+          "s_10323803be24",
+          "s_94001f671746"
+        ],
+        "confidence": "high",
+        "dataBindings": [],
+        "eventBindings": [],
+        "id": "pc_d6850462270e",
+        "name": "GoldenScreen",
+        "props": [],
+        "renderAs": "component",
+        "role": "root",
+        "semanticNodeId": "s_7bd9a8fb13c0",
+        "warnings": []
+      },
+      {
+        "childSemanticNodeIds": [],
+        "confidence": "medium",
+        "dataBindings": [],
+        "eventBindings": [],
+        "id": "pc_d39927778717",
+        "name": "ComponentHeader",
+        "props": [],
+        "renderAs": "component",
+        "role": "component",
+        "semanticNodeId": "s_10323803be24",
+        "warnings": []
+      },
+      {
+        "childSemanticNodeIds": [],
+        "confidence": "medium",
+        "dataBindings": [],
+        "eventBindings": [],
+        "id": "pc_95033c0a7555",
+        "name": "ComponentCard",
+        "props": [],
+        "renderAs": "component",
+        "role": "component",
+        "semanticNodeId": "s_94001f671746",
+        "warnings": []
+      }
+    ],
+    "exports": [
+      {
+        "exportName": "GoldenScreen",
+        "id": "pe_9a74988f6096",
+        "kind": "default",
+        "plannedComponentId": "pc_d6850462270e"
+      },
+      {
+        "exportName": "ComponentHeader",
+        "id": "pe_34185477a1f2",
+        "kind": "named",
+        "plannedComponentId": "pc_d39927778717"
+      },
+      {
+        "exportName": "ComponentCard",
+        "id": "pe_fc76cd3b8ecd",
+        "kind": "named",
+        "plannedComponentId": "pc_95033c0a7555"
+      }
+    ],
+    "interactionCoverage": {
+      "dataBinding": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "events": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "stateTransitions": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "states": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      }
+    },
+    "layoutPlan": [
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "pl_725cd40cde18",
+        "layoutCandidateId": "lc_422c4f9307c1",
+        "semanticNodeId": "s_7bd9a8fb13c0",
+        "strategy": "absolute"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "pl_320d73a814fd",
+        "layoutCandidateId": "lc_9fce15e13e17",
+        "semanticNodeId": "s_10323803be24",
+        "strategy": "absolute"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "pl_ad8f6ca0b8d3",
+        "layoutCandidateId": "lc_913e81e49847",
+        "semanticNodeId": "s_94001f671746",
+        "strategy": "absolute"
+      }
+    ],
+    "rootComponent": {
+      "childSemanticNodeIds": [
+        "s_10323803be24",
+        "s_94001f671746"
+      ],
+      "confidence": "high",
+      "dataBindings": [],
+      "eventBindings": [],
+      "id": "pc_d6850462270e",
+      "name": "GoldenScreen",
+      "props": [],
+      "renderAs": "component",
+      "role": "root",
+      "semanticNodeId": "s_7bd9a8fb13c0",
+      "warnings": []
+    },
+    "target": {
+      "framework": "react",
+      "language": "ts",
+      "styling": "bem-css"
+    },
+    "warnings": []
+  },
+  "generatedFrom": {
+    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+    "interactionSpecHash": "52f248253913f828ea3180d58b6b071757fc0fe869767cc780933020d70b0a10",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "semanticViewHash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+    "sourceRef": {
+      "documentId": "codegen-golden-doc-1",
+      "fileName": "codegen-golden.sketch"
+    },
+    "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+  },
+  "kind": "component-plan",
+  "mode": "presentational",
+  "status": "approved"
+}

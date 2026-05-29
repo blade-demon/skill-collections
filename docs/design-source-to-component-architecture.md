@@ -528,7 +528,7 @@ Gate 2 remains a single gate. The approval record carries a `level` field (`pres
 
 Codegen consumes `component-plan.mode` only — it does not take an external mode parameter. Mode is a property of the approved plan, not a runtime switch.
 
-The Gate 2 artifact chain must be hash-pinned end to end: `semantic-view` pins the `visual-view`, `interaction-spec` pins the `semantic-view`, and `component-plan` pins both `semantic-view` and `interaction-spec`. Generated bodies and contract hashes must be deterministic for the same inputs. Approval timestamps such as `approvedAt` are audit metadata and are excluded from contract hashes, but validators still require the fields when the gate is approved.
+The Gate 2 artifact chain must be hash-pinned end to end: `semantic-view` pins the `visual-view`, `interaction-spec` pins the `semantic-view`, and `component-plan` pins both `semantic-view` and `interaction-spec`. Generated bodies and contract hashes must be deterministic for the same inputs. In the current implementation the contract hash covers the **whole** artifact, including approval fields such as `approvedAt` — so signing a plan off changes its hash, and sign-off rewrites `component-plan.json` together with its `manifest.json` entry. (A contract-identity hash that excludes approval metadata, keeping the hash stable across `draft → approved`, is a noted future optimization.) Validators still require the approval fields when the gate is approved.
 
 #### Upgrade path
 

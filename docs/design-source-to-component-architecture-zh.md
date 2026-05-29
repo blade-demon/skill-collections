@@ -528,7 +528,7 @@ Token 映射是视觉保真的核心变量，必须是确定性的。
 
 Codegen 只读取 `component-plan.mode`——不接收外部 mode 参数。模式是已批准方案的属性，不是运行期开关。
 
-Gate 2 产物链必须端到端 hash 钉死:`semantic-view` 钉住 `visual-view`,`interaction-spec` 钉住 `semantic-view`,`component-plan` 同时钉住 `semantic-view` 与 `interaction-spec`。同一输入生成的 body 与 contract hash 必须确定性一致。`approvedAt` 这类审批时间戳是审计元数据,不参与 contract hash,但 gate 已批准时 validator 仍必须检查这些字段存在。
+Gate 2 产物链必须端到端 hash 钉死:`semantic-view` 钉住 `visual-view`,`interaction-spec` 钉住 `semantic-view`,`component-plan` 同时钉住 `semantic-view` 与 `interaction-spec`。同一输入生成的 body 与 contract hash 必须确定性一致。当前实现中,contract hash 覆盖**整个** artifact,包含 `approvedAt` 等审批字段——因此对方案签字会改变其 hash,sign-off 会同时重写 `component-plan.json` 及其在 `manifest.json` 中的条目。(一个剥离审批元数据、使 `draft → approved` 间 hash 保持稳定的 contract identity hash 是后续优化项。)gate 已批准时 validator 仍必须检查这些审批字段存在。
 
 #### 升级路径
 
