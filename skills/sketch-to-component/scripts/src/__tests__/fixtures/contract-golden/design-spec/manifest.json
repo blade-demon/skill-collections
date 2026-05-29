@@ -1,0 +1,62 @@
+{
+  "artifacts": [
+    {
+      "filename": "visual-view.json",
+      "generatedFrom": {
+        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "sourceRef": {
+          "documentId": "golden-doc-1",
+          "fileName": "contract-golden.sketch"
+        }
+      },
+      "hash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623",
+      "origin": "derived"
+    },
+    {
+      "filename": "semantic-view.json",
+      "generatedFrom": {
+        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "sourceRef": {
+          "documentId": "golden-doc-1",
+          "fileName": "contract-golden.sketch"
+        },
+        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+      },
+      "hash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+      "origin": "derived"
+    },
+    {
+      "filename": "interaction-spec.json",
+      "generatedFrom": {
+        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+        "sourceRef": {
+          "documentId": "golden-doc-1",
+          "fileName": "contract-golden.sketch"
+        },
+        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+      },
+      "hash": "c36e34cff49dda1c8ce681229dac550594ba06c19236412950699c675af0f34f",
+      "origin": "derived"
+    },
+    {
+      "filename": "component-plan.json",
+      "generatedFrom": {
+        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+        "interactionSpecHash": "c36e34cff49dda1c8ce681229dac550594ba06c19236412950699c675af0f34f",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+        "sourceRef": {
+          "documentId": "golden-doc-1",
+          "fileName": "contract-golden.sketch"
+        },
+        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+      },
+      "hash": "0aed90618dbf6bf938fb80847adb55d17ee3fd7b29c6315995d4c0fa5305ee17",
+      "origin": "derived"
+    }
+  ]
+}

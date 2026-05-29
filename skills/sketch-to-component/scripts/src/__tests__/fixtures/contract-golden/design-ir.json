@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "d2c.design-ir/v0.2.0",
+  "source": {
+    "provider": "sketch",
+    "ref": {
+      "fileName": "contract-golden.sketch",
+      "documentId": "golden-doc-1"
+    },
+    "rootName": "Contract Golden Screen"
+  },
+  "visual": {
+    "artboard": {
+      "width": 375,
+      "height": 812
+    },
+    "assets": [],
+    "root": {
+      "id": "node-root",
+      "kind": "frame",
+      "name": "GoldenScreen",
+      "source": {
+        "nodeId": "root-1",
+        "name": "Golden Screen",
+        "originalType": "artboard",
+        "provider": "sketch"
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 375,
+        "height": 812
+      },
+      "children": [
+        {
+          "id": "node-header",
+          "kind": "frame",
+          "name": "Component/Header",
+          "source": {
+            "nodeId": "header-1",
+            "name": "Component/Header",
+            "originalType": "group",
+            "provider": "sketch"
+          },
+          "layout": {
+            "x": 0,
+            "y": 0,
+            "width": 375,
+            "height": 80
+          },
+          "children": []
+        },
+        {
+          "id": "node-card",
+          "kind": "frame",
+          "name": "Component/Card",
+          "source": {
+            "nodeId": "card-1",
+            "name": "Component/Card",
+            "originalType": "group",
+            "provider": "sketch"
+          },
+          "layout": {
+            "x": 0,
+            "y": 100,
+            "width": 375,
+            "height": 200
+          },
+          "children": []
+        },
+        {
+          "id": "node-hero",
+          "kind": "image",
+          "name": "Hero",
+          "source": {
+            "nodeId": "hero-1",
+            "name": "Hero",
+            "originalType": "bitmap",
+            "provider": "sketch"
+          },
+          "layout": {
+            "x": 0,
+            "y": 320,
+            "width": 375,
+            "height": 200
+          },
+          "assetRef": "asset-hero",
+          "children": []
+        }
+      ]
+    }
+  },
+  "semantic": {
+    "candidates": []
+  },
+  "interaction": {
+    "status": "draft"
+  },
+  "warnings": []
+}

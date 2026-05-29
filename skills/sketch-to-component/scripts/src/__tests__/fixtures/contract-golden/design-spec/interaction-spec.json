@@ -1,0 +1,56 @@
+{
+  "approvedAt": "2026-01-01T00:00:00Z",
+  "approvedBy": "golden-fixture",
+  "body": {
+    "components": [
+      {
+        "confidence": "medium",
+        "id": "ic_4f657fa91a08",
+        "name": "Component/Header",
+        "semanticNodeId": "s_10323803be24"
+      },
+      {
+        "confidence": "medium",
+        "id": "ic_5a05fc388c64",
+        "name": "Component/Card",
+        "semanticNodeId": "s_94001f671746"
+      }
+    ],
+    "coverage": {
+      "dataBinding": {
+        "notes": "golden: visual delivery first",
+        "status": "deferred"
+      },
+      "events": {
+        "notes": "golden: visual delivery first",
+        "status": "deferred"
+      },
+      "stateTransitions": {
+        "notes": "golden: visual delivery first",
+        "status": "deferred"
+      },
+      "states": {
+        "notes": "golden: visual delivery first",
+        "status": "deferred"
+      }
+    },
+    "dataModels": [],
+    "events": [],
+    "stateTransitions": [],
+    "states": [],
+    "warnings": []
+  },
+  "generatedFrom": {
+    "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+    "sourceRef": {
+      "documentId": "golden-doc-1",
+      "fileName": "contract-golden.sketch"
+    },
+    "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+  },
+  "kind": "interaction-spec",
+  "reason": "golden: visual delivery first",
+  "status": "deferred"
+}
