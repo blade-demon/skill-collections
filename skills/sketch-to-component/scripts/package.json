@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "extract": "tsx src/cli.ts extract",
     "normalize": "tsx src/cli.ts normalize",
-    "preview": "tsx src/cli.ts preview"
+    "preview": "tsx src/cli.ts preview",
+    "contract": "tsx src/cli.ts contract"
   },
   "dependencies": {
     "@skill-collections/d2c-core": "*",
