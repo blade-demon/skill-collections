@@ -17,6 +17,7 @@ import {
   planApproval,
   planCodegenFiles,
   planContractFiles,
+  writeCodegenPackage,
 } from '../cli.js';
 
 const APPROVAL = {
@@ -151,25 +152,21 @@ describe('parseCodegenArgs', () => {
     ).toBeUndefined();
   });
 
-  it('does not accept a --mode flag', () => {
-    const args = parseCodegenArgs(
-      codegenArgv([
-        '--spec',
-        '/s',
-        '--design-ir',
-        '/i.json',
-        '--out',
-        '/p',
-        '--mode',
-        'interactive',
-      ]),
-    );
-    expect(args).toEqual({
-      command: 'codegen',
-      specDir: '/s',
-      designIrPath: '/i.json',
-      outDir: '/p',
-    });
+  it('rejects a --mode flag (codegen mode comes only from the approved plan)', () => {
+    expect(
+      parseCodegenArgs(
+        codegenArgv([
+          '--spec',
+          '/s',
+          '--design-ir',
+          '/i.json',
+          '--out',
+          '/p',
+          '--mode',
+          'interactive',
+        ]),
+      ),
+    ).toBeUndefined();
   });
 });
 
@@ -301,6 +298,26 @@ describe('codegen writes to disk (writer boundary)', () => {
     } finally {
       await rm(dirA, { recursive: true, force: true });
       await rm(dirB, { recursive: true, force: true });
+    }
+  });
+
+  it('removes stale files left by a previous run (in-place rewrite)', async () => {
+    const spec = approvedSpec();
+    const dir = await mkdtemp(join(tmpdir(), 'codegen-'));
+    try {
+      // simulate a prior generation leaving an orphan component
+      await mkdir(join(dir, 'src', 'StaleComponent'), { recursive: true });
+      await writeFile(join(dir, 'src', 'StaleComponent', 'StaleComponent.tsx'), 'stale', 'utf8');
+
+      await writeCodegenPackage(dir, planCodegenFiles(spec));
+
+      await expect(
+        readFile(join(dir, 'src', 'StaleComponent', 'StaleComponent.tsx'), 'utf8'),
+      ).rejects.toThrow();
+      // freshly generated files are present
+      await expect(readFile(join(dir, 'package.json'), 'utf8')).resolves.toContain('"d2c"');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
     }
   });
 });

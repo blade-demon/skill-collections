@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
@@ -423,9 +423,13 @@ export interface ApproveCliArgs {
   acknowledgedBehaviorStubbed: boolean;
 }
 
-/** Structural parse only. No `--mode`: codegen mode comes from the approved plan. */
+/**
+ * Structural parse only. `--mode` is rejected: codegen mode is a property of
+ * the approved component-plan, never a runtime override (plan §3.2).
+ */
 export function parseCodegenArgs(argv: string[]): CodegenCliArgs | undefined {
   if (argv[2] !== 'codegen') return undefined;
+  if (argv.includes('--mode')) return undefined;
   const specDir = argValue(argv, '--spec');
   const designIrPath = argValue(argv, '--design-ir');
   const outDir = argValue(argv, '--out');
@@ -493,6 +497,22 @@ export function planApproval(
   return { componentPlanJson: stableStringify(approved), manifestJson: stableStringify(updated) };
 }
 
+/**
+ * Write a generated package to `outDir` with in-place rewrite semantics: the
+ * managed `src/` tree is removed first so a re-run with a different plan leaves
+ * no orphaned component files (plan §2 — same output dir, overwrite in place).
+ * Managed root files (package.json / README.md / interaction-coverage.md) are
+ * overwritten by the plan. Unmanaged sibling files are left untouched.
+ */
+export async function writeCodegenPackage(outDir: string, plan: CodegenFilePlan): Promise<void> {
+  await rm(join(outDir, 'src'), { recursive: true, force: true });
+  for (const file of plan.files) {
+    const dest = join(outDir, file.path);
+    await mkdir(dirname(dest), { recursive: true });
+    await writeFile(dest, file.content, 'utf8');
+  }
+}
+
 async function runCodegenCommand(): Promise<void> {
   const args = parseCodegenArgs(process.argv);
   if (!args) {
@@ -514,11 +534,7 @@ async function runCodegenCommand(): Promise<void> {
     manifest: await readJson(specFile(MANIFEST_FILENAME)),
   });
 
-  for (const file of plan.files) {
-    const dest = join(args.outDir, file.path);
-    await mkdir(dirname(dest), { recursive: true });
-    await writeFile(dest, file.content, 'utf8');
-  }
+  await writeCodegenPackage(args.outDir, plan);
 
   console.log(`out: ${args.outDir}`);
   console.log(`files: ${plan.files.length}`);
