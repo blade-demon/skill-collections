@@ -42,8 +42,8 @@ describe('generatePreview clipping-mask flag', () => {
   });
 
   it('does not emit a per-node overflow when the flag is absent', () => {
-    /* The .d2c-node base rule already declares overflow:hidden globally — we
-     * only assert the node's own selector block does not duplicate it. */
+    /* Non-masked nodes inherit the default overflow:visible — only masked
+     * parents should clip. */
     const preview = generatePreview(makeMaskedView(undefined));
     const block = /\.d2c-node-root \{([^}]*)\}/.exec(preview.css);
     expect(block, 'expected per-node selector block').not.toBeNull();
