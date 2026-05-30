@@ -1,16 +1,30 @@
-# Fixture: React Vite App
+# Fixtures
 
-This directory contains a small React + TypeScript + Vite app used as a reusable fixture for skill development and validation.
+This directory contains reusable app fixtures for CI regression checks and
+manual browser debugging. Fixture apps are not product samples and are not skill
+source.
 
-It is not a product sample and it is not part of a published skill. Keep it intentionally plain so skills can use it as predictable input when testing app-oriented workflows.
+## Layout
+
+```text
+fixtures/
+  apps/
+    react-vite/
+  shared/
+```
+
+- `apps/<target>/` contains a self-contained frontend app for one framework or
+  stack target.
+- `shared/` contains cross-fixture assets, design specs, and notes that are
+  intentionally reused by more than one target.
 
 ## Commands
 
 ```bash
-npm install
-npm run dev
-npm run build
-npm run lint
+npm ci --prefix fixtures/apps/react-vite
+npm run check:fixtures
+npm run dev:fixture:react
 ```
 
-Generated artifacts such as `node_modules/` and `dist/` must stay untracked.
+Keep `npm run check:fixtures` as the CI-facing aggregate. Add per-target
+commands such as `check:fixtures:vue3` when new fixture apps land.

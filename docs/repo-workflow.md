@@ -56,7 +56,7 @@ skill-collections/
 │       ├── search-panel/
 │       └── feedback-form/
 │
-├── fixtures/                       # Shared test/demo app fixtures
+├── fixtures/                       # Per-framework test/demo app fixtures
 └── docs/                           # Top-level cross-cutting documentation
     ├── repo-workflow.md
     ├── sample-authoring.md
@@ -70,7 +70,9 @@ The top-level split is intentional:
 
 - `skills/<skill-name>/` contains a skill that can be installed, copied, tested, and versioned as a coherent unit.
 - `samples/<skill-name>/<sample-name>/` contains hands-on workspaces that demonstrate a specific skill against realistic inputs.
-- `fixtures/` contains reusable app fixtures used for testing or demonstrations, not skill source.
+- `fixtures/apps/<target>/` contains reusable app fixtures used for CI
+  regression, browser debugging, and demonstrations, not skill source.
+- `fixtures/shared/` contains cross-fixture assets and design specs.
 - `docs/` contains repo-level policy and contributor guides only.
 
 ---
@@ -196,7 +198,7 @@ npm run check:full
 ```
 
 Runs in order: lint -> format check -> typecheck -> all tests -> sample builds
--> fixture lint/build. This is the local equivalent of CI.
+-> fixture app lint/build. This is the local equivalent of CI.
 
 For a slightly narrower repo check that excludes fixtures, run `npm run check`.
 
@@ -238,7 +240,7 @@ GitHub Actions runs the same gate as local development:
 
 ```bash
 npm ci
-npm ci --prefix fixtures
+npm ci --prefix fixtures/apps/react-vite
 npm run check:full
 ```
 

@@ -22,6 +22,7 @@ import {
   makeDesignIrCandidateOnlyView,
   makeMismatchedShapeListView,
   makeMultiKindRepeatParentView,
+  makeSameNamedSymbolsView,
 } from './fixtures';
 
 describe('P1 — design-ir candidate lookup uses VisualNode.id', () => {
@@ -79,5 +80,17 @@ describe('P3 — multiple promotable repeat patterns under same parent', () => {
     /* If P3 were unfixed, deriveSemanticView would throw before returning.
      * Reaching this assertion at all proves the validator passed. */
     expect(() => deriveSemanticView(makeMultiKindRepeatParentView())).not.toThrow();
+  });
+});
+
+describe('suggestedName disambiguation — two same-named candidates', () => {
+  it('renames the second candidate to a numeric-suffixed variant and warns', () => {
+    /* Two symbol instances both named 'StatusBar' would otherwise produce two
+     * candidates with the same suggestedName and trip Stage 5C buildExports's
+     * `export name collision` guard. */
+    const { semanticView, warnings } = deriveSemanticView(makeSameNamedSymbolsView());
+    const names = semanticView.body.componentCandidates.map((c) => c.suggestedName);
+    expect(names).toEqual(['StatusBar', 'StatusBar2']);
+    expect(warnings.some((w) => w.code === 'component-candidate-name-disambiguated')).toBe(true);
   });
 });

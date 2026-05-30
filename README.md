@@ -16,7 +16,7 @@ skill-collections/
 │   └── design-to-spec/
 │       ├── search-panel/
 │       └── feedback-form/
-├── fixtures/                    # 测试夹具 App（React + Vite）
+├── fixtures/                    # 多框架测试夹具 App（CI 回归 + 手动演示）
 └── docs/                        # 仓库级工作流和 skill 编写指南
 ```
 
@@ -72,8 +72,8 @@ skills/<skill-name>/
 # 安装根 workspace 依赖
 npm ci
 
-# 安装 fixture app 依赖（运行完整门禁前需要）
-npm ci --prefix fixtures
+# 安装 React fixture app 依赖（运行完整门禁前需要）
+npm ci --prefix fixtures/apps/react-vite
 
 # 安装本地 Git hooks
 npx lefthook install
@@ -94,6 +94,9 @@ npm run build:samples
 
 # 完整合并前检查（本地等价 CI）
 npm run check:full
+
+# 手动打开 React fixture app 调试/演示
+npm run dev:fixture:react
 ```
 
 ## Status

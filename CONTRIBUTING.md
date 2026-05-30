@@ -8,8 +8,9 @@ review.
 
 - Use Node.js 20 or newer. The pinned local version is in `.nvmrc`.
 - Install root workspace dependencies with `npm ci`.
-- Install fixture app dependencies with `npm ci --prefix fixtures` when touching
-  fixture code or running the full gate.
+- Install React fixture app dependencies with
+  `npm ci --prefix fixtures/apps/react-vite` when touching fixture code or
+  running the full gate.
 - Install local Git hooks with `npx lefthook install`.
 
 ## Before Editing
@@ -47,7 +48,8 @@ opening a PR.
   cross-skill dependencies unless they go through a shared package.
 - `samples/*/*` is reader-facing demonstration code. A sample should build and
   explain what it teaches.
-- `fixtures/` is a reusable app fixture, not a place for skill source.
+- `fixtures/apps/*` are reusable app fixtures, not places for skill source.
+  `fixtures/shared/*` holds cross-fixture assets and design specs only.
 - `docs/` is for repo-level guidance and architecture context.
 
 ## Generated and Golden Artifacts

@@ -123,10 +123,27 @@ export function deriveInteractionSpec(
     );
   }
 
-  /* §6.4 — components from semantic candidates (always, all 3 modes). */
+  /* §6.4 — components from semantic candidates (always, all 3 modes).
+   * Stage 5A allows two candidates to share one rootSemanticNodeId (different
+   * boundary discriminators → different cc_ ids; e.g. one parent that is both
+   * a visual-region candidate AND hosts a promotable repeat-pattern). The
+   * legacy id recipe `(semanticNodeId)` would collide here; instead, when a
+   * root carries >1 candidate, fold the full candidate.id into the hash so
+   * each InteractionComponent stays distinct. Single-candidate roots keep
+   * the legacy recipe so existing fixtures/goldens are byte-stable. */
+  const rootMultiplicity = new Map<string, number>();
+  for (const c of input.semanticView.body.componentCandidates) {
+    rootMultiplicity.set(
+      c.rootSemanticNodeId,
+      (rootMultiplicity.get(c.rootSemanticNodeId) ?? 0) + 1,
+    );
+  }
   const components: InteractionComponent[] = input.semanticView.body.componentCandidates.map(
     (candidate) => ({
-      id: generateComponentId(candidate.rootSemanticNodeId),
+      id:
+        (rootMultiplicity.get(candidate.rootSemanticNodeId) ?? 0) > 1
+          ? generateComponentIdFromCandidate(candidate.id)
+          : generateComponentId(candidate.rootSemanticNodeId),
       semanticNodeId: candidate.rootSemanticNodeId,
       name: candidate.suggestedName,
       confidence: candidate.confidence,
@@ -475,6 +492,13 @@ function splitIdentifier(input: string): string[] {
 
 function generateComponentId(semanticNodeId: string): string {
   return 'ic_' + hashRecord({ form: 'interaction-component', semanticNodeId });
+}
+
+/** Disambiguating recipe for the rare case where a single rootSemanticNodeId
+ * carries two ComponentCandidates (different boundary discriminator on the
+ * Stage 5A side; cf. derive.ts §6.5/§6.6). */
+function generateComponentIdFromCandidate(candidateId: string): string {
+  return 'ic_' + hashRecord({ form: 'interaction-component', candidateId });
 }
 
 function generateEventId(sourceSemanticNodeId: string, eventName: string): string {

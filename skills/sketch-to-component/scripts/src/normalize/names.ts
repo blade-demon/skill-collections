@@ -15,7 +15,24 @@ const NAME_OVERRIDES = new Map<string, string>([
   ['猜你想要', 'SuggestedPrompt'],
 ]);
 
-export function stableNodeId(sourceNodeId: string): string {
+/**
+ * Build a deterministic `VisualNode.id` for a Sketch source node.
+ *
+ * `scope` is the chain of enclosing symbol-instance source ids (root → leaf).
+ * Outside symbol expansion it is empty and we fall back to the original
+ * normalize-the-uuid form, so single-instance trees keep byte-identical ids
+ * (no churn for existing fixtures / goldens).
+ *
+ * Inside an expanded symbol the same master child uuid appears once per
+ * instance, so we must scope it: hashing `scope.join('|') + '||' + sourceNodeId`
+ * separates instances and prevents the `duplicate SemanticNode id` failure that
+ * Stage 5A throws when two instances of the same master share children.
+ */
+export function stableNodeId(sourceNodeId: string, scope: readonly string[] = []): string {
+  if (scope.length > 0) {
+    const key = scope.join('|') + '||' + sourceNodeId;
+    return `node-${createHash('sha1').update(key).digest('hex').slice(0, 10)}`;
+  }
   const normalized = sourceNodeId
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
