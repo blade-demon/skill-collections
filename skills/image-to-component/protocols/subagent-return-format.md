@@ -1,10 +1,10 @@
-# Signature Subagent Return Format
+# Signature 子 Agent 返回格式
 
-Signature subagents must return one structured JSON object per dispatched read batch. The dispatcher validates this object by schema and field rules before any structural comparison.
+Signature 子 agent 必须为每个派发的读取 batch 返回一个结构化 JSON 对象。派发方在任何结构对比前按 schema 与字段规则校验该对象。
 
-## Contract
+## 契约
 
-Return only JSON. Do not wrap it in markdown, code fences, headings, comments, or prose.
+仅返回 JSON。不要用 markdown、代码围栏、标题、注释或散文包裹。
 
 ```json
 {
@@ -29,24 +29,24 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 }
 ```
 
-### Top-Level Fields
+### 顶层字段
 
-| Field    | Required | Type   | Rules                                                                                            |
-| -------- | -------: | ------ | ------------------------------------------------------------------------------------------------ |
-| `batch`  |      yes | string | Must exactly match the dispatcher-provided batch id, for example `batch-1`.                      |
-| `images` |      yes | array  | Must contain exactly one object for each input path in the batch. No extra images. No omissions. |
+| 字段     | 必填 | 类型   | 规则                                                    |
+| -------- | ---: | ------ | ------------------------------------------------------- |
+| `batch`  |  yes | string | 须与派发方提供的 batch id 完全一致，如 `batch-1`。      |
+| `images` |  yes | array  | 须含 batch 中每个输入路径恰好一个对象。无多余、无遗漏。 |
 
-### Image Fields
+### 图片字段
 
-| Field       | Required | Type   | Rules                                                                                      |
-| ----------- | -------: | ------ | ------------------------------------------------------------------------------------------ |
-| `filename`  |      yes | string | Basename only, matching one input image path in the batch. Do not include directory paths. |
-| `signature` |      yes | object | Must contain exactly the five slot keys `T`, `M`, `B`, `O`, `F`.                           |
-| `notes`     |      yes | object | May contain only allowlisted note keys. Use `null` when a known optional key is absent.    |
+| 字段        | 必填 | 类型   | 规则                                                       |
+| ----------- | ---: | ------ | ---------------------------------------------------------- |
+| `filename`  |  yes | string | 仅 basename，匹配 batch 中一个输入图片路径。不含目录路径。 |
+| `signature` |  yes | object | 须含恰好五个 slot 键 `T`、`M`、`B`、`O`、`F`。             |
+| `notes`     |  yes | object | 仅含 allowlisted note 键。已知可选键 absent 时用 `null`。  |
 
-### Signature Slot Object
+### Signature Slot 对象
 
-`signature` must contain exactly these keys:
+`signature` 须含恰好这些键：
 
 ```json
 {
@@ -58,44 +58,44 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 }
 ```
 
-Slot expressions use the grammar and vocabulary from `signature-spec.md`:
+Slot 表达式使用 `signature-spec.md` 的语法与词汇表：
 
-- Role words: `nav`, `title`, `meta`, `media`, `form`, `list`, `card`, `action`, `status`, `hint`, `brand`, `empty`.
-- Operators: `:`, `->`, `+`, `()`, `-`, `?`.
-- The JSON value for a missing slot is the string `"-"`.
-- Slot values must not include the slot label. Use `"T": "nav"`, not `"T": "T: nav"`.
-- Slot keys must appear as object fields, not as free-text lines.
+- Role 词：`nav`、`title`、`meta`、`media`、`form`、`list`、`card`、`action`、`status`、`hint`、`brand`、`empty`。
+- 运算符：`:`、`->`、`+`、`()`、`-`、`?`。
+- 缺失 slot 的 JSON 值为字符串 `"-"`。
+- Slot 值不得含 slot 标签。用 `"T": "nav"`，不用 `"T": "T: nav"`。
+- Slot 键须为对象字段，非自由文本行。
 
 ### Notes Allowlist
 
-`notes` may contain only these keys:
+`notes` 仅可含这些键：
 
-| Key            | Allowed value                                    |
-| -------------- | ------------------------------------------------ |
-| `overlay_type` | `modal`, `drawer`, `toast`, `sheet`, or `null`   |
-| `float_anchor` | `br`, `bl`, `tr`, `tl`, or `null`                |
-| `occluded`     | array of slot.role path strings, or `null`       |
-| `divider`      | `dashed`, `solid`, `dotted`, or `null`           |
-| `tab_active`   | string matching one visible tab label, or `null` |
-| `list_count`   | integer, string in `≥N` / `>=N` form, or `null`  |
+| 键             | 允许值                                        |
+| -------------- | --------------------------------------------- |
+| `overlay_type` | `modal`、`drawer`、`toast`、`sheet` 或 `null` |
+| `float_anchor` | `br`、`bl`、`tr`、`tl` 或 `null`              |
+| `occluded`     | slot.role 路径字符串数组，或 `null`           |
+| `divider`      | `dashed`、`solid`、`dotted` 或 `null`         |
+| `tab_active`   | 匹配可见 tab 标签的 string，或 `null`         |
+| `list_count`   | 整数、`≥N` / `>=N` 形式 string，或 `null`     |
 
-No other keys are allowed. Reject visual or descriptive keys such as `bg`, `color`, `shadow`, `radius`, `font_size`, `theme`, `description`, or `summary`.
+不允许其他键。拒绝 visual 或描述性键，如 `bg`、`color`、`shadow`、`radius`、`font_size`、`theme`、`description`、`summary`。
 
-Required note relationships:
+必需 note 关系：
 
-- If `signature.O` is not `"-"`, `notes.overlay_type` must be one of `modal`, `drawer`, `toast`, or `sheet`.
-- If `signature.F` is not `"-"`, `notes.float_anchor` must be one of `br`, `bl`, `tr`, or `tl`.
+- 若 `signature.O` 非 `"-"`，`notes.overlay_type` 须为 `modal`、`drawer`、`toast` 或 `sheet` 之一。
+- 若 `signature.F` 非 `"-"`，`notes.float_anchor` 须为 `br`、`bl`、`tr` 或 `tl` 之一。
 
-## Validation
+## 校验
 
-The dispatcher validates your return by running `scripts/src/validate-signature.ts` via `npm run validate-signature`. You do not need to self-validate — just ensure your output is bare JSON (no markdown fences, no prose) and that every field described above is present and correct.
+派发方经 `npm run validate-signature` 运行 `scripts/src/validate-signature.ts` 校验返回。无需自校验 —— 确保输出为裸 JSON（无 markdown 围栏、无散文），且上述每个字段存在且正确。
 
-## Failure and Re-Dispatch Rules
+## 失败与重派发规则
 
-Validation failure is batch-scoped.
+校验失败按 batch 范围处理。
 
-1. First failure: re-dispatch the same batch. Inject the concrete validation errors only inside the `===dispatcher-instructions-begin===` / `===dispatcher-instructions-end===` fence.
-2. Second failure: pause the workflow and show the bad JSON plus validation errors. Ask the user to choose:
+1. 首次失败：重派发同一 batch。仅在 `===dispatcher-instructions-begin===` / `===dispatcher-instructions-end===` fence 内注入具体校验错误。
+2. 第二次失败：暂停工作流，展示错误 JSON 与校验错误。询问用户选择：
 
 ```text
 Signature validation failed twice for this batch.
@@ -112,25 +112,25 @@ B. Skip this batch
 C. Stop the workflow
 ```
 
-User choice handling:
+用户选择处理：
 
-- A: validate the supplied JSON using the same rules.
-- B: exclude the batch from later comparison.
-- C: stop the workflow cleanly.
+- A：用相同规则校验提供的 JSON。
+- B：从后续对比中排除该 batch。
+- C：干净停止工作流。
 
-Do not infer missing fields from prose. Do not recover from malformed JSON by parsing markdown signature blocks. Re-dispatch or ask for a corrected JSON object.
+不要从散文推断缺失字段。不要用解析 markdown signature 块从畸形 JSON 恢复。重派发或请求 corrected JSON 对象。
 
-## Batch Tracking Rules
+## Batch 跟踪规则
 
-- The dispatcher assigns stable ids in processing order: `batch-1`, `batch-2`, etc.
-- A subagent may only return images from its own assigned batch.
-- Cross-batch comparison starts only after every retained batch has a valid JSON object.
-- Skipped batches must be recorded as excluded and must not participate in component/state decisions.
-- Preserve the mapping from `batch` + `filename` to source path in dispatcher state; the subagent return intentionally carries only the basename.
+- 派发方按处理顺序分配稳定 id：`batch-1`、`batch-2` 等。
+- 子 agent 仅可返回其被分配 batch 的图片。
+- 跨 batch 对比仅在每个保留 batch 有有效 JSON 后开始。
+- 跳过的 batch 须记录为 excluded，不得参与组件/状态决策。
+- 在派发方状态中保留 `batch` + `filename` 到源路径的映射；子 agent 返回 intentionally 仅含 basename。
 
-## Worked Example
+## 完整示例
 
-Input batch:
+输入 batch：
 
 ```text
 batch: batch-1
@@ -139,7 +139,7 @@ paths:
 /project/screens/used.png
 ```
 
-Valid return:
+有效返回：
 
 ```json
 {
@@ -179,9 +179,9 @@ Valid return:
 }
 ```
 
-Invalid return examples:
+无效返回示例：
 
-- Markdown block containing JSON: invalid because the return is not only JSON.
-- `"filename": "/project/screens/pending.png"`: invalid because filename must be basename only.
-- `"signature": "T: nav\nM: ..."`: invalid because signature must be an object.
-- `"notes": { "shadow": "card" }`: invalid because `shadow` belongs to style hints, not signature notes.
+- 含 JSON 的 Markdown 块：无效，因返回不是仅 JSON。
+- `"filename": "/project/screens/pending.png"`：无效，filename 须为 basename。
+- `"signature": "T: nav\nM: ..."`：无效，signature 须为对象。
+- `"notes": { "shadow": "card" }`：无效，`shadow` 属于 style hints，非 signature notes。

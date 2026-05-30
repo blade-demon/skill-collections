@@ -1,20 +1,20 @@
 # Case 1 Expected Output Contract — 风险承受能力评估结果页
 
-Run settings: React / TypeScript / CSS Modules / chat output.
+运行设置：React / TypeScript / CSS Modules / chat output。
 
-## Step 6 Decision
+## Step 6 决策
 
-Single image → one independent component `RiskAssessmentResult`.
+单图 → 一个独立组件 `RiskAssessmentResult`。
 
-## Props Contract
+## Props 契约
 
-Must contain a status union for the risk level:
+须含风险等级的 status union：
 
 ```ts
 export type RiskLevel = 'C1' | 'C2' | 'C3' | 'C4' | 'C5';
 ```
 
-Must contain root props equivalent to:
+须含等价的根 props：
 
 ```ts
 export interface RiskAssessmentResultProps {
@@ -30,11 +30,11 @@ export interface RiskAssessmentResultProps {
 }
 ```
 
-`onReassess` must be optional — the button can be disabled when `dailyRemaining === 0`.
+`onReassess` 须为可选 —— 当 `dailyRemaining === 0` 时按钮可 disabled。
 
-## Directory Contract
+## 目录契约
 
-Must produce exactly one root component directory:
+须恰好产出一个根组件目录：
 
 ```
 src/components/
@@ -50,16 +50,16 @@ src/components/
         └── ReassessFooter.module.css
 ```
 
-## Key Code Contract
+## 关键代码契约
 
-Must contain:
+须包含：
 
-- `ResultCard` renders risk level, validity, suitable ranks, tax residency, and static rule list.
-- `ReassessFooter` renders the button and quota hint; button is `disabled` when `dailyRemaining === 0`.
-- Quota hint text interpolates `monthlyRemaining` and `dailyRemaining` as dynamic values.
+- `ResultCard` 渲染风险等级、有效期、适合等级、税务居民身份与静态规则列表。
+- `ReassessFooter` 渲染按钮与额度提示；`dailyRemaining === 0` 时按钮 `disabled`。
+- 额度提示文案将 `monthlyRemaining` 与 `dailyRemaining` 作为动态值插值。
 
-Must not contain:
+不得包含：
 
-- `monthlyRemaining` and `dailyRemaining` hardcoded as static strings.
-- A single monolithic component file when the directory tree contains subcomponents.
-- Required `onReassess` prop.
+- `monthlyRemaining` 与 `dailyRemaining` 硬编码为静态字符串。
+- 目录树含子组件时使用单一单体组件文件。
+- 必填的 `onReassess` prop。

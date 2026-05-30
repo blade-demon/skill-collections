@@ -1,48 +1,48 @@
-# Ledger and Decision-Gate Pattern
+# Ledger 与 Decision-Gate 模式
 
-This document explains how the **Ledger + Decision-Gate** pattern prevents AI hallucination and keeps code generation safe and auditable.
+本文档说明 **Ledger + Decision-Gate** 模式如何防止 AI 幻觉，并保持代码生成安全、可审计。
 
-## The Pattern: Two Mechanisms Working Together
+## 模式：两种机制协同工作
 
-### Ledger (Capture mechanism)
+### Ledger（捕获机制）
 
-A **ledger** is a structured table that collects uncertain or ambiguous mappings instead of letting the AI invent solutions. It serves as a "holding area" for decisions that require human judgment.
+**Ledger** 是一种结构化表格，收集不确定或歧义的映射，而不是让 AI 臆造解决方案。它是需要人类判断的决策的「暂存区」。
 
-**Purpose:** Make uncertain decisions visible instead of hidden.
+**目的：** 让不确定的决策可见，而非隐藏。
 
-Examples in the skill:
+Skill 中的示例：
 
-- **asset-ledger.md** — Captures media and icon assets that can't be identified reliably from screenshots.
-- **token-ledger.md** — Captures style traits that don't map cleanly to existing design tokens.
+- **asset-ledger.md** — 捕获无法从截图可靠识别的媒体与 icon 资源。
+- **token-ledger.md** — 捕获无法干净映射到现有 design token 的样式特征。
 
-Each ledger row captures:
+每行 ledger 捕获：
 
-- What was detected or analyzed
-- Which images/context it came from
-- What the AI proposes as a solution
-- Whether user approval is still needed
-- Current status (pending, provided, reused, hardcoded, skipped)
+- 检测到或分析的内容
+- 来自哪些图片/上下文
+- AI 提议的解决方案
+- 是否仍需用户批准
+- 当前 status（pending、provided、reused、hardcoded、skipped）
 
-**Without the ledger:** The AI would either:
+**没有 ledger 时：** AI 可能会：
 
-- Invent asset names (`<img src={asset123} />`), breaking the build
-- Invent tokens (`color: var(--color-unknown-xyz)`), breaking styles
-- Hardcode wrong values silently, creating bugs
+- 臆造资源名称（`<img src={asset123} />`），导致构建失败
+- 臆造 token（`color: var(--color-unknown-xyz)`），导致样式错误
+- 静默硬编码错误值，产生 bug
 
-**With the ledger:** Uncertain items sit visibly in a table until the user decides what happens.
+**有 ledger 时：** 不确定项在表格中可见，直到用户决定如何处理。
 
-### Decision-Gate (Approval mechanism)
+### Decision-Gate（批准机制）
 
-A **decision-gate** is a confirmation checkpoint where the user explicitly approves the AI's proposed mappings before they're used in code. It's a hard stop that forces user intent.
+**Decision-gate** 是确认检查点，用户在映射用于代码前明确批准 AI 提议的映射。它是强制用户意图的硬停止。
 
-**Purpose:** Require explicit user judgment on uncertain decisions.
+**目的：** 对不确定决策要求明确的用户判断。
 
-Decision-gates in the skill:
+Skill 中的 decision-gate：
 
-- **Image Connect (Step 7)** — User approves reuse/extend/create decisions for components.
-- **Style Connect (Step 8)** — User approves token mappings and decides what to do with unresolved traits.
+- **Image Connect（Step 7）** — 用户批准组件的 reuse/extend/create 决策。
+- **Style Connect（Step 8）** — 用户批准 token 映射并决定如何处理未解析特征。
 
-Each decision-gate asks the user to choose from explicit options (A/B/C):
+每个 decision-gate 请用户从明确选项（A/B/C）中选择：
 
 ```
 Please confirm Style Connect token mappings:
@@ -54,17 +54,17 @@ B. Change one or more decisions (specify which rows)
 C. Skip Style Connect (hardcode everything with TODO comments)
 ```
 
-**Without the gate:** The AI would guess between:
+**没有 gate 时：** AI 会在以下选项间猜测：
 
-- "Bind to wrong token" (leading to visual bugs)
-- "Invent new token" (leading to inconsistent design systems)
-- "Hardcode" (losing token consistency)
+- 「绑定到错误 token」（导致视觉 bug）
+- 「臆造新 token」（导致设计系统不一致）
+- 「硬编码」（失去 token 一致性）
 
-All invisibly, without the user knowing alternatives were considered.
+全部不可见，用户不知道曾考虑过哪些替代方案。
 
-**With the gate:** User sees all options and chooses explicitly.
+**有 gate 时：** 用户看到所有选项并明确选择。
 
-## How Ledger + Gate Work Together
+## Ledger + Gate 如何协同
 
 ```
 Step 1: Extraction
@@ -102,17 +102,17 @@ Step 6: Code Generation
   └─ All uncertainty resolved or explicitly marked (TODO)
 ```
 
-## Pattern in Practice: Asset Ledger Example
+## 实践：Asset Ledger 示例
 
-The **asset-ledger** pattern already in the skill shows this in action.
+Skill 中已有的 **asset-ledger** 模式展示了该模式的应用。
 
-Workflow:
+工作流：
 
-1. **Extraction** — `asset-handling.md` reads signatures and identifies media nodes.
-   - Media with identifiable source → use immediately
-   - Media that's unclear → add to ledger
+1. **Extraction** — `asset-handling.md` 读取签名并识别 media 节点。
+   - 来源可识别的 media → 立即使用
+   - 不明确的 media → 加入 ledger
 
-2. **Ledger** — Create `asset-ledger.md`:
+2. **Ledger** — 创建 `asset-ledger.md`：
 
    ```markdown
    | Asset ID  | Source image(s)       | Signature path  | Intended use      | Generated placeholder              | Required user action                    | Status  |
@@ -121,36 +121,36 @@ Workflow:
    | asset-002 | expired.png           | T.media         | Unknown icon      | `<span className={styles.icon} />` | Identify icon or use existing component | pending |
    ```
 
-3. **User sees the ledger** — User reads it and realizes:
-   - asset-001 needs an image path
-   - asset-002 needs an icon identification
+3. **用户查看 ledger** — 用户阅读后意识到：
+   - asset-001 需要图片路径
+   - asset-002 需要 icon 识别
 
-4. **Decision-Gate** — Code generation doesn't run until:
-   - User provides URLs/names for pending assets, OR
-   - User confirms "hardcode with TODO" for now
+4. **Decision-Gate** — 在以下情况之前不运行代码生成：
+   - 用户为 pending 资源提供 URL/名称，或
+   - 用户确认「暂时 hardcode with TODO」
 
-5. **Code Generation** — Now safe to generate:
-   - `<img src={props.mediaASrc} alt={props.mediaAAlt} />` ← user provided the prop
-   - `<Icon name={props.iconName} />` ← user provided the name
-   - `// TODO: provide QRCodeImage` ← if user chose hardcoded
+5. **Code Generation** — 此时可安全生成：
+   - `<img src={props.mediaASrc} alt={props.mediaAAlt} />` ← 用户提供了 prop
+   - `<Icon name={props.iconName} />` ← 用户提供了名称
+   - `// TODO: provide QRCodeImage` ← 若用户选择 hardcoded
 
-## Pattern in Practice: Token Ledger Example
+## 实践：Token Ledger 示例
 
-The new **token-ledger** pattern extends this to styles.
+新的 **token-ledger** 模式将此扩展到样式。
 
-Workflow:
+工作流：
 
-1. **Extraction** — `../prompts/style-context-prompt.md` (subagent) reads images and detects style hints.
+1. **Extraction** — `../prompts/style-context-prompt.md`（子代理）读取图片并检测样式提示。
    - `corner_radius=medium`
    - `shadow_presence=card`
    - `type_hierarchy_levels=3`
 
-2. **Mapping** — `style-connect.md` tries to map each hint to project tokens.
-   - `corner_radius=medium` → `--radius-md` (found in project) ✓
-   - `shadow_presence=card` → `--shadow-elevation-2` (candidate, needs confirmation)
-   - `type_hierarchy_levels=3` → typography tokens (needs confirmation)
+2. **Mapping** — `style-connect.md` 尝试将每个提示映射到项目 token。
+   - `corner_radius=medium` → `--radius-md`（项目中找到）✓
+   - `shadow_presence=card` → `--shadow-elevation-2`（候选，需确认）
+   - `type_hierarchy_levels=3` → typography tokens（需确认）
 
-3. **Ledger** — Create `token-ledger.md`:
+3. **Ledger** — 创建 `token-ledger.md`：
 
    ```markdown
    | Token ID  | Hint source             | Source image(s) | Visual trait     | Suggested token name | Source        | Confidence | Status   | User action                        |
@@ -160,14 +160,14 @@ Workflow:
    | token-003 | type_hierarchy_levels=3 | pending.png     | Typography scale | typography           | lib:tailwind  |       high | pending  | Confirm Tailwind scale             |
    ```
 
-   The `Source` column makes the provenance of each candidate token explicit (project code vs. installed library vs. AI proposal). This is essential when the same token name exists in multiple sources — the user can see at a glance which source the workflow is using.
+   `Source` 列使每个候选 token 的来源明确（项目代码 vs. 已安装库 vs. AI 提案）。当同一 token 名称存在于多个来源时，这至关重要——用户可一眼看出工作流使用的是哪个来源。
 
-4. **User sees the ledger** — User reads and decides:
-   - `--radius-md` is correct; use it as-is
-   - `--shadow-elevation-2` is correct; use it
-   - Typography scale exists; use it
+4. **用户查看 ledger** — 用户阅读并决定：
+   - `--radius-md` 正确；直接使用
+   - `--shadow-elevation-2` 正确；使用
+   - Typography scale 存在；使用
 
-5. **Decision-Gate**:
+5. **Decision-Gate**：
 
    ```
    A. Accept all mappings (use suggested token names)
@@ -175,9 +175,9 @@ Workflow:
    C. Hardcode everything with TODO comments instead
    ```
 
-6. **User chooses A** → All tokens confirmed, move to code generation.
+6. **用户选择 A** → 所有 token 已确认，进入代码生成。
 
-7. **Code Generation** — Now safe:
+7. **Code Generation** — 此时安全：
 
    ```css
    .cardContainer {
@@ -186,40 +186,40 @@ Workflow:
    }
    ```
 
-   All values come from confirmed tokens, no guesses.
+   所有值来自已确认 token，无猜测。
 
-## Why This Prevents Hallucination
+## 为何能防止幻觉
 
-### Problem: AI Infers Without Asking
+### 问题：AI 不询问就推断
 
-Without ledger + gate, the AI might:
+没有 ledger + gate 时，AI 可能：
 
-- See a shadowed button and invent `--shadow-button`
-- See a spacing pattern and invent `--spacing-tight-xs`
-- Guess that "undefined token" means "skip this style"
+- 看到带阴影的按钮并臆造 `--shadow-button`
+- 看到间距模式并臆造 `--spacing-tight-xs`
+- 猜测「未定义 token」意味着「跳过此样式」
 
-All decisions made silently, invisibly, in code that ships.
+所有决策静默、不可见地进入已发布代码。
 
-### Solution: Ledger + Gate Makes Decisions Visible
+### 解决方案：Ledger + Gate 使决策可见
 
-1. **Ledger** = "Here's what I found that I'm uncertain about"
-2. **Gate** = "Here are your options for each uncertain thing"
-3. **User** = "I choose option A for this, option B for that"
-4. **Code** = "Use only what the user confirmed"
+1. **Ledger** = 「以下是我发现但不确定的内容」
+2. **Gate** = 「以下是对每个不确定项的选项」
+3. **User** = 「此项我选 A，彼项我选 B」
+4. **Code** = 「仅使用用户确认的内容」
 
-### Result: 100% Auditable
+### 结果：100% 可审计
 
-Every mapping from visual design to code token is either:
+从视觉设计到代码 token 的每个映射均为以下之一：
 
-- **Automatically handled** (high-confidence mappings from existing token library)
-- **Explicitly confirmed by user** (via decision-gate)
-- **Explicitly TODO** (awaiting future decision)
+- **自动处理**（来自现有 token 库的高置信度映射）
+- **用户明确确认**（通过 decision-gate）
+- **明确 TODO**（等待未来决策）
 
-No guesses. No invented tokens. No silent assumptions.
+无猜测。无臆造 token。无静默假设。
 
-## Patterns to Avoid
+## 应避开的模式
 
-### ❌ Inventing Without a Ledger
+### ❌ 无 Ledger 就臆造
 
 ```javascript
 // WRONG: AI silently invents a token name
@@ -229,7 +229,7 @@ const buttonStyles = css`
 `;
 ```
 
-### ✅ Ledger + Gate Instead
+### ✅ 改用 Ledger + Gate
 
 ```javascript
 // CORRECT: User explicitly confirmed this token exists
@@ -239,7 +239,7 @@ const buttonStyles = css`
 `;
 ```
 
-### ❌ Guessing Token Behavior
+### ❌ 猜测 Token 行为
 
 ```javascript
 // WRONG: AI guesses whether token applies to responsive styles
@@ -247,20 +247,20 @@ const responsiveColor = isDesktop ? 'var(--color-primary)' : 'var(--color-primar
 // ^ Did the user intend a mobile variant? Unclear.
 ```
 
-### ✅ Ask for Confirmation
+### ✅ 请求确认
 
-In token-ledger:
+在 token-ledger 中：
 
 ```markdown
 | Token ID | ... | Status | User action |
 | token-005 | ... | pending | Should `--color-primary` vary by viewport? If yes, what tokens? |
 ```
 
-User confirms → code generation uses their explicit choice.
+用户确认 → 代码生成使用其明确选择。
 
-## Ledger Status Meanings
+## Ledger Status 含义
 
-Each ledger row carries a `Status` that describes the decision state:
+每行 ledger 携带描述决策状态的 `Status`：
 
 | Status      | Meaning                                   | Code generation                   | Example                                            |
 | ----------- | ----------------------------------------- | --------------------------------- | -------------------------------------------------- |
@@ -271,22 +271,22 @@ Each ledger row carries a `Status` that describes the decision state:
 | `hardcoded` | User approved inline style + TODO comment | INLINE + TODO                     | `color: #ff6b6b; // TODO: extract to token`        |
 | `skip`      | User excludes this style from output      | OMIT IT                           | User says "don't style this, use browser defaults" |
 
-## Integration Points
+## 集成点
 
-The ledger + gate pattern is used in:
+ledger + gate 模式用于：
 
-- **Image Connect (Step 7)** — reuse/extend/create decisions for components
-- **Style Connect (Step 8)** — token mapping decisions for styles
-- **Asset Handling (Step 9)** — asset identification and placeholder decisions
+- **Image Connect（Step 7）** — 组件的 reuse/extend/create 决策
+- **Style Connect（Step 8）** — 样式的 token 映射决策
+- **Asset Handling（Step 9）** — 资源识别与占位决策
 
-Future extensions could use the same pattern for:
+未来扩展可用于：
 
-- Animation token mapping
-- Responsive breakpoint decisions
-- Accessibility requirement confirmation
+- 动画 token 映射
+- 响应式断点决策
+- 无障碍要求确认
 
-## Takeaway
+## 要点
 
 **Ledger** = Capture → **Decision-Gate** = Confirm → **Code** = Safe
 
-Instead of letting AI guess, the pattern forces visibility and requires explicit approval. This keeps generated code auditable, prevents silent bugs, and respects that design systems and style decisions are human choices.
+该模式不任由 AI 猜测，而是强制可见性并要求明确批准。这使生成代码可审计、防止静默 bug，并尊重设计系统与样式决策是人类选择这一事实。

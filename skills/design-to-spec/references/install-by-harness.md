@@ -166,7 +166,7 @@ cp tools/design-to-spec/SKILL.md .cursor/rules/design-to-spec.mdc
 
 ```yaml
 ---
-description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs. See SKILL.md for full protocol.
+description: 当用户提供 UI 截图、mockup、线框图或组件树并希望获得实现规格时使用。完整协议见 SKILL.md。
 globs:
   - '**/design-spec/**'
   - '**/*.svg'

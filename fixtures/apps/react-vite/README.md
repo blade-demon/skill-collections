@@ -1,16 +1,12 @@
-# Fixture App: React + Vite
+# Fixture 应用：React + Vite
 
-This directory contains a small React + TypeScript + Vite app used as a reusable
-fixture for skill development and validation.
+本目录包含一个用于 skill 开发与校验的小型 React + TypeScript + Vite 应用。
 
-It is not a product sample and it is not part of a published skill. Keep it
-intentionally plain so skills can use it as predictable input when testing
-app-oriented workflows.
+它不是产品 sample，也不属于已发布的 skill。请保持实现刻意简单，以便 skill 在测试面向应用的工作流时拥有可预期的输入。
 
-The app also imports `src/golden/` behind a hidden section so CI can prove the
-committed generated React package is lint/build-clean.
+应用还通过隐藏区块导入 `src/golden/`，以便 CI 证明已提交的生成 React 包可通过 lint 与构建。
 
-## Commands
+## 命令
 
 ```bash
 npm ci --prefix fixtures/apps/react-vite
@@ -18,4 +14,4 @@ npm run dev:fixture:react
 npm run check:fixtures:react
 ```
 
-Generated artifacts such as `node_modules/` and `dist/` must stay untracked.
+`node_modules/`、`dist/` 等生成物必须保持未跟踪。

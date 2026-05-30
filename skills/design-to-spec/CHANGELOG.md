@@ -1,4 +1,4 @@
-# Changelog — design-to-spec
+# 变更日志 — design-to-spec
 
 所有重要变更均记录在此文件中。
 

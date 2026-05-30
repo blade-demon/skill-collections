@@ -1,91 +1,91 @@
-# Scheme C Repository Hardening Implementation Plan
+# 方案 C 仓库工程化加固实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agent 工作者：** 必须使用子技能：推荐 `superpowers:subagent-driven-development`，也可以使用 `superpowers:executing-plans`，逐任务执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** Turn `skill-collections` from a runnable code collection into a framework-like monorepo with consistent tooling, contributor contracts, CI gates, and maintainable public boundaries.
+**目标：** 将 `skill-collections` 从一组可运行代码集合，升级为具备统一工具链、贡献者契约、CI 门禁和可维护公共边界的框架型 monorepo。
 
-**Architecture:** Keep the existing npm workspaces shape and add one repo-level quality layer above it. The work lands in reviewable batches: root tooling, workspace orchestration, CI/local hooks, human-facing docs, API comments, package boundary polish, and final verification.
+**架构：** 保持现有 npm workspaces 形态，在其上增加一层仓库级质量治理层。工作按可 review 的批次落地：根级工具链、workspace 编排、CI/本地 hook、面向人类的文档、API 注释、包边界打磨，以及最终验证。
 
-**Tech Stack:** npm workspaces, Node.js >=20, local Node v22.22.2, ESLint flat config, Prettier, TypeScript, Vitest, node:test, GitHub Actions, Lefthook.
+**技术栈：** npm workspaces、Node.js >=20、本机 Node v22.22.2、ESLint flat config、Prettier、TypeScript、Vitest、node:test、GitHub Actions、Lefthook。
 
 ---
 
-## Review Scope
+## Review 范围
 
-This plan is intentionally broader than a lint-only cleanup. It treats Scheme C as a full repository hardening pass:
+本计划刻意比单纯 lint 清理更宽。这里把方案 C 视为一次完整仓库加固：
 
-- root-level lint, format, typecheck, and full-check commands;
-- true workspace coverage for `d2c-core`, `sketch-to-component`, `image-to-component`, HTML-to-Markdown, samples, and fixtures;
-- CI and local hook templates;
-- contributor and agent guidance;
-- public API comments and commenting rules;
-- package/skill boundary documentation;
-- final audit with clean commands and reviewable commits.
+- 根级 lint、format、typecheck、full-check 命令；
+- 对 `d2c-core`、`sketch-to-component`、`image-to-component`、HTML-to-Markdown、samples、fixtures 做真实 workspace 覆盖；
+- CI 和本地 hook 模板；
+- 贡献者和 agent 指南；
+- 公共 API 注释和注释规则；
+- package/skill 边界文档；
+- 带干净命令和可 review commit 的最终审计。
 
-The plan does not change runtime behavior of the D2C pipeline, skill workflows, or generated artifacts. Any behavior change discovered during execution must be split into a separate bugfix commit with its own verification.
+本计划不改变 D2C 管线、skill workflow 或生成产物的运行时行为。执行中如果发现必须改行为，应该拆成独立 bugfix commit，并附带自己的验证证据。
 
-## Current Baseline
+## 当前基线
 
-- Root `package.json` already defines npm workspaces for `packages/*`, `skills/*`, `skills/sketch-to-component/scripts`, and `samples/*/*`.
-- `skills/image-to-component/scripts` has its own package and tests but is not currently included in root workspaces.
-- `packages/d2c-core` and `skills/sketch-to-component/scripts` already expose `test` and `typecheck`.
-- Sample `lint` scripts currently print `(lint not configured)`.
-- `fixtures/` has its own ESLint setup and package lock, but it is not part of the root workspace.
-- There is no root `.github/`, `.editorconfig`, `.nvmrc`, Prettier config, root ESLint config, `CONTRIBUTING.md`, or `AGENTS.md`.
+- 根 `package.json` 已经为 `packages/*`、`skills/*`、`skills/sketch-to-component/scripts` 和 `samples/*/*` 定义 npm workspaces。
+- `skills/image-to-component/scripts` 有自己的 package 和测试，但目前没有纳入根 workspaces。
+- `packages/d2c-core` 和 `skills/sketch-to-component/scripts` 已经暴露 `test` 和 `typecheck`。
+- sample 的 `lint` 脚本目前只是打印 `(lint not configured)`。
+- `fixtures/` 有自己的 ESLint 配置和 package lock，但不是根 workspace 的一部分。
+- 根目录目前没有 `.github/`、`.editorconfig`、`.nvmrc`、Prettier 配置、根 ESLint 配置、`CONTRIBUTING.md` 或 `AGENTS.md`。
 
-## File Structure
+## 文件结构
 
-Create:
+创建：
 
-- `.editorconfig` - editor-independent whitespace and newline rules.
-- `.nvmrc` - default local Node major version for contributors.
-- `.prettierrc.json` - shared formatting policy.
-- `.prettierignore` - generated, lock, fixture, and plan-file exclusions.
-- `eslint.config.js` - root ESLint flat config for repo code.
-- `tsconfig.base.json` - shared TypeScript baseline for internal packages.
-- `.github/workflows/check.yml` - PR and push quality gate.
-- `.github/pull_request_template.md` - review checklist and verification evidence.
-- `lefthook.yml` - local pre-commit and pre-push command wiring.
-- `CONTRIBUTING.md` - human contributor entrypoint.
-- `AGENTS.md` - agent and human maintainer operating rules.
-- `docs/commenting-guide.md` - comment/JSDoc policy for maintainable code.
+- `.editorconfig` - 与编辑器无关的空白字符和换行规则。
+- `.nvmrc` - 给贡献者使用的默认本地 Node 主版本。
+- `.prettierrc.json` - 共享格式化策略。
+- `.prettierignore` - 排除生成文件、锁文件、fixture 和计划文件。
+- `eslint.config.js` - 仓库代码的根 ESLint flat config。
+- `tsconfig.base.json` - 内部 package 的共享 TypeScript 基线。
+- `.github/workflows/check.yml` - PR 和 push 质量门禁。
+- `.github/pull_request_template.md` - review checklist 和验证证据模板。
+- `lefthook.yml` - 本地 pre-commit 和 pre-push 命令接线。
+- `CONTRIBUTING.md` - 人类贡献者入口。
+- `AGENTS.md` - agent 和人类维护者操作规则。
+- `docs/commenting-guide.md` - 可维护代码的注释/JSDoc 策略。
 
-Modify:
+修改：
 
-- `package.json` - add workspace coverage, quality scripts, and root dev tooling.
-- `package-lock.json` - generated by `npm install` after package changes.
-- `README.md` - update common commands and Scheme C quality gates.
-- `docs/repo-workflow.md` - replace the old "no CI" and "d2c not in check" notes.
-- `docs/sample-authoring.md` - require real sample lint/build evidence in the PR checklist.
-- `packages/d2c-core/tsconfig.json` - extend shared base while preserving module settings.
-- `skills/sketch-to-component/scripts/tsconfig.json` - extend shared base while preserving module settings.
-- `skills/image-to-component/scripts/tsconfig.json` - extend shared base and keep `outDir`/`rootDir`.
-- `skills/image-to-component/scripts/package.json` - add `typecheck`.
-- `samples/design-to-spec/search-panel/package.json` - replace placeholder lint.
-- `samples/design-to-spec/feedback-form/package.json` - replace placeholder lint.
-- `packages/d2c-core/src/index.ts` - add public package entrypoint comment.
-- `packages/d2c-core/src/ir/index.ts` - add IR barrel comment.
-- `packages/d2c-core/src/provider/index.ts` - add provider barrel comment.
-- `packages/d2c-core/src/preview/index.ts` - add preview barrel comment.
-- `packages/d2c-core/README.md` - document public exports and source-only package status.
-- `skills/sketch-to-component/docs/architecture-design.md` - align provider docs with new gates.
+- `package.json` - 增加 workspace 覆盖、质量脚本和根级开发工具。
+- `package-lock.json` - package 变更后由 `npm install` 生成。
+- `README.md` - 更新常用命令和方案 C 质量门禁。
+- `docs/repo-workflow.md` - 替换旧的“无 CI”和“d2c 尚未纳入 check”说明。
+- `docs/sample-authoring.md` - 在 PR checklist 中要求真实 sample lint/build 证据。
+- `packages/d2c-core/tsconfig.json` - 继承共享 base，同时保留模块设置。
+- `skills/sketch-to-component/scripts/tsconfig.json` - 继承共享 base，同时保留模块设置。
+- `skills/image-to-component/scripts/tsconfig.json` - 继承共享 base，并保留 `outDir`/`rootDir`。
+- `skills/image-to-component/scripts/package.json` - 增加 `typecheck`。
+- `samples/design-to-spec/search-panel/package.json` - 替换占位 lint。
+- `samples/design-to-spec/feedback-form/package.json` - 替换占位 lint。
+- `packages/d2c-core/src/index.ts` - 增加公共 package 入口注释。
+- `packages/d2c-core/src/ir/index.ts` - 增加 IR barrel 注释。
+- `packages/d2c-core/src/provider/index.ts` - 增加 provider barrel 注释。
+- `packages/d2c-core/src/preview/index.ts` - 增加 preview barrel 注释。
+- `packages/d2c-core/README.md` - 记录公共导出和 source-only package 状态。
+- `skills/sketch-to-component/docs/architecture-design.md` - 让 provider 文档与新门禁对齐。
 
-Do not modify:
+不要修改：
 
-- Golden outputs under `skills/design-to-spec/examples/`.
-- Generated sample outputs under `samples/**/design-spec/` unless the task explicitly changes sample contracts.
-- Runtime normalization, preview generation, or design IR schemas as part of this hardening pass.
+- `skills/design-to-spec/examples/` 下的 golden outputs。
+- `samples/**/design-spec/` 下的生成 sample 输出，除非任务明确改变 sample contract。
+- 本次加固不修改运行时 normalize、preview generation 或 design IR schemas。
 
-## Review Gates
+## Review 门禁
 
-Each batch ends with:
+每个批次结束都运行：
 
 ```bash
 git diff --check
 git status --short
 ```
 
-Each batch commit message should be scoped:
+每个批次的 commit message 应该带 scope：
 
 - `chore: add root quality tooling`
 - `chore: wire workspace checks`
@@ -96,7 +96,7 @@ Each batch commit message should be scoped:
 
 ---
 
-### Task 1: Root Toolchain Baseline
+### Task 1: 根级工具链基线
 
 **Files:**
 
@@ -107,7 +107,7 @@ Each batch commit message should be scoped:
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 
-- [ ] **Step 1: Record baseline environment**
+- [ ] **Step 1: 记录基线环境**
 
 Run:
 
@@ -125,9 +125,9 @@ node -v prints v22.22.2 on this machine
 npm -v prints 10.9.7 on this machine
 ```
 
-- [ ] **Step 2: Update root package metadata**
+- [ ] **Step 2: 更新根 package metadata**
 
-Replace the relevant `workspaces`, `scripts`, and `devDependencies` sections in `package.json` with:
+将 `package.json` 中相关的 `workspaces`、`scripts` 和 `devDependencies` section 替换为：
 
 ```json
 {
@@ -176,9 +176,9 @@ Replace the relevant `workspaces`, `scripts`, and `devDependencies` sections in 
 }
 ```
 
-- [ ] **Step 3: Add editor and formatting config**
+- [ ] **Step 3: 增加编辑器和格式化配置**
 
-Create `.editorconfig`:
+创建 `.editorconfig`：
 
 ```ini
 root = true
@@ -195,13 +195,13 @@ trim_trailing_whitespace = true
 trim_trailing_whitespace = false
 ```
 
-Create `.nvmrc`:
+创建 `.nvmrc`：
 
 ```text
 22
 ```
 
-Create `.prettierrc.json`:
+创建 `.prettierrc.json`：
 
 ```json
 {
@@ -212,7 +212,7 @@ Create `.prettierrc.json`:
 }
 ```
 
-Create `.prettierignore`:
+创建 `.prettierignore`：
 
 ```gitignore
 node_modules/
@@ -234,7 +234,7 @@ samples/**/design-spec/
 skills/sketch-to-component/scripts/src/__tests__/fixtures/*.json
 ```
 
-- [ ] **Step 4: Install root tooling and update lockfile**
+- [ ] **Step 4: 安装根工具并更新 lockfile**
 
 Run:
 
@@ -249,7 +249,7 @@ package-lock.json is updated
 node_modules contains eslint, prettier, typescript-eslint, and lefthook
 ```
 
-- [ ] **Step 5: Verify metadata only**
+- [ ] **Step 5: 只验证 metadata**
 
 Run:
 
@@ -267,7 +267,7 @@ git diff shows only the intended tooling baseline files
 git diff --check exits 0
 ```
 
-- [ ] **Step 6: Commit Task 1**
+- [ ] **Step 6: 提交 Task 1**
 
 Run:
 
@@ -284,7 +284,7 @@ Commit succeeds with the root tooling baseline only
 
 ---
 
-### Task 2: Root ESLint and Real Sample Lint
+### Task 2: 根 ESLint 和真实 sample lint
 
 **Files:**
 
@@ -292,9 +292,9 @@ Commit succeeds with the root tooling baseline only
 - Modify: `samples/design-to-spec/search-panel/package.json`
 - Modify: `samples/design-to-spec/feedback-form/package.json`
 
-- [ ] **Step 1: Add root ESLint flat config**
+- [ ] **Step 1: 增加根 ESLint flat config**
 
-Create `eslint.config.js`:
+创建 `eslint.config.js`：
 
 ```js
 import js from '@eslint/js';
@@ -358,9 +358,9 @@ export default defineConfig([
 ]);
 ```
 
-- [ ] **Step 2: Replace sample placeholder lint scripts**
+- [ ] **Step 2: 替换 sample 占位 lint 脚本**
 
-In `samples/design-to-spec/search-panel/package.json`, set:
+在 `samples/design-to-spec/search-panel/package.json` 中设置：
 
 ```json
 {
@@ -374,7 +374,7 @@ In `samples/design-to-spec/search-panel/package.json`, set:
 }
 ```
 
-In `samples/design-to-spec/feedback-form/package.json`, set:
+在 `samples/design-to-spec/feedback-form/package.json` 中设置：
 
 ```json
 {
@@ -387,7 +387,7 @@ In `samples/design-to-spec/feedback-form/package.json`, set:
 }
 ```
 
-- [ ] **Step 3: Run lint gates**
+- [ ] **Step 3: 运行 lint 门禁**
 
 Run:
 
@@ -403,7 +403,7 @@ Both commands exit 0
 No sample lint command prints "(lint not configured)"
 ```
 
-- [ ] **Step 4: Commit Task 2**
+- [ ] **Step 4: 提交 Task 2**
 
 Run:
 
@@ -420,7 +420,7 @@ Commit succeeds with lint config and sample lint scripts only
 
 ---
 
-### Task 3: TypeScript Baseline and Workspace Coverage
+### Task 3: TypeScript 基线和 workspace 覆盖
 
 **Files:**
 
@@ -432,9 +432,9 @@ Commit succeeds with lint config and sample lint scripts only
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
-- [ ] **Step 1: Add shared TypeScript base**
+- [ ] **Step 1: 增加共享 TypeScript base**
 
-Create `tsconfig.base.json`:
+创建 `tsconfig.base.json`：
 
 ```json
 {
@@ -449,9 +449,9 @@ Create `tsconfig.base.json`:
 }
 ```
 
-- [ ] **Step 2: Extend the base in D2C core**
+- [ ] **Step 2: 在 D2C core 中继承 base**
 
-Replace `packages/d2c-core/tsconfig.json` with:
+将 `packages/d2c-core/tsconfig.json` 替换为：
 
 ```json
 {
@@ -467,9 +467,9 @@ Replace `packages/d2c-core/tsconfig.json` with:
 }
 ```
 
-- [ ] **Step 3: Extend the base in Sketch scripts**
+- [ ] **Step 3: 在 Sketch scripts 中继承 base**
 
-Replace `skills/sketch-to-component/scripts/tsconfig.json` with:
+将 `skills/sketch-to-component/scripts/tsconfig.json` 替换为：
 
 ```json
 {
@@ -485,9 +485,9 @@ Replace `skills/sketch-to-component/scripts/tsconfig.json` with:
 }
 ```
 
-- [ ] **Step 4: Extend the base in image-to-component scripts**
+- [ ] **Step 4: 在 image-to-component scripts 中继承 base**
 
-Replace `skills/image-to-component/scripts/tsconfig.json` with:
+将 `skills/image-to-component/scripts/tsconfig.json` 替换为：
 
 ```json
 {
@@ -504,9 +504,9 @@ Replace `skills/image-to-component/scripts/tsconfig.json` with:
 }
 ```
 
-- [ ] **Step 5: Add image-to-component typecheck script**
+- [ ] **Step 5: 增加 image-to-component typecheck 脚本**
 
-In `skills/image-to-component/scripts/package.json`, set:
+在 `skills/image-to-component/scripts/package.json` 中设置：
 
 ```json
 {
@@ -522,7 +522,7 @@ In `skills/image-to-component/scripts/package.json`, set:
 }
 ```
 
-- [ ] **Step 6: Reinstall after workspace coverage change**
+- [ ] **Step 6: workspace 覆盖变更后重新安装**
 
 Run:
 
@@ -536,7 +536,7 @@ Expected:
 package-lock.json includes skills/image-to-component/scripts as a workspace package
 ```
 
-- [ ] **Step 7: Run typecheck gates**
+- [ ] **Step 7: 运行 typecheck 门禁**
 
 Run:
 
@@ -554,7 +554,7 @@ Expected:
 All five commands exit 0
 ```
 
-- [ ] **Step 8: Commit Task 3**
+- [ ] **Step 8: 提交 Task 3**
 
 Run:
 
@@ -571,7 +571,7 @@ Commit succeeds with TypeScript baseline and workspace coverage only
 
 ---
 
-### Task 4: CI and Local Hook Gates
+### Task 4: CI 和本地 hook 门禁
 
 **Files:**
 
@@ -581,9 +581,9 @@ Commit succeeds with TypeScript baseline and workspace coverage only
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
-- [ ] **Step 1: Add GitHub Actions workflow**
+- [ ] **Step 1: 增加 GitHub Actions workflow**
 
-Create `.github/workflows/check.yml`:
+创建 `.github/workflows/check.yml`：
 
 ```yaml
 name: check
@@ -618,9 +618,9 @@ jobs:
         run: npm run check:full
 ```
 
-- [ ] **Step 2: Add PR template**
+- [ ] **Step 2: 增加 PR 模板**
 
-Create `.github/pull_request_template.md`:
+创建 `.github/pull_request_template.md`：
 
 ```markdown
 ## Summary
@@ -645,9 +645,9 @@ Create `.github/pull_request_template.md`:
 - [ ] Sample changes include build or lint evidence.
 ```
 
-- [ ] **Step 3: Add Lefthook config**
+- [ ] **Step 3: 增加 Lefthook 配置**
 
-Create `lefthook.yml`:
+创建 `lefthook.yml`：
 
 ```yaml
 pre-commit:
@@ -663,7 +663,7 @@ pre-push:
       run: npm run check:full
 ```
 
-- [ ] **Step 4: Install hook metadata**
+- [ ] **Step 4: 安装 hook metadata**
 
 Run:
 
@@ -679,7 +679,7 @@ package-lock.json remains consistent with package.json
 lefthook reports that hooks were installed
 ```
 
-- [ ] **Step 5: Run CI-equivalent command locally**
+- [ ] **Step 5: 本地运行 CI 等价命令**
 
 Run:
 
@@ -695,7 +695,7 @@ Expected:
 All commands exit 0
 ```
 
-- [ ] **Step 6: Commit Task 4**
+- [ ] **Step 6: 提交 Task 4**
 
 Run:
 
@@ -712,7 +712,7 @@ Commit succeeds with CI and local hook files only
 
 ---
 
-### Task 5: Human and Agent Maintenance Docs
+### Task 5: 人类和 agent 维护文档
 
 **Files:**
 
@@ -723,9 +723,9 @@ Commit succeeds with CI and local hook files only
 - Modify: `docs/repo-workflow.md`
 - Modify: `docs/sample-authoring.md`
 
-- [ ] **Step 1: Add contributor guide**
+- [ ] **Step 1: 增加贡献者指南**
 
-Create `CONTRIBUTING.md`:
+创建 `CONTRIBUTING.md`：
 
 ````markdown
 # Contributing
@@ -769,9 +769,9 @@ Do not edit `skills/design-to-spec/examples/` outputs unless the skill behavior 
 Every PR should include verification evidence. For small documentation-only changes, run at least `npm run format:check`. For code, config, package, or sample changes, run `npm run check:full`.
 ````
 
-- [ ] **Step 2: Add agent operating guide**
+- [ ] **Step 2: 增加 agent 操作指南**
 
-Create `AGENTS.md`:
+创建 `AGENTS.md`：
 
 ````markdown
 # Agent Guide
@@ -807,9 +807,9 @@ npm run check:full
 - Keep fixture dependency work under `fixtures/` unless the root workspace intentionally absorbs it.
 ````
 
-- [ ] **Step 3: Add commenting guide**
+- [ ] **Step 3: 增加注释指南**
 
-Create `docs/commenting-guide.md`:
+创建 `docs/commenting-guide.md`：
 
 ````markdown
 # Commenting Guide
@@ -842,9 +842,9 @@ export const RawArtifactSchema = z.object({});
 ```
 ````
 
-- [ ] **Step 4: Update root README commands**
+- [ ] **Step 4: 更新根 README 命令**
 
-In `README.md`, replace the common commands section with:
+在 `README.md` 中将 common commands section 替换为：
 
 ````markdown
 ## Common commands
@@ -873,9 +873,9 @@ npm run check:full
 ```
 ````
 
-- [ ] **Step 5: Update repo workflow**
+- [ ] **Step 5: 更新 repo workflow**
 
-In `docs/repo-workflow.md`, update the pre-merge and CI sections to say:
+在 `docs/repo-workflow.md` 中更新 pre-merge 和 CI sections 为：
 
 ````markdown
 ### Pre-merge full check
@@ -892,9 +892,9 @@ GitHub Actions runs `npm ci`, installs fixture dependencies with `npm ci --prefi
 ```
 ````
 
-- [ ] **Step 6: Update sample authoring checklist**
+- [ ] **Step 6: 更新 sample authoring checklist**
 
-In `docs/sample-authoring.md`, ensure the PR checklist includes:
+在 `docs/sample-authoring.md` 中确保 PR checklist 包含：
 
 ```markdown
 - [ ] Sample `npm run lint` passes
@@ -902,7 +902,7 @@ In `docs/sample-authoring.md`, ensure the PR checklist includes:
 - [ ] Top-level `npm run check:full` passes
 ```
 
-- [ ] **Step 7: Commit Task 5**
+- [ ] **Step 7: 提交 Task 5**
 
 Run:
 
@@ -919,7 +919,7 @@ Commit succeeds with human-facing maintenance docs only
 
 ---
 
-### Task 6: Public API Comments and Boundary Polish
+### Task 6: 公共 API 注释和边界打磨
 
 **Files:**
 
@@ -928,9 +928,9 @@ Commit succeeds with human-facing maintenance docs only
 - Modify: `packages/d2c-core/src/provider/index.ts`
 - Modify: `packages/d2c-core/src/preview/index.ts`
 
-- [ ] **Step 1: Add package entrypoint comment**
+- [ ] **Step 1: 增加 package 入口注释**
 
-Replace `packages/d2c-core/src/index.ts` with:
+将 `packages/d2c-core/src/index.ts` 替换为：
 
 ```ts
 /**
@@ -944,9 +944,9 @@ export * from './provider';
 export * from './preview';
 ```
 
-- [ ] **Step 2: Add IR barrel comment**
+- [ ] **Step 2: 增加 IR barrel 注释**
 
-Replace `packages/d2c-core/src/ir/index.ts` with:
+将 `packages/d2c-core/src/ir/index.ts` 替换为：
 
 ```ts
 /**
@@ -961,9 +961,9 @@ export * from './views';
 export * from './validate';
 ```
 
-- [ ] **Step 3: Add provider barrel comment**
+- [ ] **Step 3: 增加 provider barrel 注释**
 
-Replace `packages/d2c-core/src/provider/index.ts` with:
+将 `packages/d2c-core/src/provider/index.ts` 替换为：
 
 ```ts
 /**
@@ -976,9 +976,9 @@ export * from './port';
 export * from './normalize-and-validate';
 ```
 
-- [ ] **Step 4: Add preview barrel comment**
+- [ ] **Step 4: 增加 preview barrel 注释**
 
-Replace `packages/d2c-core/src/preview/index.ts` with:
+将 `packages/d2c-core/src/preview/index.ts` 替换为：
 
 ```ts
 /**
@@ -993,7 +993,7 @@ export * from './stable-json';
 export * from './visual-review-report';
 ```
 
-- [ ] **Step 5: Verify comments do not alter behavior**
+- [ ] **Step 5: 验证注释不改变行为**
 
 Run:
 
@@ -1008,7 +1008,7 @@ Expected:
 Both commands exit 0
 ```
 
-- [ ] **Step 6: Commit Task 6**
+- [ ] **Step 6: 提交 Task 6**
 
 Run:
 
@@ -1025,7 +1025,7 @@ Commit succeeds with comment-only public API changes
 
 ---
 
-### Task 7: Package Boundary Documentation
+### Task 7: package 边界文档
 
 **Files:**
 
@@ -1033,9 +1033,9 @@ Commit succeeds with comment-only public API changes
 - Modify: `skills/sketch-to-component/docs/architecture-design.md`
 - Modify: `docs/design-source-to-component-implementation-plan.md`
 
-- [ ] **Step 1: Update d2c-core README**
+- [ ] **Step 1: 更新 d2c-core README**
 
-Add this section to `packages/d2c-core/README.md` after the opening description:
+在 `packages/d2c-core/README.md` 开头描述后增加这个 section：
 
 ````markdown
 ## Public Surface
@@ -1056,9 +1056,9 @@ npm test --workspace @skill-collections/d2c-core
 ```
 ````
 
-- [ ] **Step 2: Align Sketch architecture docs**
+- [ ] **Step 2: 对齐 Sketch architecture docs**
 
-Add this quality-gate paragraph to `skills/sketch-to-component/docs/architecture-design.md` near the command or verification section:
+在 `skills/sketch-to-component/docs/architecture-design.md` 的命令或 verification section 附近增加这个质量门禁段落：
 
 ````markdown
 Repository-level hardening now treats the Sketch provider as part of the full quality gate. Provider changes should pass:
@@ -1072,15 +1072,15 @@ npm run check:full
 The provider should keep Sketch-specific parsing inside `skills/sketch-to-component/scripts/src/` and pass only canonical Design IR into `@skill-collections/d2c-core` preview helpers.
 ````
 
-- [ ] **Step 3: Update implementation plan status**
+- [ ] **Step 3: 更新 implementation plan 状态**
 
-In `docs/design-source-to-component-implementation-plan.md`, replace the old Stage 7 note that says D2C will later be folded into `check` with:
+在 `docs/design-source-to-component-implementation-plan.md` 中，将旧的 Stage 7 “D2C 之后会纳入 `check`”说明替换为：
 
 ```markdown
 Repository hardening folds `d2c-core` and `sketch-to-component` into the root quality gate through `npm run check:full`. Stage-specific work may still run narrower commands such as `npm run test:d2c` and `npm run test:sketch` during development, but pre-merge verification should use the full gate.
 ```
 
-- [ ] **Step 4: Verify docs are format-clean**
+- [ ] **Step 4: 验证文档 format clean**
 
 Run:
 
@@ -1094,7 +1094,7 @@ Expected:
 Command exits 0
 ```
 
-- [ ] **Step 5: Commit Task 7**
+- [ ] **Step 5: 提交 Task 7**
 
 Run:
 
@@ -1111,14 +1111,14 @@ Commit succeeds with package boundary docs only
 
 ---
 
-### Task 8: Final Verification and Audit
+### Task 8: 最终验证和审计
 
 **Files:**
 
 - Modify: `README.md`
 - Modify: `docs/repo-workflow.md`
 
-- [ ] **Step 1: Run clean install verification**
+- [ ] **Step 1: 运行 clean install 验证**
 
 Run:
 
@@ -1134,7 +1134,7 @@ Both commands exit 0
 Root and fixture dependency installs are reproducible from lockfiles
 ```
 
-- [ ] **Step 2: Run individual gates**
+- [ ] **Step 2: 运行独立门禁**
 
 Run:
 
@@ -1153,7 +1153,7 @@ Expected:
 Every command exits 0
 ```
 
-- [ ] **Step 3: Run full gate**
+- [ ] **Step 3: 运行完整门禁**
 
 Run:
 
@@ -1167,7 +1167,7 @@ Expected:
 Command exits 0
 ```
 
-- [ ] **Step 4: Inspect diff and working tree**
+- [ ] **Step 4: 检查 diff 和 working tree**
 
 Run:
 
@@ -1185,9 +1185,9 @@ git diff --stat shows only Scheme C hardening files
 git status --short shows no untracked generated artifacts except intentional files already staged or committed
 ```
 
-- [ ] **Step 5: Update command docs after verification**
+- [ ] **Step 5: 验证后更新命令文档**
 
-In `README.md` and `docs/repo-workflow.md`, make sure the documented commands exactly match these root scripts:
+在 `README.md` 和 `docs/repo-workflow.md` 中，确保记录的命令与这些 root scripts 完全一致：
 
 ```text
 npm run lint
@@ -1199,7 +1199,7 @@ npm run check:fixtures
 npm run check:full
 ```
 
-- [ ] **Step 6: Commit Task 8**
+- [ ] **Step 6: 提交 Task 8**
 
 Run:
 
@@ -1216,23 +1216,23 @@ Commit succeeds with final command documentation and audit evidence
 
 ---
 
-## Final Acceptance Criteria
+## 最终验收标准
 
-The Scheme C hardening is complete when all of these are true:
+方案 C 加固在以下条件全部满足时完成：
 
-- Root `npm run check:full` passes from a clean install.
-- Sample lint scripts run real ESLint checks.
-- `skills/image-to-component/scripts` is included in root workspace checks.
-- `d2c-core` and `sketch-to-component` are covered by root typecheck/test gates.
-- GitHub Actions runs the same full gate used locally.
-- Contributor and agent docs explain setup, boundaries, and verification.
-- Public D2C package barrels have contract comments.
-- Existing design-source runtime behavior is unchanged.
-- Golden outputs are unchanged unless a separate behavior commit explains the change.
+- 根 `npm run check:full` 可以从 clean install 后通过。
+- sample lint 脚本运行真实 ESLint 检查。
+- `skills/image-to-component/scripts` 已纳入根 workspace 检查。
+- `d2c-core` 和 `sketch-to-component` 已被根 typecheck/test 门禁覆盖。
+- GitHub Actions 运行与本地相同的完整门禁。
+- 贡献者和 agent 文档解释 setup、边界和验证方式。
+- 公共 D2C package barrels 具有契约注释。
+- 现有 design-source 运行时行为保持不变。
+- golden outputs 不变，除非有独立行为 commit 解释变化。
 
-## Self-Review
+## 自检
 
-- Spec coverage: root tooling, workspace coverage, comments, docs, CI, hooks, package boundaries, and final audit each map to a task.
-- Placeholder scan: clear; every task lists concrete files, commands, snippets, and expected results.
-- Type consistency: script names in docs match the proposed `package.json` scripts.
-- Scope check: fixture dependency isolation is preserved through `npm --prefix fixtures`; generated design outputs remain out of scope.
+- Spec coverage：根工具链、workspace 覆盖、注释、文档、CI、hooks、package 边界和最终审计都映射到具体任务。
+- Placeholder scan：通过；每个任务都列出具体文件、命令、片段和预期结果。
+- Type consistency：文档中的脚本名与提议的 `package.json` scripts 一致。
+- Scope check：通过 `npm --prefix fixtures` 保留 fixture 依赖隔离；生成的 design outputs 仍在范围外。

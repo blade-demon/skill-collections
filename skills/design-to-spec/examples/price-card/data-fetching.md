@@ -7,8 +7,8 @@
 ```
 contracts/api-schema.yaml
   -> contracts/mapping-logic.yaml
-    -> component state / props
-      -> UI components
+    -> 组件 state / props
+      -> UI 组件
 ```
 
 ## 触发时机与条件
@@ -53,7 +53,7 @@ contracts/api-schema.yaml
 
 | 错误类型 | 触发条件 | UI 表现 | 是否可重试 | 备注 |
 |---------|---------|---------|----------|------|
-| 请求失败 | `api_error` 或 request reject | 进入 `error` 状态 | 是，若存在 retry 交互 | 以 Mapping_Logic.state_machine 为准 |
+| 请求失败 | `api_error` 或请求被拒绝 | 进入 `error` 状态 | 是，若存在 retry 交互 | 以 Mapping_Logic.state_machine 为准 |
 | 数据为空 | `api_success` 但数据满足 empty 条件 | 进入 `empty` 状态 | — | 不作为错误处理 |
 
 ## 状态机

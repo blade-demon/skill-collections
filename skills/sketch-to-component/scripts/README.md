@@ -1,12 +1,8 @@
 # sketch-to-component scripts (CLI)
 
-Provider-specific CLI for the Sketch leg of the D2C pipeline. Acquires and
-normalizes `.sketch` files into the shared `design-ir.json`, renders the
-Stage 4 preview, and runs the Stage 5 contract chain. All shared schema /
-derive logic lives in `@skill-collections/d2c-core`; this package owns
-provider parsing and the **only** disk IO (core stays pure).
+D2C 管线 Sketch 段的 provider 专用 CLI。采集并将 `.sketch` 文件规范化为共享 `design-ir.json`，渲染 Stage 4 preview，运行 Stage 5 contract 链。所有共享 schema / derive 逻辑在 `@skill-collections/d2c-core`；本包拥有 provider 解析与**唯一**磁盘 IO（core 保持纯）。
 
-Run via `tsx` (no build step):
+经 `tsx` 运行（无构建步骤）：
 
 ```bash
 npm run extract   -- --file <app.sketch> --out <dir>
@@ -18,19 +14,16 @@ npm run contract  -- (--file <app.sketch> [--artboard <id|name>] | --design-ir <
                      --approval-reason <str> --approved-by <str> --approved-at <iso>
 ```
 
-## `contract` (Stage 5D)
+## `contract`（Stage 5D）
 
-Runs `runContract` (chains visual-view → semantic-view → interaction-spec →
-component-plan) and writes the result under `<out>/`.
+运行 `runContract`（链接 visual-view → semantic-view → interaction-spec → component-plan），并将结果写入 `<out>/`。
 
-Input is exactly one of:
+输入恰好其一：
 
-- `--file <app.sketch>` — extract + normalize, then run the full chain. Also
-  persists the normalized `ir/design-ir.json` so the output dir is a
-  self-contained, re-runnable record.
-- `--design-ir <path>` — start from an existing `design-ir.json`.
+- `--file <app.sketch>` —— extract + normalize，再运行完整链。同时持久化规范化 `ir/design-ir.json`，使输出目录为自包含、可重跑记录。
+- `--design-ir <path>` —— 从现有 `design-ir.json` 开始。
 
-Output layout:
+输出布局：
 
 ```
 <out>/
@@ -44,29 +37,18 @@ Output layout:
     manifest.json         # { artifacts: [{ filename, hash, origin, generatedFrom }] }
 ```
 
-Artifacts are serialized as sorted-key, pretty JSON with a trailing newline,
-so the same input produces byte-identical output across runs (locked by the
-`contract-golden` test).
+Artifact 序列化为排序键、pretty JSON 并带末尾换行，使相同输入跨运行产生字节级相同输出（由 `contract-golden` 测试锁定）。
 
 ### Flags
 
-- `--mode presentational | interactive` — component-plan codegen archetype.
-  **`interactive` is rejected** by this CLI: it derives the interaction spec,
-  which is never `approved`, and interactive mode requires an approved spec.
-  Feeding a pre-approved spec (the reuse-input flow) is a planned follow-up;
-  for now use `--mode presentational`.
-- `--interaction-mode draft | omitted | deferred` — how the interaction spec
-  is derived. `omitted` / `deferred` require the three approval flags below;
-  `draft` must not carry them. (Note: presentational mode needs `omitted` or
-  `deferred`.)
-- `--approval-reason` / `--approved-by` / `--approved-at` — all three or none.
-- `--artboard <id|name>` — artboard selector, only meaningful with `--file`.
+- `--mode presentational | interactive` —— component-plan codegen 原型。**本 CLI 拒绝 `interactive`**：它 derive interaction spec，而 interaction spec 永不为 `approved`，interactive mode 需要 approved spec。喂入预批准 spec（reuse-input 流程）为计划后续；目前使用 `--mode presentational`。
+- `--interaction-mode draft | omitted | deferred` —— interaction spec 如何 derive。`omitted` / `deferred` 需要下方三个 approval flag；`draft` 不得携带。（注：presentational mode 需要 `omitted` 或 `deferred`。）
+- `--approval-reason` / `--approved-by` / `--approved-at` —— 三者全有或全无。
+- `--artboard <id|name>` —— 画板选择器，仅对 `--file` 有意义。
 
-### Boundary
+### 边界
 
-`d2c-core` does no file IO. `runContract` and `buildContractManifest` return
-in-memory values; `planContractFiles` (in `src/cli.ts`) serializes them to
-strings; only `runContractCommand` calls `mkdir` / `writeFile`.
+`d2c-core` 不做文件 IO。`runContract` 与 `buildContractManifest` 返回内存值；`planContractFiles`（在 `src/cli.ts`）序列化为字符串；仅 `runContractCommand` 调用 `mkdir` / `writeFile`。
 
 ## Tests
 
@@ -75,7 +57,4 @@ npm run typecheck
 npm test
 ```
 
-`.sketch` inputs are gitignored, so the contract golden uses a committed
-`design-ir.json` fixture (`src/__tests__/fixtures/contract-golden/`) and
-asserts byte-identical `design-spec/` output. The `.sketch → design-ir` step
-is covered separately by the normalize tests.
+`.sketch` 输入被 gitignore，因此 contract golden 使用已提交的 `design-ir.json` fixture（`src/__tests__/fixtures/contract-golden/`）并断言字节级相同的 `design-spec/` 输出。`.sketch → design-ir` 步骤由 normalize 测试单独覆盖。

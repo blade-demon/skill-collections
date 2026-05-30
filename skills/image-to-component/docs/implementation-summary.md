@@ -1,94 +1,94 @@
-# Ledger + Decision-Gate Implementation Summary
+# Ledger + Decision-Gate 实现摘要
 
-This document summarizes the implementation of the **Ledger + Decision-Gate** pattern for the image-to-component skill, specifically for handling style tokens and preventing AI hallucination.
+本文档总结 image-to-component skill 中 **Ledger + Decision-Gate** 模式的实现，重点说明如何处理样式 token 并防止 AI 幻觉。
 
-## What Was Added
+## 新增内容
 
-### 1. New Workflow: Style Connect (`workflows/style-connect.md`)
+### 1. 新工作流：Style Connect（`workflows/style-connect.md`）
 
-**Purpose:** Map detected visual style traits to existing design tokens and capture unresolved mappings in a structured ledger.
+**目的：** 将检测到的视觉样式特征映射到现有 design token，并将未解析映射捕获到结构化 ledger 中。
 
-**Key features:**
+**主要特性：**
 
-- Token discovery: searches for existing design tokens in the project
-- Style trait mapping: attempts to match extracted hints to existing tokens
-- Token ledger creation: structured table capturing unresolved mappings
-- Decision-gate: explicit user checkpoint (A/B/C options) before code generation
-- Confidence levels: tracks mapping certainty (high/medium/low/none)
-- Multiple status values: pending, provided, reused, create, hardcoded, skip
+- Token 发现：在项目中搜索现有 design token
+- 样式特征映射：尝试将提取的提示匹配到现有 token
+- Token ledger 创建：结构化表格捕获未解析映射
+- Decision-gate：代码生成前明确的用户检查点（A/B/C 选项）
+- Confidence 级别：跟踪映射确定性（high/medium/low/none）
+- 多种 Status 取值：pending、provided、reused、create、hardcoded、skip
 
-**Inputs:**
+**输入：**
 
-- Style hints from Step 4 (if style extraction enabled)
-- Project design token definitions (if available)
-- `.image-to-component.rules.md` for token configuration
+- Step 4 的样式提示（若启用样式提取）
+- 项目 design token 定义（如有）
+- `.image-to-component.rules.md`（token 配置）
 
-**Outputs:**
+**输出：**
 
-- `token-ledger.md` table with unresolved/ambiguous mappings
-- User confirmation of token decisions via decision-gate
+- `token-ledger.md` 表格（含未解析/歧义映射）
+- 用户通过 decision-gate 确认 token 决策
 
-**Integration:**
+**集成：**
 
-- Runs as **Step 8** (optional, only if style hints enabled in Step 1)
-- Positioned after Image Connect (Step 7)
-- Before code generation (Step 10)
+- 作为 **Step 8** 运行（可选，仅当 Step 1 启用样式提示时）
+- 位于 Image Connect（Step 7）之后
+- 位于代码生成（Step 10）之前
 
-### 2. Updated Main Workflow (`SKILL.md`)
+### 2. 更新主工作流（`SKILL.md`）
 
-**Changes:**
+**变更：**
 
-- Added routing map entry for `workflows/style-connect.md`
-- Added Step 8: "Style Connect (Optional)" to the step skeleton
-- Updated Step 11 output requirements to include `token-ledger.md` when pending
-- Added 3 new common mistakes related to style token handling:
-  - Don't hardcode style values without a ledger
-  - Don't invent new tokens without user approval
-  - Don't skip the style-connect decision-gate
+- 为 `workflows/style-connect.md` 新增 routing map 条目
+- 在 step skeleton 中新增 Step 8："Style Connect (Optional)"
+- 更新 Step 11 输出要求：待处理时包含 `token-ledger.md`
+- 新增 3 条与样式 token 处理相关的常见错误：
+  - 不要在没有 ledger 的情况下硬编码样式值
+  - 不要未经用户批准臆造新 token
+  - 不要跳过 style-connect decision-gate
 
-**Key principle:**
+**核心原则：**
 
 > "If style hints were enabled in Step 1, run Style Connect in Step 8 to map traits to tokens. If not enabled, skip to Step 9."
 
-### 3. Updated Code Generation (`workflows/code-generation.md`)
+### 3. 更新代码生成（`workflows/code-generation.md`）
 
-**New section: "Token Usage (From Style Connect)"**
+**新章节："Token Usage (From Style Connect)"**
 
-Describes how to use confirmed token mappings in generated code:
+说明如何在生成代码中使用已确认的 token 映射：
 
-- **Provided tokens** → Reference directly (`var(--token-name)`)
-- **Create tokens** → Add TODO comments for future definition
-- **Hardcoded tokens** → Inline values with TODO markers
-- **Skipped tokens** → Omit entirely, use browser defaults
+- **Provided tokens** → 直接引用（`var(--token-name)`）
+- **Create tokens** → 添加 TODO 注释供后续定义
+- **Hardcoded tokens** → 内联值加 TODO 标记
+- **Skipped tokens** → 完全省略，使用浏览器默认
 
-Ensures code generation respects Style Connect decisions and doesn't invent tokens.
+确保代码生成尊重 Style Connect 决策，不臆造 token。
 
-### 4. Updated Output Workflow (`workflows/output-and-writing.md`)
+### 4. 更新输出工作流（`workflows/output-and-writing.md`）
 
-**Changes:**
+**变更：**
 
-- Updated directory tree rules to include token-ledger when pending
-- Updated exit conditions to reference token-ledger alongside asset-ledger
+- 更新目录树规则：待处理时包含 token-ledger
+- 更新退出条件：与 asset-ledger 一并引用 token-ledger
 
-### 5. New Reference Document (`docs/ledger-and-gate-pattern.md`)
+### 5. 新参考文档（`docs/ledger-and-gate-pattern.md`）
 
-**Purpose:** Comprehensive explanation of the Ledger + Decision-Gate pattern and why it prevents AI hallucination.
+**目的：** 全面解释 Ledger + Decision-Gate 模式及其如何防止 AI 幻觉。
 
-**Sections:**
+**章节：**
 
-- Pattern overview: Ledger (capture) + Decision-Gate (approval)
-- How they work together (6-step flow diagram)
-- Asset Ledger example (already in skill)
-- Token Ledger example (new)
-- Why it prevents hallucination
-- Patterns to avoid (code examples)
-- Ledger status meanings (pending/provided/reused/create/hardcoded/skip)
-- Integration points (Image Connect, Style Connect, Asset Handling)
-- Takeaway: visibility + confirmation = safety
+- 模式概览：Ledger（捕获）+ Decision-Gate（批准）
+- 二者如何协同（6 步流程图）
+- Asset Ledger 示例（skill 中已有）
+- Token Ledger 示例（新增）
+- 为何能防止幻觉
+- 应避开的模式（代码示例）
+- Ledger status 含义（pending/provided/reused/create/hardcoded/skip）
+- 集成点（Image Connect、Style Connect、Asset Handling）
+- 要点：可见性 + 确认 = 安全
 
-## The Pattern in Action
+## 模式实践
 
-### Before (Without Ledger + Gate):
+### 之前（无 Ledger + Gate）：
 
 ```
 1. Extract styles from images
@@ -98,9 +98,9 @@ Ensures code generation respects Style Connect decisions and doesn't invent toke
 5. Later: designer notices wrong colors/spacing (too late)
 ```
 
-**Problems:** Silent assumptions, invisible guesses, bugs in shipped code.
+**问题：** 静默假设、不可见猜测、已发布代码中的 bug。
 
-### After (With Ledger + Gate):
+### 之后（有 Ledger + Gate）：
 
 ```
 1. Extract styles from images
@@ -114,11 +114,11 @@ Ensures code generation respects Style Connect decisions and doesn't invent toke
 6. Later: designer knows exactly what tokens were used
 ```
 
-**Benefits:** Auditable, transparent, requires explicit approval.
+**收益：** 可审计、透明、需要明确批准。
 
-## Token Ledger Format
+## Token Ledger 格式
 
-The token-ledger table captures:
+token-ledger 表格捕获：
 
 ```markdown
 | Token ID  | Hint source             | Source image(s) | Visual trait  | Suggested token name | Source        | Confidence | Status   | User action              |
@@ -128,11 +128,11 @@ The token-ledger table captures:
 | token-003 | type_hierarchy_levels=3 | pending.png     | Font scale    | typography           | lib:tailwind  |       high | pending  | Confirm Tailwind scale   |
 ```
 
-Each row represents a detected style trait and its mapping status. The `Source` column captures provenance (project code, installed library, AI proposal) — see the Iteration 2 section below for the full story.
+每行表示一个检测到的样式特征及其映射状态。`Source` 列捕获来源（项目代码、已安装库、AI 提案）——完整说明见下文 Iteration 2 章节。
 
-## Decision-Gate Format
+## Decision-Gate 格式
 
-After building the ledger, the workflow presents this gate:
+构建 ledger 后，工作流展示此门控：
 
 ```
 Please confirm Style Connect token mappings:
@@ -155,11 +155,11 @@ B. Change one or more decisions.
 C. Skip Style Connect. Hardcode all styles with TODO.
 ```
 
-User chooses A, B, or C. Code generation does not run until confirmed.
+用户选择 A、B 或 C。确认前不运行代码生成。
 
-## Integration with Existing Patterns
+## 与现有模式的集成
 
-The token-ledger pattern parallels the existing **asset-ledger** pattern:
+token-ledger 模式与现有 **asset-ledger** 模式并行：
 
 | Aspect           | Asset Ledger                                                            | Token Ledger                                                                                        |
 | ---------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -169,96 +169,96 @@ The token-ledger pattern parallels the existing **asset-ledger** pattern:
 | Code generation  | Uses confirmed asset references                                         | Uses confirmed token references                                                                     |
 | Status values    | pending, provided, reused                                               | pending, provided, reused, create, hardcoded, skip                                                  |
 
-Both serve the same purpose: **make uncertainty visible, require approval, prevent guessing**.
+二者目的相同：**让不确定性可见、要求批准、防止猜测**。
 
-## When Style Connect Runs
+## Style Connect 何时运行
 
-**Prerequisite:** Style hints must be enabled in Step 1.
+**前置条件：** Step 1 必须启用样式提示。
 
-If style hints are disabled:
+若禁用样式提示：
 
-- No style-context subagent dispatch in Step 4
-- No Style Connect workflow in Step 8
-- Code generation skips token mapping entirely
-- Default: hardcoded styles (or CSS follows template defaults)
+- Step 4 不派发 style-context 子代理
+- Step 8 不运行 Style Connect 工作流
+- 代码生成完全跳过 token 映射
+- 默认：硬编码样式（或 CSS 遵循模板默认）
 
-If style hints are enabled:
+若启用样式提示：
 
-- style-context-prompt.md subagent extracts hints in Step 4
-- Style Connect workflow runs in Step 8
-- Decision-gate requires user confirmation
-- Code generation uses confirmed token mappings
+- style-context-prompt.md 子代理在 Step 4 提取提示
+- Style Connect 工作流在 Step 8 运行
+- Decision-gate 要求用户确认
+- 代码生成使用已确认的 token 映射
 
-## Files Modified
+## 修改的文件
 
-1. **SKILL.md** — Added Step 8, updated routing map, added common mistakes
-2. **workflows/code-generation.md** — Added "Token Usage" section
-3. **workflows/output-and-writing.md** — Updated directory tree and exit rules
-4. **workflows/style-connect.md** — NEW (8119 bytes)
-5. **docs/ledger-and-gate-pattern.md** — NEW (comprehensive reference)
+1. **SKILL.md** — 新增 Step 8，更新 routing map，新增常见错误
+2. **workflows/code-generation.md** — 新增 "Token Usage" 章节
+3. **workflows/output-and-writing.md** — 更新目录树与退出规则
+4. **workflows/style-connect.md** — 新增（8119 bytes）
+5. **docs/ledger-and-gate-pattern.md** — 新增（综合参考）
 
-## Files Not Modified (Existing, Still Used)
+## 未修改的文件（现有，仍在使用）
 
-- `protocols/style-context-spec.md` — Defines allowed style hints (corner_radius, shadow_presence, etc.)
-- `../prompts/style-context-prompt.md` — Dispatches subagent to extract hints from images
-- `workflows/image-connect.md` — Parallel pattern for component reuse decisions
-- `workflows/asset-handling.md` — Parallel pattern for asset management
+- `protocols/style-context-spec.md` — 定义允许的样式提示（corner_radius、shadow_presence 等）
+- `../prompts/style-context-prompt.md` — 派发子代理从图片提取提示
+- `workflows/image-connect.md` — 组件复用决策的并行模式
+- `workflows/asset-handling.md` — 资源管理的并行模式
 
-## Next Steps (Optional Enhancements)
+## 后续步骤（可选增强）
 
-The implementation is complete, but future work could include:
+实现已完成，未来工作可包括：
 
-1. **Style Context Subagent Prompt** — Add a `style-token-prompt.md` if you want deeper style extraction (colors, exact measurements, typography details). Currently, style hints are coarse-grained (corner_radius=medium, shadow_presence=card, etc.).
+1. **Style Context 子代理 Prompt** — 若需更深样式提取（颜色、精确尺寸、排版细节），可新增 `style-token-prompt.md`。当前样式提示为粗粒度（corner_radius=medium、shadow_presence=card 等）。
 
-2. **Token Creation Helper** — Add guidance for creating new tokens if users choose "create" status.
+2. **Token 创建辅助** — 若用户选择 "create" status，增加创建新 token 的指引。
 
-3. **Token Export Integration** — Reference how token-ledger integrates with design system token file generation.
+3. **Token 导出集成** — 说明 token-ledger 如何与设计系统 token 文件生成集成。
 
-4. **Template Updates** — Add token reference examples to CSS Modules and BEM templates.
+4. **模板更新** — 在 CSS Modules 与 BEM 模板中增加 token 引用示例。
 
-5. **Render Verification** — Extend render-verification.md to check that referenced tokens actually exist after code generation.
+5. **渲染验证** — 扩展 render-verification.md，检查代码生成后引用的 token 是否实际存在。
 
-## Key Principle
+## 核心原则
 
 > **Ledger = Make it visible. Decision-Gate = Require approval. Code = Use only confirmed decisions.**
 
-The pattern ensures that:
+该模式确保：
 
-- No tokens are invented silently
-- All style decisions are either automatic (high-confidence) or explicit (user-approved)
-- Generated code is auditable and traceable to user decisions
-- Design system consistency is maintained through conscious, visible choices
+- 不会静默臆造 token
+- 所有样式决策要么自动处理（高置信度），要么经用户明确批准
+- 生成代码可审计、可追溯到用户决策
+- 通过有意识、可见的选择维护设计系统一致性
 
 ---
 
-## Follow-up: Token Source Awareness (Iteration 2)
+## 后续：Token 来源感知（Iteration 2）
 
-After the initial implementation, the token-ledger was extended to track the **source** of each candidate token (project-local vs. installed component library vs. AI-proposed). This brings the skill closer to the way real projects are organized — tokens often come from a mix of the project's own design tokens and the component library (antd, MUI, Chakra, shadcn, Tailwind, Radix) that the project depends on.
+初始实现后，token-ledger 扩展为跟踪每个候选 token 的**来源**（project-local vs. 已安装组件库 vs. AI-proposed）。这使 skill 更接近真实项目组织方式——token 常来自项目自有 design token 与所依赖组件库（antd、MUI、Chakra、shadcn、Tailwind、Radix）的混合。
 
-### Changes (Iteration 2)
+### 变更（Iteration 2）
 
 1. **`workflows/init-project-rules.md`**
-   - Scan Strategy now detects component libraries from `package.json` and the shadcn `components.json` marker.
-   - New "Component Library Confirmation" section: auto-detect first, then ask the user to confirm or edit; cold-start menu shown only when nothing is detected.
-   - New `Component Libraries` section in the rules-file output template, placed between Style Stack and Class Name Helper.
-   - Library list order = priority order; project-local always wins overall; library list ordered by `dependencies` → `devDependencies` → project-file markers, preserving package.json declaration order.
-   - Conflict-handling rule for "package.json shows library X but user picks None".
+   - 扫描策略现从 `package.json` 与 shadcn `components.json` 标记检测组件库。
+   - 新增 "Component Library Confirmation" 章节：先自动检测，再请用户确认或编辑；仅当未检测到任何库时显示冷启动菜单。
+   - 规则文件输出模板新增 `Component Libraries` 章节，位于 Style Stack 与 Class Name Helper 之间。
+   - 库列表顺序 = 优先级顺序；项目本地始终整体优先；库列表按 `dependencies` → `devDependencies` → 项目文件标记排序，保持 package.json 声明顺序。
+   - 冲突处理规则："package.json 显示库 X 但用户选择 None"。
 
 2. **`workflows/style-connect.md`**
-   - Token Discovery now reads `Component Libraries` from the rules file and runs the matching adapter from a new inline "Library Adapters" table.
-   - Built-in adapters: `antd`, `mui`, `chakra`, `shadcn`, `tailwind`, `radix` (Radix has no design tokens; matched but recorded as `inferred`).
-   - Token-ledger gains a `Source` column with allowed values: `project-local`, `lib:<name>`, `css-var-runtime`, `proposed`, `inferred`.
-   - Priority resolution: when the same token name exists in multiple sources, the highest-priority source wins; the row's `User action` column mentions the lower-priority duplicates for transparency.
-   - Future hook: workflow notes that if `protocols/library-adapters.md` exists, it overrides the inline adapter table — the planned extension point for user-defined adapters.
+   - Token 发现现从规则文件读取 `Component Libraries`，并运行新内联 "Library Adapters" 表中匹配的 adapter。
+   - 内置 adapter：`antd`、`mui`、`chakra`、`shadcn`、`tailwind`、`radix`（Radix 无 design token；匹配但记为 `inferred`）。
+   - Token-ledger 新增 `Source` 列，允许值：`project-local`、`lib:<name>`、`css-var-runtime`、`proposed`、`inferred`。
+   - 优先级解析：同一 token 名称存在于多个来源时，最高优先级来源胜出；行的 `User action` 列提及低优先级重复项以保持透明。
+   - 未来扩展点：工作流注明若存在 `protocols/library-adapters.md`，其覆盖内联 adapter 表——计划中的用户自定义 adapter 扩展点。
 
-3. **Docs updates**
-   - `docs/style-connect-quick-reference.md` — new Source column in the example, new "Source Column (Quick Decoder)" table, new troubleshooting entries for library-related issues.
-   - `docs/ledger-and-gate-pattern.md` — Token Ledger example now includes the Source column with a short explanation of why provenance matters.
+3. **文档更新**
+   - `docs/style-connect-quick-reference.md` — 示例新增 Source 列，新增 "Source Column (Quick Decoder)" 表，新增库相关故障排查条目。
+   - `docs/ledger-and-gate-pattern.md` — Token Ledger 示例现含 Source 列及来源重要性的简短说明。
 
-### Deferred to Iteration 3
+### 推迟至 Iteration 3
 
-- Extract Library Adapters into `protocols/library-adapters.md` (the future-hook target). Defer until inline adapter count exceeds ~8 or user-defined adapters are needed.
-- Support for user-supplied custom adapters (e.g., internal company design systems). Today such libraries can be listed as "Other" during init; tokens from them appear as `Source: inferred`.
+- 将 Library Adapters 提取到 `protocols/library-adapters.md`（未来扩展点目标）。推迟至内联 adapter 数量超过约 8 个或需要用户自定义 adapter 时。
+- 支持用户提供的自定义 adapter（如公司内部 design system）。当前此类库可在 init 中列为 "Other"；其 token 显示为 `Source: inferred`。
 
 ---
 

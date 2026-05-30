@@ -55,12 +55,14 @@
 **例子**：
 
 ```markdown
-## Requirement: User can submit search
+### Requirement: 用户可提交搜索
 
-### Scenario: Empty input shows validation error
+The system SHALL 允许用户提交搜索请求。
 
-WHEN user clicks submitBtn with empty searchInput
-THEN renders .input-error with text "请输入关键词"
+#### Scenario: 空输入显示校验错误
+
+- WHEN user clicks submitBtn with empty searchInput
+- THEN renders .input-error with text "请输入关键词"
 ```
 
 **为什么用它**：`Requirement` / `Scenario` / `WHEN` / `THEN` 是可测试关键字，下游 BDD 框架（Cucumber 等）能直接消费。

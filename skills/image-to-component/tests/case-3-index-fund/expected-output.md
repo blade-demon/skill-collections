@@ -1,14 +1,14 @@
 # Case 3 Expected Output Contract — 指数精选（含 Tab 切换）
 
-Run settings: React / TypeScript / CSS Modules / chat output.
+运行设置：React / TypeScript / CSS Modules / chat output。
 
-## Step 6 Decision
+## Step 6 决策
 
-Single image → one independent component `IndexFundSection`.
+单图 → 一个独立组件 `IndexFundSection`。
 
-## Props Contract
+## Props 契约
 
-Must model tab state externally (controlled component):
+须将 tab 状态外部建模（受控组件）：
 
 ```ts
 export type IndexTab = '指数增强' | '宽基指数' | '港股指数' | '双创指数';
@@ -32,7 +32,7 @@ export interface IndexFundSectionProps {
 }
 ```
 
-## Directory Contract
+## 目录契约
 
 ```
 src/components/
@@ -48,17 +48,17 @@ src/components/
         └── IndexFundRow.module.css
 ```
 
-## Key Code Contract
+## 关键代码契约
 
-Must contain:
+须包含：
 
-- `TabBar` as a separate component receiving `tabs`, `activeTab`, `onChange`.
-- `returnRate >= 0` conditional class for positive/negative color on return rate.
-- Both `onSubscribe` and `onToggleFavorite` on each row — two independent actions.
-- `activeTab` as a controlled prop, not internal state.
+- `TabBar` 为独立组件，接收 `tabs`、`activeTab`、`onChange`。
+- 收益率上 `returnRate >= 0` 条件 class 用于正负色。
+- 每行同时有 `onSubscribe` 与 `onToggleFavorite` —— 两个独立 action。
+- `activeTab` 为受控 prop，非内部 state。
 
-Must not contain:
+不得包含：
 
-- Tab state managed internally with `useState` inside the component.
-- "定投" button and favorite star merged into a single prop or handler.
-- Hardcoded tab list inside `TabBar` or `IndexFundSection`.
+- 组件内部用 `useState` 管理 tab 状态。
+- 「定投」按钮与收藏星合并为单一 prop 或 handler。
+- `TabBar` 或 `IndexFundSection` 内硬编码 tab 列表。

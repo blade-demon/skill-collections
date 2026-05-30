@@ -1,16 +1,16 @@
-# Degraded Mode Workflow
+# 降级模式工作流
 
-Use degraded mode only when the normal image-to-component path cannot produce runnable code for the selected target.
+仅当正常 image-to-component 路径无法为所选 target 产出可运行代码时使用降级模式。
 
-## Triggers
+## 触发条件
 
-- User selects "other framework".
-- Subagent dispatch is unavailable and the user does not allow the main agent to read images.
-- Required project context for safe file writing is missing and the user chooses chat-only structural output.
+- 用户选择「其他 framework」。
+- 子 agent 派发不可用且用户不允许主 agent 读图。
+- 安全写文件所需项目上下文缺失且用户选择仅 chat 的结构输出。
 
-## Subagent Unavailable Menu
+## 子 agent 不可用菜单
 
-If signature subagents cannot be dispatched, do not read images from the main agent unless the user explicitly allows it. Ask:
+若无法派发 signature 子 agent，除非用户显式允许，主 agent 不得读图。询问：
 
 ```text
 Subagent dispatch is unavailable in this environment, so the main agent cannot read images while preserving the structure-only boundary. Please choose:
@@ -20,28 +20,28 @@ B. Allow the main agent to read images this run - accepts the trade-off that the
 C. Cancel the skill - exit cleanly with no output.
 ```
 
-## Other Framework Output
+## 其他 Framework 输出
 
-When the user chooses an unsupported framework:
+用户选择不支持 framework 时：
 
-- Do not generate React or Vue code.
-- Output the Step 11 directory tree as a structural suggestion only.
-- Output component trees derived from signatures.
-- State that runnable code generation is unsupported for the chosen framework.
-- Suggest hand-migrating the structure into the target framework.
+- 不生成 React 或 Vue 代码。
+- 将 Step 11 目录树作为纯结构建议输出。
+- 输出由 signature 派生的组件树。
+- 说明所选 framework 不支持可运行代码生成。
+- 建议将结构手工迁移到目标 framework。
 
-## Manual Signatures
+## 手动 Signature
 
-If the user provides structured signatures manually:
+若用户手动提供结构化 signature：
 
-- Validate them using the same signature validation rules.
-- On failure, show exact errors and ask for corrected JSON, skip, or stop.
-- On success, resume structural comparison.
+- 使用相同 signature 校验规则校验。
+- 失败时展示精确错误，请求 corrected JSON、跳过或停止。
+- 成功则恢复结构对比。
 
-## Exit
+## 退出
 
-Exit degraded mode when:
+在以下情况退出降级模式：
 
-- Valid signatures are available and comparison can resume.
-- The user allowed a one-run boundary relaxation.
-- The user cancels.
+- 有效 signature 可用且可恢复对比。
+- 用户允许单次边界放宽。
+- 用户取消。

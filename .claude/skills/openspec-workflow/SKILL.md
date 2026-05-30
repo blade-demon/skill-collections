@@ -1,31 +1,31 @@
 ---
 name: openspec-workflow
-description: Scaffold an OpenSpec change folder (proposal, specs, design, tasks) pre-filled with team SDD conventions for design-to-code features
+description: 按团队 SDD 约定预填 OpenSpec 变更目录（proposal、specs、design、tasks），用于设计到代码的功能
 ---
 
-## When to Use
+## 何时使用
 
-Use when starting a new component or feature that follows the team's SDD+TDD enterprise SOP:
-- User says "start a new component", "new feature spec", "scaffold a change"
-- Before any implementation work begins
-- When a Figma/MasterGo design is ready and needs to move to code
+在启动遵循团队 SDD+TDD 企业 SOP 的新组件或功能时使用：
+- 用户说「新建组件」「新功能 spec」「搭建变更」
+- 任何实现工作开始之前
+- 设计稿（Figma/MasterGo）已就绪、需要进入编码阶段时
 
-## When NOT to Use
+## 何时不使用
 
-- For bug fixes or small patches (use OpenSpec directly: `/opsx:propose`)
-- When no design exists yet (do design first)
-- For backend-only changes with no UI component
+- 缺陷修复或小补丁（直接使用 OpenSpec：`/opsx:propose`）
+- 尚无设计稿时（先做设计）
+- 无 UI 组件的后端专属变更
 
-## Instructions
+## 指令
 
-Scaffold an OpenSpec change folder at `openspec/changes/<name>/` with the following files pre-filled using team conventions:
+在 `openspec/changes/<name>/` 搭建 OpenSpec 变更目录，并按团队约定预填以下文件：
 
-### 1. Gather context (ask if not provided)
-- Component name (kebab-case)
-- Design tool link (Figma / MasterGo URL)
-- Brief description of what the component does
+### 1. 收集上下文（未提供则询问）
+- 组件名（kebab-case）
+- 设计工具链接（Figma / MasterGo URL）
+- 组件功能的简要说明
 
-### 2. Create folder structure
+### 2. 创建目录结构
 
 ```
 openspec/changes/<component-name>/
@@ -37,38 +37,38 @@ openspec/changes/<component-name>/
   tasks.md
 ```
 
-### 3. proposal.md template
+### 3. proposal.md 模板
 
 ```markdown
 # <ComponentName>
 
 ## Why
-[What problem does this component solve? Link to PRD/ticket if available.]
+[该组件解决什么问题？如有 PRD/工单请附链接。]
 
 ## What's Changing
-[What new component or behavior is being introduced?]
+[引入哪些新组件或行为？]
 
 ## Out of Scope
-[Explicitly list what this change does NOT include.]
+[明确列出本变更不包含的内容。]
 
 ## Design Reference
-[Figma/MasterGo link]
+[Figma/MasterGo 链接]
 
 ## Success Criteria
-- [ ] All scenarios in specs/scenarios.md pass visual review with designer
-- [ ] All unit tests green
-- [ ] Storybook stories cover all variants × states
-- [ ] axe accessibility audit passes
+- [ ] specs/scenarios.md 中全部场景通过设计师视觉评审
+- [ ] 全部单元测试通过
+- [ ] Storybook stories 覆盖全部 variant × state
+- [ ] axe 无障碍审计通过
 ```
 
-### 4. specs/requirements.md template
+### 4. specs/requirements.md 模板
 
 ```markdown
 # Requirements: <ComponentName>
 
 ## Component API
 ```typescript
-// Fill in TypeScript interface here
+// 在此填写 TypeScript interface
 export interface <ComponentName>Props {
   // variants, states, callbacks
 }
@@ -88,10 +88,10 @@ export interface <ComponentName>Props {
 | error | API error | error message visible |
 
 ## Design Tokens
-[List which tokens from the design system this component uses]
+[列出本组件使用的设计系统 token]
 ```
 
-### 5. specs/scenarios.md template
+### 5. specs/scenarios.md 模板
 
 ```markdown
 # Scenarios: <ComponentName>
@@ -111,7 +111,7 @@ export interface <ComponentName>Props {
 - [ ] Focus management correct after [interaction]
 ```
 
-### 6. design.md template
+### 6. design.md 模板
 
 ```markdown
 # Technical Design: <ComponentName>
@@ -126,51 +126,52 @@ IDLE → [action] → LOADING → SUCCESS
 ```
 
 ## Data Flow
-[How does data flow into and out of this component?]
+[数据如何流入、流出该组件？]
 
 ## CSS Strategy
-[CSS Modules / Tailwind / styled-components — and why]
+[CSS Modules / Tailwind / styled-components — 及选型理由]
 
 ## Dependencies
-[List any new npm packages needed]
+[列出需要新增的 npm 包]
 
 ## Open Questions
-- [ ] [Any unresolved technical decisions]
+- [ ] [未决的技术决策]
 ```
 
-### 7. tasks.md template
+### 7. tasks.md 模板
 
 ```markdown
 # Tasks: <ComponentName>
 
 ## Phase 1: Spec & Interface
-- [ ] 1.1 Define TypeScript interface in specs/requirements.md
-- [ ] 1.2 Create Storybook stories skeleton (all variants × states)
-- [ ] 1.3 Interface review with Tech Lead
+- [ ] 1.1 在 specs/requirements.md 中定义 TypeScript interface
+- [ ] 1.2 创建 Storybook stories 骨架（全部 variant × state）
+- [ ] 1.3 与技术负责人进行 interface 评审
 
-## Phase 2: Tests (TDD — write before implementing)
-- [ ] 2.1 Write behavior unit tests (all failing)
-- [ ] 2.2 Write visual snapshot baseline
-- [ ] 2.3 Write integration test for primary user flow
-- [ ] 2.4 Test review
+## Phase 2: Tests (TDD — 先写测试再实现)
+- [ ] 2.1 编写行为单元测试（全部失败）
+- [ ] 2.2 编写视觉快照基线
+- [ ] 2.3 编写主用户流的集成测试
+- [ ] 2.4 测试评审
 
 ## Phase 3: Implementation
-- [ ] 3.1 Generate component skeleton from design tool
-- [ ] 3.2 Implement component logic (tests → green)
-- [ ] 3.3 Implement CSS / styles
-- [ ] 3.4 Wire up to real API / data
+- [ ] 3.1 从设计工具生成组件骨架
+- [ ] 3.2 实现组件逻辑（测试变绿）
+- [ ] 3.3 实现 CSS / 样式
+- [ ] 3.4 对接真实 API / 数据
 
 ## Phase 4: Review & Ship
 - [ ] 4.1 Code review
-- [ ] 4.2 Visual review with designer (Chromatic)
-- [ ] 4.3 Accessibility audit
-- [ ] 4.4 Product acceptance
+- [ ] 4.2 与设计师进行视觉评审（Chromatic）
+- [ ] 4.3 无障碍审计
+- [ ] 4.4 产品验收
 - [ ] 4.5 /opsx:archive
 ```
 
-### 8. Confirm output
+### 8. 确认输出
 
-After creating files, print:
+创建文件后打印：
+
 ```
 ✅ Scaffolded: openspec/changes/<name>/
    ├── proposal.md

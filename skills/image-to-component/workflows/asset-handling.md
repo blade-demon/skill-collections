@@ -1,30 +1,30 @@
-# Asset Handling Workflow
+# 资源处理工作流
 
-Use this workflow while defining props and generating the directory tree/code skeleton.
+在定义 props 与生成目录树/代码 skeleton 时使用。
 
-## Hard Rules
+## 硬规则
 
-- Media nodes become `src` and `alt` props only.
-- Do not infer icon package names from screenshots.
-- Do not guess icon component names.
-- Do not add new icon packages.
-- Do not replace an unknown icon with status text.
-- If an icon or media asset cannot be identified reliably, preserve an asset placeholder and record it in `asset-ledger.md`.
+- Media 节点仅变为 `src` 与 `alt` props。
+- 不要从截图推断图标包名。
+- 不要猜测图标组件名。
+- 不要添加新图标包。
+- 不要用 status 文本替换未知图标。
+- 若图标或 media 资源无法可靠识别，保留资源占位符并在 `asset-ledger.md` 中记录。
 
-## Prop Mapping
+## Prop 映射
 
-| Signature role        | Generated API                                                                                 |
-| --------------------- | --------------------------------------------------------------------------------------------- |
-| `media` image/content | `{name}Src: string` and `{name}Alt: string`                                                   |
-| Optional `media`      | `{name}Src?: string` and `{name}Alt?: string`                                                 |
-| Status-varying media  | Use data props keyed by status or conditional rendering driven by the existing `status` union |
-| Unreliable icon       | Placeholder component/element plus asset-ledger row                                           |
+| Signature role         | 生成 API                                                           |
+| ---------------------- | ------------------------------------------------------------------ |
+| `media` 图片/内容      | `{name}Src: string` 与 `{name}Alt: string`                         |
+| 可选 `media`           | `{name}Src?: string` 与 `{name}Alt?: string`                       |
+| 随 status 变化的 media | 使用按 status 的 data props 或由现有 `status` union 驱动的条件渲染 |
+| 不可靠图标             | 占位组件/元素 + asset-ledger 行                                    |
 
-Use generic names when the signature lacks semantics, e.g. `mediaASrc`, `mediaAAlt`. Use semantic names only when supplied by the user, filename, or project context.
+signature 缺乏语义时使用通用名，如 `mediaASrc`、`mediaAAlt`。仅当用户、文件名或项目上下文提供时使用语义名。
 
-## Exact Asset Ledger Format
+## 精确 Asset Ledger 格式
 
-Create or output `asset-ledger.md` with this table:
+创建或输出 `asset-ledger.md`，表格如下：
 
 ```markdown
 | Asset ID  | Source image(s)       | Signature path  | Intended use            | Generated placeholder                                     | Required user action                           | Status  |
@@ -33,22 +33,22 @@ Create or output `asset-ledger.md` with this table:
 | asset-002 | expired.png           | T.media         | Unknown leading icon    | `<span className={styles.iconPlaceholder} aria-hidden />` | Identify icon asset or existing icon component | pending |
 ```
 
-## Status Values
+## Status 值
 
-- `pending`: user must provide asset, URL, import path, or existing component name.
-- `provided`: user already supplied a reliable asset reference.
-- `reused`: an existing project asset/component is explicitly identified.
+- `pending`：用户须提供资源、URL、import 路径或现有组件名。
+- `provided`：用户已提供可靠资源引用。
+- `reused`：已显式识别现有项目资源/组件。
 
-## Accessibility
+## 无障碍
 
-- Every media prop must include an alt prop unless the user confirms the asset is decorative.
-- Decorative unknown icons use `aria-hidden` and must still appear in the ledger.
-- Do not fabricate alt text from screenshot content the signature did not carry.
+- 每个 media prop 须含 alt prop，除非用户确认资源为装饰性。
+- 装饰性未知图标使用 `aria-hidden`，仍须出现在 ledger 中。
+- 不要从 signature 未携带的截图内容伪造 alt 文本。
 
-## Exit
+## 退出
 
-Exit when every media/icon node is represented by:
+当每个 media/图标节点由以下之一表示时退出：
 
-- A concrete `src`/`alt` prop,
-- A confirmed existing asset/component, or
-- A row in `asset-ledger.md`.
+- 具体 `src`/`alt` prop，
+- 已确认现有资源/组件，或
+- `asset-ledger.md` 中的一行。

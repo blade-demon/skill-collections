@@ -1,6 +1,6 @@
 # skill-collections
 
-Monorepo containing **AI skills** and **hands-on samples** that exercise them.
+包含 **AI skills** 与**动手 samples** 的 monorepo。
 
 ```
 skill-collections/
@@ -20,7 +20,7 @@ skill-collections/
 └── docs/                        # 仓库级工作流和 skill 编写指南
 ```
 
-## Quick map
+## 快速导航
 
 | 目标                                          | 文档                                                                                                                             |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,15 +58,15 @@ skills/<skill-name>/
 └── tests/            # 测试套件
 ```
 
-## Workspace conventions
+## 工作区约定
 
-- **Node ≥ 20.** 根 workspace 以 `html-article-to-markdown` 的运行要求为准；`design-to-spec` 单独复制使用时仍只要求 Node ≥ 18。
-- **npm workspaces.** 根 `package.json` 声明 `packages/*` + `skills/*` + `samples/*/*`。从根目录运行 `npm run check` 执行 skill 测试和 sample 构建。
+- **Node ≥ 20。** 根 workspace 以 `html-article-to-markdown` 的运行要求为准；`design-to-spec` 单独复制使用时仍只要求 Node ≥ 18。
+- **npm workspaces。** 根 `package.json` 声明 `packages/*` + `skills/*` + `samples/*/*`。从根目录运行 `npm run check` 执行 skill 测试和 sample 构建。
 - **Skill examples（golden）vs samples（实战）** 刻意分离：
   - `skills/design-to-spec/examples/` 存放**黄金回归样本**（today-windvane、price-card），测试断言字节级等价，**不要编辑**。
   - `samples/<skill>/<name>/` 存放**实战工作区**，包含 `inputs/`、`design-spec/`、`src/` 和 `walkthrough.md`，演示完整作者流程，可阅读、复制和扩展。
 
-## Common commands
+## 常用命令
 
 ```bash
 # 安装根 workspace 依赖
@@ -99,7 +99,7 @@ npm run check:full
 npm run dev:fixture:react
 ```
 
-## Status
+## 状态
 
 - `design-to-spec` 处于 v0.10.x（Node.js 运行时，四阶段状态机，golden samples，38 个回归测试）。详见 [`skills/design-to-spec/CHANGELOG.md`](./skills/design-to-spec/CHANGELOG.md)。
 - `image-to-component` 定位为截图/图片输入的结构优先 skeleton workflow，不承诺设计源级样式保真。

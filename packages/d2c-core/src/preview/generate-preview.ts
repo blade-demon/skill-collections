@@ -89,7 +89,6 @@ function renderCss(root: VisualNode, placeholderAssets: Map<string, PlaceholderA
     '',
     '.d2c-node {',
     '  box-sizing: border-box;',
-    '  overflow: hidden;',
     '}',
     '',
     '.d2c-image-label {',
@@ -156,9 +155,10 @@ function nodeDeclarations(
     declarations.push(`border-radius: ${radiusValue(style.radius)};`);
   if (style?.opacity !== undefined) declarations.push(`opacity: ${formatNumber(style.opacity)};`);
   // Sketch clipping-mask siblings are skipped during normalize; their parent
-  // carries style.raw.maskedContent so we approximate clipping with
-  // overflow:hidden (otherwise oversize sibling shapes — chat-bubble tails —
-  // would render unclipped). See normalize/visual.ts markMaskedContent.
+  // carries style.raw.maskedContent so we clip oversize sibling shapes
+  // (e.g. chat-bubble tails). Non-masked containers default to overflow:visible
+  // so legitimate overflow (dropdowns, tooltips) is not silently swallowed.
+  // See normalize/visual.ts markMaskedContent.
   if (style?.raw && (style.raw as Record<string, unknown>).maskedContent === true) {
     declarations.push('overflow: hidden;');
   }

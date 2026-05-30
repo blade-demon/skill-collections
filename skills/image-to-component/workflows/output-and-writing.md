@@ -1,10 +1,10 @@
-> **Coverage table is script-driven.** Build a `CoverageInput` JSON object, then run:
+> **覆盖表由脚本驱动。** 构建 `CoverageInput` JSON 对象，然后运行：
 >
 > ```bash
 > echo '<CoverageInput JSON>' | npm run coverage-table
 > ```
 >
-> **CoverageInput shape:**
+> **CoverageInput 形状：**
 >
 > ```json
 > {
@@ -26,35 +26,35 @@
 > }
 > ```
 
-# Output And Writing Workflow
+# 输出与写入工作流
 
-Use this after code generation planning.
+在代码生成规划之后使用。
 
-## Directory Tree First
+## 目录树优先
 
-Always output a directory tree before code blocks or file writes.
+在代码块或文件写入之前始终输出目录树。
 
-Rules:
+规则：
 
-- Every file line has a `#` comment describing responsibility.
-- Mark which files vary by `status`/`step` and which are static.
-- Mention reused components from Image Connect as imports, not generated files.
-- If `asset-handling.md` produced pending assets, include `asset-ledger.md`.
-- If `style-connect.md` produced pending token decisions, include `token-ledger.md`.
+- 每个文件行有 `#` 注释描述职责。
+- 标记哪些文件随 `status`/`step` 变化、哪些静态。
+- 将 Image Connect 复用组件提及为 import，非生成文件。
+- 若 `asset-handling.md` 产出 pending 资源，包含 `asset-ledger.md`。
+- 若 `style-connect.md` 产出 pending token 决策，包含 `token-ledger.md`。
 
-## Coverage Table
+## 覆盖表
 
-After the tree, run `coverage-table.md` and include a signature coverage table.
+树之后运行 `coverage-table.md` 并包含 signature 覆盖表。
 
-## Output Modes
+## 输出模式
 
-| Mode        | Action                                    |
-| ----------- | ----------------------------------------- |
-| Chat output | Print skeletons directly; create no files |
-| Write files | Check for conflicts before writing        |
-| Unspecified | Default to chat output                    |
+| 模式        | 动作                          |
+| ----------- | ----------------------------- |
+| Chat output | 直接打印 skeleton；不创建文件 |
+| Write files | 写入前检查冲突                |
+| Unspecified | 默认 chat output              |
 
-Before writing any file, check whether the target exists. If any target exists, ask:
+写入任何文件前，检查目标是否已存在。若有冲突，询问：
 
 ```text
 Existing files conflict with the planned output.
@@ -64,13 +64,13 @@ B. Skip existing files and create only missing files
 C. Cancel file writing and output to chat instead
 ```
 
-## Optional Render Verification
+## 可选渲染验证
 
-Only in write-file mode, run `render-verification.md` when the project has Storybook or a safe Vite preview route and the user did not ask to skip verification.
+仅在 write-file mode 下，当项目有 Storybook 或安全 Vite preview 路由且用户未要求跳过验证时，运行 `render-verification.md`。
 
-## Exit
+## 退出
 
-Exit with either:
+以以下之一退出：
 
-- Chat-rendered directory tree, coverage table, asset ledger (if pending), token ledger (if pending), and skeleton code; or
-- Written files, coverage table, asset ledger path (if pending), token ledger path (if pending), and optional render verification report.
+- Chat 渲染的目录树、覆盖表、asset ledger（如有 pending）、token ledger（如有 pending）与 skeleton 代码；或
+- 已写入文件、覆盖表、asset ledger 路径（如有 pending）、token ledger 路径（如有 pending）及可选渲染验证报告。

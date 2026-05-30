@@ -1,10 +1,10 @@
-# Summarize Signatures Workflow
+# Summarize Signatures 工作流
 
-Use this workflow in Step 5, after all signature batches validate and before structural comparison. Output a natural-language summary and a mechanical JSX component tree for each image. The trees let the user verify structural parsing before the workflow commits to component decisions.
+在 Step 5 中使用本工作流：所有签名批次校验完成后、结构对比之前。为每张图片输出自然语言摘要与机械化的 JSX 组件树。树结构供用户在 workflow 提交组件决策前校验结构解析。
 
-Do not show raw signature JSON to the user. Do not output trees that contain information the signature did not carry.
+不要向用户展示原始签名 JSON。不要输出签名未携带信息的树。
 
-## Output Format
+## 输出格式
 
 ```
 已完成结构分析，共 N 张图：
@@ -24,11 +24,11 @@ Do not show raw signature JSON to the user. Do not output trees that contain inf
   └── ...
 ```
 
-After all trees, write one transition sentence, for example: "接下来将对比这 N 张图的结构，判断是否属于同一组件的不同状态。"
+所有树之后写一句过渡语，例如："接下来将对比这 N 张图的结构，判断是否属于同一组件的不同状态。"
 
-## Naming Rules
+## 命名规则
 
-Derive component names only from: (a) signature role and slot, (b) user-declared state or business context from Step 2, (c) confirmed state names from Step 6 when available. Never use visual information the signature does not carry.
+组件名称仅可从以下来源推导：(a) 签名角色与槽位，(b) Step 2 用户声明的状态或业务上下文，(c) Step 6 确认的状态名称（如有）。切勿使用签名未携带的视觉信息。
 
 | Slot / role                     | Default name                              | When user context is known                           |
 | ------------------------------- | ----------------------------------------- | ---------------------------------------------------- |
@@ -47,11 +47,11 @@ Derive component names only from: (a) signature role and slot, (b) user-declared
 | `O` overlay                     | `<OverlayModal>` / `<OverlayDrawer>` etc. | domain name when declared                            |
 | `F` floating anchor             | `<FloatAction>`                           | —                                                    |
 
-Use PascalCase for all component names.
+所有组件名称使用 PascalCase。
 
-Do not name a component after its visual position, icon shape, text content, color, or any attribute the signature does not carry.
+不要根据视觉位置、图标形状、文本内容、颜色或签名未携带的任何属性命名组件。
 
-Forbidden examples:
+禁止示例：
 
 - ❌ `<IconThumb>` — icon shape
 - ❌ `<QRCodeArea>` — visual content guess
@@ -59,39 +59,39 @@ Forbidden examples:
 - ❌ `<BottomSection>` — layout position
 - ❌ `<ErrorText>` — text content
 
-Allowed examples:
+允许示例：
 
 - ✅ `<MediaA>` — generic media, first in slot
 - ✅ `<CouponCard>` — business object declared in Step 2
 - ✅ `<ExpiredStamp>` — state name confirmed in Step 6
 - ✅ `<ActionA>` — generic action, first in slot
 
-## Tree Symbol Rules
+## 树符号规则
 
-- `├──` for non-last sibling
-- `└──` for last sibling
-- `│` to maintain indentation lines
-- Every node at every depth must carry a `#` comment
+- `├──` 表示非最后一个兄弟节点
+- `└──` 表示最后一个兄弟节点
+- `│` 用于保持缩进线
+- 每个深度的每个节点都必须带 `#` 注释
 
-## Comment Rules
+## 注释规则
 
-Each `#` comment may only contain:
+每个 `#` 注释仅可包含：
 
-- (a) The signature role of the node: `title`, `meta`, `media`, `status`, `hint`, `action`, `form`, `nav`, `brand`, `empty`
-- (b) Slot and container position: `T slot`, `M slot`, `inside card`, `inside list`
-- (c) State context from Step 2 declaration or Step 6 result: `rendered when status === 'expired'`
-- (d) Non-visual notes fields: `from notes: divider=dashed`, `overlay_type=modal`
+- (a) 节点的签名角色：`title`、`meta`、`media`、`status`、`hint`、`action`、`form`、`nav`、`brand`、`empty`
+- (b) 槽位与容器位置：`T slot`、`M slot`、`inside card`、`inside list`
+- (c) Step 2 声明或 Step 6 结果中的状态上下文：`rendered when status === 'expired'`
+- (d) 非视觉 notes 字段：`from notes: divider=dashed`、`overlay_type=modal`
 
-Forbidden in comments — these cause hallucination because the signature does not carry this information:
+注释中禁止以下内容——签名未携带这些信息，会导致幻觉：
 
-- ❌ Colors or gradients: `# 橙色渐变背景`, `# white card`
-- ❌ Shadow or radius: `# 圆角阴影`, `# card shadow`
-- ❌ Icon shapes: `# 警告图标`, `# ¥ 图标`
-- ❌ Specific text copy: `# "订单已过期"`, `# "Submit"`
-- ❌ Font size or alignment: `# 灰色小字，居中`, `# small grey text`
-- ❌ Layout measurements: `# 16px padding`, `# 48px height`
+- ❌ 颜色或渐变：`# 橙色渐变背景`、`# white card`
+- ❌ 阴影或圆角：`# 圆角阴影`、`# card shadow`
+- ❌ 图标形状：`# 警告图标`、`# ¥ 图标`
+- ❌ 具体文案：`# "订单已过期"`、`# "Submit"`
+- ❌ 字号或对齐：`# 灰色小字，居中`、`# small grey text`
+- ❌ 布局尺寸：`# 16px padding`、`# 48px height`
 
-Allowed comment examples:
+允许的注释示例：
 
 - ✅ `# T slot, title leaf`
 - ✅ `# media leaf in M (first occurrence)`
@@ -100,7 +100,7 @@ Allowed comment examples:
 - ✅ `# overlay: modal (from notes: overlay_type=modal)`
 - ✅ `# F slot, floating action anchor (from notes: float_anchor=br)`
 
-## Operator-to-Tree Mapping
+## 运算符到树的映射
 
 | Signature operator            | Tree representation                                              |
 | ----------------------------- | ---------------------------------------------------------------- |
@@ -108,9 +108,9 @@ Allowed comment examples:
 | `A -> B` (vertical sequence)  | `B` is a child of `A`, indented one level                        |
 | `container(...)`              | `container` node with children from the parenthesised expression |
 
-## Overlay and Float Trees
+## Overlay 与 Float 树
 
-When `O` is not `"-"`, output the overlay tree separately below the base tree, outside the root component node:
+当 `O` 不为 `"-"` 时，在根组件节点之外、基础树下方单独输出 overlay 树：
 
 ```
 <RootComponent>
@@ -121,7 +121,7 @@ When `O` is not `"-"`, output the overlay tree separately below the base tree, o
   └── <ActionA>                     # action leaf inside overlay
 ```
 
-When `F` is not `"-"`, show the floating anchor as a sibling of the root component's last child with a note:
+当 `F` 不为 `"-"` 时，将浮动锚点作为根组件最后一个子节点的兄弟节点展示并附注：
 
 ```
 <RootComponent>
@@ -129,9 +129,9 @@ When `F` is not `"-"`, show the floating anchor as a sibling of the root compone
   └── <FloatAction>                 # F slot, floating action anchor (from notes: float_anchor=br)
 ```
 
-## Multi-State Trees
+## 多状态树
 
-When multiple images represent the same component in different states, output one tree per image. Name each root node to reflect its state:
+当多张图片表示同一组件的不同状态时，每张图输出一棵树。根节点名称应反映其状态：
 
 ```
 <PendingOrderPage>                  # Root component, pending state
@@ -144,9 +144,9 @@ When multiple images represent the same component in different states, output on
   ├── ...
 ```
 
-## Worked Example
+## 完整示例
 
-Signature input (internal, not shown to user):
+签名输入（内部使用，不展示给用户）：
 
 ```json
 {
@@ -162,13 +162,13 @@ Signature input (internal, not shown to user):
 }
 ```
 
-User context from Step 2: page is a coupon order page; state is expired.
+Step 2 用户上下文：页面为优惠券订单页；状态为 expired。
 
-Natural-language summary shown to user:
+展示给用户的自然语言摘要：
 
 > **expired.png**：T 槽导航栏 + 标题；M 槽券信息卡（含两个 media 节点、内嵌信息卡、状态印章）；B 槽提示文字
 
-JSX tree shown to user:
+展示给用户的 JSX 树：
 
 ```
 <ExpiredOrderPage>                      # Root component, expired state
@@ -188,12 +188,12 @@ JSX tree shown to user:
 <Footer>                                # B slot, hint leaf
 ```
 
-Note: `<CouponCard>` and `<CouponInfoCard>` use business names because Step 2 declared the coupon context. `<MediaA>` and `<MediaB>` use generic names because no Step 2 declaration identified their specific semantic.
+说明：`<CouponCard>` 与 `<CouponInfoCard>` 使用业务名称，因为 Step 2 声明了优惠券上下文。`<MediaA>` 与 `<MediaB>` 使用通用名称，因为 Step 2 未声明其具体语义。
 
-## User Correction Gate
+## 用户修正门控
 
-After outputting all trees, invite correction before proceeding:
+输出所有树后，在进入下一步前邀请修正：
 
 > 如果发现结构与设计稿不符，请在进入结构比较前指出，主代理将重新派发签名子代理。
 
-If the user identifies a mismatch, re-dispatch the affected batch with a correction instruction inside the dispatcher-instructions fence and re-validate before continuing.
+若用户指出不匹配，在 dispatcher-instructions fence 内附带修正指令重新派发受影响批次，重新校验后再继续。

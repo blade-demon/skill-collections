@@ -103,7 +103,7 @@ Requirement 下只有「正常数据 + 常见变体」，缺了边界和异常�
 
 ```
 ### Requirement: 卡片渲染热点与基金推荐
-The system SHALL render hotspot row and fund row when data is available.
+The system SHALL 在数据可用时渲染热点行与基金推荐行。
 
 #### Scenario: 完整数据时正确渲染
 - WHEN hotspot 与 fund 都齐全

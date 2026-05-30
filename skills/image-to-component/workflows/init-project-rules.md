@@ -1,40 +1,40 @@
-# Init Project Rules Workflow
+# Init Project Rules 工作流
 
-Use this workflow when `.image-to-component.rules.md` is missing in the target project. It runs before Step 1 asks image-to-component generation questions, then returns to Step 1 with the initialized rules as project context.
+当目标项目中缺少 `.image-to-component.rules.md` 时使用本工作流。它在 Step 1 询问 image-to-component 生成问题之前运行，随后带着已初始化的规则作为项目上下文返回 Step 1。
 
-## Trigger
+## 触发条件
 
-At the start of an image-to-component run:
+在 image-to-component 运行开始时：
 
-1. Resolve the target project root from the user's requested output location or current working directory.
-2. Check for `<project-root>/.image-to-component.rules.md`.
-3. If the file exists, read it and continue to Step 1.
-4. If the file is missing, run this workflow once, create the file, then continue to Step 1.
+1. 从用户请求的输出位置或当前工作目录解析目标项目根目录。
+2. 检查 `<project-root>/.image-to-component.rules.md`。
+3. 若文件存在，读取并继续 Step 1。
+4. 若文件缺失，运行本工作流一次，创建文件，然后继续 Step 1。
 
-Do not read images during this workflow. Do not ask the Step 1 framework/output/language/style questions until the rules file exists or the user cancels initialization.
+本工作流期间不要读取图片。在规则文件存在或用户取消初始化之前，不要询问 Step 1 的框架/输出/语言/样式问题。
 
-## Scan Strategy
+## 扫描策略
 
-Collect lightweight project evidence before choosing defaults:
+在选择默认值前收集轻量级项目证据：
 
-- Component directories: inspect common roots such as `src/components`, `components`, `app/components`, `src/app`, `src/ui`, `src/shared/ui`, and existing import aliases.
-- Style stack: inspect existing component files and package metadata for CSS Modules (`*.module.css`), plain CSS/BEM (`*.css` with block-style class names), CSS-in-JS, Tailwind, Sass, or UI-library-only styling.
-- Class helper: search for `cn`, `clsx`, `classnames`, `classNames`, or local utility exports under `src/utils`, `src/lib`, `utils`, and `lib`.
-- Icon source: inspect package metadata and imports for icon libraries. Prefer an existing single icon source when it is consistent.
-- Accessibility requirements: inspect existing components and project docs for interactive-element labeling patterns.
-- Base components: search for `Button`, `Card`, `Modal`, and `ListItem` components. Record paths only when discovered.
-- Test command: inspect `package.json` scripts. Prefer an existing script that runs component/unit tests.
-- Component library: inspect `package.json` dependencies and devDependencies for known UI library packages (`antd`, `@mui/material`, `@chakra-ui/react`, `@radix-ui/*`, `tailwindcss`). Also check for the shadcn marker file `components.json` in the project root (shadcn copies components into the project rather than installing a package).
+- 组件目录：检查常见根目录，如 `src/components`、`components`、`app/components`、`src/app`、`src/ui`、`src/shared/ui` 及现有 import 别名。
+- 样式栈：检查现有组件文件与包元数据中的 CSS Modules（`*.module.css`）、plain CSS/BEM（带 BEM 风格类名的 `*.css`）、CSS-in-JS、Tailwind、Sass 或仅 UI 库样式。
+- Class helper：在 `src/utils`、`src/lib`、`utils`、`lib` 下搜索 `cn`、`clsx`、`classnames`、`classNames` 或本地 utility export。
+- Icon 来源：检查包元数据与 import 中的 icon 库。若一致，优先使用现有单一 icon 来源。
+- 无障碍要求：检查现有组件与项目文档中的交互元素标注模式。
+- 基础组件：搜索 `Button`、`Card`、`Modal`、`ListItem` 组件。仅在实际发现时记录路径。
+- 测试命令：检查 `package.json` scripts。优先使用运行组件/单元测试的现有脚本。
+- 组件库：检查 `package.json` dependencies 与 devDependencies 中的已知 UI 库包（`antd`、`@mui/material`、`@chakra-ui/react`、`@radix-ui/*`、`tailwindcss`）。同时检查项目根目录的 shadcn 标记文件 `components.json`（shadcn 将组件复制到项目中而非安装包）。
 
-Use `rg`/`rg --files` where available. Keep the scan shallow enough to avoid turning initialization into a full audit.
+可用时使用 `rg`/`rg --files`。保持扫描足够浅，避免将初始化变成全面审计。
 
-## Component Library Detection And Confirmation
+## 组件库检测与确认
 
-After Scan Strategy completes, resolve the project's component libraries before writing the rules file. Style Connect (Step 8) needs this list to pick the right Library Adapter for token discovery.
+扫描策略完成后，在写入规则文件前解析项目的组件库。Style Connect（Step 8）需要此列表以选择正确的 Library Adapter 进行 token 发现。
 
-### Standardized Library Names
+### 标准化库名称
 
-Map detected signals to the standardized name used in the rules file and adapter table:
+将检测信号映射为规则文件与 adapter 表使用的标准化名称：
 
 | Detection signal                         | Standardized name                      |
 | ---------------------------------------- | -------------------------------------- |
@@ -46,9 +46,9 @@ Map detected signals to the standardized name used in the rules file and adapter
 | `components.json` exists at project root | `shadcn`                               |
 | User-specified "Other" entry             | `<lowercased-user-input>` (no adapter) |
 
-### Confirmation Flow
+### 确认流程
 
-If detection produced at least one match, ask the user to confirm:
+若检测产生至少一个匹配，请用户确认：
 
 ```text
 Detected component libraries from package.json:
@@ -65,7 +65,7 @@ B. Edit the list (add/remove libraries; specify order — first has higher prior
 C. None — use only project-local token sources
 ```
 
-If detection found nothing, ask from scratch:
+若未检测到任何库，从零询问：
 
 ```text
 No known component library detected in package.json.
@@ -82,15 +82,15 @@ G. Tailwind CSS
 H. Other — specify package name(s)
 ```
 
-### Library Priority
+### 库优先级
 
-The library list order is the **priority order** Style Connect uses to resolve conflicts when the same token name is defined in multiple sources. Project-local tokens always win over any library; among libraries, the **first entry in the list has highest priority**.
+库列表顺序即 Style Connect 在多个来源定义同一 token 名称时用于解决冲突的**优先级顺序**。项目本地 token 始终优先于任何库；库之间**列表第一项优先级最高**。
 
-When the user picks option B (Edit the list), explicitly state that order matters. Default order from auto-detection: dependencies before devDependencies, then project-file markers (shadcn), preserving package.json declaration order within each group.
+当用户选择 B（Edit the list）时，明确说明顺序很重要。自动检测的默认顺序：dependencies 先于 devDependencies，然后是项目文件标记（shadcn），各组内保持 package.json 声明顺序。
 
-## Defaults
+## 默认值
 
-When project evidence is absent, incomplete, or consistent with the user's spec, encode these defaults:
+当项目证据缺失、不完整或与用户规格一致时，编码以下默认值：
 
 | Rule                | Default                                                          |
 | ------------------- | ---------------------------------------------------------------- |
@@ -103,43 +103,43 @@ When project evidence is absent, incomplete, or consistent with the user's spec,
 | Test command        | `vitest`                                                         |
 | Component libraries | `[]` (none — only project-local token sources used)              |
 
-Defaults are not guesses about the existing app. Mark them as defaults in the rules file so later generation can distinguish project evidence from fallback policy.
+默认值不是对现有应用的猜测。在规则文件中将其标记为 default，以便后续生成能区分项目证据与回退策略。
 
-## Conflict Handling
+## 冲突处理
 
-If evidence conflicts with the defaults:
+若证据与默认值冲突：
 
-- Prefer explicit user instructions over detected evidence.
-- Prefer strong project evidence over defaults.
-- If two project conventions conflict, write the conflict under `Open Questions` and ask before generating code that depends on the unresolved choice.
-- If icon imports show multiple libraries, do not add another package. Record the allowed source selected by user instruction or project convention; otherwise default to `@iconify/react` and flag the conflict.
-- If a `cn` helper exists in a different path, record the discovered path instead of creating the default helper.
-- If no base component path is found, record the component name with `path: not discovered`.
-- If `package.json` shows a known UI library but the user chooses "None" in the Component Library Confirmation, respect the user's choice and record the discrepancy in `Open Questions` (the user may be migrating off the library).
+- 优先采用用户明确指令，而非检测证据。
+- 优先采用强项目证据，而非默认值。
+- 若两种项目约定冲突，在 `Open Questions` 下记录冲突，并在生成依赖未解析选择的代码前询问。
+- 若 icon import 显示多个库，不要新增包。记录用户指令或项目约定所选允许来源；否则默认 `@iconify/react` 并标记冲突。
+- 若 `cn` helper 存在于不同路径，记录发现的路径，而非创建默认 helper。
+- 若未发现基础组件路径，记录组件名称并标注 `path: not discovered`。
+- 若 `package.json` 显示已知 UI 库但用户在组件库确认中选择 "None"，尊重用户选择并在 `Open Questions` 中记录差异（用户可能正在迁移离开该库）。
 
-When a conflict blocks generation, stop after writing the rules draft and ask the user to choose. When it does not block generation, continue with the recorded decision and include the conflict in `Open Questions`.
+若冲突阻塞生成，写入规则草稿后停止并让用户选择。若不阻塞生成，继续并记录决策，将冲突纳入 `Open Questions`。
 
-## Output Template
+## 输出模板
 
-Create `.image-to-component.rules.md` with this structure:
+使用以下结构创建 `.image-to-component.rules.md`：
 
 ```markdown
-# Image To Component Project Rules
+# Image To Component 项目规则
 
-Generated for image-to-component runs in this project. Update this file when project conventions change.
+为本项目的 image-to-component 运行生成。项目约定变更时请更新本文件。
 
-## Component Directory
+## 组件目录
 
 - Directory: `src/components/`
 - Source: default | project evidence | user instruction
 
-## Style Stack
+## 样式栈
 
 - Stack: CSS Modules
 - Source: default | project evidence | user instruction
 - Notes: <module file naming, BEM convention, Tailwind policy, or other relevant constraints>
 
-## Component Libraries
+## 组件库
 
 - Libraries (in priority order): `[antd, tailwind]`
 - Source: project evidence | user confirmation | user instruction
@@ -147,9 +147,9 @@ Generated for image-to-component runs in this project. Update this file when pro
 - Priority rule: project-local tokens always win over library tokens; among libraries, the first entry has highest priority.
 - Notes: <e.g., "antd v5 with CSS-in-JS"; "shadcn components in src/components/ui">
 
-### Token Discovery Sources (informational)
+### Token 发现来源（参考信息）
 
-When Style Connect runs, it will scan tokens from:
+Style Connect 运行时将扫描以下来源的 token：
 
 - Project-local: `src/tokens/`, `src/styles/`, `tailwind.config.*`
 - Library: <resolved adapter paths, e.g., `node_modules/antd/dist/reset.css`, `tailwind.config.*` resolved theme>
@@ -163,19 +163,19 @@ If no library is selected, only project-local sources are scanned.
 - Source: default | project evidence | user instruction
 - Policy: Reuse this helper for React class composition. Do not redefine it in every component.
 
-## Icons
+## 图标
 
 - Allowed source: `@iconify/react`
 - Policy: Do not introduce new icon packages. Use existing project icons only when listed here.
 - Existing icon components/imports: <paths or "none discovered">
 
-## Accessibility
+## 无障碍
 
 - All interactive elements must have `aria-label`.
 - Prefer semantic buttons/links for actions.
 - Preserve heading hierarchy through configurable heading props when needed.
 
-## Existing Base Components
+## 现有基础组件
 
 | Component | Path           | Notes             |
 | --------- | -------------- | ----------------- |
@@ -184,24 +184,24 @@ If no library is selected, only project-local sources are scanned.
 | Modal     | not discovered | default candidate |
 | ListItem  | not discovered | default candidate |
 
-## Test Command
+## 测试命令
 
 - Command: `vitest`
 - Source: default | project evidence | user instruction
 
-## Open Questions
+## 待决问题
 
 - None.
 ```
 
-Replace defaults with discovered values when evidence is clear. Keep the table rows for `Button`, `Card`, `Modal`, and `ListItem` even when paths are not discovered.
+证据清晰时用发现值替换默认值。即使未发现路径，仍保留 `Button`、`Card`、`Modal`、`ListItem` 的表格行。
 
-## Continuation
+## 后续步骤
 
-After writing `.image-to-component.rules.md`:
+写入 `.image-to-component.rules.md` 后：
 
-1. Summarize the chosen rules to the user in one short paragraph.
-2. If no blocking conflict remains, return to Step 1 and ask the normal upfront questions.
-3. If blocking conflicts remain, ask the user to resolve them before Step 1.
+1. 用一段简短文字向用户总结所选规则。
+2. 若无阻塞冲突，返回 Step 1 并询问常规 upfront 问题。
+3. 若仍有阻塞冲突，在 Step 1 前请用户解决。
 
-The rest of the workflow treats `.image-to-component.rules.md` as the authoritative project-convention input for Image Connect, prop definition, directory planning, and code generation.
+工作流其余部分将 `.image-to-component.rules.md` 视为 Image Connect、属性定义、目录规划与代码生成的权威项目约定输入。

@@ -5,7 +5,7 @@ metadata:
   compatibility:
     - opencode # 原生支持：question tool / Plan mode / AGENTS.md / SQLite 会话持久化
     - claude-code # 原生支持：AskUserQuestion / 文件读写
-description: Use when a user provides a UI screenshot, mockup, wireframe, or component tree and wants implementation specs, component decomposition, API-field mapping, data-fetching behavior, or OpenSpec scenarios. Do not use for pure visual critique, pixel-level CSS extraction, or browsing-only design discussion.
+description: 当用户提供 UI 截图、mockup、线框图或组件树，并希望获得实现规格、组件分解、API 字段映射、数据获取行为或 OpenSpec Scenario 时使用。不要用于纯视觉点评、像素级 CSS 提取，或仅浏览式的设计讨论。
 ---
 
 # design-to-spec — OpenSpec 智能向导

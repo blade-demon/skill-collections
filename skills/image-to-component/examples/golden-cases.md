@@ -1,10 +1,10 @@
-# Golden Signature Comparison Cases
+# Golden Signature 对比案例
 
-These examples use the structured JSON shape from `protocols/subagent-return-format.md`. Compare the `signature` objects mechanically; do not ask subagents to emit markdown signature blocks.
+这些示例使用 `protocols/subagent-return-format.md` 的结构化 JSON 形状。机械对比 `signature` 对象；不要要求子 agent 输出 markdown signature 块。
 
-## Case A: QR-code order page
+## Case A：二维码订单页
 
-Three images are states of the same component.
+三张图为同一组件的状态。
 
 ```json
 {
@@ -47,9 +47,9 @@ Three images are states of the same component.
 }
 ```
 
-Decision: T/O/F are identical; M differs by one added `status` leaf; B has a leaf-node swap. Conclusion: same component, 3 states.
+决策：T/O/F 相同；M 差一个新增 `status` leaf；B 有 leaf 互换。结论：同一组件，3 个状态。
 
-## Case B: List page vs detail page
+## Case B：列表页 vs 详情页
 
 ```json
 {
@@ -81,9 +81,9 @@ Decision: T/O/F are identical; M differs by one added `status` leaf; B has a lea
 }
 ```
 
-Decision: M container topology differs: `list(card(...))` vs a leaf sequence. Conclusion: different components.
+决策：M 容器拓扑不同：`list(card(...))` vs leaf 序列。结论：不同组件。
 
-## Case C: Detail page plus confirm dialog
+## Case C：详情页加确认对话框
 
 ```json
 {
@@ -115,9 +115,9 @@ Decision: M container topology differs: `list(card(...))` vs a leaf sequence. Co
 }
 ```
 
-Decision: after stripping O, the base layer is identical; the O slot becomes an independent overlay component.
+决策：剥离 O 后基础层相同；O slot 成为独立 overlay 组件。
 
-## Case D: Login form idle vs error
+## Case D：登录表单 idle vs error
 
 ```json
 {
@@ -149,9 +149,9 @@ Decision: after stripping O, the base layer is identical; the O slot becomes an 
 }
 ```
 
-Decision: M differs by one added `hint` leaf inside the same form topology. Conclusion: same component, 2 states.
+决策：M 在同一 form 拓扑内差一个新增 `hint` leaf。结论：同一组件，2 个状态。
 
-## Case E: Empty state vs filled list
+## Case E：空状态 vs 有数据列表
 
 ```json
 {
@@ -183,4 +183,4 @@ Decision: M differs by one added `hint` leaf inside the same form topology. Conc
 }
 ```
 
-Decision: M topology changes from a single `empty` leaf to `list(card(...))`. Conclusion: different components.
+决策：M 拓扑从单个 `empty` leaf 变为 `list(card(...))`。结论：不同组件。

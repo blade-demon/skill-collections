@@ -1,17 +1,17 @@
-# Candidate Group Conflicts
+# 候选组冲突
 
-Use this workflow after all signatures have been collected. Do not run it during filename pre-grouping.
+在所有 signature 收集完成后使用本工作流。不要在文件名预分组期间运行。
 
-## Trigger
+## 触发条件
 
-A conflict exists when:
+存在冲突当：
 
-- Two or more candidate groups have different structural skeletons, and
-- Each conflicting candidate group contains more than 1 image.
+- 两个及以上候选组具有不同结构 skeleton，且
+- 每个冲突候选组含多于 1 张图。
 
-A single isolated image is not a conflict. Match a single image to the closest candidate group by structural skeleton. If no group matches, treat it as an independent component candidate.
+单张孤立图不是冲突。按结构 skeleton 将单图匹配到最近候选组。若无组匹配，视为独立组件候选。
 
-## Required Prompt
+## 必需 Prompt
 
 ```text
 Merging found multiple candidate groups with different structural skeletons; cannot auto-merge.
@@ -27,16 +27,16 @@ C. Process only a specified subset of files. List filenames directly,
    The model will restart from file listing and only process these files.
 ```
 
-## Outcomes
+## 结果
 
-| User choice | Action                                                                    |
-| ----------- | ------------------------------------------------------------------------- |
-| A           | Run prop modeling and code generation separately for each candidate group |
-| B           | Merge all signatures, model all differences as props/status, and continue |
-| C           | Restart file-list handling with only the user-listed filenames            |
+| 用户选择 | 动作                                                     |
+| -------- | -------------------------------------------------------- |
+| A        | 对每个候选组分别运行 prop 建模与代码生成                 |
+| B        | 合并所有 signature，将所有差异建模为 props/status 并继续 |
+| C        | 仅用用户列出的文件名重启文件列表处理                     |
 
-## Guardrails
+## 护栏
 
-- Do not silently merge conflicting multi-image groups.
-- Do not discard a group without explicit user choice.
-- Do not re-read images unless the selected outcome requires a restarted subset.
+- 不要静默合并冲突的多图组。
+- 未经用户显式选择不要丢弃组。
+- 除非所选结果需要重启子集，否则不要重新读图。

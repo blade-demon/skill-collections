@@ -1,19 +1,19 @@
-# sketch-to-component Provider Architecture
+# sketch-to-component Provider 架构
 
-## Overview
+## 概述
 
-`sketch-to-component` is the Sketch provider adapter for the shared design-source pipeline.
+`sketch-to-component` 是共享设计源管线的 Sketch provider 适配器。
 
-The authoritative D2C contract is [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md). This provider document must not redefine:
+权威 D2C 契约见 [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md)。本 provider 文档不得重新定义：
 
-- canonical IR naming or schema location;
-- preview, IR, or package output directories;
-- review gate count or gate semantics;
-- target package layout;
-- barrel export rules;
-- target stack defaults.
+- 规范 IR 命名或 schema 位置；
+- preview、IR 或 package 输出目录；
+- review gate 数量或 gate 语义；
+- target package 布局；
+- barrel export 规则；
+- target stack 默认值。
 
-Sketch-specific extraction feeds the shared pipeline:
+Sketch 特定提取接入共享管线：
 
 ```text
 .sketch file (direct ZIP parse)        # first / primary extraction path
@@ -24,64 +24,51 @@ Sketch-specific extraction feeds the shared pipeline:
 -> shared preview, contract, and target-package pipeline
 ```
 
-**Extraction approach (2026-05-21).** The first extraction path is **direct `.sketch`
-file parsing** — `.sketch` is an open ZIP of JSON, so `extractRaw` is offline,
-inspectable, and fixture-friendly. SketchMCP is a later alternative behind the same
-seam: both acquisition strategies converge on one internal `SketchRawModel`, so
-`normalize` and the shared pipeline are unaffected when MCP is added. The current
-local-file acquisition path remains the implemented acquisition path — see
-[`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md). Normalize
-and preview now build on that local raw artifact. The `Prerequisites` and
-`Configuration` sections below describe the _later_ SketchMCP path, not the
-current local-file path.
+**提取方式（2026-05-21）。** 首要提取路径为**直接 `.sketch` 文件解析** —— `.sketch` 是 JSON 的开放 ZIP，因此 `extractRaw` 可离线、可检视、fixture 友好。SketchMCP 是同一 seam 上的后续替代：两种采集策略收敛于一个内部 `SketchRawModel`，因此添加 MCP 时 `normalize` 与共享管线不受影响。当前本地文件采集路径仍是已实现的采集路径 —— 见 [`stage-2-extract-raw-outline.md`](./stage-2-extract-raw-outline.md)。Normalize 与 preview 现已基于该本地 raw artifact 构建。下方 `Prerequisites` 与 `Configuration` 描述的是*后续* SketchMCP 路径，而非当前本地文件路径。
 
-## Current Implemented Scope
+## 当前已实现范围
 
-The implemented vertical slice now reaches Gate 1 preview:
+已实现的垂直切片现达 Gate 1 preview：
 
-- `extract --file <path> --out <dir>` reads a local `.sketch` ZIP and writes
-  `<out>/ir/raw-dsl.json`;
-- `normalize --raw <path> --out <dir>` converts Sketch raw data into validated
-  `<out>/ir/design-ir.json`;
-- `preview --ir <path> --out <dir>` invokes shared `d2c-core` preview helpers
-  and writes Gate 1 HTML/review artifacts.
+- `extract --file <path> --out <dir>` 读取本地 `.sketch` ZIP 并写入 `<out>/ir/raw-dsl.json`；
+- `normalize --raw <path> --out <dir>` 将 Sketch raw 数据转为校验后的 `<out>/ir/design-ir.json`；
+- `preview --ir <path> --out <dir>` 调用共享 `d2c-core` preview 辅助并写入 Gate 1 HTML/review artifact。
 
-SketchMCP, remote document acquisition, full asset export, interaction modeling,
-component-plan generation, and target package codegen are still future scope.
+SketchMCP、远程文档采集、完整资源导出、交互建模、component-plan 生成与 target package codegen 仍为未来范围。
 
-## When To Use
+## 何时使用
 
-This provider applies when:
+在以下情况适用本 provider：
 
-- the user wants to convert a Sketch design through D2C;
-- a local `.sketch` file is available — the current acquisition entry, via `extract --file`;
-- SketchMCP is available (a later extraction path, not Stage 2);
-- the repo contains committed Sketch-derived raw or canonical artifacts;
-- the user asks for Sketch provider behavior, limitations, or validation.
+- 用户希望通过 D2C 转换 Sketch 设计；
+- 有本地 `.sketch` 文件 —— 当前采集入口，经 `extract --file`；
+- SketchMCP 可用（后续提取路径，非 Stage 2）；
+- 仓库含已提交的 Sketch 衍生 raw 或规范 artifact；
+- 用户询问 Sketch provider 行为、限制或验证。
 
-Screenshot-only inputs belong to `image-to-component`, not this provider.
+纯截图输入属于 `image-to-component`，非本 provider。
 
-## Role Split
+## 角色分工
 
-| Role                                             | Responsibility                                                                                                        |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| Operator with a local `.sketch` file _(current)_ | Run `extract`, `normalize`, and `preview` to reach Gate 1 from local files.                                           |
-| Designer with Sketch + SketchMCP _(future)_      | Extract the selected frame, assets, and reference-frame image.                                                        |
-| Developer without Sketch                         | Work from committed `output/ir/` artifacts, review gates, and future generated `output/package/`.                     |
-| Shared D2C engine                                | Own canonical IR views, HTML preview, future interaction spec, component plan, target package output, and validation. |
+| 角色                                 | 职责                                                                                               |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| 持有本地 `.sketch` 的操作者 _(当前)_ | 运行 `extract`、`normalize`、`preview`，从本地文件达 Gate 1。                                      |
+| 设计师（Sketch + SketchMCP）_(未来)_ | 提取所选 frame、资源与参考帧图片。                                                                 |
+| 无 Sketch 的开发者                   | 基于已提交的 `output/ir/` artifact、review gate 及未来生成的 `output/package/` 工作。              |
+| 共享 D2C 引擎                        | 拥有规范 IR 视图、HTML preview、未来 interaction spec、component plan、target package 输出与验证。 |
 
-The Sketch provider should make developer builds possible without requiring Sketch, as long as the required `output/ir/raw-dsl.json`, `output/ir/design-ir.json`, and asset/reference artifacts are committed or otherwise supplied.
+只要所需的 `output/ir/raw-dsl.json`、`output/ir/design-ir.json` 及 asset/reference artifact 已提交或以其他方式提供，Sketch provider 应使开发者构建无需 Sketch。
 
-## Prerequisites
+## 前置条件
 
-### Designer Machine
+### 设计师机器
 
-- Sketch.app installed and running.
-- Target document open.
-- Target Frame selected or otherwise addressable.
-- SketchMCP responding at the configured URL, defaulting to `http://localhost:31126/mcp`.
+- 已安装并运行 Sketch.app。
+- 目标文档已打开。
+- 目标 Frame 已选中或可寻址。
+- SketchMCP 在配置 URL 响应，默认为 `http://localhost:31126/mcp`。
 
-Probe example:
+探测示例：
 
 ```bash
 curl -sS -X POST "$SKETCH_MCP_URL" \
@@ -90,19 +77,19 @@ curl -sS -X POST "$SKETCH_MCP_URL" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
 ```
 
-Expect the MCP server to identify itself as SketchMCP or an equivalent configured Sketch connector.
+期望 MCP 服务器自称为 SketchMCP 或等效配置的 Sketch connector。
 
-### Developer Machine
+### 开发者机器
 
-- Node version required by the repo.
-- No Sketch installation required when committed canonical artifacts exist.
-- Access to the project rules that define target stack, tokens, naming, BEM, and package export rules.
+- Node 版本符合仓库要求。
+- 存在已提交规范 artifact 时无需 Sketch 安装。
+- 可访问定义 target stack、token、命名、BEM 与 package export 规则的项目规则。
 
-## Configuration
+## 配置
 
-Provider configuration should describe Sketch access and output root only. It must not define a separate IR or package contract.
+Provider 配置应仅描述 Sketch 访问与输出根。不得定义独立 IR 或 package 契约。
 
-Recommended shape:
+推荐形状：
 
 ```json
 {
@@ -115,9 +102,9 @@ Recommended shape:
 }
 ```
 
-`SKETCH_MCP_URL` may override `mcpUrl`.
+`SKETCH_MCP_URL` 可覆盖 `mcpUrl`。
 
-Output locations under `outputRoot` follow the global architecture:
+`outputRoot` 下的输出位置遵循全局架构：
 
 ```text
 output/
@@ -126,26 +113,26 @@ output/
   package/
 ```
 
-## Provider Responsibilities
+## Provider 职责
 
-The Sketch provider owns only Sketch-specific work:
+Sketch provider 仅拥有 Sketch 特定工作：
 
-| Responsibility   | Provider rule                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Frame resolution | Resolve the selected frame or configured frame id.                                                                      |
-| MCP extraction   | Fetch Sketch document/frame data through SketchMCP.                                                                     |
-| Raw preservation | Save provider response as `output/ir/raw-dsl.json`.                                                                     |
-| Source trace     | Preserve page, artboard, layer, symbol, and override source ids under canonical source metadata or trace records.       |
-| Asset export     | Export images, SVGs, symbols, masks, and unresolved placeholders when available.                                        |
-| Reference frame  | Export a Sketch-rendered frame image for screenshot diff.                                                               |
-| Normalization    | Convert Sketch-specific document data into canonical `output/ir/design-ir.json`.                                        |
-| Warnings         | Record unsupported effects, masks, gradients, nested overrides, missing assets, and low-confidence semantic candidates. |
+| 职责       | Provider 规则                                                                                 |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| Frame 解析 | 解析所选 frame 或配置的 frame id。                                                            |
+| MCP 提取   | 通过 SketchMCP 获取 Sketch 文档/frame 数据。                                                  |
+| Raw 保留   | 将 provider 响应保存为 `output/ir/raw-dsl.json`。                                             |
+| 来源追溯   | 在规范 source 元数据或 trace 记录下保留 page、artboard、layer、symbol 与 override source id。 |
+| 资源导出   | 在可用时导出图片、SVG、symbol、蒙版及未解析占位符。                                           |
+| 参考帧     | 导出 Sketch 渲染的 frame 图片供截图 diff。                                                    |
+| 规范化     | 将 Sketch 特定文档数据转为规范 `output/ir/design-ir.json`。                                   |
+| Warnings   | 记录不支持的效果、蒙版、渐变、嵌套 override、缺失资源及低置信度 semantic candidate。          |
 
-Raw Sketch data must not be consumed directly by preview or target package generation.
+Raw Sketch 数据不得被 preview 或 target package 生成直接消费。
 
-## Provider Normalization Guidance
+## Provider 规范化指引
 
-Sketch data may include:
+Sketch 数据可能包括：
 
 ```text
 Page
@@ -160,73 +147,72 @@ Shared Style
 Exportable asset
 ```
 
-Provider normalization should:
+Provider 规范化应：
 
-- preserve source ids and layer names for traceability;
-- map Symbol Masters and Symbol Instances to semantic candidates, not approved contracts;
-- preserve Overrides as candidate props with confidence;
-- preserve visual data needed by the Visual View;
-- export or ledger bitmap/vector assets;
-- record unsupported masks, gradients, shadows, blurs, and nested symbol swaps as warnings;
-- keep Sketch-specific fields under `source` metadata or trace records.
+- 保留 source id 与 layer 名称以供追溯；
+- 将 Symbol Master 与 Symbol Instance 映射为 semantic candidate，而非 approved contract；
+- 将 Override 保留为带 confidence 的 candidate props；
+- 保留 Visual View 所需的 visual 数据；
+- 导出或 ledger 位图/矢量资源；
+- 将不支持的蒙版、渐变、阴影、模糊及嵌套 symbol swap 记录为 warning；
+- 将 Sketch 特定字段保留在 `source` 元数据或 trace 记录下。
 
-## Commands
+## 命令
 
-### Current — through Gate 1 preview
+### 当前 —— 至 Gate 1 preview
 
-The current provider scripts are intentionally local and deterministic:
+当前 provider 脚本有意为本地且确定性：
 
-| Command                                         | Purpose                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------- |
-| `npm install`                                   | Install provider script dependencies when working standalone.       |
-| `npm test`                                      | Run provider-owned tests.                                           |
-| `npm run typecheck`                             | Type-check the provider scripts.                                    |
-| `npm run extract -- --file <path> --out <dir>`  | Parse a local `.sketch` file; write `<out>/ir/raw-dsl.json`.        |
-| `npm run normalize -- --raw <path> --out <dir>` | Normalize raw Sketch data into validated `<out>/ir/design-ir.json`. |
-| `npm run preview -- --ir <path> --out <dir>`    | Generate Gate 1 preview HTML and visual review artifacts from IR.   |
-| `npm run test:sketch` from the repo root        | Run Sketch provider tests through the root workspace.               |
-| `npm run typecheck:sketch` from the repo root   | Type-check Sketch provider scripts through the root workspace.      |
+| 命令                                            | 用途                                                           |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| `npm install`                                   | 独立工作时安装 provider 脚本依赖。                             |
+| `npm test`                                      | 运行 provider 自有测试。                                       |
+| `npm run typecheck`                             | 对 provider 脚本做类型检查。                                   |
+| `npm run extract -- --file <path> --out <dir>`  | 解析本地 `.sketch` 文件；写入 `<out>/ir/raw-dsl.json`。        |
+| `npm run normalize -- --raw <path> --out <dir>` | 将 raw Sketch 数据规范化为校验后的 `<out>/ir/design-ir.json`。 |
+| `npm run preview -- --ir <path> --out <dir>`    | 从 IR 生成 Gate 1 preview HTML 与 visual review artifact。     |
+| 仓库根目录 `npm run test:sketch`                | 经根 workspace 运行 Sketch provider 测试。                     |
+| 仓库根目录 `npm run typecheck:sketch`           | 经根 workspace 对 Sketch provider 脚本做类型检查。             |
 
-### Future — not implemented yet
+### 未来 —— 尚未实现
 
-These describe the eventual full provider and shared pipeline:
+以下描述 eventual 完整 provider 与共享管线：
 
-| Capability                                | Purpose                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------- |
-| `extract` via SketchMCP / frame selection | Extract a selected remote/open Sketch frame, assets, and reference image. |
-| Gate 2 contract generation                | Draft semantic view, interaction spec, and component plan for review.     |
-| Target package generation                 | Emit React/TS/BEM package output after Gate 2 approval.                   |
+| 能力                                  | 用途                                                               |
+| ------------------------------------- | ------------------------------------------------------------------ |
+| 经 SketchMCP / frame 选择的 `extract` | 提取所选远程/已打开 Sketch frame、资源与参考图。                   |
+| Gate 2 contract 生成                  | 起草 semantic view、interaction spec 与 component plan 供 review。 |
+| Target package 生成                   | Gate 2 批准后发出 React/TS/BEM 包输出。                            |
 
-Command names may evolve as the provider matures; outputs must still follow the
-global architecture.
+命令名可随 provider 成熟而演进；输出仍须遵循全局架构。
 
 ## Gates
 
-This provider uses the gates defined by the global architecture:
+本 provider 使用全局架构定义的 gate：
 
-1. Gate 1: HTML preview approval for visual fidelity.
-2. Gate 2: component contract approval for Semantic View, Interaction Spec, and Component Plan.
+1. Gate 1：visual 保真的 HTML preview 批准。
+2. Gate 2：Semantic View、Interaction Spec 与 Component Plan 的组件 contract 批准。
 
-The Sketch provider may extract and normalize data before either gate. It must not generate or claim final target package output until both gates pass.
+Sketch provider 可在任一 gate 之前提取与规范化。在两个 gate 均通过前不得生成或声称最终 target package 输出。
 
-## Validation Focus
+## 验证重点
 
-Sketch provider validation should cover provider-owned behavior:
+Sketch provider 验证应覆盖 provider 自有行为：
 
-- SketchMCP connectivity and failure reporting.
-- Selected frame or configured frame resolution.
-- Raw Sketch fixture parsing.
-- Source trace preservation.
-- Symbol, instance, and override preservation as candidates.
-- Asset and reference-frame export or warning behavior.
-- Canonical `schemaVersion` presence.
-- Provider-specific data isolation under `source` or trace records.
+- SketchMCP 连通性与失败报告。
+- 所选 frame 或配置 frame 解析。
+- Raw Sketch fixture 解析。
+- Source trace 保留。
+- Symbol、instance 与 override 作为 candidate 保留。
+- 资源与参考帧导出或 warning 行为。
+- 规范 `schemaVersion` 存在。
+- Provider 特定数据隔离在 `source` 或 trace 记录下。
 
-Shared output package structure, barrel export shape, gate semantics, regeneration policy, token reconciliation, and screenshot-diff thresholds are owned by the global design-source architecture.
+共享输出包结构、barrel export 形状、gate 语义、再生策略、token 对账与截图 diff 阈值由全局 design-source 架构拥有。
 
-## Limitations
+## 限制
 
-- SketchMCP availability and authentication are environment-specific.
-- Some Sketch visual effects may be unsupported and must become warnings.
-- Nested symbol swaps should remain candidates until the shared component plan approves them.
-- The provider should not promise handler implementation; interaction semantics require developer approval in Gate 2.
+- SketchMCP 可用性与认证因环境而异。
+- 部分 Sketch visual 效果可能不支持，须变为 warning。
+- 嵌套 symbol swap 在共享 component plan 批准前应仍为 candidate。
+- Provider 不应承诺 handler 实现；交互语义须在 Gate 2 经开发者批准。

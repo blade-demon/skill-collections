@@ -1,76 +1,76 @@
-# Design Source To Component Architecture
+# 设计源到组件架构
 
-## Decision
+## 决策
 
-Use separate workflows for screenshot inputs and design-source inputs.
+截图输入和设计源输入使用独立的工作流。
 
-Screenshots are useful for structural understanding, state comparison, and skeleton generation, but they do not contain reliable style data. High-fidelity frontend generation should start from design-source systems that expose structured layout, text, style, component, and asset data.
+截图适合用于结构理解、状态对比和骨架生成，但它不包含可靠的样式数据。高保真的前端生成应当从能够暴露结构化布局、文本、样式、组件和资源数据的设计源系统开始。
 
-Design-source workflows use one canonical normalized IR, then derive preview, semantic, interaction, and code-generation artifacts from it. The first implementation may still carry the shape of the first provider, but provider-neutrality is the target contract and must be refined as more providers are added.
+设计源工作流使用一份唯一权威的规范化 IR，再从它派生出预览、语义、交互和代码生成等工件。第一版实现仍可能带有首个 provider 的形状，但 provider 中立性是目标契约，必须随着更多 provider 的接入逐步收敛。
 
-The target output stack is controlled by project rules. The first default stack is React + TypeScript + BEM CSS.
+目标输出技术栈由项目规则控制。第一版的默认技术栈是 React + TypeScript + BEM CSS。
 
-The long-term workflow family is:
+长期的工作流家族如下：
 
 ```text
 design-to-component
-  image-to-component          # Screenshot/image input, structure-first skeleton workflow
-  sketch-to-component         # Sketch source provider
-  figma-to-component          # Figma source provider
-  mastergo-to-component       # MasterGo source provider
+  image-to-component          # 截图/图片输入，结构优先的骨架工作流
+  sketch-to-component         # Sketch 设计源 provider
+  figma-to-component          # Figma 设计源 provider
+  mastergo-to-component       # MasterGo 设计源 provider
 ```
 
-## D2C Fidelity Layers
+## D2C 保真层
 
-Design-to-code has two distinct fidelity layers. They should be modeled and reviewed separately.
+Design-to-code 存在两个不同的保真层。它们应当分别建模、分别评审。
 
-| Layer             | Goal                                                        | Primary Inputs                                               | Primary Outputs                                                                             | Review Gate             |
-| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ----------------------- |
-| Visual fidelity   | Make the result look like the design                        | design DSL, layout, style, tokens, assets                    | `ir/views/visual-view.json`, `preview/index.html`, `preview/preview.css`, `preview/assets/` | HTML preview approval   |
-| Contract fidelity | Make the result usable as a maintainable component contract | annotations, layer names, project rules, developer contracts | `ir/views/semantic-view.json`, `ir/interaction-spec.json`, `ir/component-plan.json`         | component plan approval |
+| 层级       | 目标                       | 主要输入                           | 主要输出                                                                                    | 评审门禁      |
+| ---------- | -------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- | ------------- |
+| 视觉保真层 | 让结果看起来与设计稿一致   | 设计 DSL、布局、样式、token、资源  | `ir/views/visual-view.json`、`preview/index.html`、`preview/preview.css`、`preview/assets/` | HTML 预览审批 |
+| 契约保真层 | 让结果具备可维护的组件契约 | 标注、图层名、项目规则、开发者契约 | `ir/views/semantic-view.json`、`ir/interaction-spec.json`、`ir/component-plan.json`         | 组件方案审批  |
 
-Visual fidelity answers "does it look right?" Contract fidelity answers "is the generated component boundary, API, state, and event contract usable?"
+视觉保真层回答“看起来对不对”。契约保真层回答“生成的组件边界、API、状态和事件契约能不能用”。
 
-Contract fidelity does not mean the generator implements business handlers. The engine may scaffold props, event names, payload shapes, and state-machine drafts, but the developer is authoritative for interaction semantics.
+契约保真层并不意味着生成器会实现业务处理函数。引擎可以生成草稿形态的 props、事件名、payload 结构和状态机，但开发者对交互语义拥有最终权威。
 
-## Canonical IR Model
+## 权威 IR 模型
 
-There is one canonical source of truth after extraction:
+提取完成后，只存在一份唯一权威数据源：
 
 ```text
 ir/design-ir.json
 ```
 
-`design-ir.json` is the normalized design IR. All other JSON outputs are derived views or downstream contracts.
+`design-ir.json` 是规范化设计 IR。所有其他 JSON 输出都是它的派生视图或下游契约。
 
 ```text
 ir/
-  raw-dsl.json                  # provider response, preserved for traceability
-  design-ir.json                # canonical normalized IR
+  raw-dsl.json                  # provider 响应，保留用于可追溯性
+  design-ir.json                # 唯一权威的规范化 IR
   views/
-    visual-view.json            # derived view for preview rendering
-    semantic-view.json          # derived view for component planning
-  interaction-spec.json         # developer-authorized interaction contract
-  component-plan.json           # approved code-generation plan
+    visual-view.json            # 供预览渲染使用的派生视图
+    semantic-view.json          # 供组件规划使用的派生视图
+  interaction-spec.json         # 由开发者授权的交互契约
+  component-plan.json           # 已批准的代码生成方案
 ```
 
-Placement rule:
+放置规则：
 
-- `views/` contains engine-derived projections from the canonical IR.
-- top-level files under `ir/` are source data or developer-authorized contracts that gate generation.
+- `views/` 存放从权威 IR 派生出的引擎投影产物。
+- `ir/` 顶层文件存放源数据，或会对生成流程形成门禁的开发者授权契约。
 
-Use these terms consistently:
+术语必须保持一致：
 
-| Term                 | Meaning                                                                          |
-| -------------------- | -------------------------------------------------------------------------------- |
-| Raw DSL              | Provider-specific data returned by MasterGo, Figma, Sketch, or another connector |
-| Normalized Design IR | The canonical provider-normalized contract stored at `ir/design-ir.json`         |
-| Visual View          | A derived view of the canonical IR used by the preview renderer                  |
-| Semantic View        | A derived view of the canonical IR used by component planning                    |
-| Interaction Spec     | A developer-authorized contract for events, payloads, state, and data            |
-| Component Plan       | The final code-generation plan approved before target stack output               |
+| 术语                 | 含义                                                            |
+| -------------------- | --------------------------------------------------------------- |
+| Raw DSL              | MasterGo、Figma、Sketch 或其他连接器返回的、provider 专有的数据 |
+| Normalized Design IR | 存放于 `ir/design-ir.json` 的、经 provider 规范化的权威契约     |
+| Visual View          | 权威 IR 的派生视图，供预览渲染器使用                            |
+| Semantic View        | 权威 IR 的派生视图，供组件规划使用                              |
+| Interaction Spec     | 由开发者授权的事件、payload、状态与数据契约                     |
+| Component Plan       | 在目标技术栈输出前已批准的最终代码生成方案                      |
 
-`design-ir.json` must include a schema version:
+`design-ir.json` 必须包含 schema 版本：
 
 ```json
 {
@@ -104,58 +104,58 @@ Use these terms consistently:
 }
 ```
 
-Compatibility rule:
+兼容规则：
 
-- Patch changes may add optional fields.
-- Minor changes may add required fields only behind a migration path.
-- Major changes may break old providers and must include a migration note.
-- Pre-1.0 exception: while the major version is `0`, a minor bump is treated as breaking — `isCompatible` requires an exact major.minor match (patch is ignored). The patch/minor/major rules above take effect once major ≥ 1.
-- Provider extractors must write the `schemaVersion` they target.
+- 补丁（patch）变更只能新增可选字段。
+- 次要（minor）变更只能在提供迁移路径的前提下新增必填字段。
+- 主要（major）变更允许破坏旧 provider，但必须附带迁移说明。
+- 1.0 前的特例：major 为 `0` 期间，minor 升级一律视为破坏性 —— `isCompatible` 要求 major.minor 精确匹配（patch 忽略）。上面的 patch/minor/major 规则自 major ≥ 1 起生效。
+- Provider 提取器必须写入它所面向的 `schemaVersion`。
 
-## End-To-End D2C Architecture
+## 端到端 D2C 架构
 
-The first version should not depend on a low-code platform DSL. Instead, use design-source DSL for visual fidelity and annotations plus developer contracts for contract fidelity.
+第一版不应依赖低代码平台 DSL。应当用设计源 DSL 解决视觉保真，用标注加开发者契约解决契约保真。
 
-Semantic work can run in parallel with visual review, but final target-stack code generation is blocked until both gates pass.
+语义工作可以与视觉评审并行，但最终目标技术栈代码生成必须等到两个门禁都通过。
 
 ```mermaid
 flowchart TD
-  subgraph Designer["Designer"]
-    D1["Design file<br/>MasterGo / Figma / Sketch"]
-    D2["Optional annotations<br/>@component / @state / @event / @slot / @data"]
-    D3["Visual approval<br/>layout / style / assets / states"]
+  subgraph Designer["设计师"]
+    D1["设计文件<br/>MasterGo / Figma / Sketch"]
+    D2["可选标注<br/>@component / @state / @event / @slot / @data"]
+    D3["视觉确认<br/>布局 / 样式 / 资源 / 状态"]
   end
 
-  subgraph Developer["Developer"]
-    DEV1["Project rules<br/>target stack / BEM / tokens / component conventions"]
-    DEV2["Interaction contract<br/>props / events / data schema / API binding"]
-    DEV3["Component plan approval<br/>split / states / events / exports"]
+  subgraph Developer["开发者"]
+    DEV1["项目规则<br/>目标技术栈 / BEM / token / 组件规范"]
+    DEV2["交互契约<br/>props / 事件 / 数据 schema / API 绑定"]
+    DEV3["组件方案确认<br/>拆分 / 状态 / 事件 / 导出"]
   end
 
-  subgraph Connector["MCP / Connector"]
-    M1["Fetch design DSL<br/>file / page / layer / style"]
-    M2["Export assets<br/>images / SVG / icons"]
-    M3["Export reference frame image<br/>for screenshot diff"]
-    M4["Persist raw data<br/>raw-dsl.json + source trace"]
+  subgraph Connector["MCP / 连接器"]
+    M1["拉取设计 DSL<br/>文件 / 页面 / 图层 / 样式"]
+    M2["导出资源<br/>图片 / SVG / 图标"]
+    M3["导出参考帧图片<br/>用于截图比对"]
+    M4["保存原始数据<br/>raw-dsl.json + 源 trace"]
   end
 
-  subgraph Engine["AI / D2C Engine"]
-    A1["Normalize Design IR<br/>layout / style / text / assets / trace"]
-    A2["Derive Visual View<br/>views/visual-view.json"]
-    A3["HTML preview generator<br/>preview.html / preview.css / assets"]
-    A4["Pixel validation<br/>compare preview to reference frame"]
+  subgraph Engine["AI / D2C 引擎"]
+    A1["规范化设计 IR<br/>布局 / 样式 / 文本 / 资源 / trace"]
+    A2["派生 Visual View<br/>views/visual-view.json"]
+    A3["HTML 预览生成器<br/>preview.html / preview.css / assets"]
+    A4["像素校验<br/>预览与参考帧比对"]
 
-    A5["Annotation extractor<br/>description / layer name / pluginData"]
-    A6["Heuristic semantic inference<br/>runs even with zero annotations"]
-    A7["Derive Semantic View<br/>components / props / slots / states"]
-    A8["Interaction modeler<br/>draft events / state machine / data flow"]
-    A9["Component plan generator<br/>tree / props / events / variants"]
+    A5["标注提取器<br/>description / layer name / pluginData"]
+    A6["启发式语义推断<br/>零标注也可运行"]
+    A7["派生 Semantic View<br/>组件 / props / 插槽 / 状态"]
+    A8["交互建模器<br/>草稿事件 / 状态机 / 数据流"]
+    A9["组件方案生成器<br/>组件树 / props / 事件 / 变体"]
 
-    A10["Target code generator<br/>default React + TypeScript + BEM CSS"]
-    A11["Build and render validation<br/>typecheck / build / screenshot diff"]
+    A10["目标代码生成器<br/>默认 React + TypeScript + BEM CSS"]
+    A11["构建与渲染校验<br/>类型检查 / 构建 / 截图比对"]
   end
 
-  subgraph Outputs["Deliverables"]
+  subgraph Outputs["交付物"]
     O1["ir/raw-dsl.json"]
     O2["ir/design-ir.json"]
     O3["ir/views/visual-view.json"]
@@ -164,7 +164,7 @@ flowchart TD
     O6["ir/views/semantic-view.json"]
     O7["ir/interaction-spec.json"]
     O8["ir/component-plan.json"]
-    O9["output/package<br/>barrel exports + split CSS + assets"]
+    O9["output/package<br/>barrel 导出 + 拆分 CSS + 资源"]
   end
 
   D1 --> M1
@@ -199,259 +199,259 @@ flowchart TD
   A9 --> O8
   O8 --> DEV3
 
-  D3 --> G1{"Gate 1<br/>visual approved?"}
-  G1 -- "No" --> GV1["Rework affected visual stage"]
+  D3 --> G1{"门禁 1<br/>视觉是否通过?"}
+  G1 -- "否" --> GV1["重做受影响的视觉阶段"]
   GV1 --> A2
-  G1 -- "Yes" --> READY1["Visual gate passed"]
+  G1 -- "是" --> READY1["视觉门禁已通过"]
 
-  DEV3 --> G2{"Gate 2<br/>component contract approved?"}
-  G2 -- "No" --> GV2["Rework affected semantic or interaction stage"]
+  DEV3 --> G2{"门禁 2<br/>组件契约是否通过?"}
+  G2 -- "否" --> GV2["重做受影响的语义或交互阶段"]
   GV2 --> A7
-  G2 -- "Yes" --> READY2["Contract gate passed"]
+  G2 -- "是" --> READY2["契约门禁已通过"]
 
-  READY1 --> JOIN{"Both gates passed?"}
+  READY1 --> JOIN{"两个门禁都通过?"}
   READY2 --> JOIN
   JOIN --> A10
   A10 --> O9
   O9 --> A11
 ```
 
-Gate rejection returns to the narrowest affected stage. A visual rejection may rework only token mapping, asset export, or the Visual View; it does not require full DSL normalization unless the canonical IR is wrong. A contract rejection may rework only the Semantic View, Interaction Spec, or Component Plan.
+门禁拒绝时回到最小受影响阶段。视觉拒绝可能只需重做 token 对账、资源导出或 Visual View；除非权威 IR 本身有误，否则无需完整重做 DSL 规范化。契约拒绝可能只需重做 Semantic View、Interaction Spec 或 Component Plan。
 
-## Responsibility And Deliverables
+## 职责与交付物
 
-| Stage                  | Owner                  | Input                                    | Deliverable                                                             |
-| ---------------------- | ---------------------- | ---------------------------------------- | ----------------------------------------------------------------------- |
-| Design preparation     | Designer               | design file                              | accessible design source and exportable assets                          |
-| Semantic annotation    | Designer + developer   | design file and business intent          | optional `@component`, `@state`, `@event`, `@slot`, `@data` annotations |
-| Project rule setup     | Developer              | target codebase conventions              | stack rules, token mapping, BEM rules, export rules                     |
-| DSL extraction         | MCP / connector        | design URL, file, page, or layer id      | `ir/raw-dsl.json`, assets, reference frame image, source trace          |
-| IR normalization       | D2C engine             | raw DSL, assets, project tokens          | `ir/design-ir.json`                                                     |
-| Visual view derivation | D2C engine             | canonical IR                             | `ir/views/visual-view.json`                                             |
-| HTML preview           | D2C engine             | Visual View derived from canonical IR    | `preview/index.html`, `preview/preview.css`, `preview/assets/`          |
-| Visual review          | Designer + developer   | HTML preview and screenshot diff         | `preview/visual-review-report.md` and Gate 1 approval                   |
-| Semantic mapping       | D2C engine + developer | canonical IR, annotations, project rules | `ir/views/semantic-view.json`                                           |
-| Interaction modeling   | Developer + D2C engine | interaction contract and semantic view   | `ir/interaction-spec.json`                                              |
-| Component planning     | Developer + D2C engine | semantic view and interaction spec       | `ir/component-plan.json` and Gate 2 approval                            |
-| Code generation        | D2C engine             | approved component plan                  | target component package with barrel exports                            |
-| Engineering validation | Developer + tools      | generated code                           | typecheck, build, render, and screenshot-diff reports                   |
+| 阶段         | 负责人            | 输入                              | 交付物                                                         |
+| ------------ | ----------------- | --------------------------------- | -------------------------------------------------------------- |
+| 设计准备     | 设计师            | 设计文件                          | 可访问的设计源与可导出的资源                                   |
+| 语义标注     | 设计师 + 开发者   | 设计文件与业务意图                | 可选的 `@component`、`@state`、`@event`、`@slot`、`@data` 标注 |
+| 项目规则设置 | 开发者            | 目标代码库规范                    | 技术栈规则、token 映射、BEM 规则、导出规则                     |
+| DSL 提取     | MCP / 连接器      | 设计 URL、文件、页面或图层 id     | `ir/raw-dsl.json`、资源、参考帧图片、源 trace                  |
+| IR 规范化    | D2C 引擎          | raw DSL、资源、项目 token         | `ir/design-ir.json`                                            |
+| 视觉视图派生 | D2C 引擎          | 权威 IR                           | `ir/views/visual-view.json`                                    |
+| HTML 预览    | D2C 引擎          | 由权威 IR 派生的 Visual View      | `preview/index.html`、`preview/preview.css`、`preview/assets/` |
+| 视觉评审     | 设计师 + 开发者   | HTML 预览与截图比对               | `preview/visual-review-report.md` 与门禁 1 审批                |
+| 语义映射     | D2C 引擎 + 开发者 | 权威 IR、标注、项目规则           | `ir/views/semantic-view.json`                                  |
+| 交互建模     | 开发者 + D2C 引擎 | 交互契约与 Semantic View          | `ir/interaction-spec.json`                                     |
+| 组件规划     | 开发者 + D2C 引擎 | Semantic View 与 Interaction Spec | `ir/component-plan.json` 与门禁 2 审批                         |
+| 代码生成     | D2C 引擎          | 已批准的 Component Plan           | 带 barrel 导出的目标组件包                                     |
+| 工程校验     | 开发者 + 工具     | 生成的代码                        | 类型检查、构建、渲染与截图比对报告                             |
 
-## Why Split These Workflows
+## 为什么拆分这些工作流
 
-`image-to-component` starts from pixels. A screenshot can show what a UI looked like, but it cannot reliably reveal:
+`image-to-component` 从像素开始。截图可以展示某个 UI 曾经的样子，但它无法可靠地揭示：
 
-- exact layout constraints;
-- design tokens;
-- font styles as named styles;
-- component instances;
-- layer names;
-- exportable bitmap assets;
-- vector source data;
-- true spacing intent;
-- design-system references.
+- 精确的布局约束；
+- 设计 token；
+- 以具名样式形式存在的字体样式；
+- 组件实例；
+- 图层名；
+- 可导出的位图资源；
+- 矢量源数据；
+- 真实的间距意图；
+- 设计系统引用。
 
-Trying to make screenshot input produce high-fidelity production code pushes the workflow into guessing. That is still useful for component skeletons, but not enough for a design-source-grade implementation pipeline.
+强行让截图输入产出高保真的生产代码，会把工作流推向猜测。它仍适合生成组件骨架，但不足以支撑设计源级别的实现管线。
 
-Design-source providers start from structured data. Sketch, Figma, and MasterGo can expose richer signals: layers, frames, constraints, text nodes, fills, strokes, tokens or styles, component instances, and asset references. These providers should feed the canonical Normalized Design IR, then use the same preview, contract planning, and target code generation stages.
+设计源 provider 从结构化数据开始。Sketch、Figma 和 MasterGo 可以暴露更丰富的信号：图层、画板、约束、文本节点、填充、描边、token 或样式、组件实例，以及资源引用。这些 provider 应当汇入权威的规范化设计 IR，再复用同一套预览、契约规划和目标代码生成阶段。
 
-## Workflow Roles
+## 工作流角色
 
-| Workflow                | Input                           | Primary Output                                          | Fidelity Goal  |
-| ----------------------- | ------------------------------- | ------------------------------------------------------- | -------------- |
-| `image-to-component`    | UI screenshots or mockup images | typed skeletons, state model, asset ledger              | low to medium  |
-| `sketch-to-component`   | Sketch file or Sketch MCP/IR    | normalized design IR, preview, target component package | medium to high |
-| `figma-to-component`    | Figma API/MCP data              | normalized design IR, preview, target component package | medium to high |
-| `mastergo-to-component` | MasterGo DSL                    | normalized design IR, preview, target component package | medium to high |
+| 工作流                  | 输入                        | 主要输出                        | 保真目标 |
+| ----------------------- | --------------------------- | ------------------------------- | -------- |
+| `image-to-component`    | UI 截图或设计稿图片         | 类型化骨架、状态模型、资源清单  | 低到中   |
+| `sketch-to-component`   | Sketch 文件或 Sketch MCP/IR | 规范化设计 IR、预览、目标组件包 | 中到高   |
+| `figma-to-component`    | Figma API/MCP 数据          | 规范化设计 IR、预览、目标组件包 | 中到高   |
+| `mastergo-to-component` | MasterGo DSL                | 规范化设计 IR、预览、目标组件包 | 中到高   |
 
-## Shared Design-Source Pipeline
+## 共享设计源管线
 
-Every design-source provider should follow the same stages:
+每个设计源 provider 都应遵循相同的阶段：
 
 ```text
-Design Source
--> Provider Extractor
--> Normalized Design IR
--> HTML Preview Review Gate
+设计源
+-> Provider 提取器
+-> 规范化设计 IR
+-> HTML 预览评审门禁
 -> Semantic View + Interaction Spec + Component Plan
--> Component Plan Review Gate
--> Target component package
+-> 组件方案评审门禁
+-> 目标组件包
 ```
 
-### Provider Extractor
+### Provider 提取器
 
-The provider extractor is the only layer that knows provider-specific details.
+Provider 提取器是唯一了解 provider 专有细节的层。
 
-Examples:
+示例：
 
-- MasterGo extractor reads `MASTERGO_TOKEN`, parses `fileId` and `layerId`, and requests `/mcp/dsl`.
-- Figma extractor would read Figma file/node data and export images where supported.
-- Sketch extractor parses a `.sketch` file directly (an open ZIP of JSON), or later via SketchMCP.
+- MasterGo 提取器读取 `MASTERGO_TOKEN`，解析 `fileId` 与 `layerId`，并请求 `/mcp/dsl`。
+- Figma 提取器会读取 Figma 的文件/节点数据，并在支持的情况下导出图片。
+- Sketch 提取器直接解析 `.sketch` 文件（公开的 JSON ZIP 包），后续也可经 SketchMCP。
 
-Provider raw data must not be consumed directly by preview or target code generation.
+Provider 原始数据不得被预览或目标代码生成直接消费。
 
-### Provider Neutrality
+### Provider 中立性
 
-`ir/design-ir.json` is the shared normalization target, but the first implementation is allowed to be influenced by the first provider's shape. Treat provider neutrality as an explicit migration goal, not as a claim already proven by one provider.
+`ir/design-ir.json` 是共享的规范化目标，但第一版实现允许受首个 provider 的形状影响。应把 provider 中立性视为明确的迁移目标，而不是只接入一个 provider 后就已被证明的结论。
 
-Rules:
+规则：
 
-- Do not copy provider-specific field names into downstream generators unless they are isolated under `source`.
-- Keep provider-specific data under source metadata or trace records.
-- When a second provider is implemented, extract provider-neutral concepts that both providers need.
-- Provider docs must state which IR version and provider-specific assumptions they currently depend on.
+- 不要把 provider 专有的字段名复制进下游生成器，除非它们被隔离在 `source` 下。
+- Provider 专有数据应保留在源元数据或 trace 记录中。
+- 实现第二个 provider 时，再抽取两个 provider 都需要的中立概念。
+- Provider 文档必须说明它当前依赖的 IR 版本与 provider 专有假设。
 
-### Normalized Design IR
+### 规范化设计 IR
 
-Normalized Design IR is the common contract between extraction and generation. It should preserve:
+规范化设计 IR 是提取与生成之间的公共契约。它应当保留：
 
-- schema version;
-- source metadata;
-- page and frame structure;
-- source-node trace ids;
-- text content;
-- layout and style data needed for preview;
-- asset references;
-- semantic component candidates;
-- interaction scaffold status;
-- warnings and lossy transformations;
-- generated names for files, components, and BEM blocks.
+- schema 版本；
+- 源元数据；
+- 页面与画板结构；
+- 源节点 trace id；
+- 文本内容；
+- 预览所需的布局与样式数据；
+- 资源引用；
+- 语义组件候选；
+- 交互脚手架状态；
+- 警告与有损转换；
+- 为文件、组件和 BEM 块生成的名称。
 
-Preview, semantic mapping, and code generation consume derived views from this canonical IR.
+预览、语义映射和代码生成都消费这份权威 IR 的派生视图。
 
-## Annotation And Semantic Fallback
+## 标注与语义降级
 
-Annotations improve contract fidelity, but they are not a hard prerequisite.
+标注会提升契约保真度，但它不是硬性前置条件。
 
-Zero-annotation runs must still work:
+零标注运行也必须可执行：
 
-1. Infer semantic candidates from layer names, component instances, geometry, repeated groups, and text roles.
-2. Assign confidence to each inferred component, prop, slot, state, and event.
-3. Emit low-confidence items into `warnings`.
-4. Require developer approval in Gate 2 before generating target-stack code.
+1. 从图层名、组件实例、几何信息、重复编组和文本角色推断语义候选。
+2. 为每个推断出的组件、prop、插槽、状态和事件标注置信度。
+3. 将低置信度项写入 `warnings`。
+4. 在生成目标技术栈代码前，要求开发者在门禁 2 中审批。
 
-Fallback behavior:
+降级行为：
 
-- Unknown visual nodes remain renderable in the preview through generic layout primitives.
-- Unknown semantic regions become `GenericSection` candidates with warnings.
-- Unknown events are not invented as approved handlers. They may appear only as draft suggestions.
-- If the generator cannot infer a public component API, it must stop before target code generation and ask for Gate 2 input.
+- 未知的视觉节点仍通过通用布局原语在预览中保持可渲染。
+- 未知的语义区域成为带警告的 `GenericSection` 候选。
+- 未知事件不得被编造为已批准的处理函数。它们只能作为草稿建议出现。
+- 如果生成器无法推断出公开的组件 API，必须在目标代码生成前停止，并请求门禁 2 输入。
 
-## Token Reconciliation
+## Token 对账
 
-Token mapping is a core visual-fidelity variable and must be deterministic.
+Token 映射是视觉保真的核心变量，必须是确定性的。
 
-Mapping priority:
+映射优先级：
 
-1. Explicit annotation or project rule mapping.
-2. Provider style or token id mapped in project rules.
-3. Exact value match against project tokens.
-4. Threshold nearest-neighbor match marked as `pending`.
-5. Literal value fallback marked with a warning.
+1. 显式的标注或项目规则映射。
+2. 在项目规则中映射的 provider 样式或 token id。
+3. 与项目 token 的精确值匹配。
+4. 阈值内的最近邻匹配，标记为 `pending`。
+5. 字面值兜底，并附带警告。
 
-Default thresholds:
+默认阈值策略：
 
-- Color: exact match by normalized color value; nearest-neighbor candidates require a small perceptual delta and must stay `pending` until confirmed.
-- Spacing and size: exact px/rem/token match first; nearest-neighbor candidates must stay `pending`.
-- Radius and shadow: match named token families first; otherwise use literal fallback with warning.
+- 颜色：先按规范化后的颜色值精确匹配；最近邻候选需要较小的感知色差，并且必须保持 `pending` 直到被确认。
+- 间距与尺寸：先精确匹配 px/rem/token；最近邻候选必须保持 `pending`。
+- 圆角与阴影：先匹配具名 token 族；否则使用字面值兜底并加警告。
 
-The generator must not silently map a low-confidence raw value to a project token.
+生成器不得静默地把低置信度的原始值映射为项目 token。
 
-## Screenshot Diff Reference
+## 截图比对参考图
 
-Screenshot diff compares generated output against a provider-exported reference image.
+截图比对将生成结果与 provider 导出的参考图片进行对比。
 
-Reference image rule:
+参考图规则：
 
-- For design-source inputs, the reference image is the provider-exported frame or layer render.
-- If the provider cannot export a reference image, the user must supply one or the screenshot-diff step is skipped with a warning.
-- Do not compare against the original design DSL directly. Diff requires rendered pixels on both sides.
+- 对设计源输入，参考图片是 provider 导出的画板或图层渲染图。
+- 如果 provider 无法导出参考图片，用户必须自行提供一张；否则截图比对步骤带警告跳过。
+- 不要直接与原始设计 DSL 对比。比对要求两侧都是已渲染的像素。
 
-Default threshold policy:
+默认阈值策略：
 
-- Pass: mismatch is within the configured tolerance and no critical asset is missing.
-- Warn: mismatch is above tolerance but localized and explainable.
-- Fail: mismatch is broad, blocks visual review, or hides missing layout, font, or asset data.
+- 通过：差异在配置的容差范围内，且没有关键资源缺失。
+- 警告：差异超出容差，但局部且可解释。
+- 失败：差异范围大、阻塞视觉评审，或掩盖了布局、字体或资源数据的缺失。
 
-Exact thresholds should be configurable per project because font rendering, browser engine, and export pipeline differences vary.
+精确阈值应允许按项目配置，因为字体渲染、浏览器引擎和导出管线之间的差异很大。
 
-## Error And Abort Semantics
+## 错误与中止语义
 
-The pipeline must distinguish partial output from fatal failure.
+管线必须区分部分输出与致命失败。
 
-Fatal failures stop the run:
+致命失败会停止运行：
 
-- design DSL cannot be fetched;
-- target file, page, or layer id cannot be resolved;
-- raw DSL cannot be parsed;
-- canonical IR fails schema validation;
-- node count exceeds the configured safety limit;
-- Gate 1 or Gate 2 is rejected and no retry input is provided.
+- 设计 DSL 无法获取；
+- 目标文件、页面或图层 id 无法解析；
+- raw DSL 无法解析；
+- 权威 IR 未通过 schema 校验；
+- 节点数量超过配置的安全上限；
+- 门禁 1 或门禁 2 被拒绝，且未提供重试输入。
 
-Recoverable failures produce partial output with warnings:
+可恢复失败会产出带警告的部分输出：
 
-- individual asset export failures;
-- token mapping fallback to literal values;
-- unknown semantic component candidates;
-- missing optional annotations;
-- screenshot diff unavailable because no reference image exists.
+- 单个资源导出失败；
+- token 映射兜底为字面值；
+- 未知的语义组件候选；
+- 缺少可选标注；
+- 因没有参考图片导致截图比对不可用。
 
-Recoverable failures may generate preview output. They must not silently generate final target code if they affect public component contracts.
+可恢复失败可以生成预览输出。如果它们影响公开的组件契约，则不得静默生成最终目标代码。
 
-## Regeneration And Human Edits
+## 重生成与人工修改
 
-Generated output should be treated as replaceable by default.
+生成的输出默认应被视为可替换产物。
 
-First-version rule:
+第一版规则：
 
-- Generated package files are owned by the generator.
-- Human edits should live in wrapper components, adapter files, or upstream project code outside the generated package.
-- The generator must not overwrite an existing package unless the user passes an explicit overwrite option.
-- Regeneration should create a new run directory or emit a change report before replacing generated output.
+- 生成的组件包文件归生成器所有。
+- 人工修改应放在生成包之外的包装组件、适配文件或上游项目代码中。
+- 除非用户传入显式的覆盖选项，否则生成器不得覆盖已有的组件包。
+- 重生成应创建新的运行目录，或在替换生成输出前输出变更报告。
 
-Design iteration flow:
+设计迭代流程：
 
 ```text
-new design DSL
--> new raw-dsl.json
--> new design-ir.json
--> compare source node trace and component plan
--> emit change report
--> rerun preview and gates
+新的设计 DSL
+-> 新的 raw-dsl.json
+-> 新的 design-ir.json
+-> 对比源节点 trace 与组件方案
+-> 输出变更报告
+-> 重新运行预览与门禁
 ```
 
-Protected manual edit regions are not part of the first-version contract. Add them only after the generator has stable ownership and change-detection behavior.
+受保护的人工修改区域不属于第一版契约。只有在生成器具备稳定的归属权和变更检测能力后，再引入它们。
 
-## HTML Preview Gate
+## HTML 预览门禁
 
-Design-source workflows must generate static HTML before target component output. The preview exists for developer and visual review.
+设计源工作流必须先生成静态 HTML，再输出目标组件。预览用于开发者与视觉评审。
 
-Rules:
+规则：
 
-- Generate `preview/index.html`, `preview/preview.css`, and preview assets first.
-- Include `preview/visual-review-report.md`.
-- Compare preview screenshots against the provider-exported reference image when available.
-- Stop before target code generation until Gate 1 has approved the preview.
+- 先生成 `preview/index.html`、`preview/preview.css` 和预览资源。
+- 包含 `preview/visual-review-report.md`。
+- 在参考图片可用时，将预览截图与 provider 导出的参考图片对比。
+- 在门禁 1 批准预览之前，停止目标代码生成。
 
-Semantic extraction may run while Gate 1 is pending, but target code generation must wait for Gate 1 approval.
+语义提取可以在门禁 1 待审批期间运行，但目标代码生成必须等待门禁 1 审批。
 
-This prevents unapproved visual guesses from spreading across many component files.
+这能避免未经批准的视觉猜测扩散到大量组件文件中。
 
-## Interaction Spec Gate
+## 交互规格门禁
 
-HTML preview approval is not enough to generate maintainable components. After or alongside the visual gate, the workflow must produce an interaction spec and component plan before target code generation.
+仅有 HTML 预览审批不足以生成可维护的组件。在视觉门禁之后或与之并行，工作流必须先产出 interaction spec 和 component plan，再进行目标代码生成。
 
-`interaction-spec.json` captures:
+`interaction-spec.json` 捕获：
 
-- component states;
-- user events;
-- event payloads;
-- handler prop names;
-- data models;
-- state transitions when known;
-- API or data binding notes;
-- confidence and approval status.
+- 组件状态；
+- 用户事件；
+- 事件 payload；
+- 处理函数 prop 名；
+- 数据模型；
+- 已知的状态转移；
+- API 或数据绑定说明；
+- 置信度与审批状态。
 
-Example:
+示例：
 
 ```json
 {
@@ -479,23 +479,23 @@ Example:
 }
 ```
 
-The engine may draft this file, but the developer owns approval. Gate 2 confirms component boundaries, props, slots, states, events, data contracts, and public exports.
+引擎可以起草这份文件，但开发者负责批准。门禁 2 确认组件边界、props、插槽、状态、事件、数据契约和公开导出。
 
-### Interaction status and codegen mode
+### 交互状态与 codegen 模式
 
-`interaction-spec.json` is a required artifact — codegen will refuse to run if the file is missing. Behavior is conveyed by an explicit `status` field, not by file absence:
+`interaction-spec.json` 是必需工件——文件缺失时 codegen 直接拒绝运行。是否要建模交互通过显式 `status` 字段表达，而不是用文件缺失隐式表达：
 
-| `status`    | Meaning                                                                                | Passes Gate 2? |
-| ----------- | -------------------------------------------------------------------------------------- | -------------- |
-| `draft`     | Engine-drafted, developer has not signed off                                           | No             |
-| `in-review` | Submitted to Gate 2 review, developer has not approved yet                             | No             |
-| `approved`  | Developer-reviewed full interaction contract                                           | Yes            |
-| `omitted`   | Developer-acknowledged that behavior is intentionally not modeled for this delivery    | Yes            |
-| `deferred`  | Behavior modeling postponed to a later iteration; current delivery must be visual-only | Yes            |
+| `status`    | 含义                                                    | 是否通过门禁 2？ |
+| ----------- | ------------------------------------------------------- | ---------------- |
+| `draft`     | 引擎起草，开发者尚未签字                                | 否               |
+| `in-review` | 已提交门禁 2 评审，开发者尚未批准                       | 否               |
+| `approved`  | 开发者已评审的完整交互契约                              | 是               |
+| `omitted`   | 开发者确认本次交付不建模交互（例如 sandbox/视觉评审包） | 是               |
+| `deferred`  | 推迟到后续迭代再补建模，本次交付仅视觉层                | 是               |
 
-`omitted` and `deferred` both produce a presentational delivery. The distinction is intent: `omitted` says "we do not plan to add behavior to this package" (e.g., a sandbox-only artifact); `deferred` says "we will upgrade later". Both require `reason`, `approvedBy`, and `approvedAt`.
+`omitted` 和 `deferred` 都会得到 presentational 交付。区别是意图：`omitted` 表示"本包不计划补交互"，`deferred` 表示"以后会升级"。两者都必须填 `reason`、`approvedBy` 和 `approvedAt`。
 
-`component-plan.json` carries a top-level `status` plus the single `mode` field that codegen consumes. `status` tracks the plan lifecycle (`draft` → `in-review` → `approved`); Stage 6 may only consume an approved plan.
+`component-plan.json` 携带顶层 `status` 与一个 `mode` 字段。`status` 表达方案生命周期（`draft` → `in-review` → `approved`）；Stage 6 只能消费已批准的 plan。`mode` 是 codegen 唯一消费的开关：
 
 ```json
 {
@@ -512,54 +512,54 @@ The engine may draft this file, but the developer owns approval. Gate 2 confirms
 }
 ```
 
-When `mode === "presentational"`, `acknowledgedBehaviorStubbed: true` is required by the Gate 2 validator.
+当 `mode === "presentational"` 时，Gate 2 校验要求 `acknowledgedBehaviorStubbed: true` 必填。
 
-Allowed combinations:
+允许的组合：
 
-| `interaction-spec.status` | `component-plan.mode` | Result                                          |
-| ------------------------- | --------------------- | ----------------------------------------------- |
-| `approved`                | `interactive`         | Full interactive package                        |
-| `omitted` or `deferred`   | `presentational`      | Visual-only package, behavior stubbed           |
-| any other pairing         | —                     | Schema error; pipeline refuses to enter Stage 6 |
+| `interaction-spec.status` | `component-plan.mode` | 结果                              |
+| ------------------------- | --------------------- | --------------------------------- |
+| `approved`                | `interactive`         | 完整交互包                        |
+| `omitted` 或 `deferred`   | `presentational`      | 视觉级包，行为占位                |
+| 其它组合                  | —                     | Schema 报错；管线拒绝进入 Stage 6 |
 
-All rows assume `component-plan.status === "approved"`; any unapproved plan is rejected before mode validation.
+表中所有行都以 `component-plan.status === "approved"` 为前提；未批准的 plan 在 mode 校验前即被拒绝。
 
-Gate 2 remains a single gate. The approval record carries a `level` field (`presentational` or `interactive`) so tooling only has to ask "has Gate 2 passed?" while the contract retains the substance of what was approved.
+门禁 2 仍是单一门禁。审批记录里带一个 `level` 字段（`presentational` 或 `interactive`），让 tooling 只需问"门禁 2 通过了吗"，契约本身保留了具体批准的内容。
 
-Codegen consumes `component-plan.mode` only — it does not take an external mode parameter. Mode is a property of the approved plan, not a runtime switch.
+Codegen 只读取 `component-plan.mode`——不接收外部 mode 参数。模式是已批准方案的属性，不是运行期开关。
 
-The Gate 2 artifact chain must be hash-pinned end to end: `semantic-view` pins the `visual-view`, `interaction-spec` pins the `semantic-view`, and `component-plan` pins both `semantic-view` and `interaction-spec`. Generated bodies and contract hashes must be deterministic for the same inputs. In the current implementation the contract hash covers the **whole** artifact, including approval fields such as `approvedAt` — so signing a plan off changes its hash, and sign-off rewrites `component-plan.json` together with its `manifest.json` entry. (A contract-identity hash that excludes approval metadata, keeping the hash stable across `draft → approved`, is a noted future optimization.) Validators still require the approval fields when the gate is approved.
+Gate 2 产物链必须端到端 hash 钉死:`semantic-view` 钉住 `visual-view`,`interaction-spec` 钉住 `semantic-view`,`component-plan` 同时钉住 `semantic-view` 与 `interaction-spec`。同一输入生成的 body 与 contract hash 必须确定性一致。当前实现中,contract hash 覆盖**整个** artifact,包含 `approvedAt` 等审批字段——因此对方案签字会改变其 hash,sign-off 会同时重写 `component-plan.json` 及其在 `manifest.json` 中的条目。(一个剥离审批元数据、使 `draft → approved` 间 hash 保持稳定的 contract identity hash 是后续优化项。)gate 已批准时 validator 仍必须检查这些审批字段存在。
 
-#### Upgrade path
+#### 升级路径
 
-`presentational → interactive` is the highest-risk transition: optional placeholder props become required handlers, and every consumer's call sites may break. The upgrade rewrites the same `output/package/` directory in place so that the diff is reviewable, and **must re-run Gate 2** — the new approval record replaces the presentational one. Do not maintain parallel `output/package@presentational/` directories; a stale presentational copy on disk invites accidental imports.
+`presentational → interactive` 是风险最高的过渡：可选占位 prop 会变成必填 handler，每个 consumer 的调用点都可能出错。升级必须在原地重写同一个 `output/package/` 目录，让 diff 可审，并且**必须再过一次门禁 2**——新的审批记录替换 presentational 那次。不要保留并行的 `output/package@presentational/` 目录；磁盘上残留的 presentational 副本会诱发误 import。
 
-## Target Package Output
+## 目标组件包输出
 
-After both gates pass, design-source workflows generate the target component package.
+两个门禁都通过后，设计源工作流生成目标组件包。
 
-The target stack is selected by project rules. The first default output is React + TypeScript + BEM CSS.
+目标技术栈由项目规则选择。第一版的默认输出是 React + TypeScript + BEM CSS。
 
-`output/preview/` and `output/ir/` are sidecar pipeline artifacts. They are reviewable and should be preserved for traceability, but they are not the publishable component package. The publishable generated package lives under `output/package/`.
+`output/preview/` 和 `output/ir/` 是附属管线工件（sidecar）。它们可供评审，并应保留以支持可追溯性，但它们不是可发布的组件包。可发布的生成包位于 `output/package/`。
 
-Default package requirements for React output:
+React 输出的默认组件包要求：
 
-- one page or root component directory;
-- one `.tsx`, `.css`, `.types.ts`, and `index.ts` per component;
-- per-component CSS files rather than one large stylesheet;
-- page-level CSS only for layout composition;
-- child component CSS for local structure, states, and variants;
-- shared token files under package-root `styles/`;
-- generated assets under package-root `assets/`;
-- package-root barrel export;
-- component and child component barrel exports;
-- asset barrel export when assets are generated.
+- 一个页面或根组件目录；
+- 每个组件一个 `.tsx`、`.css`、`.types.ts` 和 `index.ts`；
+- 使用按组件拆分的 CSS 文件，而不是一个巨大的样式表；
+- 页面级 CSS 只负责布局组合；
+- 子组件 CSS 负责局部结构、状态和变体；
+- 共享 token 文件放在包根目录的 `styles/`；
+- 生成的资源放在包根目录的 `assets/`；
+- 包根 barrel 导出；
+- 组件与子组件的 barrel 导出；
+- 如果生成了资源，则提供资源 barrel 导出。
 
-### Presentational package metadata
+### Presentational 包元信息
 
-When `component-plan.mode === "presentational"`, the published package must surface that fact in four places. A single TODO file is not enough — readers and consumers will miss it.
+当 `component-plan.mode === "presentational"` 时，发布包必须在四处显式标注。单一 TODO 文件不够——读者和 consumer 一定会漏看。
 
-1. **`package.json`** carries a `d2c` block:
+1. **`package.json`** 增加 `d2c` 块：
 
    ```json
    {
@@ -571,11 +571,11 @@ When `component-plan.mode === "presentational"`, the published package must surf
    }
    ```
 
-2. **`README.md`** opens with a banner before any usage docs:
+2. **`README.md`** 在任何使用文档之前先出 banner：
 
-   > **This package is presentational / behavior-stubbed.** Interaction handlers and data bindings are placeholders. Do not import into business code without upgrading via the interactive Gate 2 flow.
+   > **本包为 presentational / 行为占位包。** 交互处理函数与数据绑定都是占位。未走完 interactive Gate 2 流程之前，不要 import 进业务代码。
 
-3. **Each component file header** carries a comment:
+3. **每个组件文件头**带注释：
 
    ```ts
    /**
@@ -584,27 +584,27 @@ When `component-plan.mode === "presentational"`, the published package must surf
     */
    ```
 
-4. **`interaction-coverage.md`** lives at the package root and enumerates the gaps:
+4. **`interaction-coverage.md`** 放在包根，列出所有缺口：
 
    ```md
    ## Interaction coverage
 
-   | Aspect      | Status  | Notes                                       |
-   | ----------- | ------- | ------------------------------------------- |
-   | states      | omitted | No state machine modeled                    |
-   | events      | omitted | Handler props are placeholders, never wired |
-   | dataBinding | omitted | Render data comes from defaultProps         |
+   | Aspect      | Status  | Notes                        |
+   | ----------- | ------- | ---------------------------- |
+   | states      | omitted | 未建模状态机                 |
+   | events      | omitted | Handler props 是占位，未连接 |
+   | dataBinding | omitted | 渲染数据来自 defaultProps    |
 
    Approved by: <developer> at Gate 2 (presentational level).
    ```
 
-   Stage 6 generates this file by formatting `interaction-spec.body.coverage` as markdown; it never invents coverage data.
+   Stage 6 通过把 `interaction-spec.body.coverage` 格式化成 markdown 生成此文件；不重新发明 coverage 结构。
 
-The presentational flag is the single source of truth: `component-plan.mode` propagates to all four surfaces during generation; do not add redundant fields.
+presentational 标记的唯一来源是 `component-plan.mode`；生成时由它扩散到上述四处。不要新增冗余字段。
 
-A follow-up `check:d2c-consumption` CI scan (Stage 8 backlog) will flag any business code that imports a presentational package; until then, the four-surface metadata is the only line of defense.
+后续会补一道 `check:d2c-consumption` CI 扫描（列入 Stage 8 后置项），用来在业务代码 import presentational 包时报警；在此之前，这四处元信息是唯一防线。
 
-Recommended structure:
+推荐结构：
 
 ```text
 output/
@@ -663,13 +663,13 @@ output/
     index.ts
 ```
 
-Root export:
+根导出：
 
 ```ts
 export * from './components/ChatAssistantPage';
 ```
 
-Page component export:
+页面组件导出：
 
 ```ts
 export { ChatAssistantPage } from './ChatAssistantPage';
@@ -680,40 +680,40 @@ export * from './components/MessageList';
 export * from './components/InputComposer';
 ```
 
-Child component export:
+子组件导出：
 
 ```ts
 export { MessageList } from './MessageList';
 export type { MessageItem, MessageListProps } from './MessageList.types';
 ```
 
-Asset export:
+资源导出：
 
 ```ts
 export { default as assistantAvatar } from './assistant-avatar.png';
 export { default as sendIcon } from './send.svg';
 ```
 
-React output must use this package and barrel export shape. Avoid generating a single page `.tsx` file with one large CSS file.
+React 输出必须使用这种组件包与 barrel 导出形态。避免生成单个页面 `.tsx` 文件加一个巨大的 CSS 文件。
 
-## `image-to-component` Positioning
+## `image-to-component` 定位
 
-`image-to-component` remains valuable, but its contract should be explicit:
+`image-to-component` 仍然有价值，但它的契约应当明确：
 
-- It is structure-first.
-- It compares screenshots and states.
-- It models props and variants.
-- It can produce usable skeleton code.
-- It can optionally collect coarse style hints.
-- It must not promise design-source fidelity.
+- 它是结构优先的。
+- 它比较截图与状态。
+- 它对 props 和变体建模。
+- 它可以产出可用的骨架代码。
+- 它可以选择性地收集粗粒度的样式提示。
+- 它不得承诺设计源级别的保真度。
 
-When a user needs accurate visual reconstruction and can provide Sketch, Figma, or MasterGo source data, route them to the design-source pipeline instead.
+当用户需要精确的视觉重建，并且能够提供 Sketch、Figma 或 MasterGo 源数据时，应将其路由到设计源管线。
 
-## Migration Path
+## 迁移路径
 
-1. Reposition `image-to-component` as screenshot-to-skeleton in its `SKILL.md`.
-2. Keep its existing structural comparison, signature validation, prop modeling, and asset-ledger strengths.
-3. **Sketch is the first complete-vertical-slice provider** (confirmed 2026-05-21, after Stage 2 raw extraction proved out): it carries raw extraction and `normalize`. `.sketch` is an open, local, inspectable format, so the pipeline is developed and tested offline.
-4. Implement `ir/design-ir.json` as the canonical normalized IR target for the first provider that reaches `normalize`, documenting any provider-specific assumptions.
-5. Extract stronger provider-neutral concepts only after a second provider proves what is actually shared.
-6. Restore MasterGo as a provider once its server-side raw DSL contract can be obtained reliably; add Figma later. Every new provider must respect the IR versioning, preview gate, contract gate, and regeneration behavior.
+1. 在 `SKILL.md` 中把 `image-to-component` 重新定位为“截图到骨架”。
+2. 保留它现有的结构对比、签名校验、prop 建模和资源清单方面的优势。
+3. **Sketch 是首个完整垂直切片 provider**（2026-05-21 确认，Stage 2 raw extraction 验证通过后）：由它承载 raw extraction 与 `normalize`。`.sketch` 是公开、本地、可检视的格式，管线可离线开发与测试。
+4. 为首个跑到 `normalize` 的 provider 实现 `ir/design-ir.json` 作为权威规范化 IR 目标，同时记录任何 provider 专有假设。
+5. 只有在第二个 provider 证明了哪些概念真正共享之后，再抽取更强的中立概念。
+6. 待 MasterGo 服务端 raw DSL 契约可稳定取得后再恢复它；Figma 更晚。每个新 provider 都须遵守 IR 版本管理、预览门禁、契约门禁和重生成行为。
