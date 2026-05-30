@@ -27,11 +27,17 @@ const NAME_OVERRIDES = new Map<string, string>([
  * instance, so we must scope it: hashing `scope.join('|') + '||' + sourceNodeId`
  * separates instances and prevents the `duplicate SemanticNode id` failure that
  * Stage 5A throws when two instances of the same master share children.
+ *
+ * The scoped hash is truncated to 16 hex chars (64 bits → ~2^32 ≈ 4·10^9
+ * birthday-collision tolerance) to give Stage 5A's `assertSemanticViewIntegrity`
+ * a comfortable safety margin on large Sketch files with many symbol-expanded
+ * nodes. The earlier 40-bit slice only tolerated ~10^6 entries before the
+ * birthday bound became a realistic risk.
  */
 export function stableNodeId(sourceNodeId: string, scope: readonly string[] = []): string {
   if (scope.length > 0) {
     const key = scope.join('|') + '||' + sourceNodeId;
-    return `node-${createHash('sha1').update(key).digest('hex').slice(0, 10)}`;
+    return `node-${createHash('sha1').update(key).digest('hex').slice(0, 16)}`;
   }
   const normalized = sourceNodeId
     .toLowerCase()
