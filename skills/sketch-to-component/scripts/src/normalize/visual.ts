@@ -57,6 +57,7 @@ export function buildVisualBlock(input: BuildVisualBlockInput): VisualBlock {
   const root = normalizeNode(input.artboard, context, {
     isRoot: true,
     visitedSymbols: new Set(),
+    instancePath: [],
   });
   if (!root) {
     throw new Error('Selected artboard could not be normalized');
@@ -77,6 +78,12 @@ interface NormalizeNodeOptions {
    * and batch-2-symbol-scale-investigation.md).
    */
   containerResize?: { old: ContainerSize; new: ContainerSize };
+  /**
+   * Chain of enclosing symbol-instance source ids (root → leaf), used to
+   * scope `VisualNode.id` for nodes that originate inside an expanded symbol
+   * master. Empty outside symbol expansion. See stableNodeId in names.ts.
+   */
+  instancePath: readonly string[];
 }
 
 function normalizeNode(
@@ -89,6 +96,23 @@ function normalizeNode(
       context.warnings,
       'hidden-node-skipped',
       `Skipped hidden node "${getNodeName(node)}"`,
+      node,
+      'info',
+    );
+    return undefined;
+  }
+
+  /* Sketch clipping-mask layers (hasClippingMask: true) define geometric
+   * clipping for their siblings — in Sketch they are invisible. Emitting them
+   * as ordinary shapes paints a gray box over the clipped sibling (e.g. chat
+   * bubble tails). Skip the mask layer itself; the parent will mark its
+   * style.raw.maskedContent so preview/codegen can approximate clipping
+   * via overflow: hidden. */
+  if (node.hasClippingMask === true) {
+    addWarning(
+      context.warnings,
+      'clipping-mask-skipped',
+      `Skipped clipping-mask layer "${getNodeName(node)}" — masking semantics not rendered; parent will use overflow:hidden to approximate clipping`,
       node,
       'info',
     );
@@ -124,18 +148,23 @@ function normalizeNode(
         new: { width: newFrame.width, height: newFrame.height },
       }
     : undefined;
-  const rawChildren = getLayers(node)
+  const directChildren = getLayers(node);
+  // Detect a clipping-mask sibling *before* normalization (the mask itself
+  // returns undefined), so the parent can advertise clipping to preview/codegen.
+  const hadClippingMaskChild = directChildren.some((c) => c.hasClippingMask === true);
+  const rawChildren = directChildren
     .map((child) =>
       normalizeNode(child, context, {
         visitedSymbols: new Set(options.visitedSymbols),
         containerResize: childContainerResize,
+        instancePath: options.instancePath,
       }),
     )
     .filter((child): child is VisualNode => Boolean(child));
   const children = cleanChildren(rawChildren, context.warnings);
 
   const visualNode: VisualNode = {
-    id: stableNodeId(getNodeId(node)),
+    id: stableNodeId(getNodeId(node), options.instancePath),
     kind,
     name: stableComponentName(getNodeName(node), getNodeId(node)),
     source: {
@@ -152,6 +181,7 @@ function normalizeNode(
 
   const style = extractStyle(node, kind);
   if (style) visualNode.style = style;
+  if (hadClippingMaskChild) markMaskedContent(visualNode);
   if (kind === 'text') visualNode.text = extractText(node);
   if (kind === 'image') {
     const asset = registerImageAsset(node, context);
@@ -159,6 +189,18 @@ function normalizeNode(
   }
 
   return visualNode;
+}
+
+/**
+ * Mark a parent node as clipping its content (Sketch clipping-mask siblings
+ * were skipped). Preview/codegen reads style.raw.maskedContent === true to
+ * emit `overflow: hidden`. Creates style/raw lazily so nodes without other
+ * styling still carry the flag.
+ */
+function markMaskedContent(visualNode: VisualNode): void {
+  if (!visualNode.style) visualNode.style = {};
+  if (!visualNode.style.raw) visualNode.style.raw = {};
+  visualNode.style.raw.maskedContent = true;
 }
 
 function normalizeSymbolInstance(
@@ -182,6 +224,10 @@ function normalizeSymbolInstance(
     );
   }
   let children: VisualNode[] = [];
+  // A clipping-mask child can live on the master's direct layers; we must
+  // detect that *before* normalizing so the resulting symbol-instance node can
+  // mark style.raw.maskedContent for the preview/codegen pass.
+  let hadClippingMaskChild = false;
 
   if (symbolId && options.visitedSymbols.has(symbolId)) {
     addWarning(
@@ -199,12 +245,19 @@ function normalizeSymbolInstance(
     const masterContainerResize = isResized(masterSize, instanceSize)
       ? { old: masterSize, new: instanceSize }
       : undefined;
+    /* Scope every node emitted from the master subtree by this instance's
+     * source id so a second instance of the same master does not produce
+     * collision-bound child ids (Stage 5A integrity throw). */
+    const childInstancePath = [...options.instancePath, getNodeId(node)];
+    const masterChildren = getLayers(master);
+    hadClippingMaskChild = masterChildren.some((c) => c.hasClippingMask === true);
     children = cleanChildren(
-      getLayers(master)
+      masterChildren
         .map((child) =>
           normalizeNode(child, context, {
             visitedSymbols: nextVisited,
             containerResize: masterContainerResize,
+            instancePath: childInstancePath,
           }),
         )
         .filter((child): child is VisualNode => Boolean(child)),
@@ -216,7 +269,7 @@ function normalizeSymbolInstance(
     ? mapKind(getNodeClass(master), context.warnings, master)
     : 'frame';
   const visualNode: VisualNode = {
-    id: stableNodeId(getNodeId(node)),
+    id: stableNodeId(getNodeId(node), options.instancePath),
     kind,
     name: stableComponentName(getNodeName(node), getNodeId(node)),
     source: {
@@ -235,6 +288,7 @@ function normalizeSymbolInstance(
   };
   const style = extractStyle(node, kind);
   if (style) visualNode.style = style;
+  if (hadClippingMaskChild) markMaskedContent(visualNode);
   return visualNode;
 }
 
@@ -399,10 +453,39 @@ function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined
   if (effects.length > 0) result.effects = effects;
   const contextSettings = style.contextSettings as Record<string, unknown> | undefined;
   if (typeof contextSettings?.opacity === 'number') result.opacity = contextSettings.opacity;
-  if (typeof node.fixedRadius === 'number' && node.fixedRadius >= 0)
-    result.radius = node.fixedRadius;
+  const radius = extractRadius(node);
+  if (radius !== undefined) result.radius = radius;
   if (typeof style.do_objectID === 'string') result.raw = { sketchStyleId: style.do_objectID };
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+/**
+ * Sketch stores per-corner radius in `points[i].cornerRadius`, ordered
+ * top-left → top-right → bottom-right → bottom-left (the layer's local
+ * rectangle vertices, in `{0,0} {1,0} {1,1} {0,1}` unit-space order).
+ * The top-level `node.fixedRadius` is only the *uniform* radius and is 0
+ * whenever the user set corners individually — common for chat-bubble
+ * shapes (3 rounded corners + 1 square to seat the tail). Prefer points
+ * when available; collapse to a single number when all four are equal.
+ */
+function extractRadius(node: SketchNode): NonNullable<Style['radius']> | undefined {
+  const points = Array.isArray(node.points)
+    ? (node.points as Array<Record<string, unknown>>)
+    : undefined;
+  if (points && points.length === 4) {
+    const corners = points.map((p) =>
+      typeof p.cornerRadius === 'number' && p.cornerRadius >= 0 ? p.cornerRadius : 0,
+    );
+    const [tl, tr, br, bl] = corners as [number, number, number, number];
+    const anyPositive = corners.some((r) => r > 0);
+    if (!anyPositive) return undefined;
+    if (tl === tr && tr === br && br === bl) return tl;
+    return { topLeft: tl, topRight: tr, bottomRight: br, bottomLeft: bl };
+  }
+  if (typeof node.fixedRadius === 'number' && node.fixedRadius >= 0) {
+    return node.fixedRadius;
+  }
+  return undefined;
 }
 
 function normalizeFills(value: unknown): Fill[] {

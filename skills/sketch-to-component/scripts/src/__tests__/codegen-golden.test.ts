@@ -10,14 +10,16 @@ import { planCodegenFiles } from '../cli.js';
  * and asserts the generated React package reproduces the committed expected
  * bytes exactly, and is byte-stable across runs.
  *
- * The expected package lives under `fixtures/src/golden` (NOT beside this test):
- * it is the single committed copy, also compiled by `build:fixtures`
- * (`tsc -b && vite build`) so the golden is proven tsc/build-clean, not just
- * unit-tested. Keeping one copy means the byte-compare here and the build proof
- * cannot drift apart.
+ * The expected package lives under `fixtures/apps/react-vite/src/golden` (NOT
+ * beside this test): it is the single committed copy, also compiled by
+ * `build:fixtures` (`tsc -b && vite build`) so the golden is proven
+ * tsc/build-clean, not just unit-tested. Keeping one copy means the
+ * byte-compare here and the build proof cannot drift apart.
  */
 const inputDir = fileURLToPath(new URL('./fixtures/codegen-golden', import.meta.url));
-const expectedDir = fileURLToPath(new URL('../../../../../fixtures/src/golden', import.meta.url));
+const expectedDir = fileURLToPath(
+  new URL('../../../../../fixtures/apps/react-vite/src/golden', import.meta.url),
+);
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(path, 'utf8'));
@@ -34,7 +36,7 @@ function goldenInput() {
   };
 }
 
-/** Every committed file under fixtures/src/golden, as POSIX-relative paths. */
+/** Every committed file under fixtures/apps/react-vite/src/golden, as POSIX-relative paths. */
 function committedPaths(dir: string, prefix = ''): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

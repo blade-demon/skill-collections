@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -q 'SKILL\\.md' && (cd /Users/blade/IdeaProjects/skill-collections && npm run test:skills 2>&1 | tail -20) || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE 'node_modules|package-lock\\.json' && (echo 'BLOCK: do not edit generated files' >&2 && exit 2) || true"
+          }
+        ]
+      }
+    ]
+  }
+}

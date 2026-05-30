@@ -48,6 +48,106 @@ describe('buildVisualBlock', () => {
     expect(statusBar?.children.length).toBeGreaterThan(0);
   });
 
+  it('reads per-corner radius from Sketch points[].cornerRadius (chat-bubble case)', () => {
+    /* Sketch stores per-corner radius on each curvePoint, not in fixedRadius.
+     * A chat-bubble rectangle typically has 3 rounded corners and 1 square
+     * corner (where the tail sits). The previous extractor only read
+     * fixedRadius=0 and emitted square boxes for every bubble. */
+    const warnings: Warning[] = [];
+    const bubble = {
+      _class: 'rectangle',
+      do_objectID: 'bubble-1',
+      name: 'Bubble',
+      frame: { _class: 'rect', x: 0, y: 0, width: 168, height: 48 },
+      fixedRadius: 0,
+      points: [
+        { _class: 'curvePoint', cornerRadius: 21, point: '{0, 0}' },
+        { _class: 'curvePoint', cornerRadius: 21, point: '{1, 0}' },
+        { _class: 'curvePoint', cornerRadius: 0, point: '{1, 1}' },
+        { _class: 'curvePoint', cornerRadius: 21, point: '{0, 1}' },
+      ],
+      style: { do_objectID: 'bubble-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'bubble-art',
+      name: 'BubbleArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 100 },
+      layers: [bubble],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    expect(visual.root.children[0]?.style?.radius).toEqual({
+      topLeft: 21,
+      topRight: 21,
+      bottomRight: 0,
+      bottomLeft: 21,
+    });
+  });
+
+  it('collapses per-corner radius to a single number when all four corners are equal', () => {
+    const warnings: Warning[] = [];
+    const card = {
+      _class: 'rectangle',
+      do_objectID: 'card-1',
+      name: 'Card',
+      frame: { _class: 'rect', x: 0, y: 0, width: 100, height: 100 },
+      fixedRadius: 0,
+      points: [
+        { _class: 'curvePoint', cornerRadius: 8, point: '{0, 0}' },
+        { _class: 'curvePoint', cornerRadius: 8, point: '{1, 0}' },
+        { _class: 'curvePoint', cornerRadius: 8, point: '{1, 1}' },
+        { _class: 'curvePoint', cornerRadius: 8, point: '{0, 1}' },
+      ],
+      style: { do_objectID: 'card-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'card-art',
+      name: 'CardArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 200 },
+      layers: [card],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    expect(visual.root.children[0]?.style?.radius).toBe(8);
+  });
+
+  it('assigns a unique VisualNode.id to every node when the same symbol master appears twice (Stage 5A graph integrity)', () => {
+    const warnings: Warning[] = [];
+    const selected = selectArtboard(model);
+    const visual = buildVisualBlock({
+      model,
+      artboard: selected.artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    // The desensitized fixture instantiates the StatusBar (and other masters)
+    // multiple times. Without instance-scoped ids, each duplicated instance
+    // would emit master-child ids verbatim and produce duplicates here, which
+    // assertSemanticViewIntegrity rejects downstream as
+    // `duplicate SemanticNode id`.
+    const ids: string[] = [];
+    const collect = (n: VisualNode): void => {
+      ids.push(n.id);
+      for (const c of n.children) collect(c);
+    };
+    collect(visual.root);
+    const seen = new Set<string>();
+    const dups = ids.filter((id) => (seen.has(id) ? true : (seen.add(id), false)));
+    expect(dups).toEqual([]);
+  });
+
   it('captures a text layer fill as text colour, never as a box background', () => {
     const warnings: Warning[] = [];
     const selected = selectArtboard(model);
@@ -105,6 +205,57 @@ describe('buildVisualBlock', () => {
     const helvetica = findBySourceNodeId(visual.root, '4292B85E-1BAD-4D6A-AFDB-267DCDE4F7C8');
     expect(helvetica?.text?.style?.fontFamily).toBe('Helvetica');
     expect(helvetica?.text?.style?.fontWeight).toBeUndefined();
+  });
+
+  it('skips clipping-mask layers and flags the parent for overflow:hidden', () => {
+    /* Sketch clipping-mask siblings (hasClippingMask: true) are invisible in
+     * Sketch — they define geometry for sibling clipping. Emitting them as
+     * ordinary shapes paints a visible box over the clipped sibling. We skip
+     * the mask and mark the parent's style.raw.maskedContent so preview/codegen
+     * can approximate clipping via overflow:hidden. */
+    const warnings: Warning[] = [];
+    const mask = {
+      _class: 'rectangle',
+      do_objectID: 'mask-1',
+      name: 'mask',
+      hasClippingMask: true,
+      frame: { _class: 'rect', x: 0, y: 0, width: 7, height: 21 },
+      style: { do_objectID: 'mask-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const tail = {
+      _class: 'rectangle',
+      do_objectID: 'tail-1',
+      name: 'tail',
+      frame: { _class: 'rect', x: -151, y: -27, width: 161, height: 48 },
+      style: { do_objectID: 'tail-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const group = {
+      _class: 'group',
+      do_objectID: 'group-1',
+      name: 'TailGroup',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 50 },
+      layers: [mask, tail],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'mask-art',
+      name: 'MaskArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 200 },
+      layers: [group],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const groupNode = visual.root.children[0];
+    expect(groupNode?.children).toHaveLength(1);
+    expect(groupNode?.children[0]?.source.nodeId).toBe('tail-1');
+    expect(groupNode?.style?.raw?.maskedContent).toBe(true);
+    expect(warnings.some((w) => w.code === 'clipping-mask-skipped')).toBe(true);
   });
 
   it('preserves every gradient fill’s raw stops per-fill', () => {

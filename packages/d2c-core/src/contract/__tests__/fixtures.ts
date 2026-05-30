@@ -23,6 +23,7 @@ import {
   makeDecorativeBgView,
   makeFullChatView,
   makeListView,
+  makeMultiKindRepeatParentView,
   makeSymbolHeavyView,
   type Stage5aFixture,
 } from '../../semantic/__tests__/fixtures';
@@ -40,6 +41,8 @@ export const bridgedAmbiguousGroup = (): DeriveInteractionSpecInput =>
   bridge(makeAmbiguousGroupView());
 export const bridgedDecorativeBg = (): DeriveInteractionSpecInput => bridge(makeDecorativeBgView());
 export const bridgedFullChat = (): DeriveInteractionSpecInput => bridge(makeFullChatView());
+export const bridgedMultiKindRepeatParent = (): DeriveInteractionSpecInput =>
+  bridge(makeMultiKindRepeatParentView());
 
 /* ── 5B-specific raw VisualNode helpers ──────────────────────────────────── */
 

@@ -219,7 +219,7 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
    skill、provider 状态对齐(阶段 0 + 后续一致性修订完成)。
 5. ✅ **sketch 脚本残缺已清理**：阶段 2 已重做 `scripts/package.json`、`src/cli.ts`、raw extract；
    阶段 3/4 已补 `normalize` 与 `preview` 命令，旧 sketch IR 已移除。
-6. ✅ **CI 已接入**：GitHub Actions 使用 `npm ci`、`npm ci --prefix fixtures`、`npm run check:full`。
+6. ✅ **CI 已接入**：GitHub Actions 使用 `npm ci`、`npm ci --prefix fixtures/apps/react-vite`、`npm run check:full`。
 
 ---
 

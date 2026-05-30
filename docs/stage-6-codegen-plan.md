@@ -246,8 +246,8 @@ component-plan → `approveComponentPlan` → 重写 `component-plan.json` + `ma
 
 - golden fixture:一个 **approved、无 asset** 的 `design-spec/`(用 PR-3 `approve` 对 5D 风格的
   draft plan 签字产出)+ expected 生成包
-- 可复现性测试:两跑 `codegen` 字节级一致;**生成包能 `tsc` / build**(沿用 `fixtures/` 的
-  react-vite build 套路,进 `check:fixtures`)
+- 可复现性测试:两跑 `codegen` 字节级一致;**生成包能 `tsc` / build**(沿用
+  `fixtures/apps/react-vite` 的 build 套路,进 `check:fixtures`)
 - 架构 doc / README:Stage 6 如何消费 5D 产物;**更正第 531 行 hash 口径(§3.4)**
 
 要点:端到端 approved → 包;确认可重复 + 可编译;文档闭环。

@@ -326,6 +326,31 @@ export function makeMismatchedShapeListView(): Stage5aFixture {
  * (parent.id, boundary), so the two candidates collided and the integrity
  * validator hard-threw on duplicate ComponentCandidate id.
  */
+/* ── 9) Same-named symbol instances ────────────────────────────────────────
+ * Two distinct symbol instances of the same conceptual `StatusBar` (e.g. one
+ * at top, one at bottom) get the same `suggestedName` on each candidate.
+ * 5C buildExports requires unique PlannedComponent.name and hard-throws on
+ * collision; tests confirm deriveSemanticView's disambiguation pass renames
+ * the second one to `StatusBar2`.
+ */
+export function makeSameNamedSymbolsView(): Stage5aFixture {
+  const root = frame('root', 'SameNamedRoot', { x: 0, y: 0, width: 320, height: 200 }, [
+    symbolInstance(
+      'inst-1',
+      'StatusBar',
+      { x: 0, y: 0, width: 320, height: 40 },
+      'master-statusbar',
+    ),
+    symbolInstance(
+      'inst-2',
+      'StatusBar',
+      { x: 0, y: 160, width: 320, height: 40 },
+      'master-statusbar',
+    ),
+  ]);
+  return fixtureFromRoot(root, 'SameNamed');
+}
+
 export function makeMultiKindRepeatParentView(): Stage5aFixture {
   const regions: VisualNode[] = [];
   for (let i = 0; i < 3; i++) {

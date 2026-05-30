@@ -141,6 +141,14 @@ export function deriveSemanticView(input: DeriveSemanticViewInput): DeriveSemant
     }
   }
 
+  /* Stage 5C buildExports() requires unique PlannedComponent.name across
+   * exports and hard-throws on collision (it explicitly tells callers to
+   * "Fix the upstream semantic-view candidate names instead of dedup-ing in
+   * 5C"). Walk-order first-wins: repeated suggestedNames pick up a numeric
+   * suffix (StatusBar, StatusBar2, ...). Each rename emits an info warning
+   * so reviewers see the disambiguation. */
+  disambiguateSuggestedNames(ctx);
+
   const body: SemanticViewBody = {
     screen: { semanticNodeId: screenSemanticNode.id, name: screenSemanticNode.name },
     nodes: ctx.nodes,
@@ -582,6 +590,40 @@ function generateLayoutId(semanticNodeId: string, kind: LayoutCandidateKind): st
 
 function hashRecord(input: Record<string, unknown>): string {
   return stableSha256(stableJson(input)).slice(0, 12);
+}
+
+/* ── suggestedName disambiguation ─────────────────────────────────────────── */
+
+/**
+ * Walk-order first-wins. The first occurrence of each suggestedName keeps it;
+ * the 2nd, 3rd, ... get a numeric suffix (`StatusBar`, `StatusBar2`, …). The
+ * suffix value is chosen to also avoid existing-but-future suggestedNames
+ * (e.g. an organic `Foo2` already in the list won't get shadowed when `Foo`
+ * needs disambiguation).
+ */
+function disambiguateSuggestedNames(ctx: DeriveContext): void {
+  const used = new Set<string>();
+  for (const c of ctx.componentCandidates) {
+    if (!used.has(c.suggestedName)) {
+      used.add(c.suggestedName);
+      continue;
+    }
+    const original = c.suggestedName;
+    let n = 2;
+    let next = `${original}${n}`;
+    while (used.has(next)) {
+      n += 1;
+      next = `${original}${n}`;
+    }
+    c.suggestedName = next;
+    used.add(next);
+    ctx.warnings.push({
+      code: 'component-candidate-name-disambiguated',
+      message: `ComponentCandidate ${c.id}: suggestedName '${original}' already used; renamed to '${next}' to satisfy Stage 5C export uniqueness`,
+      severity: 'info',
+      sourceNodeId: c.rootSemanticNodeId,
+    });
+  }
 }
 
 /* ── subtree signature for repeat-pattern shape conformity ───────────────── */

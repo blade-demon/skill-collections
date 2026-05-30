@@ -19,7 +19,8 @@ should start with [`CONTRIBUTING.md`](./CONTRIBUTING.md).
   skills.
 - `samples/*/*` directories are hands-on reader workspaces. Do not make sample
   implementations depend on raw `inputs/`; they should consume `design-spec/`.
-- `fixtures/` is checked by its own install and build commands.
+- `fixtures/apps/*` contains per-framework fixture apps checked by their own
+  install and build commands.
 - `docs/superpowers/plans/` contains planning artifacts and is excluded from the
   formatter baseline.
 
@@ -32,7 +33,7 @@ Use targeted checks while editing:
 - Image skeleton scripts: `npm run typecheck:image` and `npm run test:image`
 - HTML article skill: `npm run typecheck:html`
 - Samples: `npm run test:samples` and `npm run build:samples`
-- Fixture app: `npm run check:fixtures`
+- Fixture apps: `npm run check:fixtures`
 
 Before claiming repo-wide completion, run `npm run check:full`.
 
