@@ -255,7 +255,7 @@ function normalizeNode(
   };
 
   // 提取并附加样式信息（填充、边框、效果、透明度等）
-  const style = extractStyle(node, kind);
+  const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
   // 标记父节点为有裁剪内容，供后续处理
   if (hadClippingMaskChild) markMaskedContent(visualNode);
@@ -390,7 +390,7 @@ function normalizeSymbolInstance(
     },
     children,
   };
-  const style = extractStyle(node, kind);
+  const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
   // 标记实例节点为有裁剪内容
   if (hadClippingMaskChild) markMaskedContent(visualNode);
@@ -664,7 +664,11 @@ function layerTextColor(node: SketchNode): string | undefined {
  * @param kind - 节点类型（用于判断是否跳过填充）
  * @returns 样式对象，或 undefined（无样式属性）
  */
-function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined {
+function extractStyle(
+  node: SketchNode,
+  kind: VisualNodeKind,
+  context: VisualContext,
+): Style | undefined {
   const style = node.style && typeof node.style === 'object' ? node.style : undefined;
   if (!style) return undefined;
   const result: Style = {};
@@ -684,7 +688,7 @@ function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined
   const contextSettings = style.contextSettings as Record<string, unknown> | undefined;
   if (typeof contextSettings?.opacity === 'number') result.opacity = contextSettings.opacity;
   // 圆角
-  const radius = extractRadius(node);
+  const radius = extractRadius(node, context);
   if (radius !== undefined) result.radius = radius;
   // 保留 Sketch 样式 ID 以备后续处理
   if (typeof style.do_objectID === 'string') result.raw = { sketchStyleId: style.do_objectID };
@@ -692,25 +696,74 @@ function extractStyle(node: SketchNode, kind: VisualNodeKind): Style | undefined
 }
 
 /**
+ * 解析 Sketch curvePoint 的 `point: '{x, y}'` 字符串为数值坐标
+ *
+ * Sketch 把每个曲线点的位置编码为本地矩形的归一化坐标字符串
+ * （0..1 范围），形如 `'{0, 0}'` 或 `'{0.5, 1}'`。该解析器复用
+ * `packages/d2c-core/src/preview/generate-preview.ts:parseGradientPoint`
+ * 的正则模式，兼容负数和科学计数法以保持一致。
+ */
+function parseCurvePointCoord(value: unknown): { x: number; y: number } | undefined {
+  if (typeof value !== 'string') return undefined;
+  const match =
+    /^\{\s*(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*,\s*(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*\}$/i.exec(
+      value.trim(),
+    );
+  if (!match || match[1] === undefined || match[2] === undefined) return undefined;
+  const x = Number.parseFloat(match[1]);
+  const y = Number.parseFloat(match[2]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
+  return { x, y };
+}
+
+/**
+ * 从归一化坐标分类至矩形角位
+ *
+ * 用一个小容差（~0.01）容纳浮点误差。仅接受四个单位顶点
+ * `{0,0}` `{1,0}` `{1,1}` `{0,1}`；其它取值（例如形状路径上的
+ * 中间锚点）返回 undefined，由上层降级处理。
+ */
+function classifyCorner(
+  x: number,
+  y: number,
+): 'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft' | undefined {
+  const EPS = 0.01;
+  const near = (a: number, b: number): boolean => Math.abs(a - b) <= EPS;
+  if (near(x, 0) && near(y, 0)) return 'topLeft';
+  if (near(x, 1) && near(y, 0)) return 'topRight';
+  if (near(x, 1) && near(y, 1)) return 'bottomRight';
+  if (near(x, 0) && near(y, 1)) return 'bottomLeft';
+  return undefined;
+}
+
+/**
  * 从 Sketch 节点提取圆角信息
  *
- * Sketch 在 points[i].cornerRadius 中存储四个角的圆角值，
- * 顺序为：top-left → top-right → bottom-right → bottom-left
- * （对应节点本地矩形的顶点顺序 {0,0} {1,0} {1,1} {0,1}）。
+ * Sketch 在 points[i].cornerRadius 中存储四个角的圆角值。常规矩形
+ * 的 points 数组顺序为：top-left → top-right → bottom-right → bottom-left
+ * （对应节点本地矩形顶点 `{0,0} {1,0} {1,1} {0,1}`），但 ShapePath
+ * 编辑或手动操作会改变数组顺序。因此优先根据每个 curvePoint 的
+ * `point` 坐标判断角位，仅在解析失败时回退到数组顺序。
  *
  * 处理策略：
- * 1. 若四个角都相等，返回单个数值（统一圆角）
- * 2. 否则返回四个角分别的对象（不同圆角）
- * 3. 若所有角都为 0，返回 undefined（无圆角）
- * 4. 若无 points，回退到 node.fixedRadius（仅在统一圆角时存在）
+ * 1. 优先按 `point: '{x, y}'` 坐标将四个 curvePoint 分配到四个角
+ * 2. 若四个角都相等，返回单个数值（统一圆角）
+ * 3. 否则返回四个角分别的对象（不同圆角）
+ * 4. 若所有角都为 0，返回 undefined（无圆角）
+ * 5. 若坐标缺失/重复/非单位顶点，回退到原有数组顺序并发出告警
+ * 6. 若无 points，回退到 node.fixedRadius（仅在统一圆角时存在）
  *
  * 注意：node.fixedRadius 只在用户设置统一圆角时非零；
  * 用户分别设置角时为 0（常见于聊天气泡形状）
  *
  * @param node - 节点
+ * @param context - 规范化上下文（用于在降级时发出告警）
  * @returns 统一圆角值、四角对象或 undefined
  */
-function extractRadius(node: SketchNode): NonNullable<Style['radius']> | undefined {
+function extractRadius(
+  node: SketchNode,
+  context: VisualContext,
+): NonNullable<Style['radius']> | undefined {
   const points = Array.isArray(node.points)
     ? (node.points as Array<Record<string, unknown>>)
     : undefined;
@@ -719,9 +772,56 @@ function extractRadius(node: SketchNode): NonNullable<Style['radius']> | undefin
     const corners = points.map((p) =>
       typeof p.cornerRadius === 'number' && p.cornerRadius >= 0 ? p.cornerRadius : 0,
     );
-    const [tl, tr, br, bl] = corners as [number, number, number, number];
+
+    // 优先按每个 curvePoint 的 point 坐标将圆角值分配到对应角位，
+    // 这样即使数组顺序被改变（ShapePath 编辑/手动操作）也能得到正确结果。
+    const byCorner: Partial<Record<'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft', number>> =
+      {};
+    let resolvedAll = true;
+    for (let i = 0; i < points.length; i++) {
+      const coord = parseCurvePointCoord(points[i]?.point);
+      if (!coord) {
+        resolvedAll = false;
+        break;
+      }
+      const corner = classifyCorner(coord.x, coord.y);
+      if (!corner || byCorner[corner] !== undefined) {
+        // 非单位顶点或重复角位 → 视为解析失败
+        resolvedAll = false;
+        break;
+      }
+      byCorner[corner] = corners[i] ?? 0;
+    }
+
+    let tl: number;
+    let tr: number;
+    let br: number;
+    let bl: number;
+    if (
+      resolvedAll &&
+      byCorner.topLeft !== undefined &&
+      byCorner.topRight !== undefined &&
+      byCorner.bottomRight !== undefined &&
+      byCorner.bottomLeft !== undefined
+    ) {
+      tl = byCorner.topLeft;
+      tr = byCorner.topRight;
+      br = byCorner.bottomRight;
+      bl = byCorner.bottomLeft;
+    } else {
+      // 降级：按数组顺序读取并发出 info 级告警，便于排查
+      addWarning(
+        context.warnings,
+        'radius-point-order-ambiguous',
+        `Could not resolve per-corner radius from curvePoint coordinates on "${getNodeName(node)}"; falling back to array order (top-left → top-right → bottom-right → bottom-left)`,
+        node,
+        'info',
+      );
+      [tl, tr, br, bl] = corners as [number, number, number, number];
+    }
+
     // 若所有角都为 0，则无圆角
-    const anyPositive = corners.some((r) => r > 0);
+    const anyPositive = tl > 0 || tr > 0 || br > 0 || bl > 0;
     if (!anyPositive) return undefined;
     // 若四个角相等，返回单值
     if (tl === tr && tr === br && br === bl) return tl;
