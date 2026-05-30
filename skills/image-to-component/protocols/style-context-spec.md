@@ -1,23 +1,23 @@
-# Style Context Protocol
+# Style Context 协议
 
-The style-context subagent is optional. Use it only when the dispatcher needs coarse styling hints to choose skeleton density and class structure. It must never provide colors, exact measurements, text copy, or freeform visual descriptions.
+Style-context 子 agent 为可选。仅当派发方需要 coarse 样式提示以选择 skeleton 密度与 class 结构时使用。绝不得提供颜色、精确尺寸、文案或自由形式 visual 描述。
 
-## Dispatch Timing
+## 派发时机
 
-Dispatch style-context only after image paths are listed and batched, and only after the main workflow has enough user settings to know whether style hints will be useful for output generation.
+仅在图片路径已列出并分批后派发 style-context，且主工作流已有足够用户设置以知样式提示是否对输出生成有用。
 
-Recommended timing:
+推荐时机：
 
-1. Create image read batches.
-2. Dispatch signature subagents for structural signatures.
-3. Optionally dispatch style-context subagents over the same batches, in parallel with or immediately after signature dispatch.
-4. Validate style hints before using them in component skeleton or CSS decisions.
+1. 创建图片读取 batch。
+2. 派发 signature 子 agent 获取结构 signature。
+3. 可选：对相同 batch 派发 style-context 子 agent，与 signature 派发并行或紧随其后。
+4. 在用于组件 skeleton 或 CSS 决策前校验 style hints。
 
-The main agent image-reading boundary still applies: if style-context requires image reading, that reading happens inside the style-context subagent, not in the main agent.
+主 agent 读图边界仍适用：若 style-context 需读图，读图发生在 style-context 子 agent 内，非主 agent。
 
-## Return Contract
+## 返回契约
 
-Return only JSON. Do not wrap it in markdown, code fences, headings, comments, or prose.
+仅返回 JSON。不要用 markdown、代码围栏、标题、注释或散文包裹。
 
 ```json
 {
@@ -38,11 +38,11 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 }
 ```
 
-## Allowed Keys
+## 允许的键
 
-`style_hints` must contain exactly these keys:
+`style_hints` 须含恰好这些键：
 
-| Key                     | Type    | Allowed values                     |
+| 键                      | 类型    | 允许值                             |
 | ----------------------- | ------- | ---------------------------------- |
 | `density`               | string  | `compact`, `normal`, `loose`       |
 | `corner_radius`         | string  | `none`, `small`, `medium`, `large` |
@@ -51,22 +51,22 @@ Return only JSON. Do not wrap it in markdown, code fences, headings, comments, o
 | `is_mobile_viewport`    | boolean | `true` or `false`                  |
 | `shadow_presence`       | string  | `none`, `card`, `modal`, `overlay` |
 
-No other keys are allowed anywhere inside `style_hints`.
+`style_hints` 内外不允许其他键。
 
-## Forbidden Content
+## 禁止内容
 
-Style hints must not include:
+Style hints 不得包含：
 
-- Colors or palette names.
-- Exact numeric measurements such as pixel widths, font sizes, spacing values, or border radii.
-- Text copy from the image.
-- Freeform descriptions, summaries, rationale, or visual commentary.
-- Component structure. Structure belongs in the signature subagent return.
-- Signature notes keys such as `overlay_type`, `float_anchor`, `divider`, `tab_active`, or `list_count`.
+- 颜色或 palette 名称。
+- 精确数值测量，如像素宽度、字号、间距、圆角。
+- 图片中的文案。
+- 自由形式描述、摘要、理由或 visual 评论。
+- 组件结构。结构属于 signature 子 agent 返回。
+- Signature notes 键，如 `overlay_type`、`float_anchor`、`divider`、`tab_active`、`list_count`。
 
-## Invalid Examples
+## 无效示例
 
-Invalid because it includes colors and exact measurements:
+无效：含颜色与精确测量
 
 ```json
 {
@@ -76,7 +76,7 @@ Invalid because it includes colors and exact measurements:
 }
 ```
 
-Invalid because it includes freeform description and text copy:
+无效：含自由描述与文案
 
 ```json
 {
@@ -85,7 +85,7 @@ Invalid because it includes freeform description and text copy:
 }
 ```
 
-Invalid because it uses unsupported enum values:
+无效：使用不支持的 enum 值
 
 ```json
 {
@@ -98,25 +98,25 @@ Invalid because it uses unsupported enum values:
 }
 ```
 
-## Validation Rules
+## 校验规则
 
-Validate style-context returns before using them:
+使用前校验 style-context 返回：
 
-- The return is parseable JSON and the entire output is the JSON object.
-- `batch` exactly matches the dispatched batch id.
-- `images.length` equals the number of paths in the batch.
-- Every `filename` is a basename from the batch path list.
-- Every batch filename appears exactly once.
-- `style_hints` contains exactly the six allowed keys.
-- Enum fields match the allowed values exactly.
-- `type_hierarchy_levels` is an integer from 1 through 5.
-- `primary_action_count` is an integer greater than or equal to 0.
-- `is_mobile_viewport` is a boolean, not a string.
-- No colors, exact measurements, text copy, or freeform descriptive fields appear.
+- 返回为可解析 JSON，且整个输出即为 JSON 对象。
+- `batch` 与派发的 batch id 完全一致。
+- `images.length` 等于 batch 路径数。
+- 每个 `filename` 为 batch 路径列表中的 basename。
+- 每个 batch filename 恰好出现一次。
+- `style_hints` 含恰好六个允许键。
+- Enum 字段与允许值完全匹配。
+- `type_hierarchy_levels` 为 1–5 的整数。
+- `primary_action_count` 为 >= 0 的整数。
+- `is_mobile_viewport` 为 boolean，非 string。
+- 不得出现颜色、精确测量、文案或自由描述字段。
 
-Failure handling matches the signature return protocol:
+失败处理与 signature 返回协议相同：
 
-1. First failure: re-dispatch the same style-context batch with concrete validation errors inside the dispatcher-instructions fence.
-2. Second failure: pause and ask the user whether to provide corrected JSON, skip style hints for that batch, or stop the workflow.
+1. 首次失败：在同一 style-context batch 内于 dispatcher-instructions fence 注入具体校验错误后重派发。
+2. 第二次失败：暂停并询问用户提供 corrected JSON、跳过该 batch 的 style hints，或停止工作流。
 
-If style-context is skipped or invalidated, continue the signature-based workflow without style hints.
+若 style-context 被跳过或无效，继续无 style hints 的基于 signature 工作流。

@@ -1,17 +1,17 @@
-# Coverage Table Workflow
+# 覆盖表工作流
 
-Use this workflow after directory tree planning and before outputting or writing component files.
+在目录树规划之后、输出或写入组件文件之前使用。
 
-## Trigger
+## 触发条件
 
-Generate a coverage table for every non-trivial output, especially when:
+对每个非平凡输出生成覆盖表，尤其是：
 
-- More than one screenshot was processed.
-- Multiple components or status variants are generated.
-- A staged large-directory workflow selected representatives.
-- Any candidate group was split, merged, skipped, or reused.
+- 处理了多于一张截图。
+- 生成多个组件或 status variant。
+- 大目录分阶段工作流选择了代表。
+- 任何候选组被拆分、合并、跳过或复用。
 
-## Exact Format
+## 精确格式
 
 ```markdown
 | Signature path   | Covering file(s)                                     | Component(s) | Status  |
@@ -23,29 +23,29 @@ Generate a coverage table for every non-trivial output, especially when:
 | O.modal          | src/components/OrderPage/components/ExpiredModal.tsx | ExpiredModal | pending |
 ```
 
-## Fields
+## 字段
 
-| Field            | Meaning                                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| Signature path   | Mechanical path from slot and role/container position, e.g. `T.title`, `M.list.card[0].meta`, `O.modal.action` |
-| Covering file(s) | Output files responsible for rendering that path                                                               |
-| Component(s)     | Component names responsible for the path                                                                       |
-| Status           | `covered`, `reused`, or `pending`                                                                              |
+| 字段             | 含义                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| Signature path   | 由 slot 与 role/container 位置构成的机械路径，如 `T.title`、`M.list.card[0].meta`、`O.modal.action` |
+| Covering file(s) | 负责渲染该路径的输出文件                                                                            |
+| Component(s)     | 负责该路径的组件名                                                                                  |
+| Status           | `covered`、`reused` 或 `pending`                                                                    |
 
-## Status Values
+## Status 值
 
-- `covered`: implemented directly by the listed component/file.
-- `reused`: intentionally covered by a shared/static component or existing project component.
-- `pending`: intentionally not generated yet, with a short reason immediately after the table.
+- `covered`：由所列组件/文件直接实现。
+- `reused`：有意由共享/静态组件或现有项目组件覆盖。
+- `pending`：有意尚未生成，表格后立即附简短原因。
 
-## Rules
+## 规则
 
-- Include every signature path that affects generated structure.
-- Include status-varying paths separately when different files/components cover them.
-- If a large-directory Stage A coarse signature was used only for grouping, do not list it as final coverage unless a Stage B full signature or explicit representative covers it.
-- The table must match the directory tree. Do not list files that are not in the planned output.
-- Any `pending` row must have a reason and next action.
+- 包含影响生成结构的每个 signature path。
+- 不同文件/组件覆盖时，分别列出随 status 变化的路径。
+- 大目录 Stage A coarse signature 仅用于分组时，不要列为最终覆盖，除非 Stage B 完整 signature 或显式代表覆盖。
+- 表格须与目录树一致。不要列出不在计划输出中的文件。
+- 任何 `pending` 行须有原因与下一步动作。
 
-## Exit
+## 退出
 
-Exit when every structural path is marked `covered`, `reused`, or `pending` and any pending work is explained.
+当每个结构路径标记为 `covered`、`reused` 或 `pending` 且 pending 工作已说明时退出。

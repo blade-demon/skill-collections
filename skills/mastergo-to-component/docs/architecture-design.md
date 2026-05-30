@@ -1,24 +1,23 @@
-# mastergo-to-component Provider Architecture
+# mastergo-to-component Provider 架构
 
-## Scope
+## 范围
 
-`mastergo-to-component` is the MasterGo provider adapter for the shared design-source pipeline.
+`mastergo-to-component` 是共享设计源管线的 MasterGo provider 适配器。
 
-The authoritative D2C contract is [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md). This provider document must not redefine:
+权威 D2C 契约见 [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md)。本 provider 文档不得重新定义：
 
-- the canonical IR identity or schema location;
-- preview, IR, or package output directories;
-- review gate count or gate semantics;
-- barrel export structure;
-- target stack output shape.
+- 规范 IR 身份或 schema 位置；
+- preview、IR 或 package 输出目录；
+- review gate 数量或 gate 语义；
+- barrel export 结构；
+- target stack 输出形状。
 
-> **Status (2026-05-21):** MasterGo provider implementation is deferred. The Sketch
-> provider's raw-extraction stage is being built first as an offline de-risking probe
-> (`.sketch` is a local, inspectable format); the MasterGo extractor follows once its
-> server-side DSL contract can be obtained reliably. See
-> [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md).
+> **状态（2026-05-21）：** MasterGo provider 实现延后。Sketch provider 的 raw-extraction 阶段
+> 先行作为离线去风险探针（`.sketch` 为本地可检视格式）；MasterGo extractor 在其服务端 DSL 契约
+> 可可靠获取后再跟进。见
+> [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md)。
 
-Provider implementation must feed the global contract:
+Provider 实现必须接入全局契约：
 
 ```text
 MasterGo URL
@@ -28,44 +27,44 @@ MasterGo URL
 -> shared preview, contract, and target-package pipeline
 ```
 
-The first reference design remains:
+首个参考设计仍为：
 
 ```text
 https://mastergo.com/file/192813714739577?fileOpenFrom=home&page_id=M&devMode=true&layer_id=2%3A0031
 ```
 
-For this reference, `layer_id=2:0031` has previously represented the root page `财资小助手对话页`.
+对该参考，`layer_id=2:0031` 此前代表根页面 `财资小助手对话页`。
 
-## Provider Responsibilities
+## Provider 职责
 
-The MasterGo provider owns only provider-specific work:
+MasterGo provider 仅拥有 provider 特定工作：
 
-| Responsibility   | Provider rule                                                                                                                                |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| URL parsing      | Parse `https://mastergo.com/file/{fileId}` and decode URL-encoded `layer_id` values such as `2%3A0031` into `2:0031`.                        |
-| Authentication   | Read `MASTERGO_TOKEN` from the shell environment and never print the token value.                                                            |
-| DSL fetch        | Request MasterGo DSL for the resolved `fileId` and `layerId`.                                                                                |
-| Raw preservation | Save provider data as `output/ir/raw-dsl.json` when running the full pipeline.                                                               |
-| Source trace     | Preserve source ids, source names, node types, file id, page id, and layer id under the canonical IR `source` or trace records.              |
-| Asset export     | Export or record MasterGo images, SVGs, icons, masks, and unresolved asset placeholders.                                                     |
-| Reference frame  | Export a provider-rendered frame or layer image for screenshot diff when MasterGo supports it.                                               |
-| Normalization    | Convert MasterGo-specific nodes into the canonical `output/ir/design-ir.json` target described by the global architecture.                   |
-| Warnings         | Emit warnings for lossy conversion, unsupported node types, missing assets, low-confidence semantic candidates, and skipped screenshot diff. |
+| 职责     | Provider 规则                                                                                            |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| URL 解析 | 解析 `https://mastergo.com/file/{fileId}`，将 URL 编码的 `layer_id`（如 `2%3A0031`）解码为 `2:0031`。    |
+| 认证     | 从 shell 环境读取 `MASTERGO_TOKEN`，永不打印 token 值。                                                  |
+| DSL 获取 | 为解析出的 `fileId` 与 `layerId` 请求 MasterGo DSL。                                                     |
+| Raw 保留 | 运行完整管线时将 provider 数据保存为 `output/ir/raw-dsl.json`。                                          |
+| 来源追溯 | 在规范 IR 的 `source` 或 trace 记录下保留 source id、source 名称、节点类型、file id、page id、layer id。 |
+| 资源导出 | 导出或记录 MasterGo 图片、SVG、图标、蒙版及未解析的资源占位符。                                          |
+| 参考帧   | 在 MasterGo 支持时导出 provider 渲染的 frame 或 layer 图片供截图 diff。                                  |
+| 规范化   | 将 MasterGo 特定节点转为全局架构描述的规范 `output/ir/design-ir.json` 目标。                             |
+| Warnings | 对有损转换、不支持的节点类型、缺失资源、低置信度 semantic candidate 及跳过的截图 diff 发出 warning。     |
 
-All provider-specific fields must remain isolated under `source` metadata or trace records. Downstream preview and target code generation must consume canonical IR views and contracts, not raw MasterGo DSL.
+所有 provider 特定字段必须隔离在 `source` 元数据或 trace 记录下。下游 preview 与目标代码生成必须消费规范 IR 视图与契约，而非 raw MasterGo DSL。
 
-## Non-Goals
+## 非目标
 
-- Do not define a MasterGo-only IR file.
-- Do not define a MasterGo-only output tree.
-- Do not define a separate preview approval flow.
-- Do not define a separate React package layout or barrel export contract.
-- Do not generate target code before both global gates pass.
-- Do not treat annotations as mandatory; zero-annotation runs must degrade through global semantic fallback rules.
+- 不定义 MasterGo 专用 IR 文件。
+- 不定义 MasterGo 专用输出树。
+- 不定义独立的 preview 审批流程。
+- 不定义独立的 React 包布局或 barrel export 契约。
+- 在两个全局 gate 均通过前不生成目标代码。
+- 不将 annotation 视为 mandatory；零 annotation 运行须按全局 semantic fallback 规则降级。
 
-## Runtime Modules
+## 运行时模块
 
-When implemented, the provider package should keep provider-specific modules separate from shared D2C stages:
+实现时，provider 包应将 provider 特定模块与共享 D2C 阶段分离：
 
 ```text
 scripts/src/
@@ -79,82 +78,82 @@ scripts/src/
   types.ts
 ```
 
-| Module                        | Responsibility                                                                                                                |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `parse-url.ts`                | Extract `fileId`, `pageId` when available, and decoded `layerId`.                                                             |
-| `fetch-dsl.ts`                | Read `MASTERGO_TOKEN` safely and fetch MasterGo raw DSL.                                                                      |
-| `export-assets.ts`            | Export or ledger image, SVG, icon, mask, and placeholder assets.                                                              |
-| `export-reference-frame.ts`   | Export the reference frame/layer image used by screenshot diff.                                                               |
-| `normalize-design-ir.ts`      | Convert MasterGo raw DSL into the canonical `output/ir/design-ir.json` shape.                                                 |
-| `write-provider-artifacts.ts` | Write `raw-dsl.json`, provider traces, assets, and reference-frame artifacts without overwriting unless explicitly requested. |
-| `types.ts`                    | Define MasterGo raw adapter types and provider trace helpers only. Canonical IR types belong to the shared pipeline.          |
-| `cli.ts`                      | Expose provider entrypoints that hand off to the shared preview, contract, and package generation pipeline.                   |
+| 模块                          | 职责                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------ |
+| `parse-url.ts`                | 提取 `fileId`、可用的 `pageId` 及解码后的 `layerId`。                                |
+| `fetch-dsl.ts`                | 安全读取 `MASTERGO_TOKEN` 并获取 MasterGo raw DSL。                                  |
+| `export-assets.ts`            | 导出或 ledger 图片、SVG、图标、蒙版及占位符资源。                                    |
+| `export-reference-frame.ts`   | 导出截图 diff 使用的参考 frame/layer 图片。                                          |
+| `normalize-design-ir.ts`      | 将 MasterGo raw DSL 转为规范 `output/ir/design-ir.json` 形状。                       |
+| `write-provider-artifacts.ts` | 写入 `raw-dsl.json`、provider trace、资源及参考帧 artifact，除非显式请求否则不覆盖。 |
+| `types.ts`                    | 仅定义 MasterGo raw 适配器类型与 provider trace 辅助。规范 IR 类型属于共享管线。     |
+| `cli.ts`                      | 暴露 provider 入口，交接给共享 preview、contract 与包生成管线。                      |
 
-## Execution Flow
+## 执行流程
 
-### Step 1: Validate URL
+### Step 1：校验 URL
 
-Input example:
+输入示例：
 
 ```bash
 npm run extract -- --url "<mastergo-url>" --out output
 ```
 
-Required behavior:
+必需行为：
 
-- Accept MasterGo file URLs.
-- Accept `/goto/` links only after a resolver exists.
-- Decode `layer_id`.
-- Stop with a clear error when `layer_id` is missing or cannot be resolved.
+- 接受 MasterGo 文件 URL。
+- 仅在 resolver 存在后接受 `/goto/` 链接。
+- 解码 `layer_id`。
+- `layer_id` 缺失或无法解析时以清晰错误停止。
 
-### Step 2: Check Token Safely
+### Step 2：安全检查 Token
 
-Required behavior:
+必需行为：
 
-- Check whether `MASTERGO_TOKEN` exists before any network call.
-- Never print the token value.
-- Surface missing token as a fatal provider extraction failure.
+- 任何网络调用前检查 `MASTERGO_TOKEN` 是否存在。
+- 永不打印 token 值。
+- 缺失 token 作为 fatal provider 提取失败 surfaced。
 
-Safe check:
+安全检查：
 
 ```bash
 test -n "$MASTERGO_TOKEN" && echo "Token is set" || echo "Token is NOT set"
 ```
 
-### Step 3: Fetch MasterGo Raw DSL
+### Step 3：获取 MasterGo Raw DSL
 
-Required behavior:
+必需行为：
 
-- Request the MasterGo DSL for the resolved `fileId` and `layerId`.
-- Send the token through the expected MasterGo authentication header.
-- Preserve the raw response in `output/ir/raw-dsl.json` for traceability when running the full pipeline.
-- Distinguish missing token, permission denied, invalid token, network failure, URL parse failure, empty frame, and unsupported node families.
+- 为解析出的 `fileId` 与 `layerId` 请求 MasterGo DSL。
+- 通过预期的 MasterGo 认证头发送 token。
+- 运行完整管线时将 raw 响应保留在 `output/ir/raw-dsl.json` 以供追溯。
+- 区分缺失 token、权限拒绝、无效 token、网络失败、URL 解析失败、空 frame 及不支持的节点族。
 
-### Step 4: Export Assets And Reference Frame
+### Step 4：导出资源与参考帧
 
-Required behavior:
+必需行为：
 
-- Export images, SVGs, icons, and other resources when the MasterGo API exposes binary or vector content.
-- If binary export is not available, create asset ledger entries and placeholders through the global output rules.
-- Export a provider-rendered frame or layer image for screenshot diff when possible.
-- If the reference image cannot be exported, continue with a warning as defined by the global Screenshot Diff Reference section.
+- 在 MasterGo API 暴露二进制或矢量内容时导出图片、SVG、图标及其他资源。
+- 若二进制导出不可用，通过全局输出规则创建 asset ledger 条目与占位符。
+- 可能时导出 provider 渲染的 frame 或 layer 图片供截图 diff。
+- 若参考图片无法导出，按全局 Screenshot Diff Reference 节定义以 warning 继续。
 
-### Step 5: Normalize To Canonical Design IR
+### Step 5：规范化为规范 Design IR
 
-Required behavior:
+必需行为：
 
-- Write `output/ir/design-ir.json` with `schemaVersion` matching the global architecture.
-- Preserve every useful source node id and source node name.
-- Keep provider-specific details under source metadata or trace records.
-- Convert MasterGo node types into canonical visual and semantic fields.
-- Record low-confidence semantic candidates rather than silently approving them.
-- Emit warnings for lossy or unsupported transformations.
+- 写入 `output/ir/design-ir.json`，`schemaVersion` 匹配全局架构。
+- 保留每个有用的 source 节点 id 与 source 节点名称。
+- 将 provider 特定细节保留在 source 元数据或 trace 记录下。
+- 将 MasterGo 节点类型转为规范 visual 与 semantic 字段。
+- 记录低置信度 semantic candidate，而非静默批准。
+- 对有损或不支持转换发出 warning。
 
-For `layer_id=2:0031`, the provider should avoid treating the whole page as one anonymous component. It should preserve enough source and layout information for the shared semantic mapper to propose meaningful regions such as page shell, navigation, conversation area, cards, action rows, and input area.
+对 `layer_id=2:0031`，provider 应避免将整个页面视为一个匿名组件。应保留足够 source 与布局信息，供共享 semantic mapper 提议有意义区域，如 page shell、navigation、conversation area、cards、action rows、input area。
 
-## MasterGo Normalization Guidance
+## MasterGo 规范化指引
 
-MasterGo DSL may contain low-level design concepts such as:
+MasterGo DSL 可能包含低级设计概念，如：
 
 ```text
 FRAME
@@ -169,20 +168,20 @@ style
 children
 ```
 
-Provider normalization should:
+Provider 规范化应：
 
-- collapse wrappers that have no visual or semantic value;
-- preserve wrappers that affect layout, clipping, mask, or z-order;
-- extract text nodes even when text is split across nested groups;
-- preserve layout and style data needed by the Visual View;
-- record component-instance information when present;
-- preserve repeated groups for later semantic inference;
-- map unsupported paths to icon or shape candidates with warnings;
-- leave business semantics as candidates, not approved contracts.
+- 折叠无 visual 或 semantic 价值的 wrapper；
+- 保留影响布局、裁剪、蒙版或 z-order 的 wrapper；
+- 即使文本分散在嵌套 group 中也要提取 text 节点；
+- 保留 Visual View 所需的 layout 与 style 数据；
+- 存在时记录 component-instance 信息；
+- 保留 repeated group 供后续 semantic 推断；
+- 将 unsupported path 映射为带 warning 的 icon 或 shape candidate；
+- 将业务语义留为 candidate，而非 approved contract。
 
-## Reference Design Candidate Regions
+## 参考设计候选区域
 
-For the first reference design, candidate regions may include:
+对首个参考设计，候选区域可能包括：
 
 ```text
 StatusBar
@@ -194,26 +193,26 @@ RoomOptionRow
 BottomInputBar
 ```
 
-These names are hints, not provider-level contract. The final component names, props, states, events, and exports must come from the shared Semantic View, Interaction Spec, and Component Plan, then pass Gate 2.
+这些名称是提示，非 provider 级 contract。最终组件名、props、states、events 与 exports 必须来自共享 Semantic View、Interaction Spec 与 Component Plan，并通过 Gate 2。
 
-## Validation Focus
+## 验证重点
 
-MasterGo provider validation should cover provider-owned behavior:
+MasterGo provider 验证应覆盖 provider 自有行为：
 
-- URL parsing and `layer_id` decoding.
-- Missing token detection without token leakage.
-- Raw DSL fixture loading.
-- Empty frame detection.
-- Source trace preservation.
-- Asset and reference-frame warning paths.
-- Canonical `schemaVersion` presence.
-- Provider-specific data isolation under `source` or trace records.
+- URL 解析与 `layer_id` 解码。
+- 缺失 token 检测且无 token 泄漏。
+- Raw DSL fixture 加载。
+- 空 frame 检测。
+- Source trace 保留。
+- 资源与参考帧 warning 路径。
+- 规范 `schemaVersion` 存在。
+- Provider 特定数据隔离在 `source` 或 trace 记录下。
 
-Do not duplicate shared pipeline tests for output package structure or gate semantics here. Those belong to the shared design-source pipeline.
+勿在此重复共享管线的输出包结构或 gate 语义测试。那些属于共享 design-source 管线。
 
-## Open Questions
+## 开放问题
 
-1. Whether MasterGo can export a reliable provider-rendered reference image for every target frame.
-2. Which MasterGo asset families can be exported automatically versus ledged as placeholders.
-3. Whether `/goto/` URL resolution should be provider-owned or shared across connector utilities.
-4. Which MasterGo component-instance fields should become provider-neutral concepts after another provider validates the same need.
+1. MasterGo 是否能为每个目标 frame 导出可靠的 provider 渲染参考图。
+2. 哪些 MasterGo 资源族可自动导出 vs 须 ledger 为占位符。
+3. `/goto/` URL 解析应由 provider 拥有还是跨 connector 工具共享。
+4. 在另一 provider 验证相同需求后，哪些 MasterGo component-instance 字段应成为 provider 中立概念。

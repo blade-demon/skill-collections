@@ -1,8 +1,8 @@
-## Summary
+## 摘要
 
-- Summarize changed packages, scripts, docs, and verification evidence.
+- 概括变更涉及的 package、脚本、文档与验证证据。
 
-## Verification
+## 验证
 
 - [ ] `npm run lint`
 - [ ] `npm run format:check`
@@ -12,9 +12,9 @@
 - [ ] `npm run check:fixtures`
 - [ ] `npm run check:full`
 
-## Review Notes
+## 评审说明
 
-- [ ] Generated golden outputs were not changed unintentionally.
-- [ ] Runtime behavior changes are described explicitly.
-- [ ] New public APIs include comments or docs.
-- [ ] Sample changes include build or lint evidence.
+- [ ] 生成的 golden 输出未被意外修改。
+- [ ] 运行时行为变更已明确说明。
+- [ ] 新的公共 API 已补充注释或文档。
+- [ ] Sample 变更附有构建或 lint 证据。

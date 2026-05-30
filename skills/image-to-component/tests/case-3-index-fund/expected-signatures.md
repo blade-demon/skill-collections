@@ -21,4 +21,4 @@
 }
 ```
 
-Expected Step 6 decision: single image, one independent component.
+预期 Step 6 决策：单图，一个独立组件。

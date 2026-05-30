@@ -1,166 +1,166 @@
 ---
 name: image-to-component
-description: Use when the user points to a directory of UI screenshots or design mockup images and wants structure-first component skeletons, state comparison, prop modeling, or screenshot-derived variants. Use design-source workflows instead when Sketch, Figma, or MasterGo source data is available for high-fidelity styling.
+description: 当用户指向 UI 截图或设计 mockup 图片目录，需要结构优先的组件 skeleton、状态对比、prop 建模或截图衍生 variant 时使用。若有 Sketch、Figma 或 MasterGo 源数据可用于高保真样式，应改用 design-source 工作流。
 ---
 
 # image-to-component
 
-## Overview
+## 概述
 
-Convert a directory of UI screenshots into typed component skeletons. The critical step is **structural comparison first**: multiple screenshots often represent one component in different states, not multiple components.
+将 UI 截图目录转为带类型的组件 skeleton。**关键步骤是结构对比优先**：多张截图常代表同一组件的不同状态，而非多个组件。
 
-This is a **screenshot-to-skeleton** workflow. It can infer structure, variants, props, and asset needs from pixels, but screenshots do not reliably contain source-level style data such as design tokens, layer names, component instances, exportable vectors, or layout constraints. For high-fidelity generation from structured design data, route to a design-source workflow — the `sketch-to-component` / `mastergo-to-component` / `figma-to-component` providers (all in development).
+这是**截图到 skeleton** 工作流。可从像素推断结构、variant、props 与资源需求，但截图不可靠地包含源级样式数据（如 design token、图层名、组件实例、可导出矢量或布局约束）。要从结构化设计数据高保真生成，请路由到 design-source 工作流 —— `sketch-to-component` / `mastergo-to-component` / `figma-to-component` provider（均在开发中）。
 
-**Hard context boundary:** the main agent must never read image files directly. Image reading happens only inside signature subagents, coarse-signature subagents, or optional style-context subagents. If subagent dispatch is unavailable, use `workflows/degraded-mode.md`.
+**硬上下文边界：** 主 agent 不得直接读取图片文件。图片读取仅发生在 signature 子 agent、coarse-signature 子 agent 或可选 style-context 子 agent 内。若子 agent 派发不可用，使用 `workflows/degraded-mode.md`。
 
-## Routing Map
+## 路由图
 
-Load supporting docs only when their trigger applies:
+仅在对应触发条件成立时加载支持文档：
 
-| Area                                         | File                                                                                |
-| -------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Project rules init                           | `workflows/init-project-rules.md`                                                   |
-| Large directories and two-stage reading      | `workflows/large-directory.md`                                                      |
-| Subagent unavailable / unsupported framework | `workflows/degraded-mode.md`                                                        |
-| Coarse Stage A protocol                      | `protocols/coarse-signature-format.md`                                              |
-| Full signature JSON protocol                 | `protocols/subagent-return-format.md`                                               |
-| Optional style hints protocol                | `protocols/style-context-spec.md`                                                   |
-| Signature validation redispatch              | `workflows/diagnostic-redispatch.md`                                                |
-| Signature summary and JSX tree output        | `workflows/summarize-signatures.md`                                                 |
-| Structural comparison                        | `workflows/structural-comparison.md`                                                |
-| Manual structural review                     | `workflows/manual-review-exit.md`                                                   |
-| Candidate group conflicts                    | `workflows/candidate-group-conflicts.md`                                            |
-| Image Connect reuse/extend/create mapping    | `workflows/image-connect.md`                                                        |
-| Style Connect token mapping and ledger       | `workflows/style-connect.md`                                                        |
-| Style Plan CSS generation input              | `workflows/style-plan.md`                                                           |
-| Prop modeling                                | `workflows/prop-modeling.md`                                                        |
-| Asset and icon hard rules                    | `workflows/asset-handling.md`                                                       |
-| Code generation and templates                | `workflows/code-generation.md` — calls `scripts/generate-skeleton`                  |
-| Output and file writing                      | `workflows/output-and-writing.md`                                                   |
-| Scripts package                              | `scripts/` — validate-signature, validate-coarse, coverage-table, generate-skeleton |
-| Signature coverage table                     | `workflows/coverage-table.md`                                                       |
-| Optional render verification                 | `workflows/render-verification.md`                                                  |
+| 区域                                   | 文件                                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------------ |
+| 项目规则初始化                         | `workflows/init-project-rules.md`                                                    |
+| 大目录与两阶段读取                     | `workflows/large-directory.md`                                                       |
+| 子 agent 不可用 / 不支持框架           | `workflows/degraded-mode.md`                                                         |
+| Coarse Stage A 协议                    | `protocols/coarse-signature-format.md`                                               |
+| 完整 signature JSON 协议               | `protocols/subagent-return-format.md`                                                |
+| 可选样式提示协议                       | `protocols/style-context-spec.md`                                                    |
+| Signature 校验重派发                   | `workflows/diagnostic-redispatch.md`                                                 |
+| Signature 摘要与 JSX 树输出            | `workflows/summarize-signatures.md`                                                  |
+| 结构对比                               | `workflows/structural-comparison.md`                                                 |
+| 手动结构 review                        | `workflows/manual-review-exit.md`                                                    |
+| 候选组冲突                             | `workflows/candidate-group-conflicts.md`                                             |
+| Image Connect reuse/extend/create 映射 | `workflows/image-connect.md`                                                         |
+| Style Connect token 映射与 ledger      | `workflows/style-connect.md`                                                         |
+| Style Plan CSS 生成输入                | `workflows/style-plan.md`                                                            |
+| Prop 建模                              | `workflows/prop-modeling.md`                                                         |
+| 资源与图标硬规则                       | `workflows/asset-handling.md`                                                        |
+| 代码生成与模板                         | `workflows/code-generation.md` —— 调用 `scripts/generate-skeleton`                   |
+| 输出与文件写入                         | `workflows/output-and-writing.md`                                                    |
+| Scripts 包                             | `scripts/` —— validate-signature, validate-coarse, coverage-table, generate-skeleton |
+| Signature 覆盖表                       | `workflows/coverage-table.md`                                                        |
+| 可选渲染验证                           | `workflows/render-verification.md`                                                   |
 
-Always use `protocols/signature-spec.md` for grammar and role vocabulary. Read `examples/golden-cases.md` when manual review triggers or when comparing 4+ signatures with mixed leaf additions/removals.
+语法与 role 词汇表始终使用 `protocols/signature-spec.md`。手动 review 触发或对比 4+ 个含混合 leaf 增删的 signature 时，阅读 `examples/golden-cases.md`。
 
 ## Scripts
 
-Run all commands from `skills/image-to-component/scripts/`. Requires Node.js 20+ and `npm install` once on first use.
+所有命令从 `skills/image-to-component/scripts/` 运行。需要 Node.js 20+，首次使用需 `npm install` 一次。
 
-| Script                          | Usage                                                                                         |
-| ------------------------------- | --------------------------------------------------------------------------------------------- |
-| Validate full signature batch   | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
-| Validate coarse signature batch | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png`    |
-| Generate coverage table         | `echo '<json>' \| npm run coverage-table`                                                     |
-| Generate component skeleton     | `echo '<json>' \| npm run generate-skeleton`                                                  |
+| Script                     | 用法                                                                                          |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| 校验完整 signature 批次    | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
+| 校验 coarse signature 批次 | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png`    |
+| 生成覆盖表                 | `echo '<json>' \| npm run coverage-table`                                                     |
+| 生成组件 skeleton          | `echo '<json>' \| npm run generate-skeleton`                                                  |
 
-Output format: `validate-*` scripts print `{"valid":true}` or `{"valid":false,"errors":[...]}` and exit non-zero on failure. `coverage-table` prints a markdown table. `generate-skeleton` prints a `[{path,content}]` JSON array.
+输出格式：`validate-*` 脚本打印 `{"valid":true}` 或 `{"valid":false,"errors":[...]}`，失败时非零退出。`coverage-table` 打印 markdown 表。`generate-skeleton` 打印 `[{path,content}]` JSON 数组。
 
-## Step Skeleton
+## 步骤骨架
 
-### Step 0 — Ensure Project Rules
+### Step 0 —— 确保项目规则
 
-Resolve the target project root. If `.image-to-component.rules.md` is missing, run `workflows/init-project-rules.md`; otherwise read it as the project-convention authority. Do not read images before this completes.
+解析目标项目根。若缺少 `.image-to-component.rules.md`，运行 `workflows/init-project-rules.md`；否则读取它作为项目约定权威。完成前不得读取图片。
 
-### Step 1 — Gather Context
+### Step 1 —— 收集上下文
 
-Confirm framework, output mode, language, style stack, and whether optional style hints are enabled. Recommended defaults are React, chat output, TypeScript, CSS Modules, and style hints disabled. Do not assume missing answers.
+确认 framework、输出 mode、language、style stack 及是否启用可选样式提示。推荐默认：React、chat 输出、TypeScript、CSS Modules、样式提示关闭。不要假设缺失答案。
 
-If the user has Sketch, Figma, or MasterGo source data and asks for accurate styling, pause and route to the design-source pipeline instead of continuing with screenshot inference. Continue here only when the available input is screenshots/images or when the user explicitly wants a lower-fidelity skeleton.
+若用户有 Sketch、Figma 或 MasterGo 源数据且要求准确样式，暂停并路由到 design-source 管线，而非继续截图推断。仅当可用输入为截图/图片，或用户明确要求较低保真 skeleton 时在此继续。
 
-### Step 2 — Capture User Intent
+### Step 2 —— 捕获用户意图
 
-Record any user-declared relationship among images: same component states, different components, or sequenced flow steps. Use the declaration as input to structural comparison, subject to conflict checks.
+记录用户声明的图片关系：同一组件状态、不同组件或顺序流程步骤。将声明作为结构对比输入，须做冲突检查。
 
-### Step 3 — List Files And Plan Batches
+### Step 3 —— 列出文件并规划批次
 
-Run `ls <directory>` or equivalent. Use `workflows/large-directory.md` for image-count handling, filename pre-grouping, Stage A coarse scans, and Stage B full-signature selection.
+运行 `ls <directory>` 或等效命令。图片数量处理、文件名预分组、Stage A coarse 扫描与 Stage B 完整 signature 选择使用 `workflows/large-directory.md`。
 
-### Step 4 — Dispatch Subagents
+### Step 4 —— 派发子 agent
 
-For Stage A large-directory scans, dispatch `prompts/coarse-signature-prompt.md` and validate with `protocols/coarse-signature-format.md`.
+Stage A 大目录扫描：派发 `prompts/coarse-signature-prompt.md`，用 `protocols/coarse-signature-format.md` 校验。
 
-For every full-signature batch, dispatch `prompts/subagent-prompt.md` and validate with `protocols/subagent-return-format.md`. Assign stable batch ids and place them inside the dispatcher-instructions fence.
+每个完整 signature 批次：派发 `prompts/subagent-prompt.md`，用 `protocols/subagent-return-format.md` 校验。分配稳定 batch id 并放入 dispatcher-instructions fence。
 
-If style hints were enabled, dispatch `prompts/style-context-prompt.md` over the same batches and validate with `protocols/style-context-spec.md`. Style hints must remain separate from structural signatures.
+若启用了样式提示，对相同批次派发 `prompts/style-context-prompt.md`，用 `protocols/style-context-spec.md` 校验。样式提示必须与结构 signature 分离。
 
-If subagent dispatch is unavailable, run `workflows/degraded-mode.md`.
+若子 agent 派发不可用，运行 `workflows/degraded-mode.md`。
 
-### Step 5 — Validate And Summarize Signatures
+### Step 5 —— 校验并摘要 Signature
 
-> **Script:** After receiving subagent JSON, run validation from `skills/image-to-component/scripts/`:
+> **Script：** 收到子 agent JSON 后，从 `skills/image-to-component/scripts/` 运行校验：
 >
 > ```bash
 > echo '<subagent return JSON>' | npm run validate-signature -- --batch batch-1 --expected-files file1.png file2.png
 > ```
 >
-> A non-zero exit means validation failed; the printed `errors` array describes what to fix. For Stage A coarse batches, use `npm run validate-coarse` instead.
+> 非零退出表示校验失败；打印的 `errors` 数组描述需修复项。Stage A coarse 批次改用 `npm run validate-coarse`。
 
-Validate all subagent JSON before comparison. On first validation failure, run `workflows/diagnostic-redispatch.md`; never resend an unchanged prompt. On second failure, ask for corrected JSON, skip the batch, or stop.
+对比前校验所有子 agent JSON。首次校验失败运行 `workflows/diagnostic-redispatch.md`；永不重发未改 prompt。第二次失败则请求 corrected JSON、跳过批次或停止。
 
-Before Step 6, run `workflows/summarize-signatures.md` to output a natural-language structure summary and mechanical JSX component tree for each image. Do not show raw signature JSON unless debugging validation. Do not add visual information the signature does not carry.
+Step 6 前运行 `workflows/summarize-signatures.md`，为每张图输出自然语言结构摘要与机械 JSX 组件树。除非调试校验，不要向用户展示 raw signature JSON。不要添加 signature 未携带的 visual 信息。
 
-### Step 6 — Compare Structures
+### Step 6 —— 对比结构
 
-Run `workflows/structural-comparison.md`. Use `workflows/manual-review-exit.md` for ambiguous structural variants and `workflows/candidate-group-conflicts.md` for conflicting multi-image groups.
+运行 `workflows/structural-comparison.md`。歧义结构 variant 用 `workflows/manual-review-exit.md`；冲突多图组用 `workflows/candidate-group-conflicts.md`。
 
-### Step 7 — Image Connect
+### Step 7 —— Image Connect
 
-Run `workflows/image-connect.md`. Output the reuse/extend/create candidate table and wait for user confirmation before prop modeling.
+运行 `workflows/image-connect.md`。输出 reuse/extend/create 候选表，prop 建模前等待用户确认。
 
-### Step 8 — Style Connect (Optional)
+### Step 8 —— Style Connect（可选）
 
-Only run this step if style hints were enabled in Step 1. Run `workflows/style-connect.md`. Output the token-ledger table and wait for user confirmation of token mappings before code generation. If style hints were not enabled, skip to Step 9.
+仅当 Step 1 启用了样式提示时运行。运行 `workflows/style-connect.md`。输出 token-ledger 表，代码生成前等待用户确认 token 映射。未启用样式提示则跳到 Step 9。
 
-After token decisions are confirmed, run `workflows/style-plan.md` to create the `SkeletonConfig.stylePlan` object. The generator consumes `stylePlan` to write CSS module or BEM CSS files. If style hints were skipped, omit `stylePlan`.
+Token 决策确认后，运行 `workflows/style-plan.md` 创建 `SkeletonConfig.stylePlan` 对象。生成器消费 `stylePlan` 写入 CSS module 或 BEM CSS 文件。跳过样式提示则省略 `stylePlan`。
 
-### Step 9 — Define Props
+### Step 9 —— 定义 Props
 
-Run `workflows/prop-modeling.md`, then `workflows/asset-handling.md` for every `media` node or unknown icon.
+运行 `workflows/prop-modeling.md`，对每个 `media` 节点或未知图标运行 `workflows/asset-handling.md`。
 
-### Step 10 — Generate Code Skeleton
+### Step 10 —— 生成代码 Skeleton
 
-Run `workflows/code-generation.md` to build a `SkeletonConfig` JSON object from the component tree and prop definitions established in Step 9, plus `stylePlan` from Step 8 when available. Then run:
+运行 `workflows/code-generation.md`，从 Step 9 建立的组件树与 prop 定义（及 Step 8 的 `stylePlan`（如有））构建 `SkeletonConfig` JSON。然后运行：
 
 ```bash
 echo '<SkeletonConfig JSON>' | npm run generate-skeleton
 ```
 
-The output is a `[{path, content}]` JSON array. Use this array as the file list in Step 11. Do not read `templates/` — those files have been removed.
+输出为 `[{path, content}]` JSON 数组。将该数组作为 Step 11 的文件列表。不要读取 `templates/` —— 那些文件已移除。
 
-### Step 11 — Output Or Write Files
+### Step 11 —— 输出或写入文件
 
-> **Script:** Build a `CoverageInput` JSON object (entries with signaturePath, files, components, status, optional note), then run:
+> **Script：** 构建 `CoverageInput` JSON（entries 含 signaturePath、files、components、status、optional note），然后运行：
 >
 > ```bash
 > echo '<CoverageInput JSON>' | npm run coverage-table
 > ```
 >
-> Paste the output markdown directly into the response.
+> 将输出 markdown 直接粘贴到响应中。
 
-Run `workflows/output-and-writing.md`. Always output a directory tree first, include `workflows/coverage-table.md`, include `asset-ledger.md` when pending assets exist, and include `token-ledger.md` when pending token decisions exist.
+运行 `workflows/output-and-writing.md`。始终先输出目录树，包含 `workflows/coverage-table.md`；有待处理资源时包含 `asset-ledger.md`；有待处理 token 决策时包含 `token-ledger.md`。
 
-### Step 12 — Optional Render Verification
+### Step 12 —— 可选渲染验证
 
-Only in write-file mode, run `workflows/render-verification.md` when a Storybook or safe Vite preview route exists and the user did not ask to skip verification.
+仅在 write-file mode 下，当存在 Storybook 或安全 Vite preview 路由且用户未要求跳过验证时，运行 `workflows/render-verification.md`。
 
-## Common Mistakes
+## 常见错误
 
-| Mistake                                        | Fix                                                                                             |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Promise high-fidelity styling from screenshots | Explain the screenshot limitation and route to a design-source workflow when source data exists |
-| Skip `.image-to-component.rules.md`            | Run init first when missing                                                                     |
-| Parse free-text signatures                     | Require JSON from `protocols/subagent-return-format.md`                                         |
-| Treat Stage A coarse signatures as final       | Use them only to select Stage B files                                                           |
-| Re-dispatch the same bad prompt                | Diagnose with `workflows/diagnostic-redispatch.md`                                              |
-| Skip structural comparison                     | Run `workflows/structural-comparison.md` before props/code                                      |
-| Create files without being asked               | Default to chat output                                                                          |
-| Main agent reads images                        | Dispatch subagents or use degraded-mode menu                                                    |
-| Let style hints alter structure                | Keep `style_hints` separate                                                                     |
-| Invent icon names from screenshots             | Use `workflows/asset-handling.md` and asset ledger                                              |
-| Add new icon packages                          | Obey `.image-to-component.rules.md`; default is only `@iconify/react`                           |
-| Split props into status-specific objects       | Keep flat discriminator props                                                                   |
-| Mix TS syntax in JS output                     | Match the selected language                                                                     |
-| Hardcode style values without ledger           | Use `workflows/style-connect.md` and token-ledger when style hints enabled                      |
-| Invent new tokens without user approval        | Require Style Connect decision-gate before code generation                                      |
-| Skip style-connect gate and guess tokens       | Run `workflows/style-connect.md` and wait for confirmation A/B/C                                |
+| 错误                                 | 修复                                                          |
+| ------------------------------------ | ------------------------------------------------------------- |
+| 承诺截图高保真样式                   | 说明截图限制；有源数据时路由到 design-source 工作流           |
+| 跳过 `.image-to-component.rules.md`  | 缺失时先运行 init                                             |
+| 解析自由文本 signature               | 要求 `protocols/subagent-return-format.md` 的 JSON            |
+| 将 Stage A coarse signature 当作最终 | 仅用于选择 Stage B 文件                                       |
+| 重发相同错误 prompt                  | 用 `workflows/diagnostic-redispatch.md` 诊断                  |
+| 跳过结构对比                         | props/代码前运行 `workflows/structural-comparison.md`         |
+| 未请求就创建文件                     | 默认 chat 输出                                                |
+| 主 agent 读图片                      | 派发子 agent 或使用 degraded-mode 菜单                        |
+| 让样式提示改变结构                   | 保持 `style_hints` 分离                                       |
+| 从截图臆造图标名                     | 使用 `workflows/asset-handling.md` 与 asset ledger            |
+| 添加新图标包                         | 遵守 `.image-to-component.rules.md`；默认仅 `@iconify/react`  |
+| 将 props 拆成状态专用对象            | 保持扁平 discriminator props                                  |
+| JS 输出混用 TS 语法                  | 匹配所选 language                                             |
+| 无 ledger 硬编码样式值               | 启用样式提示时用 `workflows/style-connect.md` 与 token-ledger |
+| 未经用户批准臆造新 token             | 代码生成前须 Style Connect decision-gate                      |
+| 跳过 style-connect gate 猜 token     | 运行 `workflows/style-connect.md` 并等待确认 A/B/C            |

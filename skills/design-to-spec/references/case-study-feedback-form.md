@@ -1,4 +1,4 @@
-# Case Study: feedback-form — 用 vs 不用 design-to-spec 的差异
+# 案例研究：feedback-form — 用 vs 不用 design-to-spec 的差异
 
 > 这不是性能 benchmark，是**同一个真实需求**用两种工作流跑下来的对比。所有"工作量估算"基于一名熟练前端工程师，假设需求评审已开过、设计稿已交付。
 

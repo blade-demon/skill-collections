@@ -15,7 +15,7 @@
 
 ```ts
 interface PriceCardData {
-  // No API response fields. Data is expected from props or parent context.
+  // 无 API 响应字段。数据预期由 props 或父组件上下文传入。
 }
 ```
 

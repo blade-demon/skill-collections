@@ -1,15 +1,15 @@
-# Style Connect Quick Reference
+# Style Connect 快速参考
 
-A cheat sheet for using the Style Connect workflow (Step 8) in image-to-component.
+image-to-component 中 Style Connect 工作流（Step 8）的速查表。
 
-## When Does Style Connect Run?
+## Style Connect 何时运行？
 
 | Scenario                            | What happens                                             |
 | ----------------------------------- | -------------------------------------------------------- |
 | ✅ Step 1: Style hints **enabled**  | Style Connect runs in Step 8 after Image Connect         |
 | ❌ Step 1: Style hints **disabled** | Style Connect skipped; code generation uses CSS defaults |
 
-## Step 8: Style Connect Workflow
+## Step 8：Style Connect 工作流
 
 ```
 Input:  Style hints extracted in Step 4 (corner_radius, shadow, typography, etc.)
@@ -23,9 +23,9 @@ Wait:   User chooses A, B, or C
 Result: Confirmed token bindings for code generation
 ```
 
-## Token Ledger Table
+## Token Ledger 表格
 
-Shows all detected style traits and their mapping status:
+展示所有检测到的样式特征及其映射状态：
 
 ```markdown
 | Token ID  | Hint source          | Source image(s) | Visual trait         | Suggested token name | Source        | Confidence | Status   | User action              |
@@ -34,7 +34,7 @@ Shows all detected style traits and their mapping status:
 | token-002 | shadow_presence=card | pending.png     | Card shadow          | `--ant-box-shadow`   | lib:antd      |       high | pending  | Confirm antd theme value |
 ```
 
-### Column Meanings
+### 列含义
 
 | Column               | Purpose                             | Example                                             |
 | -------------------- | ----------------------------------- | --------------------------------------------------- |
@@ -48,7 +48,7 @@ Shows all detected style traits and their mapping status:
 | Status               | Current decision state              | `pending`, `provided`, `create`, etc.               |
 | User action          | What the user should do             | "Confirm this mapping"                              |
 
-### Source Column (Quick Decoder)
+### Source 列（快速解码）
 
 | Value             | Meaning                                                                                                    |
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -58,9 +58,9 @@ Shows all detected style traits and their mapping status:
 | `proposed`        | No matching token found; AI proposed a new name (for `status: create`)                                     |
 | `inferred`        | Pure guess from style hint, no source supports it (for `status: hardcoded`)                                |
 
-The library list and priority order come from `.image-to-component.rules.md` (set during init).
+库列表与优先级顺序来自 `.image-to-component.rules.md`（init 时设置）。
 
-## Status Values Explained
+## Status 取值说明
 
 | Status      | Meaning                            | Next action                       |
 | ----------- | ---------------------------------- | --------------------------------- |
@@ -71,11 +71,11 @@ The library list and priority order come from `.image-to-component.rules.md` (se
 | `hardcoded` | User approved inline value + TODO  | Inline value with TODO marker     |
 | `skip`      | User excluded from output          | Omit from generated code          |
 
-## Decision-Gate (A/B/C Choice)
+## Decision-Gate（A/B/C 选择）
 
-After seeing the token-ledger, you choose:
+查看 token-ledger 后，你选择：
 
-### Option A: Accept All
+### 选项 A：全部接受
 
 ```
 ✅ Use all suggested mappings
@@ -84,9 +84,9 @@ After seeing the token-ledger, you choose:
 ✅ Hardcode with TODO for none-confidence
 ```
 
-→ Fastest path; confidence-driven resolution
+→ 最快路径；由置信度驱动解析
 
-### Option B: Change Specific Rows
+### 选项 B：修改特定行
 
 ```
 Tell me which token IDs should be:
@@ -96,9 +96,9 @@ Tell me which token IDs should be:
 - 🗑️  "token-007 skip entirely"
 ```
 
-→ Fine-grained control; exact mappings
+→ 细粒度控制；精确映射
 
-### Option C: Skip Style Connect
+### 选项 C：跳过 Style Connect
 
 ```
 🚫 Skip token mapping entirely
@@ -106,17 +106,17 @@ Tell me which token IDs should be:
 ⚡ Fallback if you don't want design tokens yet
 ```
 
-→ Conservative approach; leaves decisions for later
+→ 保守做法；决策留待后续
 
-## Example Scenario
+## 示例场景
 
-**User has these screenshots:**
+**用户有以下截图：**
 
-- pending.png (card pending delivery)
-- used.png (card marked as used)
-- expired.png (card marked as expired)
+- pending.png（待配送卡片）
+- used.png（已使用卡片）
+- expired.png（已过期卡片）
 
-**Step 4 detects style hints:**
+**Step 4 检测到的样式提示：**
 
 ```
 All: corner_radius=medium, primary_action_count=1
@@ -124,9 +124,9 @@ pending.png: shadow_presence=card, type_hierarchy_levels=3
 expired.png: shadow_presence=modal, type_hierarchy_levels=3
 ```
 
-**Project libraries (from rules file):** `[antd, tailwind]` (priority order)
+**项目库（来自规则文件）：** `[antd, tailwind]`（优先级顺序）
 
-**Style Connect builds token-ledger:**
+**Style Connect 构建 token-ledger：**
 
 ```markdown
 | Token ID | Hint source | Source image(s) | Visual trait | Suggested name | Source | Confidence | Status | User action |
@@ -137,7 +137,7 @@ expired.png: shadow_presence=modal, type_hierarchy_levels=3
 | token-005 | primary_action_count=1 | all | Primary color | `--color-primary` | project-local | high | provided | Exists in `src/tokens/color.css` |
 ```
 
-**User chooses Option B:**
+**用户选择选项 B：**
 
 ```
 Change:
@@ -145,7 +145,7 @@ Change:
 - token-004: already have this typography scale
 ```
 
-**After confirmation:**
+**确认后：**
 
 - token-001 → use `--radius-md` ✓
 - token-002 → use `--shadow-elevation-2` ✓
@@ -153,7 +153,7 @@ Change:
 - token-004 → use existing typography tokens ✓
 - token-005 → use `--color-primary` ✓
 
-**Code generation uses confirmed mappings:**
+**代码生成使用已确认映射：**
 
 ```css
 .card {
@@ -163,7 +163,7 @@ Change:
 }
 ```
 
-## Confidence Levels (Quick Decoder)
+## Confidence 级别（快速解码）
 
 | Level    | Meaning                                        | Example                                                                 |
 | -------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
@@ -172,85 +172,85 @@ Change:
 | `low`    | Multiple possible tokens                       | type_hierarchy_levels=3 → could be different scales depending on design |
 | `none`   | Cannot map to any existing token               | Trait has no matching token; create or hardcode                         |
 
-## Integration with Code Generation
+## 与代码生成的集成
 
-After decision-gate confirmation:
+decision-gate 确认后：
 
-### Confirmed tokens are used directly:
+### 已确认 token 直接使用：
 
 ```css
 color: var(--color-primary); /* status: provided */
 border-radius: var(--radius-md); /* status: provided */
 ```
 
-### Create-status gets TODO:
+### create status 加 TODO：
 
 ```css
 box-shadow: var(--shadow-new); /* TODO: add --shadow-new to design system */
 ```
 
-### Hardcoded-status gets TODO:
+### hardcoded status 加 TODO：
 
 ```css
 color: #ff6b6b; /* TODO: extract to token --color-warning */
 ```
 
-### Skipped-status is omitted:
+### skipped status 省略：
 
 ```css
 /* (no color property; inherits from parent) */
 ```
 
-## Key Principles
+## 核心原则
 
-1. **Visible**: Every detected style trait appears in the ledger
-2. **Explicit**: User confirms decisions; AI doesn't guess
-3. **Auditable**: Decision-gate creates a record of choices
-4. **Safe**: No invented tokens in generated code
-5. **Recoverable**: TODO comments mark future work
+1. **Visible**：每个检测到的样式特征都出现在 ledger 中
+2. **Explicit**：用户确认决策；AI 不猜测
+3. **Auditable**：decision-gate 形成选择记录
+4. **Safe**：生成代码中无臆造 token
+5. **Recoverable**：TODO 注释标记后续工作
 
-## Troubleshooting
+## 故障排查
 
-### "I want to use a different token than suggested"
+### 「我想用与建议不同的 token」
 
-→ Choose **Option B** in decision-gate; tell me which rows to change
+→ 在 decision-gate 中选择 **Option B**；告诉我哪些行需要修改
 
-### "I have a new token to create"
+### 「我有新 token 要创建」
 
-→ Choose **Option B**; say "token-XXX create new token --my-token-name"
+→ 选择 **Option B**；说明 "token-XXX create new token --my-token-name"
 
-### "I don't want style tokens yet"
+### 「我暂时不想用样式 token」
 
-→ Choose **Option C** to skip Style Connect; all styles hardcoded with TODO
+→ 选择 **Option C** 跳过 Style Connect；所有样式 hardcode 并加 TODO
 
-### "The suggested token doesn't exist in my project"
+### 「建议的 token 在我的项目中不存在」
 
-→ Choose **Option B**; either map to a different token or choose "create"
+→ 选择 **Option B**；映射到其他 token 或选择 "create"
 
-### "Token extraction looks wrong"
+### 「Token 提取看起来不对」
 
-→ Check that `protocols/style-context-spec.md` matches your project's style traits
+→ 检查 `protocols/style-context-spec.md` 是否与项目的样式特征匹配
 
-### "I want to use library X but it's not in my detected list"
+### 「我想用库 X 但检测列表里没有」
 
-→ Edit `.image-to-component.rules.md` `Component Libraries` section; rerun Style Connect
+→ 编辑 `.image-to-component.rules.md` 的 `Component Libraries` 章节；重新运行 Style Connect
 
-### "The wrong source won when there's a conflict"
+### 「冲突时选错了来源」
 
-→ Reorder the `Component Libraries` list in the rules file. First entry has highest priority among libraries; project-local always wins overall.
+→ 在规则文件中调整 `Component Libraries` 列表顺序。库之间第一项优先级最高；项目本地始终整体优先。
 
-### "My internal company design system isn't recognized"
+### 「公司内部 design system 未被识别」
 
-→ List it as `Other` during init; it will be recorded but without an adapter (tokens from that library will not be auto-discovered until `protocols/library-adapters.md` supports custom adapters)
+→ init 时列为 `Other`；会记录但无 adapter（在 `protocols/library-adapters.md` 支持自定义 adapter 之前，该库的 token 不会自动发现）
 
-## File References
+## 文件引用
 
-- **Workflow:** `../workflows/style-connect.md`
-- **Pattern explanation:** `./ledger-and-gate-pattern.md`
-- **Full implementation details:** `./implementation-summary.md`
-- **Style hints spec:** `../protocols/style-context-spec.md`
-- **Related workflow:** `../workflows/image-connect.md` (similar pattern for components)
+- **Workflow：** `../workflows/style-connect.md`
+- **Pattern explanation：** `./ledger-and-gate-pattern.md`
+- **Full implementation details：** `./implementation-summary.md`
+- **Style hints spec：** `../protocols/style-context-spec.md`
+- **Related workflow：** `../workflows/image-connect.md`（组件的类似模式）
 
 ---
 
-**Remember:** Style Connect runs in **Step 8** (optional, only if style hints enabled in Step 1).
+**Remember：** Style Connect 在 **Step 8** 运行（可选，仅当 Step 1 启用 style hints 时）。

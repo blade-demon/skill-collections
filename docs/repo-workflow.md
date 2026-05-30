@@ -1,28 +1,28 @@
-# Repo Workflow
+# 仓库工作流
 
-This file explains how `skill-collections` is organized and how skill development, sample authoring, fixtures, and validation fit together.
+本文说明 `skill-collections` 的组织方式，以及 skill 开发、sample 编写、fixtures 与验证如何衔接。
 
-> **Audience**: contributors / maintainers. End users who only want to use a skill should start at the relevant skill README or onboarding guide.
+> **读者**：贡献者 / 维护者。只想使用某个 skill 的终端用户，请从对应 skill 的 README 或 onboarding 指南开始。
 
 ---
 
-## 1. Repo layout
+## 1. 仓库布局
 
 ```
 skill-collections/
-├── README.md                       # Top-level orientation
-├── CONTRIBUTING.md                  # Contributor setup and review checklist
-├── AGENTS.md                        # Coding-agent operating notes
-├── package.json                    # npm workspace declaration
-├── package-lock.json               # Root workspace lockfile
-├── .gitignore                      # Shared local/build artifact ignores
-├── eslint.config.mjs                # Repo lint policy
-├── lefthook.yml                     # Local Git hooks
+├── README.md                       # 顶层导览
+├── CONTRIBUTING.md                  # 贡献者环境与 review 检查清单
+├── AGENTS.md                        # 编码 Agent 操作说明
+├── package.json                    # npm workspace 声明
+├── package-lock.json               # 根 workspace 锁文件
+├── .gitignore                      # 共享的本地/构建产物忽略规则
+├── eslint.config.mjs                # 仓库 lint 策略
+├── lefthook.yml                     # 本地 Git hooks
 │
-├── packages/                       # Shared code consumed across skills
-│   └── d2c-core/                   # @skill-collections/d2c-core — D2C pipeline core
+├── packages/                       # 跨 skill 共享代码
+│   └── d2c-core/                   # @skill-collections/d2c-core — D2C 管线核心
 │
-├── skills/                         # Installable/copyable skills
+├── skills/                         # 可安装/可复制的 skills
 │   ├── design-to-spec/
 │   │   ├── SKILL.md
 │   │   ├── ONBOARDING.md
@@ -35,10 +35,10 @@ skill-collections/
 │   │   ├── schemas/
 │   │   ├── templates/
 │   │   ├── references/
-│   │   └── examples/               # Golden regression samples
-│   ├── image-to-component/         # Screenshot -> component skeleton workflow
-│   ├── mastergo-to-component/      # MasterGo design-source provider
-│   ├── sketch-to-component/        # Sketch design-source provider
+│   │   └── examples/               # Golden 回归样本
+│   ├── image-to-component/         # 截图 → 组件骨架工作流
+│   ├── mastergo-to-component/      # MasterGo 设计源 provider
+│   ├── sketch-to-component/        # Sketch 设计源 provider
 │   └── html-article-to-markdown/
 │       ├── SKILL.md
 │       ├── README.md
@@ -51,13 +51,13 @@ skill-collections/
 │       ├── tests/
 │       └── tools/
 │
-├── samples/                        # Hands-on workspaces grouped by skill
+├── samples/                        # 按 skill 分组的动手工作区
 │   └── design-to-spec/
 │       ├── search-panel/
 │       └── feedback-form/
 │
-├── fixtures/                       # Per-framework test/demo app fixtures
-└── docs/                           # Top-level cross-cutting documentation
+├── fixtures/                       # 各框架的测试/演示 app fixture
+└── docs/                           # 顶层横切文档
     ├── repo-workflow.md
     ├── sample-authoring.md
     ├── commenting-guide.md
@@ -66,63 +66,62 @@ skill-collections/
     └── superpowers/
 ```
 
-The top-level split is intentional:
+顶层划分是刻意的：
 
-- `skills/<skill-name>/` contains a skill that can be installed, copied, tested, and versioned as a coherent unit.
-- `samples/<skill-name>/<sample-name>/` contains hands-on workspaces that demonstrate a specific skill against realistic inputs.
-- `fixtures/apps/<target>/` contains reusable app fixtures used for CI
-  regression, browser debugging, and demonstrations, not skill source.
-- `fixtures/shared/` contains cross-fixture assets and design specs.
-- `docs/` contains repo-level policy and contributor guides only.
+- `skills/<skill-name>/` 包含可安装、可复制、可测试、可版本化的完整 skill。
+- `samples/<skill-name>/<sample-name>/` 包含针对真实输入演示某个 skill 的动手工作区。
+- `fixtures/apps/<target>/` 包含用于 CI 回归、浏览器调试与演示的可复用 app fixture，不是 skill 源码。
+- `fixtures/shared/` 包含跨 fixture 的资产与设计规格。
+- `docs/` 只包含仓库级策略与贡献者指南。
 
 ---
 
-## 2. Skill directory contract
+## 2. Skill 目录契约
 
-Each skill should keep its own human docs, runtime code, tests, and assets together:
+每个 skill 应把人类文档、运行时代码、测试与资产放在一起：
 
 ```
 skills/<skill-name>/
-├── SKILL.md          # Skill definition loaded by agent harnesses
-├── README.md         # Human entry point
-├── CHANGELOG.md      # Version history
-├── agents/           # Agent/harness configuration
-├── assets/           # Icons, previews, screenshots
-├── src/ or scripts/  # Core implementation
-├── schemas/          # JSON Schema or equivalent contracts, if applicable
-├── templates/        # Output templates, if applicable
-├── references/       # Long-form reference docs loaded on demand
-├── examples/         # Golden samples / regression fixtures, if applicable
-└── tests/            # Automated test suite, if applicable
+├── SKILL.md          # 由 agent harness 加载的 skill 定义
+├── README.md         # 人类入口
+├── CHANGELOG.md      # 版本历史
+├── agents/           # Agent/harness 配置
+├── assets/           # 图标、预览、截图
+├── src/ 或 scripts/  # 核心实现
+├── schemas/          # JSON Schema 或等价契约（若适用）
+├── templates/        # 输出模板（若适用）
+├── references/       # 按需加载的长文档
+├── examples/         # Golden 样本 / 回归 fixture（若适用）
+└── tests/            # 自动化测试套件（若适用）
 ```
 
-Not every skill needs every folder. Add a folder only when the skill actually has that kind of artifact.
+不是每个 skill 都需要每个目录。只有 skill 确实有该类产物时才添加对应文件夹。
 
 ---
 
-## 3. Two kinds of design-to-spec examples
+## 3. 两类 design-to-spec 示例
 
-The repo deliberately separates two concepts that are easy to conflate:
+仓库刻意区分两个容易混淆的概念：
 
-|                   | Golden regression samples                                  | Hands-on samples                                          |
-| ----------------- | ---------------------------------------------------------- | --------------------------------------------------------- |
-| **Lives in**      | `skills/design-to-spec/examples/`                          | `samples/design-to-spec/<name>/`                          |
-| **Purpose**       | Prove the skill works; pin behavior with byte-equal output | Demonstrate the inputs -> spec -> implementation workflow |
-| **Audience**      | The skill's own tests                                      | Skill users / reviewers / readers                         |
-| **Owned by**      | `design-to-spec` maintainers                               | Sample authors                                            |
-| **Editable?**     | No; test scripts assert exact output                       | Yes; samples evolve over time                             |
-| **Contains**      | Contracts + generated markdown                             | `inputs/` + `design-spec/` + `src/` + `walkthrough.md`    |
-| **Failure means** | The skill regressed                                        | The sample drifted from its spec                          |
+|                    | Golden 回归样本                           | 动手 samples                                           |
+| ------------------ | ----------------------------------------- | ------------------------------------------------------ |
+| **位置**           | `skills/design-to-spec/examples/`         | `samples/design-to-spec/<name>/`                       |
+| **目的**           | 证明 skill 可用；用字节级等价输出钉住行为 | 演示 inputs → spec → 实现全流程                        |
+| **读者**           | skill 自己的测试                          | skill 用户 / reviewer / 读者                           |
+| **维护方**         | `design-to-spec` 维护者                   | sample 作者                                            |
+| **可否编辑？**     | 否；测试脚本断言输出完全一致              | 是；sample 会随时间演进                                |
+| **包含内容**       | 契约 + 生成的 markdown                    | `inputs/` + `design-spec/` + `src/` + `walkthrough.md` |
+| **失败意味着什么** | skill 发生回归                            | sample 与 spec 漂移                                    |
 
-Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
+正是为了避免混淆才做了 monorepo 拆分。不要混用这两类目录。
 
 ---
 
-## 4. The hands-on sample flow
+## 4. 动手 sample 流程
 
 ```
 ┌──────────────────────────┐
-│  inputs/                 │   raw materials, human-authored
+│  inputs/                 │   原始材料，由人编写
 │  ├── design.svg          │
 │  ├── api.md              │
 │  └── interaction-notes.md│
@@ -130,12 +129,12 @@ Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
              │
              ▼
    ╔═══════════════════════╗
-   ║  design-to-spec skill ║   four-stage interactive flow
+   ║  design-to-spec skill ║   四阶段交互式流程
    ╚═══════════╤═══════════╝
                │
                ▼
 ┌──────────────────────────┐
-│  design-spec/<unit>/     │   skill output
+│  design-spec/<unit>/     │   skill 输出
 │  ├── contracts/*.yaml    │
 │  ├── notes.md            │
 │  ├── data-fetching.md    │
@@ -144,65 +143,65 @@ Mixing these is what motivated the monorepo split. Don't cross-contaminate them.
              │
              ▼
 ┌──────────────────────────┐
-│  src/                    │   implementation
-│  ├── index.html          │   consumes design-spec/
-│  ├── main.js             │   never reads inputs/ directly
+│  src/                    │   实现
+│  ├── index.html          │   消费 design-spec/
+│  ├── main.js             │   不直接读 inputs/
 │  └── style.css           │
 └──────────────────────────┘
 ```
 
-`walkthrough.md` is the narrative layer gluing these stages together: what each stage looked like, what choices were made, and what `open_questions` remained.
+`walkthrough.md` 是串联各阶段的叙事层：每步长什么样、做了哪些选择、还有哪些 `open_questions`。
 
 ---
 
-## 5. Common operations
+## 5. 常用操作
 
-### Run skill tests
+### 运行 skill 测试
 
 ```bash
 npm run test:skills
 ```
 
-Runs the current skill test suites from the repo root. `npm run test:skill` is kept as a compatibility alias.
+从仓库根目录运行当前 skill 测试套件。`npm run test:skill` 保留为兼容别名。
 
-### Build all samples
+### 构建所有 samples
 
 ```bash
 npm run build:samples
 ```
 
-Runs sample builds for the workspaces under `samples/<skill>/<sample>/`.
+构建 `samples/<skill>/<sample>/` 下的工作区。
 
-### Format and lint
+### 格式化与 lint
 
 ```bash
 npm run format:check
 npm run lint
 ```
 
-Use `npm run format` and `npm run lint:fix` for local fixes.
+本地修复可用 `npm run format` 与 `npm run lint:fix`。
 
-### Type-check all typed workspaces
+### 类型检查所有带类型的 workspace
 
 ```bash
 npm run typecheck
 ```
 
-This covers `d2c-core`, `image-to-component` scripts, `sketch-to-component`
-scripts, and the HTML article TypeScript build.
+覆盖 `d2c-core`、`image-to-component` scripts、`sketch-to-component`
+scripts，以及 HTML article 的 TypeScript 构建。
 
-### Pre-merge full check
+### 合并前完整检查
 
 ```bash
 npm run check:full
 ```
 
-Runs in order: lint -> format check -> typecheck -> all tests -> sample builds
--> fixture app lint/build. This is the local equivalent of CI.
+按顺序执行：lint → format check → typecheck → 全部测试 → sample 构建
+→ fixture app lint/build。这是本地的 CI 等价命令。
 
-For a slightly narrower repo check that excludes fixtures, run `npm run check`.
+若需要稍窄、不含 fixtures 的检查，可运行 `npm run check`。
 
-### Work on a single sample
+### 单独开发某个 sample
 
 ```bash
 cd samples/design-to-spec/search-panel
@@ -212,31 +211,29 @@ npm run dev
 
 ---
 
-## 6. Runtime and lockfile policy
+## 6. 运行时与锁文件策略
 
-- The root workspace uses Node.js >= 20 because `skills/html-article-to-markdown` requires Node 20.
-- Individual skills may declare a lower compatible engine when they can run standalone, such as `skills/design-to-spec` requiring Node >= 18.
-- Keep the root `package-lock.json` for workspace development.
-- Keep per-skill `package-lock.json` files when the skill is intended to be copied or installed standalone.
-- Do not commit `node_modules/`, `dist/`, `.vite/`, build outputs, or nested `.git/` directories.
+- 根 workspace 使用 Node.js >= 20，因为 `skills/html-article-to-markdown` 需要 Node 20。
+- 各 skill 若可独立运行，可声明更低的兼容引擎，例如 `skills/design-to-spec` 要求 Node >= 18。
+- 保留根 `package-lock.json` 供 workspace 开发使用。
+- 当 skill 设计为可复制或独立安装时，保留各 skill 的 `package-lock.json`。
+- 不要提交 `node_modules/`、`dist/`、`.vite/`、构建输出或嵌套的 `.git/` 目录。
 
 ---
 
-## 7. Shared packages and future tooling
+## 7. 共享 package 与未来工具
 
-`packages/` now exists — it holds `d2c-core` (`@skill-collections/d2c-core`), the shared
-design-source-to-component pipeline core consumed across skills. Add further shared
-packages under `packages/*` only after the duplication is real.
+`packages/` 已存在 —— 其中是 `d2c-core`（`@skill-collections/d2c-core`），供各 skill 消费的设计源→组件共享管线核心。只有在重复确实出现之后，才在 `packages/*` 下新增共享 package。
 
-One folder that still doesn't exist but might:
+目前仍不存在、但可能在未来出现的目录：
 
-- `tools/` - repo-level scripts that operate across multiple skills or samples, such as a `new-sample.mjs` generator. Create only after the need is real.
+- `tools/` —— 跨多个 skill 或 sample 操作的仓库级脚本，例如 `new-sample.mjs` 生成器。仅在需求真实出现后再创建。
 
 ---
 
 ## 8. CI
 
-GitHub Actions runs the same gate as local development:
+GitHub Actions 运行与本地开发相同的门禁：
 
 ```bash
 npm ci
@@ -244,5 +241,5 @@ npm ci --prefix fixtures/apps/react-vite
 npm run check:full
 ```
 
-Local `lefthook` hooks run `npm run format:check` and `npm run lint` on commit,
-then `npm run check:full` before push.
+本地 `lefthook` 在 commit 时运行 `npm run format:check` 与 `npm run lint`，
+在 push 前运行 `npm run check:full`。

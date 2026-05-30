@@ -249,9 +249,9 @@ export function getAdapter(name) {
 ```markdown
 ### Requirement: SearchPanel 埋点完整性
 
-The system SHALL fire each contract-defined tracking event with required properties.
+The system SHALL 触发契约定义的每个埋点事件，并携带必需属性。
 
-#### Scenario: search_submit fires on submit
+#### Scenario: 点击提交时触发 search_submit
 
 - WHEN user clicks submitBtn
 - THEN tracker emits `search_submit` event with properties { keyword, result_count? }

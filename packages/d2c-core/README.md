@@ -1,256 +1,160 @@
 # @skill-collections/d2c-core
 
-Shared core for the design-source-to-component (D2C) pipeline: the canonical
-IR schema, derived-view schemas, validators, and the `Provider` port.
+设计源到组件（D2C）管线的共享核心：规范 IR schema、派生视图 schema、校验器与 `Provider` 端口。
 
-See [`docs/design-source-to-component-architecture.md`](../../docs/design-source-to-component-architecture.md)
-for the authoritative architecture and
-[`docs/design-source-to-component-implementation-plan.md`](../../docs/design-source-to-component-implementation-plan.md)
-for build phases.
+权威架构见 [`docs/design-source-to-component-architecture.md`](../../docs/design-source-to-component-architecture.md)，
+构建阶段见 [`docs/design-source-to-component-implementation-plan.md`](../../docs/design-source-to-component-implementation-plan.md)。
 
-## Source-only internal package
+## 仅源码的内部包
 
-This is an **internal workspace package**. It ships TypeScript source only —
-there is no `dist/` and no build step. `package.json#exports` points at
-`src/index.ts`, so it is consumed by other workspace packages through
-`tsx` / `vitest` / TS-aware tooling. It is **not** runnable by plain `node`.
+这是**内部 workspace 包**。仅发布 TypeScript 源码 —— 无 `dist/`、无构建步骤。
+`package.json#exports` 指向 `src/index.ts`，由其他 workspace 包通过 `tsx` / `vitest` / TS 感知工具消费。
+**不能**用纯 `node` 直接运行。
 
-## Scope (current)
+## 范围（当前）
 
-`d2c-core` owns provider-neutral contracts and deterministic shared pipeline
-helpers:
+`d2c-core` 拥有 provider 中立的契约与确定性共享管线辅助工具：
 
 ```
 src/
-  ir/        canonical Design IR schema, derived-view schemas, validators
-  provider/  capability-style Provider port + normalize/validate helper
-  preview/   visual view derivation, static HTML preview, review report helpers
-  semantic/  Stage 5A: semantic-view body schema, evidence, integrity
-             validator, and deriveSemanticView
-  contract/  Stages 5B / 5C: interaction-spec + component-plan schemas,
-             integrity validators, and the deriveInteractionSpec /
-             deriveComponentPlan pure functions
-  codegen/   Stage 6: Gate 2 sign-off + verify, and the TargetGenerator
-             abstraction with a React + TS + BEM implementation
-  utils/     cross-cutting helpers (stable JSON / hash)
+  ir/        规范 Design IR schema、派生视图 schema、校验器
+  provider/  能力式 Provider 端口 + normalize/validate 辅助
+  preview/   visual view 派生、静态 HTML 预览、review 报告辅助
+  semantic/  Stage 5A：semantic-view body schema、evidence、完整性
+             校验器及 deriveSemanticView
+  contract/  Stage 5B / 5C：interaction-spec + component-plan schema、
+             完整性校验器，以及 deriveInteractionSpec /
+             deriveComponentPlan 纯函数
+  codegen/   Stage 6：Gate 2 签收 + verify，以及 TargetGenerator
+             抽象及 React + TS + BEM 实现
+  utils/     横切辅助（stable JSON / hash）
 ```
 
-Provider-specific extraction and normalization code stays in
-`skills/<provider>-to-component/scripts/`. For example, Sketch-specific parsing
-of `.sketch` ZIP JSON lives in `skills/sketch-to-component/scripts/`, then hands
-validated IR to this package.
+Provider 特定的提取与规范化代码留在 `skills/<provider>-to-component/scripts/`。
+例如，Sketch 对 `.sketch` ZIP JSON 的解析在 `skills/sketch-to-component/scripts/`，
+然后将校验后的 IR 交给本包。
 
-Not yet in scope: screenshot diff automation, and a fully resumable pipeline
-runner — the Stage 5D contract runner below chains the derive steps in one pure
-pass, but persisting and resuming partial runs is a later slice. Codegen (Stage 6) generates presentational React packages today; interactive generation and
-asset emission are later slices.
+尚未纳入范围：截图 diff 自动化，以及完全可恢复的管线 runner —— 下方 Stage 5D contract runner
+在一次纯 pass 中链接 derive 步骤，但持久化与恢复部分运行是后续切片。Codegen（Stage 6）当前生成展示型 React 包；交互式生成与资源输出是后续切片。
 
-## Semantic View (Stage 5A)
+## Semantic View（Stage 5A）
 
-`src/semantic/` is the first half of Gate 2: it turns the visual-view
-produced by Stage 4 into a typed `SemanticView` that downstream
-interaction-spec and component-plan work will consume.
+`src/semantic/` 是 Gate 2 的前半段：将 Stage 4 产出的 visual-view 转为下游 interaction-spec 与 component-plan 将消费的 typed `SemanticView`。
 
-### Public surface
+### 公共面
 
 - `SemanticViewBodySchema` / `SemanticNodeSchema` /
   `ComponentCandidateSchema` / `RepeatedPatternSchema` /
-  `LayoutCandidateSchema` — Zod definitions. **Shape only**: every field
-  exists, types match, discriminated unions pick correctly.
+  `LayoutCandidateSchema` —— Zod 定义。**仅形状**：每个字段存在、类型匹配、discriminated union 正确选择。
 - `evidenceFromVisualNode` / `evidenceFromDesignIrCandidate` /
-  `evidenceFromAnnotation` / `evidenceFromProjectRule` — the only place
-  evidence values are constructed. Greppable origin for every cited
-  source. Annotation and project-rule are reserved entry points and are
-  not produced by 5A derive.
-- `assertSemanticViewIntegrity(body)` — graph-level invariants Zod
-  cannot reach: unique node ids, reciprocal parent/child links, screen
-  pointer kind, `primaryVisualNodeId` membership, all candidate /
-  pattern / layout cross-references resolve, ids globally unique across
-  all four arrays. Throws `SemanticViewIntegrityError` with the
-  offending id and field in the message.
-- `deriveSemanticView({ designIr, visualView })` — pure function; same
-  input ⇒ byte-identical output. Validates the input hash chain
-  (`visualView.generatedFrom.designIrHash` must equal
-  `stableSha256(stableJson(designIr))`), walks the visual tree depth-first
-  pre-order, applies the §6.4–§6.7 heuristics, and self-calls the
-  integrity validator before returning.
+  `evidenceFromAnnotation` / `evidenceFromProjectRule` —— 构造 evidence 值的唯一入口。每个引用来源可 grep。Annotation 与 project-rule 为预留入口，5A derive 不产出。
+- `assertSemanticViewIntegrity(body)` —— Zod 无法覆盖的图级不变量：唯一 node id、父子双向链接、screen 指针 kind、`primaryVisualNodeId` 成员关系、所有 candidate / pattern / layout 交叉引用可解析、四数组内 id 全局唯一。抛出 `SemanticViewIntegrityError`，消息含 offending id 与 field。
+- `deriveSemanticView({ designIr, visualView })` —— 纯函数；相同输入 ⇒ 字节级相同输出。校验输入 hash 链（`visualView.generatedFrom.designIrHash` 必须等于 `stableSha256(stableJson(designIr))`），深度优先前序遍历 visual 树，应用 §6.4–§6.7 启发式，返回前自调用完整性校验器。
 
-### Determinism
+### 确定性
 
-All ids are `<prefix>` + `stableSha256(stableJson({ form, ...canonical fields })).slice(0, 12)`.
-The prefix is `s_` for SemanticNode, `cc_` for ComponentCandidate, `rp_`
-for RepeatedPattern, `lc_` for LayoutCandidate. RepeatedPattern item ids
-are sorted before hashing so shuffled-input runs still produce the same
-pattern id. No `Date.now`, no UUID, no counters.
+所有 id 为 `<prefix>` + `stableSha256(stableJson({ form, ...canonical fields })).slice(0, 12)`。
+前缀：`s_` SemanticNode、`cc_` ComponentCandidate、`rp_` RepeatedPattern、`lc_` LayoutCandidate。
+RepeatedPattern item id 在 hash 前排序，使乱序输入仍产生相同 pattern id。无 `Date.now`、无 UUID、无计数器。
 
-### Known limitations carried by 5A
+### 5A 携带的已知限制
 
-- Grid layout (mixed x+y equal-spacing) is not detected — emits
-  `repeated-pattern-grid-skipped` warning instead.
-- Annotation extraction is reserved as a schema entry point but not
-  consumed; 5B+ wires in `@component` / `@slot` / `@event` / etc.
-- Project-rule evidence is reserved similarly.
-- `repeated-item` kind exists in the union but is not produced by derive.
-- Real `.sketch` fixtures land in 5D when the CLI + Gate 2 signal arrive;
-  5A tests use inline TS makers under `src/semantic/__tests__/fixtures.ts`.
+- 未检测 grid 布局（x+y 等间距混合）—— 发出 `repeated-pattern-grid-skipped` warning。
+- Annotation 提取为 schema 入口但尚未消费；5B+ 接入 `@component` / `@slot` / `@event` 等。
+- Project-rule evidence 同样为预留。
+- `repeated-item` kind 在 union 中存在但 derive 不产出。
+- 真实 `.sketch` fixture 在 5D CLI + Gate 2 信号到达时落地；5A 测试用 `src/semantic/__tests__/fixtures.ts` 内联 TS maker。
 
-### Hash chain
+### Hash 链
 
-`GeneratedFromSchema` now carries `designIrHash` _and_ `visualViewHash`
-(both optional at the schema level, but `deriveSemanticView` always
-writes both). Downstream `interaction-spec` and `component-plan` will
-pin to `semantic-view`'s body hash in 5B / 5C.
+`GeneratedFromSchema` 现携带 `designIrHash` 与 `visualViewHash`（schema 层均为可选，但 `deriveSemanticView` 始终写入两者）。下游 `interaction-spec` 与 `component-plan` 将在 5B / 5C 钉住 `semantic-view` 的 body hash。
 
-## Interaction Spec (Stage 5B)
+## Interaction Spec（Stage 5B）
 
-`src/contract/` adds the interaction contract that sits between
-`SemanticView` and the future `ComponentPlan`. It provides
-`InteractionSpecSchema`, `InteractionSpecBodySchema`,
-`InteractionStatusSchema`, `assertInteractionSpecIntegrity()`, and
-`deriveInteractionSpec()`.
+`src/contract/` 新增介于 `SemanticView` 与未来 `ComponentPlan` 之间的交互契约。提供
+`InteractionSpecSchema`、`InteractionSpecBodySchema`、
+`InteractionStatusSchema`、`assertInteractionSpecIntegrity()` 与 `deriveInteractionSpec()`。
 
-### Status model
+### 状态模型
 
-`InteractionStatusSchema` has five values: `draft`, `in-review`, `approved`,
-`omitted`, and `deferred`. It is intentionally separate from
-`ContractStatusSchema`, which remains the three-state lifecycle
-(`draft | in-review | approved`) used by `component-plan`. Presentational vs
-interactive output is a component-plan `mode` decision in Stage 5C, not an
-extra `ContractStatusSchema` state.
+`InteractionStatusSchema` 五值：`draft`、`in-review`、`approved`、`omitted`、`deferred`。
+有意与 `ContractStatusSchema` 分离，后者仍为 component-plan 使用的三态生命周期（`draft | in-review | approved`）。展示型 vs 交互式输出是 Stage 5C 的 component-plan `mode` 决策，而非 `ContractStatusSchema` 的额外状态。
 
-### Derive modes
+### Derive 模式
 
-`deriveInteractionSpec()` is a pure function. It validates the upstream hash
-chain (`designIrHash`, `visualViewHash`, `semanticViewHash`) and returns the
-same artifact for the same inputs. It supports three modes:
+`deriveInteractionSpec()` 为纯函数。校验上游 hash 链（`designIrHash`、`visualViewHash`、`semanticViewHash`），相同输入返回相同 artifact。支持三种模式：
 
-- `draft` (default): mirrors semantic component candidates, drafts heuristic
-  events and data slots, persists caveats in `body.warnings`, and leaves
-  `states` / `stateTransitions` empty.
-- `omitted`: requires caller-supplied `{ reason, approvedBy, approvedAt }`,
-  writes top-level approval fields, leaves behavior arrays empty, and pins all
-  coverage entries to `omitted`.
-- `deferred`: same approval requirements and empty behavior arrays as
-  `omitted`, but pins coverage entries to `deferred`.
+- `draft`（默认）：镜像 semantic component candidates，起草启发式 events 与 data slots，将 caveat 写入 `body.warnings`，`states` / `stateTransitions` 留空。
+- `omitted`：要求调用方提供 `{ reason, approvedBy, approvedAt }`，写入顶层 approval 字段，行为数组留空，所有 coverage 条目钉为 `omitted`。
+- `deferred`：与 `omitted` 相同的 approval 要求与空行为数组，但 coverage 条目钉为 `deferred`。
 
-### Draft heuristics
+### Draft 启发式
 
-Stage 5B uses conservative name and kind checks only:
+Stage 5B 仅使用保守的名称与 kind 检查：
 
-- `button`, `btn`, `cta`, `submit`, `send` on region/component nodes draft
-  click events.
-- `tab`, `tabs`, `tabbar` on region/component nodes draft select events.
-- `input`, `field`, `search`, `composer` on region/component nodes draft a
-  change event plus a value slot.
-- Text nodes draft string data slots.
-- Media nodes with `assetRef` draft string URL data slots and emit a warning.
+- region/component 节点上 `button`、`btn`、`cta`、`submit`、`send` 起草 click events。
+- region/component 节点上 `tab`、`tabs`、`tabbar` 起草 select events。
+- region/component 节点上 `input`、`field`、`search`、`composer` 起草 change event 与 value slot。
+- Text 节点起草 string data slots。
+- 带 `assetRef` 的 media 节点起草 string URL data slots 并发出 warning。
 
-All heuristic candidates have confidence `low` or `medium`; `high` and
-`developer-provided` are reserved for explicit annotations or developer
-overrides.
+所有启发式 candidate 的 confidence 为 `low` 或 `medium`；`high` 与 `developer-provided` 保留给显式 annotation 或开发者 override。
 
-### Known limitations
+### 已知限制
 
-- No state-machine inference: without explicit annotations, `states` and
-  `stateTransitions` stay empty.
-- Annotation evidence is not consumed yet, even though schema entry points are
-  present.
-- Payload and data slot types only reach the `'string'` level in 5B.
-- Real `.sketch` contract golden fixtures are reserved for 5D, when the CLI
-  `contract` command and Gate 2 signal are introduced.
+- 无状态机推断：无显式 annotation 时 `states` 与 `stateTransitions` 留空。
+- Annotation evidence 尚未消费，尽管 schema 入口已存在。
+- Payload 与 data slot 类型在 5B 仅到 `'string'` 级别。
+- 真实 `.sketch` contract golden fixture 保留给 5D，待 CLI `contract` 命令与 Gate 2 信号引入。
 
-`body.coverage` is the single data source Stage 6 will use to generate
-`interaction-coverage.md`. Codegen should not infer coverage by re-reading
-events or states directly.
+`body.coverage` 是 Stage 6 生成 `interaction-coverage.md` 的唯一数据源。Codegen 不应通过重读 events 或 states 推断 coverage。
 
-## Component Plan (Stage 5C)
+## Component Plan（Stage 5C）
 
-`src/contract/` also owns the Stage 5C component-plan contract that sits
-between `InteractionSpec` and Stage 6 codegen. It provides
-`ComponentPlanSchema`, `ComponentPlanBodySchema`, `ComponentPlanModeSchema`,
-`assertComponentPlanIntegrity()`, and `deriveComponentPlan()`.
+`src/contract/` 还拥有 Stage 5C component-plan 契约，介于 `InteractionSpec` 与 Stage 6 codegen 之间。提供
+`ComponentPlanSchema`、`ComponentPlanBodySchema`、`ComponentPlanModeSchema`、
+`assertComponentPlanIntegrity()` 与 `deriveComponentPlan()`。
 
-### Status, mode, and approval
+### 状态、mode 与 approval
 
-`component-plan.status` stays on the existing three-state
-`ContractStatusSchema` (`draft | in-review | approved`); presentational vs
-interactive is a separate axis — `ComponentPlanModeSchema =
-z.enum(['presentational', 'interactive'])` — so the plan never confuses
-lifecycle with codegen archetype.
+`component-plan.status` 保持现有三态 `ContractStatusSchema`（`draft | in-review | approved`）；展示型 vs 交互式为独立轴 —— `ComponentPlanModeSchema = z.enum(['presentational', 'interactive'])` —— 计划不会混淆生命周期与 codegen 原型。
 
-`ComponentPlanApprovalSchema` is a `level`-discriminated union: an
-`interactive` plan signs off with `{ gate: 'gate-2', level: 'interactive',
-approvedBy, approvedAt }`, and a `presentational` plan signs off with the
-same fields plus `acknowledgedBehaviorStubbed: true`. The literal-`true`
-field forces an approver to physically acknowledge the plan is a behavior
-stub, instead of letting a `false` slide through and pretend the plan is
-functionally complete.
+`ComponentPlanApprovalSchema` 为 `level` 判别联合：`interactive` 计划用 `{ gate: 'gate-2', level: 'interactive', approvedBy, approvedAt }` 签收；`presentational` 计划用相同字段加 `acknowledgedBehaviorStubbed: true`。literal-`true` 字段强制审批人物理确认计划为行为 stub，而非让 `false` 滑过并假装功能完整。
 
-`status × mode × approval` consistency is owned by
-`ComponentPlanSchema.superRefine()` at parse time, not by the integrity
-validator. Holding a successful `ComponentPlanSchema.safeParse()` result is
-sufficient to know approval shape is consistent.
+`status × mode × approval` 一致性由 `ComponentPlanSchema.superRefine()` 在 parse 时拥有，而非完整性校验器。成功 `ComponentPlanSchema.safeParse()` 即足以知 approval 形状一致。
 
 ### Derive
 
 `deriveComponentPlan({ designIr, visualView, semanticView, interactionSpec, mode })`
-is a pure function — no IO, no clock, no `Math.random`. It:
+为纯函数 —— 无 IO、无时钟、无 `Math.random`。它：
 
-- validates the full hash chain across all four upstream artifacts and
-  writes `interactionSpecHash` on output;
-- rejects illegal `mode × interactionSpec.status` combinations (interactive
-  needs an `approved` spec; presentational needs `omitted` or `deferred`;
-  `draft` / `in-review` specs never derive a plan);
-- builds `rootComponent` from `semanticView.body.screen`, then maps each
-  `componentCandidate` to a `PlannedComponent` (kind→role table; primitive
-  kinds — text, media, icon, control, decorative — throw rather than coerce
-  to `'component'`);
-- in presentational mode emits no event handlers; `deferred` upstream
-  converts `dataModels` into optional `presentational-stub` props,
-  `omitted` ignores them with a warning;
-- in interactive mode wires events → handler props and data models →
-  required data props, attributing each binding to the deepest planned
-  component whose semantic ownership covers the binding's source node;
-- generates `layoutPlan` from upstream `layoutCandidates` and fills an
-  `absolute` fallback so every planned component has at least one layout
-  entry;
-- generates `assetPlan` from `media` / `icon` semantic nodes, looking up
-  `assetRef` via `primaryVisualNodeId`; missing refs warn, do not throw;
-- generates exports — root default plus one named per candidate — and
-  throws on PascalCase collisions (with both candidate ids in the error
-  message) rather than silently dedup-ing.
+- 校验四个上游 artifact 的完整 hash 链，并在输出上写入 `interactionSpecHash`；
+- 拒绝非法 `mode × interactionSpec.status` 组合（interactive 需要 `approved` spec；presentational 需要 `omitted` 或 `deferred`；`draft` / `in-review` spec 永不 derive plan）；
+- 从 `semanticView.body.screen` 构建 `rootComponent`，再将每个 `componentCandidate` 映射为 `PlannedComponent`（kind→role 表；primitive kind —— text、media、icon、control、decorative —— 抛出而非强制为 `'component'`）；
+- presentational mode 不发出 event handler；上游 `deferred` 将 `dataModels` 转为可选 `presentational-stub` props，`omitted` 忽略并 warning；
+- interactive mode 将 events → handler props、data models → required data props，每个 binding 归因于 semantic ownership 覆盖 binding 源节点的最深 planned component；
+- 从上游 `layoutCandidates` 生成 `layoutPlan`，并填充 `absolute` fallback，使每个 planned component 至少有一条 layout 条目；
+- 从 `media` / `icon` semantic 节点生成 `assetPlan`，经 `primaryVisualNodeId` 查找 `assetRef`；缺失 ref 警告，不抛出；
+- 生成 exports —— root default 加每个 candidate 一个 named —— PascalCase 冲突时抛出（错误消息含两个 candidate id），而非静默去重。
 
-Deterministic ids use a `<prefix>` + `stableSha256(stableJson({ form,
-...canonical fields })).slice(0, 12)` scheme: `pc_` for
-`PlannedComponent`, `pe_` for `PlannedExport`, `pl_` for `PlannedLayout`,
-`pa_` for `PlannedAsset`. No `Date.now`, no UUID, no counters.
+确定性 id 使用 `<prefix>` + `stableSha256(stableJson({ form, ...canonical fields })).slice(0, 12)` 方案：`pc_` PlannedComponent、`pe_` PlannedExport、`pl_` PlannedLayout、`pa_` PlannedAsset。无 `Date.now`、无 UUID、无计数器。
 
-### Wiring (Stage 5C-PR-3)
+### 接线（Stage 5C-PR-3）
 
-The canonical `ComponentPlanSchema` lives in `src/contract/component-plan-schema.ts`.
-`src/contract/index.ts` exports the schema, validator, and derive together
-as the public Stage 5C surface. `src/ir/views.ts` re-exports the canonical
-binding (and `ComponentPlanModeSchema`) for the handful of historical
-callers that imported it from `ir/views`. `src/ir/index.ts` deliberately
-stops forwarding `ComponentPlanSchema`, so the root barrel exports it
-exactly once via `export * from './contract'`.
+规范 `ComponentPlanSchema` 位于 `src/contract/component-plan-schema.ts`。
+`src/contract/index.ts` 将 schema、validator、derive 一并导出为 Stage 5C 公共面。
+`src/ir/views.ts` 为少数仍从 `ir/views` 导入的历史调用方重导出规范绑定（及 `ComponentPlanModeSchema`）。
+`src/ir/index.ts` 有意停止转发 `ComponentPlanSchema`，根 barrel 经 `export * from './contract'` 恰好导出一次。
 
-### Not in scope
+### 不在范围内
 
-5C still does not generate React / TS / BEM (Stage 6), does not provide a
-CLI entry (Stage 5D), and does not write artifacts to disk; the
-component-plan it returns is held in memory and round-trips through
-`ComponentPlanSchema` + `assertComponentPlanIntegrity` before being
-returned.
+5C 仍不生成 React / TS / BEM（Stage 6）、不提供 CLI 入口（Stage 5D）、不写 artifact 到磁盘；返回的 component-plan 在内存中经 `ComponentPlanSchema` + `assertComponentPlanIntegrity` 往返后返回。
 
-## Contract Runner (Stage 5D)
+## Contract Runner（Stage 5D）
 
-`src/contract/run-contract.ts` chains the four Stage 5 derive steps into one
-pass, and `src/contract/artifact-paths.ts` defines the stable artifact names
-plus a manifest builder. Both are **pure** — `d2c-core` performs no file IO.
-The disk-writing CLI lives in the Sketch skill
-(`skills/sketch-to-component/scripts`), keeping provider/output concerns out
-of core.
+`src/contract/run-contract.ts` 将四个 Stage 5 derive 步骤链接为一次 pass；
+`src/contract/artifact-paths.ts` 定义稳定 artifact 名称及 manifest 构建器。二者均为**纯** —— `d2c-core` 不做文件 IO。
+写磁盘的 CLI 在 Sketch skill（`skills/sketch-to-component/scripts`），将 provider/输出关注点排除在 core 之外。
 
 ### `runContract`
 
@@ -259,65 +163,42 @@ runContract({ designIr, visualView?, semanticView?, interactionSpec?, mode, inte
   => { visualView, semanticView, interactionSpec, componentPlan, warnings }
 ```
 
-Chains `deriveVisualView → deriveSemanticView → deriveInteractionSpec →
-deriveComponentPlan`. Same input ⇒ byte-identical output; no clock, no
-network, no IO. Input contract (flexible, but constraints are hard):
+链接 `deriveVisualView → deriveSemanticView → deriveInteractionSpec → deriveComponentPlan`。
+相同输入 ⇒ 字节级相同输出；无时钟、无网络、无 IO。输入契约（灵活，但约束是硬性的）：
 
-- `designIr` is required — the root anchor of the hash chain.
-- `visualView` / `semanticView` / `interactionSpec` are optional, but a
-  provided view MUST pass full hash-chain validation against its upstream;
-  a mismatch throws (never trusts a cached object).
-- `mode` / `interactionMode` / `approval` are caller-explicit. When the
-  interaction spec is derived (not provided), `interactionMode` is
-  **required** — `runContract` does not fall back to a default.
-- Provided views must form a contiguous prefix from `designIr`; the runner
-  derives only past the last provided one and never re-derives a provided
-  view. Warnings are the ordered merge of the steps that actually ran.
+- `designIr` 必填 —— hash 链的根锚点。
+- `visualView` / `semanticView` / `interactionSpec` 可选，但提供的 view 必须对上游通过完整 hash 链校验；不匹配则抛出（永不信任缓存对象）。
+- `mode` / `interactionMode` / `approval` 由调用方显式指定。当 interaction spec 被 derive（非提供）时，`interactionMode` **必填** —— `runContract` 不回落到默认值。
+- 提供的 view 必须形成从 `designIr` 起的连续前缀；runner 仅在最后提供的 view 之后 derive，永不 re-derive 已提供的 view。warnings 为实际运行步骤的有序合并。
 
-`runContract` never promotes an interaction spec to `approved`
-(`deriveInteractionSpec` only ever yields `draft | omitted | deferred`). So
-`mode='interactive'` succeeds only with a caller-provided `approved` spec;
-otherwise `deriveComponentPlan` throws (5C §3.2).
+`runContract` 永不将 interaction spec 提升为 `approved`（`deriveInteractionSpec` 仅产出 `draft | omitted | deferred`）。
+因此 `mode='interactive'` 仅在有调用方提供的 `approved` spec 时成功；否则 `deriveComponentPlan` 抛出（5C §3.2）。
 
-### Artifact names + manifest
+### Artifact 名称 + manifest
 
 ```ts
-ARTIFACT_FILENAMES; // design-ir.json (input root, in ir/) + the four
-// runContract outputs (in design-spec/)
+ARTIFACT_FILENAMES; // design-ir.json（输入根，在 ir/）+ 四个 runContract 输出（在 design-spec/）
 MANIFEST_FILENAME; // 'manifest.json'
-buildContractManifest(input, result); // pure; one entry per contract artifact:
+buildContractManifest(input, result); // 纯；每个 contract artifact 一条：
 // { filename, hash, origin: 'provided' | 'derived', generatedFrom }
 ```
 
-`hash` is always `stableSha256(stableJson(artifact))` of the final adopted
-artifact, so a provided view that validated and the same view derived hash
-identically — `origin` records provenance only.
+`hash` 始终为最终采用 artifact 的 `stableSha256(stableJson(artifact))`，
+因此已校验的 provided view 与 derive 出的相同 view hash 一致 —— `origin` 仅记录来源。
 
-### Not in scope (Stage 5D)
+### 不在范围内（Stage 5D）
 
-No codegen (Stage 6). The CLI's `--file` / `--design-ir` entries derive the
-full chain; reuse-input entries (feeding a pre-approved interaction-spec for
-interactive mode) are a later slice.
+无 codegen（Stage 6）。CLI 的 `--file` / `--design-ir` 入口 derive 完整链；reuse-input 入口（为 interactive mode 喂入预批准 interaction-spec）是后续切片。
 
-## Codegen (Stage 6)
+## Codegen（Stage 6）
 
-`src/codegen/` turns an **approved** `design-spec/` into a target component
-package. Everything here is **pure** (no IO / clock / randomness); the CLI owns
-disk writes.
+`src/codegen/` 将**已批准**的 `design-spec/` 转为目标组件包。此处一切**纯**（无 IO / 时钟 / 随机）；CLI 拥有磁盘写入。
 
-- `verifyDesignSpec(input)` — Gate 2 input validation: schema-parses the four
-  contract artifacts + manifest, reconciles each manifest hash, walks the
-  `generatedFrom` chain, and requires `component-plan.status === 'approved'`.
-  There is deliberately no `mode` parameter — mode is a property of the plan.
-- `approveComponentPlan(plan, signOff)` — sign-off: flips a draft plan to
-  `approved` (status + approval block only; the body is untouched).
-- `generateComponentPackage(input)` — dispatches on the plan's own
-  `body.target.framework`; rejects any non-approved plan. The React target emits
-  one `.tsx`/`.module.css`/`index.ts` per component, a package barrel,
-  `package.json`, a presentational README banner, and `interaction-coverage.md`
-  (formatted from the plan's coverage snapshot — never re-classified).
+- `verifyDesignSpec(input)` —— Gate 2 输入校验：schema 解析四个 contract artifact + manifest，核对每个 manifest hash，遍历 `generatedFrom` 链，要求 `component-plan.status === 'approved'`。故意无 `mode` 参数 —— mode 是 plan 的属性。
+- `approveComponentPlan(plan, signOff)` —— 签收：将 draft plan 翻转为 `approved`（仅 status + approval 块；body 不动）。
+- `generateComponentPackage(input)` —— 按 plan 自身 `body.target.framework` 分发；拒绝任何非 approved plan。React target 为每个组件发出 `.tsx`/`.module.css`/`index.ts`、包 barrel、`package.json`、presentational README banner 及 `interaction-coverage.md`（从 plan 的 coverage 快照格式化 —— 永不重新分类）。
 
-The generated `package.json` carries a `d2c` provenance block:
+生成的 `package.json` 携带 `d2c` 来源块：
 
 ```jsonc
 "d2c": {
@@ -330,22 +211,15 @@ The generated `package.json` carries a `d2c` provenance block:
 }
 ```
 
-### Hash semantics
+### Hash 语义
 
-The contract hash covers the **whole** artifact, including approval fields, so
-sign-off changes the `component-plan` hash and rewrites both
-`component-plan.json` and its `manifest.json` entry (architecture doc, "Gate 2
-artifact chain"). A contract-identity hash that excludes approval metadata is a
-noted future optimization.
+Contract hash 覆盖**整个** artifact，含 approval 字段，因此签收会改变 `component-plan` hash 并重写 `component-plan.json` 及其 `manifest.json` 条目（架构文档「Gate 2 artifact chain」）。排除 approval 元数据的 contract-identity hash 是 noted 的未来优化。
 
 ### Golden
 
-`fixtures/apps/react-vite/src/golden/` is the committed expected package for an
-approved, no-asset React `design-spec/`. It is one copy that serves two purposes: the
-`codegen-golden` test (in `skills/sketch-to-component/scripts`) compares
-generated bytes against it, and `npm run check:fixtures` compiles it via
-`tsc -b && vite build` to prove the output is build-clean. Regenerate it with
-the Sketch CLI:
+`fixtures/apps/react-vite/src/golden/` 是已提交的无资源、已批准 React `design-spec/` 的预期包。
+一份副本服务两个目的：`codegen-golden` 测试（在 `skills/sketch-to-component/scripts`）将生成字节与之比较，
+`npm run check:fixtures` 经 `tsc -b && vite build` 编译以证明输出可构建。用 Sketch CLI 重新生成：
 
 ```bash
 # from skills/sketch-to-component/scripts
@@ -357,10 +231,9 @@ npm run codegen  -- --spec <tmp>/design-spec --design-ir <ir> \
   --out <repo>/fixtures/apps/react-vite/src/golden
 ```
 
-### Not in scope (Stage 6 v1)
+### 不在范围内（Stage 6 v1）
 
-Interactive generation, asset emission, a second target, and the reuse-input CLI
-path are later slices.
+交互式生成、资源输出、第二 target 及 reuse-input CLI 路径为后续切片。
 
 ## Verification
 
@@ -369,5 +242,4 @@ npm run typecheck:d2c
 npm run test:d2c
 ```
 
-Repo-wide gates include this package through `npm run typecheck`,
-`npm run test:all`, and `npm run check:full`.
+全仓库门禁经 `npm run typecheck`、`npm run test:all` 与 `npm run check:full` 包含本包。

@@ -1,78 +1,64 @@
-# Contributing
+# 贡献指南
 
-This repo is a monorepo for AI skills, sample workspaces, and shared D2C
-packages. Keep changes small, verified, and easy for another maintainer to
-review.
+本仓库是 AI skills、sample 工作区与共享 D2C package 的 monorepo。请保持变更小而可验证，便于其他维护者 review。
 
-## Environment
+## 环境
 
-- Use Node.js 20 or newer. The pinned local version is in `.nvmrc`.
-- Install root workspace dependencies with `npm ci`.
-- Install React fixture app dependencies with
-  `npm ci --prefix fixtures/apps/react-vite` when touching fixture code or
-  running the full gate.
-- Install local Git hooks with `npx lefthook install`.
+- 使用 Node.js 20 或更高版本。本地固定版本见 `.nvmrc`。
+- 用 `npm ci` 安装根 workspace 依赖。
+- 若改动 fixture 代码或要跑完整门禁，还需执行
+  `npm ci --prefix fixtures/apps/react-vite` 安装 React fixture app 依赖。
+- 用 `npx lefthook install` 安装本地 Git hooks。
 
-## Before Editing
+## 开始改代码前
 
-1. Read the nearest README, architecture note, or workflow document for the
-   area you are changing.
-2. Identify whether the change belongs to `packages/`, `skills/`, `samples/`,
-   `fixtures/`, or `docs/`.
-3. Check existing tests and golden outputs before updating behavior.
+1. 阅读你改动区域最近的 README、架构说明或工作流文档。
+2. 判断变更属于 `packages/`、`skills/`、`samples/`、`fixtures/` 还是 `docs/`。
+3. 在改行为之前，先查看现有测试与 golden 输出。
 
-## Quality Gates
+## 质量门禁
 
-Run the narrowest useful command while developing, then run the full gate before
-opening a PR.
+开发过程中跑最窄但有用的命令，开 PR 前跑完整门禁。
 
-| Purpose                | Command                  |
-| ---------------------- | ------------------------ |
-| Lint repository code   | `npm run lint`           |
-| Auto-fix lint issues   | `npm run lint:fix`       |
-| Format repository      | `npm run format`         |
-| Check formatting       | `npm run format:check`   |
-| Type-check workspaces  | `npm run typecheck`      |
-| Run all tests          | `npm run test:all`       |
-| Build hands-on samples | `npm run build:samples`  |
-| Check fixture app      | `npm run check:fixtures` |
-| Full repository gate   | `npm run check:full`     |
+| 用途                 | 命令                     |
+| -------------------- | ------------------------ |
+| Lint 仓库代码        | `npm run lint`           |
+| 自动修复 lint 问题   | `npm run lint:fix`       |
+| 格式化仓库           | `npm run format`         |
+| 检查格式化           | `npm run format:check`   |
+| 类型检查各 workspace | `npm run typecheck`      |
+| 运行全部测试         | `npm run test:all`       |
+| 构建动手 samples     | `npm run build:samples`  |
+| 检查 fixture app     | `npm run check:fixtures` |
+| 完整仓库门禁         | `npm run check:full`     |
 
-`npm run check:full` is the expected local equivalent of CI.
+`npm run check:full` 是本地与 CI 等价的预期检查。
 
-## Change Boundaries
+## 变更边界
 
-- `packages/*` is shared code. Treat exported types and functions as public
-  contracts and document new public entry points.
-- `skills/*` is copyable skill source. Keep each skill self-contained and avoid
-  cross-skill dependencies unless they go through a shared package.
-- `samples/*/*` is reader-facing demonstration code. A sample should build and
-  explain what it teaches.
-- `fixtures/apps/*` are reusable app fixtures, not places for skill source.
-  `fixtures/shared/*` holds cross-fixture assets and design specs only.
-- `docs/` is for repo-level guidance and architecture context.
+- `packages/*` 是共享代码。把导出的类型与函数视为公共契约，并为新的公共入口补充文档。
+- `skills/*` 是可单独复制的 skill 源码。保持每个 skill 自包含；除非通过共享 package，否则避免跨 skill 依赖。
+- `samples/*/*` 是面向读者的演示代码。sample 应能构建，并说明它要教什么。
+- `fixtures/apps/*` 是可复用的 app fixture，不是 skill 源码所在地。
+  `fixtures/shared/*` 只放跨 fixture 的资产与设计规格。
+- `docs/` 只放仓库级指南与架构上下文。
 
-## Generated and Golden Artifacts
+## 生成物与 golden 产物
 
-- Do not edit golden outputs casually. If output changes, explain the behavior
-  change and run the owning tests.
-- Keep `inputs/` for samples stable after the sample lands. Evolve by adding a
-  new sample or regenerating the matching `design-spec/` intentionally.
-- Never commit `node_modules/`, build output, nested `.git/`, or local agent
-  scratch directories.
+- 不要随意编辑 golden 输出。若输出变了，请说明行为变更并运行所属测试。
+- sample 落地后保持 `inputs/` 稳定。若要演进，请新增 sample，或有意地重新生成对应的 `design-spec/`。
+- 不要提交 `node_modules/`、构建输出、嵌套的 `.git/` 或本地 agent 临时目录。
 
-## Comments and Docs
+## 注释与文档
 
-Prefer concise comments at boundaries that future maintainers must understand:
-public exports, parser-to-IR transitions, validation rules, and non-obvious test
-fixtures. Avoid comments that repeat the code. See
-[`docs/commenting-guide.md`](./docs/commenting-guide.md).
+在后续维护者必须理解的边界处写简洁注释：
+公共导出、parser→IR 过渡、校验规则，以及非典型的测试 fixture。
+避免重复代码含义的注释。参见 [`docs/commenting-guide.md`](./docs/commenting-guide.md)。
 
-## Pull Request Checklist
+## Pull Request 检查清单
 
-- [ ] The changed area has an appropriate README, architecture note, or inline
-      comment update.
-- [ ] New public APIs include comments or docs.
-- [ ] Generated outputs and golden fixtures were reviewed intentionally.
-- [ ] `npm run check:full` passes locally, or the skipped part is explained.
-- [ ] The PR description includes verification evidence.
+- [ ] 改动区域有对应的 README、架构说明或必要的行内注释更新。
+- [ ] 新的公共 API 带有注释或文档。
+- [ ] 生成输出与 golden fixture 经过有意 review。
+- [ ] 本地 `npm run check:full` 通过，或 PR 中说明了跳过的部分及原因。
+- [ ] PR 描述包含验证证据。

@@ -1,57 +1,48 @@
-# Agent Instructions
+# Agent 说明
 
-This file is for coding agents working in this repository. Human contributors
-should start with [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+本文件面向在本仓库中工作的编码 Agent。人类贡献者请从 [`CONTRIBUTING.md`](./CONTRIBUTING.md) 开始阅读。
 
-## Working Style
+## 工作方式
 
-- Inspect the real files before planning edits.
-- Keep changes scoped to the requested package, skill, sample, or document.
-- Preserve unrelated user changes and untracked local scratch directories.
-- Prefer established repo patterns over new abstractions.
-- Use `rg` / `rg --files` for discovery.
+- 在规划修改之前，先查看真实文件。
+- 将变更范围限制在所请求的 package、skill、sample 或文档内。
+- 保留与用户请求无关的本地修改，以及未跟踪的本地临时目录。
+- 优先采用仓库既有模式，而非引入新的抽象。
+- 使用 `rg` / `rg --files` 进行文件发现。
 
-## Repository Boundaries
+## 仓库边界
 
-- `packages/d2c-core/` contains shared D2C contracts and pipeline helpers. Treat
-  barrel exports as public API.
-- `skills/*` directories must remain understandable and copyable as individual
-  skills.
-- `samples/*/*` directories are hands-on reader workspaces. Do not make sample
-  implementations depend on raw `inputs/`; they should consume `design-spec/`.
-- `fixtures/apps/*` contains per-framework fixture apps checked by their own
-  install and build commands.
-- `docs/superpowers/plans/` contains planning artifacts and is excluded from the
-  formatter baseline.
+- `packages/d2c-core/` 包含共享的 D2C 契约与 pipeline 辅助工具。将 barrel export 视为公共 API。
+- `skills/*` 目录必须保持可理解、可单独复制为独立 skill。
+- `samples/*/*` 目录是供读者动手实践的 workspace。不要让 sample 实现依赖原始 `inputs/`；它们应消费 `design-spec/`。
+- `fixtures/apps/*` 包含各框架的 fixture 应用，通过各自的安装与构建命令进行校验。
+- `docs/superpowers/plans/` 包含规划产物，且已从 formatter 基线中排除。
 
-## Verification Matrix
+## 验证矩阵
 
-Use targeted checks while editing:
+编辑过程中使用有针对性的检查：
 
-- D2C core: `npm run typecheck:d2c` and `npm run test:d2c`
-- Sketch provider: `npm run typecheck:sketch` and `npm run test:sketch`
-- Image skeleton scripts: `npm run typecheck:image` and `npm run test:image`
-- HTML article skill: `npm run typecheck:html`
-- Samples: `npm run test:samples` and `npm run build:samples`
-- Fixture apps: `npm run check:fixtures`
+- D2C core：`npm run typecheck:d2c` 与 `npm run test:d2c`
+- Sketch provider：`npm run typecheck:sketch` 与 `npm run test:sketch`
+- Image skeleton scripts：`npm run typecheck:image` 与 `npm run test:image`
+- HTML article skill：`npm run typecheck:html`
+- Samples：`npm run test:samples` 与 `npm run build:samples`
+- Fixture apps：`npm run check:fixtures`
 
-Before claiming repo-wide completion, run `npm run check:full`.
+在声称全仓库工作已完成之前，请运行 `npm run check:full`。
 
-## Comments
+## 注释
 
-Add comments where they clarify contracts, public exports, provider boundaries,
-or unusual validation behavior. Do not add narration that merely repeats the
-next line of code. See [`docs/commenting-guide.md`](./docs/commenting-guide.md).
+在注释能阐明契约、公共导出、provider 边界或非典型校验行为时再添加。不要添加仅重复下一行代码的叙述性注释。参见 [`docs/commenting-guide.md`](./docs/commenting-guide.md)。
 
-## Commits
+## 提交
 
-Prefer reviewable commits by concern:
+按关注点拆分便于 review 的 commit：
 
-- tooling and config
-- mechanical formatting
-- CI and hooks
-- documentation
-- runtime or test behavior
+- 工具与配置
+- 机械性格式化
+- CI 与 hooks
+- 文档
+- 运行时或测试行为
 
-Do not mix broad formatting changes with behavioral changes unless the user
-explicitly asks for a single squashed result.
+除非用户明确要求单一 squashed 结果，否则不要将大范围格式化变更与行为变更混在同一 commit 中。

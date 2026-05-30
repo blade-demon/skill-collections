@@ -1,17 +1,17 @@
-# Large Directory Workflow
+# 大目录工作流
 
-Use this workflow after listing the target directory and before dispatching any signature subagents.
+在列出目标目录之后、派发任何 signature 子 agent 之前使用本工作流。
 
-## Trigger
+## 触发条件
 
-- 0 images: stop and ask for a directory containing screenshots.
-- 1-20 images: proceed with normal batching.
-- 21-50 images: use staged reading unless the user filters to a smaller subset.
-- More than 50 images: never run a flat full-directory pass automatically. Require either a filtered subset or a staged plan confirmed by the user.
+- 0 张图：停止并请求含截图的目录。
+- 1–20 张：正常分批继续。
+- 21–50 张：除非用户过滤为更小子集，否则使用分阶段读取。
+- 超过 50 张：永不自动对整目录做扁平全量 pass。须过滤子集或经用户确认的分阶段计划。
 
-## 21-50 Images: Two-Stage Reading
+## 21–50 张：两阶段读取
 
-Ask:
+询问：
 
 ```text
 The directory contains <N> images. Please choose:
@@ -20,27 +20,27 @@ B. Provide a filtered subset (list filenames, comma-separated; e.g., pending.png
 C. Cancel.
 ```
 
-If the user chooses A, run:
+若用户选 A，运行：
 
-| Stage   | Scope                | Signature depth                                    | Purpose                                       |
-| ------- | -------------------- | -------------------------------------------------- | --------------------------------------------- |
-| Stage A | Every image          | T/M/B top-level roles only; no container expansion | Build coarse groups cheaply                   |
-| Stage B | Selected images only | Full signature-spec signatures                     | Resolve ambiguity and support code generation |
+| Stage   | 范围       | Signature 深度                 | 目的                   |
+| ------- | ---------- | ------------------------------ | ---------------------- |
+| Stage A | 每张图     | 仅 T/M/B 顶层 role；不展开容器 | 低成本构建 coarse 组   |
+| Stage B | 仅选定图片 | 完整 signature-spec signature  | 消解歧义并支持代码生成 |
 
-Stage B includes only:
+Stage B 仅包括：
 
-- Inconsistent coarse groups.
-- Coarse signatures with unclear nested containers.
-- Files explicitly requested by the user.
-- At least one representative from each stable coarse group that will generate code.
+- 不一致的 coarse 组。
+- 嵌套容器不清晰的 coarse signature。
+- 用户显式请求的文件。
+- 每个将生成代码的稳定 coarse 组至少一名代表。
 
-Stage A dispatch uses `../prompts/coarse-signature-prompt.md` and validates with `protocols/coarse-signature-format.md`. Stage A returns only `T`/`M`/`B` top-level role arrays plus `needs_full_signature`; it must not return full slot expressions.
+Stage A 派发使用 `../prompts/coarse-signature-prompt.md`，用 `protocols/coarse-signature-format.md` 校验。Stage A 仅返回 `T`/`M`/`B` 顶层 role 数组及 `needs_full_signature`；不得返回完整 slot 表达式。
 
-Do not compare Stage A coarse signatures as final evidence. They only decide which files need full signatures.
+不要将 Stage A coarse signature 当作最终证据对比。它们仅决定哪些文件需要完整 signature。
 
-## More Than 50 Images
+## 超过 50 张
 
-Ask:
+询问：
 
 ```text
 The directory contains <N> images, which is too large for automatic full-directory processing.
@@ -50,26 +50,26 @@ B. Approve a staged plan: coarse scan all files, then full signatures only for a
 C. Cancel.
 ```
 
-If the user chooses B, restate the staged plan with expected batch count and wait for confirmation before dispatching.
+若用户选 B，重述分阶段计划及预期 batch 数，派发前等待确认。
 
-## Filename Pre-Grouping
+## 文件名预分组
 
-For more than 5 selected images, pre-group filenames before batching:
+超过 5 张选定图片时，分批前预分组文件名：
 
-| Rule                                                                                  | Grouping method               |
-| ------------------------------------------------------------------------------------- | ----------------------------- |
-| Filename contains status keyword (`pending`, `used`, `expired`, `active`, `disabled`) | Same candidate state group    |
-| Filename contains sequence keyword (`page1`, `page2`, `step1`, `step2`)               | Same candidate sequence group |
-| All other files                                                                       | Alphabetical fill             |
+| 规则                                                                     | 分组方法       |
+| ------------------------------------------------------------------------ | -------------- |
+| 文件名含状态关键词（`pending`、`used`、`expired`、`active`、`disabled`） | 同一候选状态组 |
+| 文件名含序列关键词（`page1`、`page2`、`step1`、`step2`）                 | 同一候选序列组 |
+| 其他所有文件                                                             | 字母序填充     |
 
-Candidate groups are semantic hints. Read batches are operational units of at most 5 images. If a candidate group exceeds 5 images, split it into multiple read batches but keep one candidate-group label.
+候选组为语义提示。读取 batch 为最多 5 张图的运营单元。若候选组超过 5 张，拆成多个读取 batch，但保留一个候选组标签。
 
-## Exit
+## 退出
 
-Exit this workflow with:
+以以下之一退出本工作流：
 
-- A filtered filename set, or
-- A confirmed staged plan, or
-- Cancellation.
+- 过滤后的文件名集，或
+- 已确认的分阶段计划，或
+- 取消。
 
-Then continue to signature dispatch.
+然后继续 signature 派发。

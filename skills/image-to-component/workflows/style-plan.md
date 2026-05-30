@@ -1,17 +1,17 @@
-# Style Plan Workflow
+# Style Plan 工作流
 
-Use this after Style Connect and before code generation when style hints are enabled. It converts confirmed style decisions into the `stylePlan` field consumed by `scripts/generate-skeleton`.
+在 Style Connect 之后、代码生成之前使用（当启用样式提示时）。将已确认的样式决策转为 `scripts/generate-skeleton` 消费的 `stylePlan` 字段。
 
-## Inputs
+## 输入
 
-- Validated `style_hints` from `protocols/style-context-spec.md`.
-- Confirmed `token-ledger.md` decisions from `workflows/style-connect.md`.
-- Component tree and component names from structural comparison and prop modeling.
-- Selected style stack: `css-modules` or `bem`.
+- 来自 `protocols/style-context-spec.md` 的已校验 `style_hints`。
+- 来自 `workflows/style-connect.md` 的已确认 `token-ledger.md` 决策。
+- 来自结构对比与 prop 建模的组件树与组件名。
+- 所选 style stack：`css-modules` 或 `bem`。
 
-## Output Contract
+## 输出契约
 
-Add `stylePlan` to the `SkeletonConfig` passed to `generate-skeleton`:
+向传给 `generate-skeleton` 的 `SkeletonConfig` 添加 `stylePlan`：
 
 ```json
 {
@@ -42,27 +42,27 @@ Add `stylePlan` to the `SkeletonConfig` passed to `generate-skeleton`:
 }
 ```
 
-## Rules
+## 规则
 
-- Treat screenshot-derived styles as inferred unless the user or project tokens confirm them.
-- Prefer confirmed token references such as `var(--space-md)` over hardcoded values.
-- Use hardcoded values only when Style Connect marked the row as `hardcoded`; include a `comment` describing the intended future token extraction.
-- Do not invent colors, exact pixel measurements, or font sizes from screenshots.
-- Do not let style hints alter the structural component tree.
-- Use lower kebab-case variant names because they become CSS class names or BEM modifiers.
-- Omit any style trait marked `skip` in the token ledger.
+- 将截图衍生样式视为 inferred，除非用户或项目 token 确认。
+- 优先使用已确认 token 引用如 `var(--space-md)`，而非硬编码值。
+- 仅当 Style Connect 将行标为 `hardcoded` 时使用硬编码值；包含描述 intended 未来 token 提取的 `comment`。
+- 不要从截图臆造颜色、精确像素或字号。
+- 不要让样式提示改变结构组件树。
+- variant 名使用 lower kebab-case，因其成为 CSS 类名或 BEM modifier。
+- 省略 token ledger 中标记 `skip` 的任何样式 trait。
 
-## Default Mapping Guidance
+## 默认映射指引
 
-| Style hint              | StylePlan use                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `density`               | Select spacing/gap token family, e.g. `--space-sm`, `--space-md`, `--space-lg`       |
-| `corner_radius`         | Select border-radius token, e.g. `--radius-sm`, `--radius-md`, `--radius-lg`         |
-| `shadow_presence`       | Select elevation/shadow token if confirmed                                           |
-| `type_hierarchy_levels` | Add typography TODO comments only unless project tokens are confirmed                |
-| `primary_action_count`  | Prefer existing button/component APIs; do not infer color without token confirmation |
-| `is_mobile_viewport`    | Use layout comments or mobile-first container styles, not fixed viewport dimensions  |
+| Style hint              | StylePlan 用法                                                           |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `density`               | 选择 spacing/gap token 族，如 `--space-sm`、`--space-md`、`--space-lg`   |
+| `corner_radius`         | 选择 border-radius token，如 `--radius-sm`、`--radius-md`、`--radius-lg` |
+| `shadow_presence`       | 若已确认则选择 elevation/shadow token                                    |
+| `type_hierarchy_levels` | 除非项目 token 已确认，否则仅添加 typography TODO 注释                   |
+| `primary_action_count`  | 优先现有 button/组件 API；无 token 确认时不推断颜色                      |
+| `is_mobile_viewport`    | 使用布局注释或 mobile-first 容器样式，而非固定视口尺寸                   |
 
-## Exit
+## 退出
 
-Exit with a complete `stylePlan` object or explicitly state that no style plan will be passed. Then run `workflows/code-generation.md`.
+以完整 `stylePlan` 对象退出，或显式说明不传递 style plan。然后运行 `workflows/code-generation.md`。

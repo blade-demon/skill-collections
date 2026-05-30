@@ -1,6 +1,5 @@
-# Shared Fixture Inputs
+# 共享 Fixture 输入
 
-This directory is reserved for assets, design specs, and notes that are reused
-by multiple fixture apps.
+本目录预留供多个 fixture 应用复用的资源、设计规格与说明。
 
-Keep framework-specific source code in `fixtures/apps/<target>/`.
+框架相关的源码请放在 `fixtures/apps/<target>/`。

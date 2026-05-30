@@ -1,12 +1,12 @@
-> **Code generation is script-driven.** Build a `SkeletonConfig` JSON object from the component tree and prop definitions from Step 9, plus `stylePlan` from Step 8 when style hints were enabled, then run:
+> **代码生成由脚本驱动。** 从 Step 9 的组件树与 prop 定义构建 `SkeletonConfig` JSON，Step 8 启用样式提示时加上 `stylePlan`，然后运行：
 >
 > ```bash
 > echo '<SkeletonConfig JSON>' | npm run generate-skeleton
 > ```
 >
-> The output is a `[{path, content}]` JSON array. Use this array as the file list for Step 11. Do **not** read `templates/` — those files have been removed.
+> 输出为 `[{path, content}]` JSON 数组。将该数组作为 Step 11 的文件列表。**不要**读取 `templates/` —— 那些文件已移除。
 >
-> **SkeletonConfig shape:**
+> **SkeletonConfig 形状：**
 >
 > ```json
 > {
@@ -34,55 +34,55 @@
 > }
 > ```
 
-# Code Generation Workflow
+# 代码生成工作流
 
-Use this after prop modeling.
+在 prop 建模之后使用。
 
-## Split Rules
+## 拆分规则
 
-- Root component owns `status`, shared data props, and composition.
-- Split by structural region: `T` header/status hero, `M` main content/card/media, `B` footer/action area, `O` overlay, `F` floating action.
-- Split a region when it is status-varying, repeated, resource-heavy, structurally non-trivial, or a distinct semantic region.
-- Static business-object regions should still be separate components when they are visually distinct.
-- Pass only the props a child needs. Do not pass the entire parent props object.
+- 根组件拥有 `status`、共享 data props 与组合。
+- 按结构区域拆分：`T` header/status hero、`M` main content/card/media、`B` footer/action area、`O` overlay、`F` floating action。
+- 当区域随 status 变化、重复、资源密集、结构非平凡或为 distinct 语义区域时拆分。
+- 静态业务对象区域在视觉 distinct 时仍应为独立组件。
+- 仅传递子组件需要的 props。不要传递整个 parent props 对象。
 
-## Class Composition
+## Class 组合
 
-- Follow `.image-to-component.rules.md` for the `cn` helper path.
-- React: use existing `cn`, `clsx`, or `classnames`; if rules authorize a missing helper, add it once at the configured path.
-- Vue: use native array/object bindings unless the project already uses a helper.
-- Do not hand-build long conditional class strings.
+- 遵循 `.image-to-component.rules.md` 的 `cn` helper 路径。
+- React：使用现有 `cn`、`clsx` 或 `classnames`；若 rules 授权缺失 helper，在配置路径添加一次。
+- Vue：使用原生 array/object 绑定，除非项目已有 helper。
+- 不要手工构建长条件 class 字符串。
 
-## Token Usage (From Style Connect)
+## Token 用法（来自 Style Connect）
 
-If Style Connect (Step 8) was run and produced a token-ledger:
+若 Step 8 运行 Style Connect 并产出 token-ledger：
 
-- **Provided tokens** (status: `provided` or `reused`) — Reference them directly in generated code.
-  - CSS: `color: var(--token-name);`
-  - SCSS: `color: $token-name;`
-  - Tailwind: Use the token class if the project exposes tokens as classes.
-- **Create tokens** (status: `create`) — Add a TODO comment and inline the value, or create placeholder CSS variables.
+- **Provided tokens**（status：`provided` 或 `reused`）—— 在生成代码中直接引用。
+  - CSS：`color: var(--token-name);`
+  - SCSS：`color: $token-name;`
+  - Tailwind：若项目将 token 暴露为 class 则使用 token class。
+- **Create tokens**（status：`create`）—— 添加 TODO 注释并内联值，或创建占位 CSS 变量。
   - `color: var(--new-token-name); /* TODO: define this token in design system */`
-- **Hardcoded tokens** (status: `hardcoded`) — Use TODO comments to mark for future extraction.
+- **Hardcoded tokens**（status：`hardcoded`）—— 用 TODO 标记待提取。
   - `color: #ff6b6b; /* TODO: extract to token --color-warning */`
-- **Skipped tokens** (status: `skip`) — Omit the style entirely; rely on browser defaults or inherited styles.
+- **Skipped tokens**（status：`skip`）—— 完全省略样式；依赖浏览器默认或继承。
 
-When a token status is not yet fully resolved at code generation time, check the token-ledger row and follow its `User action` column guidance.
+代码生成时若 token status 尚未完全 resolved，查 token-ledger 行并遵循 `User action` 列指引。
 
-## Style Plan Usage
+## Style Plan 用法
 
-If `workflows/style-plan.md` produced `SkeletonConfig.stylePlan`, include it in the JSON passed to `generate-skeleton`.
+若 `workflows/style-plan.md` 产出 `SkeletonConfig.stylePlan`，将其包含在传给 `generate-skeleton` 的 JSON 中。
 
-React generation consumes `stylePlan` now:
+React 生成现已消费 `stylePlan`：
 
-- CSS Modules: writes declarations into root and child `.module.css` files.
-- BEM: generates and imports root and child `.css` files only for components with style rules.
+- CSS Modules：将 declarations 写入 root 与子 `.module.css`。
+- BEM：仅为有 style rules 的组件生成并 import root 与子 `.css`。
 
-Vue generation may ignore `stylePlan` until Vue style support is implemented. Do not claim Vue style generation unless tests cover it.
+Vue 生成在实现 Vue 样式支持前可忽略 `stylePlan`。除非测试覆盖，不要声称 Vue 样式生成。
 
-## Template Selection
+## 模板选择
 
-Read exactly one template based on Step 1 choices:
+根据 Step 1 选择恰好读一个模板：
 
 | Framework | Language                 | Style stack     | Template                             |
 | --------- | ------------------------ | --------------- | ------------------------------------ |
@@ -95,15 +95,15 @@ Read exactly one template based on Step 1 choices:
 | Vue 2     | TypeScript or JavaScript | CSS Modules     | `templates/vue2-sfc-css-modules.md`  |
 | Vue 2     | TypeScript or JavaScript | plain CSS + BEM | `templates/vue2-sfc-bem.md`          |
 
-Never mix TypeScript and JavaScript syntax. If the user selected an unsupported framework, run `degraded-mode.md` and output only structural guidance.
+永不混用 TypeScript 与 JavaScript 语法。若用户选择不支持 framework，运行 `degraded-mode.md` 且仅输出结构指引。
 
-## Directory Tree Rules
+## 目录树规则
 
-- The code skeleton must match the planned tree exactly.
-- React CSS Modules list a root `.module.css` and each child component `.module.css`.
-- Vue CSS Modules use `<style module>` inside each SFC by default.
-- React + JavaScript uses `types.js` with JSDoc typedefs, not `types.ts`.
+- 代码 skeleton 须与计划树完全一致。
+- React CSS Modules 列出 root `.module.css` 与每个子组件 `.module.css`。
+- Vue CSS Modules 默认在每个 SFC 内用 `<style module>`。
+- React + JavaScript 用带 JSDoc typedef 的 `types.js`，非 `types.ts`。
 
-## Exit
+## 退出
 
-Exit with a complete directory tree and skeleton content or file write plan ready for `output-and-writing.md`.
+以完整目录树与 skeleton 内容或文件写入计划退出，供 `output-and-writing.md` 使用。

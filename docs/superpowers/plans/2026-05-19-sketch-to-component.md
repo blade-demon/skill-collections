@@ -1,65 +1,62 @@
-> **⚠️ DEPRECATED (2026-05-21).** This plan predates the shared design-source
-> architecture. It targets a standalone SketchMCP → CSS Modules generator, which
-> conflicts with the current direction (provider-neutral `d2c-core` + a Sketch raw
-> extractor feeding a shared pipeline). Superseded by
+> **⚠️ 已弃用（2026-05-21）。** 本计划早于共享设计源架构。它面向独立的 SketchMCP → CSS Modules 生成器，与当前方向（provider 中立的 `d2c-core` + Sketch raw 提取器汇入共享管线）冲突。已被
 > [`../../../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md`](../../../skills/sketch-to-component/docs/stage-2-extract-raw-outline.md)
-> and [`../../design-source-to-component-implementation-plan.md`](../../design-source-to-component-implementation-plan.md).
-> Kept for history only — do not implement from this file.
+> 与 [`../../design-source-to-component-implementation-plan.md`](../../design-source-to-component-implementation-plan.md) 取代。
+> 仅作历史留存 —— **不要**按本文件实现。
 
-# Sketch-to-Component Skill Implementation Plan
+# Sketch-to-Component Skill 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **给 agent 工作者：** 必须使用子技能：推荐 `superpowers:subagent-driven-development`，也可使用 `superpowers:executing-plans`，逐任务执行本计划。步骤使用 checkbox（`- [ ]`）语法跟踪。
 
-**Goal:** Build a `sketch-to-component` skill that converts a Sketch Frame selected in the local Sketch app to pixel-faithful React + TypeScript + CSS Modules code, mapping Symbol Masters to reusable components with Overrides → typed props.
+**目标：** 构建 `sketch-to-component` skill，将本地 Sketch 应用中选中的 Frame 转为像素级忠实的 React + TypeScript + CSS Modules 代码，把 Symbol Master 映射为可复用组件，Override → 类型化 props。
 
-**Architecture:** Two-stage pipeline with **IR JSON as the contract** between roles. **Stage 1 — Extractor (designer-only)**: a JS script POSTed to the configured SketchMCP server (default `http://localhost:31126/mcp`, tool `run_code`) walks the selected layer subtree, in-memory exports Image base64s, and emits a Zod-validated IR JSON. The designer commits that IR to the repo. **Stage 2 — Generator (every developer)**: a TS CLI reads the committed IR and emits one `.tsx` + `.module.css` per Symbol Master plus a root component for the Frame; image assets are written to `assets/`. **No frontend developer needs Sketch installed.** A `sketch-to-component.config.json` at the repo root + `SKETCH_MCP_URL` env var control the MCP endpoint for designers. Layout is absolute positioning (real-world Frame `375×1173` in fixture has zero Stack layouts; flex sizing is a Phase 2 concern). Override types become typed optional props on the Master component.
+**架构：** 两阶段管线，**IR JSON 作为角色之间的契约**。**阶段 1 — 提取器（仅设计师）**：一段 JS 脚本 POST 到配置的 SketchMCP 服务（默认 `http://localhost:31126/mcp`，工具 `run_code`），遍历选中图层子树，在内存中导出 Image base64，并输出经 Zod 校验的 IR JSON。设计师将该 IR 提交到仓库。**阶段 2 — 生成器（所有开发者）**：TS CLI 读取已提交的 IR，为每个 Symbol Master 输出一对 `.tsx` + `.module.css`，并为 Frame 输出根组件；图片资源写入 `assets/`。**前端开发者无需安装 Sketch。** 仓库根目录的 `sketch-to-component.config.json` + 环境变量 `SKETCH_MCP_URL` 控制设计师使用的 MCP 端点。布局为绝对定位（fixture 中真实 Frame `375×1173` 无 Stack 布局；flex 尺寸属 Phase 2）。Override 类型变成 Master 组件上的可选类型化 props。
 
-**Tech Stack:** TypeScript 5, Node 20+, Zod 3 (IR validation), Vitest 3 (tests), tsx (runner). Sketch JS API for extraction. Mirrors the existing `skills/image-to-component/scripts/` package conventions (private, ESM, tsx-driven).
+**技术栈：** TypeScript 5、Node 20+、Zod 3（IR 校验）、Vitest 3（测试）、tsx（运行器）。提取使用 Sketch JS API。镜像现有 `skills/image-to-component/scripts/` 的 package 约定（private、ESM、tsx 驱动）。
 
-**Real fixture (already inspected via MCP):** `/Users/blade/Desktop/figma-mcp%E6%B5%8B%E8%AF%95.sketch` → Page 1 root Frame `2.0-1备份 21` (375×1173, 137 nodes, depth 8, 13 SymbolInstances over 9 unique Masters, 29 Texts, 4 Images, 0 Stacks). Override histogram shows the property set the generator MUST handle: `stringValue`, `textColor/Size/Weight/HAlign/Decoration`, `color:fill-{0..6}`, `color:border-{0,1}`, `color:shadow-0`, `color:innershadow-0`, `isVisible`, `symbolID`, `layerStyle`, `fillColor`.
+**真实 fixture（已通过 MCP 检视）：** `/Users/blade/Desktop/figma-mcp%E6%B5%8B%E8%AF%95.sketch` → Page 1 根 Frame `2.0-1备份 21`（375×1173，137 节点，深度 8，9 个唯一 Master 上的 13 个 SymbolInstance，29 个 Text，4 个 Image，0 个 Stack）。Override 直方图展示生成器**必须**处理的属性集：`stringValue`、`textColor/Size/Weight/HAlign/Decoration`、`color:fill-{0..6}`、`color:border-{0,1}`、`color:shadow-0`、`color:innershadow-0`、`isVisible`、`symbolID`、`layerStyle`、`fillColor`。
 
-**Out of scope for this plan (deferred):** Stack layouts (none in fixture), gradient fills, mask chains, blur/progressive blur, masking modes, font-loading verification, design-token JSON export (color variables emit CSS vars but no separate token file).
+**本计划范围外（延后）：** Stack 布局（fixture 中无）、渐变填充、蒙版链、模糊/渐进模糊、蒙版模式、字体加载验证、设计 token JSON 导出（颜色变量输出 CSS var，但不单独出 token 文件）。
 
 ---
 
-## File Structure
+## 文件结构
 
 ```
 skills/sketch-to-component/
-├── SKILL.md                              # Skill entry; designer vs developer workflows
+├── SKILL.md                              # Skill 入口；设计师 vs 开发者工作流
 ├── docs/
-│   ├── ir-schema.md                      # IR JSON shape reference
-│   ├── override-mapping.md               # Override property → React/CSS mapping table
-│   └── deployment.md                     # How to share IRs vs share a central MCP
+│   ├── ir-schema.md                      # IR JSON 形态参考
+│   ├── override-mapping.md               # Override 属性 → React/CSS 映射表
+│   └── deployment.md                     # 如何共享 IR vs 共享中央 MCP
 ├── workflows/
-│   ├── designer-publish-ir.md            # Designer: extract from Sketch & commit IR
-│   ├── developer-build.md                # Developer: read committed IR & generate code
-│   └── verify-output.md                  # How to validate generated code compiles & matches
+│   ├── designer-publish-ir.md            # 设计师：从 Sketch 提取并提交 IR
+│   ├── developer-build.md                # 开发者：读取已提交 IR 并生成代码
+│   └── verify-output.md                  # 如何校验生成代码可编译且匹配
 ├── protocols/
-│   ├── mcp-extractor-contract.md         # The script body sent to run_code & its IR contract
-│   └── config-schema.md                  # sketch-to-component.config.json shape
+│   ├── mcp-extractor-contract.md         # 发给 run_code 的脚本体及其 IR 契约
+│   └── config-schema.md                  # sketch-to-component.config.json 形态
 └── scripts/
-    ├── package.json                      # private, ESM, tsx, vitest
+    ├── package.json                      # private、ESM、tsx、vitest
     ├── tsconfig.json
     ├── vitest.config.ts
     └── src/
         ├── ir/
-        │   ├── schema.ts                 # Zod schemas + inferred types
+        │   ├── schema.ts                 # Zod schema + 推断类型
         │   └── __tests__/schema.test.ts
         ├── config/
-        │   ├── load.ts                   # Read+validate sketch-to-component.config.json
+        │   ├── load.ts                   # 读取并校验 sketch-to-component.config.json
         │   └── __tests__/load.test.ts
         ├── extractor/
-        │   ├── extract.js                # Body for run_code; pure JS, runs inside Sketch
-        │   ├── client.ts                 # POSTs to MCP URL, parses result
-        │   └── __tests__/client.test.ts  # Mocked fetch test
+        │   ├── extract.js                # run_code 脚本体；纯 JS，在 Sketch 内运行
+        │   ├── client.ts                 # POST 到 MCP URL，解析结果
+        │   └── __tests__/client.test.ts  # Mock fetch 测试
         ├── generator/
-        │   ├── naming.ts                 # Sanitize names → PascalCase / valid CSS ident
-        │   ├── css.ts                    # Style → CSS rule string
-        │   ├── tsx.ts                    # Node tree → JSX string
-        │   ├── symbols.ts                # Symbol Master → component file emitter
-        │   ├── overrides.ts              # Override → prop name/type/default & call-site arg
-        │   ├── index.ts                  # Top-level: ir → { files: Record<path, content> }
+        │   ├── naming.ts                 # 名称清理 → PascalCase / 合法 CSS 标识符
+        │   ├── css.ts                    # Style → CSS 规则字符串
+        │   ├── tsx.ts                    # 节点树 → JSX 字符串
+        │   ├── symbols.ts                # Symbol Master → 组件文件发射器
+        │   ├── overrides.ts              # Override → prop 名/类型/默认值与调用点参数
+        │   ├── index.ts                  # 顶层：ir → { files: Record<path, content> }
         │   └── __tests__/
         │       ├── naming.test.ts
         │       ├── css.test.ts
@@ -67,59 +64,59 @@ skills/sketch-to-component/
         │       ├── overrides.test.ts
         │       └── symbols.test.ts
         ├── assets/
-        │   └── write-images.ts           # Decode base64 → disk
-        ├── cli.ts                        # CLI: sync (designer) / build (dev) / extract / generate
+        │   └── write-images.ts           # base64 解码 → 落盘
+        ├── cli.ts                        # CLI：sync（设计师）/ build（开发）/ extract / generate
         └── tests/
             └── fixtures/
-                ├── tiny-ir.json          # Hand-authored minimal IR for unit tests
-                ├── frame-ir.json         # Real extracted IR (commit after first run)
-                └── tiny-config.json      # Hand-authored minimal config for unit tests
+                ├── tiny-ir.json          # 手写最小 IR，供单元测试
+                ├── frame-ir.json         # 真实提取的 IR（首次运行后提交）
+                └── tiny-config.json      # 手写最小 config，供单元测试
 ```
 
-**Repo-level artifact (lives in the consuming project, not in this skill):**
+**仓库级产物（位于消费方项目，不在本 skill 内）：**
 
 ```
 <consumer-project>/
-├── sketch-to-component.config.json       # MCP URL, irDir, outDir, frame manifest
-└── design/sketch-ir/                     # Committed IR JSONs (one per Frame)
+├── sketch-to-component.config.json       # MCP URL、irDir、outDir、frame 清单
+└── design/sketch-ir/                     # 已提交的 IR JSON（每个 Frame 一份）
     ├── home.json
     └── settings.json
 ```
 
-**Out path:** Generator writes to a caller-supplied directory (default `out/`). Each Symbol Master → `<sanitized>.tsx` + `<sanitized>.module.css`. Root → `Frame.tsx` + `Frame.module.css`. Images → `assets/<short-hash>.png`. A `tokens.css` holds `:root` Color Variable definitions if any are referenced.
+**输出路径：** 生成器写入调用方指定目录（默认 `out/`）。每个 Symbol Master → `<sanitized>.tsx` + `<sanitized>.module.css`。根 → `Frame.tsx` + `Frame.module.css`。图片 → `assets/<short-hash>.png`。若有引用，`tokens.css` 存放 `:root` 颜色变量定义。
 
 ---
 
-## Task 1: Skill scaffold
+## 任务 1：Skill 脚手架
 
-**Files:**
-- Create: `skills/sketch-to-component/SKILL.md`
+**文件：**
+- 创建：`skills/sketch-to-component/SKILL.md`
 
-- [ ] **Step 1: Write SKILL.md**
+- [ ] **步骤 1：编写 SKILL.md**
 
 ```markdown
 ---
 name: sketch-to-component
-description: Use when the user wants to convert a Sketch Frame into pixel-faithful React + TypeScript + CSS Modules code. Two roles — designers run extract to publish a versioned IR JSON via the SketchMCP server; developers run generate against the committed IR with no Sketch installation needed. Triggers on phrases like "convert this Sketch frame", "generate React from Sketch", "build from sketch IR", or when a sketch-to-component.config.json exists.
+description: 当用户想把 Sketch Frame 转为像素级忠实的 React + TypeScript + CSS Modules 代码时使用。两种角色 —— 设计师通过 SketchMCP 服务运行 extract 发布带版本的 IR JSON；开发者对已提交的 IR 运行 generate，无需安装 Sketch。触发短语如 "convert this Sketch frame"、"generate React from Sketch"、"build from sketch IR"，或存在 sketch-to-component.config.json 时。
 ---
 
 # sketch-to-component
 
-## Overview
+## 概览
 
-**IR JSON is the contract between design and code.** Pipeline has two roles:
+**IR JSON 是设计与代码之间的契约。** 管线有两种角色：
 
-- **Designer (has Sketch + SketchMCP):** runs `npm run sync <name>`. This extracts the selected Frame from Sketch, validates as IR, writes to `design/sketch-ir/<name>.json`, and generates code. They commit both the IR and the generated code.
-- **Developer (no Sketch needed):** runs `npm run build <name>`. This reads the committed IR and regenerates code. Used in CI and when refactoring the generator.
+- **设计师（有 Sketch + SketchMCP）：** 运行 `npm run sync <name>`。从 Sketch 提取选中 Frame，校验为 IR，写入 `design/sketch-ir/<name>.json` 并生成代码。同时提交 IR 与生成代码。
+- **开发者（无需 Sketch）：** 运行 `npm run build <name>`。读取已提交 IR 并重新生成代码。用于 CI 与重构生成器时。
 
-Each Sketch Symbol Master becomes one React component file; its Overrides become typed optional props on that component.
+每个 Sketch Symbol Master 对应一个 React 组件文件；其 Override 变成该组件上的可选类型化 props。
 
-## Prerequisites
+## 前置条件
 
-### Designer machine (extract path)
+### 设计师机器（extract 路径）
 
-- Sketch.app installed and running, with the target document open and a Frame selected
-- SketchMCP responding at the configured URL (default `http://localhost:31126/mcp`). Verify:
+- 已安装并运行 Sketch.app，目标文档已打开且选中了 Frame
+- SketchMCP 在配置 URL 响应（默认 `http://localhost:31126/mcp`）。验证：
 
   ```bash
   curl -sS -X POST $SKETCH_MCP_URL \
@@ -128,16 +125,16 @@ Each Sketch Symbol Master becomes one React component file; its Overrides become
     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
   ```
 
-  Expect `serverInfo.name == "SketchMCP"`.
+  预期 `serverInfo.name == "SketchMCP"`。
 
-### Developer machine (build path)
+### 开发者机器（build 路径）
 
-- Node 20+. **No Sketch installation required.**
-- The repo has `sketch-to-component.config.json` and at least one IR JSON under `irDir`.
+- Node 20+。**无需安装 Sketch。**
+- 仓库有 `sketch-to-component.config.json`，且 `irDir` 下至少有一份 IR JSON。
 
-## Configuration
+## 配置
 
-A `sketch-to-component.config.json` at the consumer repo root (validated by `src/config/load.ts`):
+消费方仓库根目录的 `sketch-to-component.config.json`（由 `src/config/load.ts` 校验）：
 
 ```json
 {
@@ -151,43 +148,43 @@ A `sketch-to-component.config.json` at the consumer repo root (validated by `src
 }
 ```
 
-`mcpUrl` can be overridden by the `SKETCH_MCP_URL` env var. `irDir` and `outDir` are resolved relative to the config file's directory.
+`mcpUrl` 可由环境变量 `SKETCH_MCP_URL` 覆盖。`irDir` 与 `outDir` 相对于配置文件所在目录解析。
 
-## Routing Map
+## 路由表
 
-| Need | Read |
+| 需求 | 阅读 |
 |---|---|
-| IR shape reference | `docs/ir-schema.md` |
-| Override → React/CSS mapping table | `docs/override-mapping.md` |
-| Deployment options (local vs shared MCP) | `docs/deployment.md` |
-| Designer flow — extract & commit IR | `workflows/designer-publish-ir.md` |
-| Developer flow — build from IR | `workflows/developer-build.md` |
-| Verifying generated output | `workflows/verify-output.md` |
-| The extractor script body & MCP contract | `protocols/mcp-extractor-contract.md` |
-| Config file schema | `protocols/config-schema.md` |
+| IR 形态参考 | `docs/ir-schema.md` |
+| Override → React/CSS 映射表 | `docs/override-mapping.md` |
+| 部署选项（本地 vs 共享 MCP） | `docs/deployment.md` |
+| 设计师流程 —— 提取并提交 IR | `workflows/designer-publish-ir.md` |
+| 开发者流程 —— 从 IR 构建 | `workflows/developer-build.md` |
+| 校验生成输出 | `workflows/verify-output.md` |
+| extractor 脚本体与 MCP 契约 | `protocols/mcp-extractor-contract.md` |
+| 配置文件 schema | `protocols/config-schema.md` |
 
-## Scripts
+## 脚本
 
-From the scripts folder:
+在 scripts 目录下：
 
-| Command | Audience | Purpose |
+| 命令 | 受众 | 用途 |
 |---|---|---|
-| `npm install` | All | Once on first use |
-| `npm test` | All | Run Vitest suite |
-| `npm run sync -- --name home --config <path>` | Designer | extract → write IR → generate (no extra step) |
-| `npm run build -- --name home --config <path>` | Developer | read committed IR → generate (no Sketch needed) |
-| `npm run extract -- --out path.json --url <mcpUrl>` | Designer | low-level: extract only |
-| `npm run generate -- --ir path.json --out dir/` | All | low-level: generate only |
+| `npm install` | 全部 | 首次使用时执行一次 |
+| `npm test` | 全部 | 运行 Vitest 套件 |
+| `npm run sync -- --name home --config <path>` | 设计师 | extract → 写 IR → generate（一步完成） |
+| `npm run build -- --name home --config <path>` | 开发者 | 读已提交 IR → generate（无需 Sketch） |
+| `npm run extract -- --out path.json --url <mcpUrl>` | 设计师 | 底层：仅 extract |
+| `npm run generate -- --ir path.json --out dir/` | 全部 | 底层：仅 generate |
 
-## Limitations
+## 限制
 
-- Layout is absolute positioning. Stack layouts and Flex sizing are not yet emitted.
-- Gradient fills, mask chains, progressive blur are not yet emitted.
-- A Symbol Instance with a `symbolID` override (nested symbol swap) is inlined rather than abstracted, to keep the prop model simple.
-- Sharing the SketchMCP server across a team requires an out-of-band auth/network solution (Tailscale, mTLS, etc.) because MCP itself has no authentication — see `docs/deployment.md`.
+- 布局为绝对定位。尚未输出 Stack 布局与 Flex 尺寸。
+- 尚未输出渐变填充、蒙版链、渐进模糊。
+- 带 `symbolID` override 的 Symbol Instance（嵌套 symbol 替换）会内联而非抽象，以保持 prop 模型简单。
+- 团队共享 SketchMCP 需要带外 auth/网络方案（Tailscale、mTLS 等），因 MCP 本身无认证 —— 见 `docs/deployment.md`。
 ```
 
-- [ ] **Step 2: Commit**
+- [ ] **步骤 2：提交**
 
 ```bash
 git add skills/sketch-to-component/SKILL.md
@@ -196,14 +193,14 @@ git commit -m "feat(sketch-to-component): scaffold skill entry"
 
 ---
 
-## Task 2: Scripts package setup
+## 任务 2：Scripts package 搭建
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/package.json`
-- Create: `skills/sketch-to-component/scripts/tsconfig.json`
-- Create: `skills/sketch-to-component/scripts/vitest.config.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/package.json`
+- 创建：`skills/sketch-to-component/scripts/tsconfig.json`
+- 创建：`skills/sketch-to-component/scripts/vitest.config.ts`
 
-- [ ] **Step 1: Write package.json**
+- [ ] **步骤 1：编写 package.json**
 
 ```json
 {
@@ -230,7 +227,7 @@ git commit -m "feat(sketch-to-component): scaffold skill entry"
 }
 ```
 
-- [ ] **Step 2: Write tsconfig.json**
+- [ ] **步骤 2：编写 tsconfig.json**
 
 ```json
 {
@@ -250,7 +247,7 @@ git commit -m "feat(sketch-to-component): scaffold skill entry"
 }
 ```
 
-- [ ] **Step 3: Write vitest.config.ts**
+- [ ] **步骤 3：编写 vitest.config.ts**
 
 ```ts
 import { defineConfig } from 'vitest/config';
@@ -263,15 +260,15 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 4: Install**
+- [ ] **步骤 4：安装依赖**
 
 ```bash
 cd skills/sketch-to-component/scripts && npm install
 ```
 
-Expected: lockfile written, `node_modules/` populated, exit 0.
+预期：写入 lockfile，`node_modules/` 已填充，退出码 0。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add skills/sketch-to-component/scripts/package.json skills/sketch-to-component/scripts/tsconfig.json skills/sketch-to-component/scripts/vitest.config.ts skills/sketch-to-component/scripts/package-lock.json
@@ -280,13 +277,13 @@ git commit -m "feat(sketch-to-component): scripts package skeleton"
 
 ---
 
-## Task 3: IR — primitive schemas
+## 任务 3：IR — primitive schema
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/ir/schema.ts`
-- Create: `skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/ir/schema.ts`
+- 创建：`skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
 
-- [ ] **Step 1: Write failing test for primitive schemas**
+- [ ] **步骤 1：编写 primitive schema 的失败测试**
 
 ```ts
 // src/ir/__tests__/schema.test.ts
@@ -308,15 +305,15 @@ describe('IR primitives', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 cd skills/sketch-to-component/scripts && npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: FAIL `Cannot find module '../schema.js'`.
+预期：失败，提示 `Cannot find module '../schema.js'`。
 
-- [ ] **Step 3: Implement primitives**
+- [ ] **步骤 3：实现 primitives**
 
 ```ts
 // src/ir/schema.ts
@@ -334,15 +331,15 @@ export const RectSchema = z.object({
 export type Rect = z.infer<typeof RectSchema>;
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: 3 passed.
+预期：3 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add skills/sketch-to-component/scripts/src/ir/schema.ts skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts
@@ -351,16 +348,16 @@ git commit -m "feat(sketch-to-component): IR primitive schemas (Color, Rect)"
 
 ---
 
-## Task 4: IR — style schemas
+## 任务 4：IR — style schema
 
-**Files:**
-- Modify: `skills/sketch-to-component/scripts/src/ir/schema.ts`
-- Modify: `skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
+**文件：**
+- 修改：`skills/sketch-to-component/scripts/src/ir/schema.ts`
+- 修改：`skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
 
-- [ ] **Step 1: Append failing tests**
+- [ ] **步骤 1：追加失败测试**
 
 ```ts
-// append to src/ir/__tests__/schema.test.ts
+// 追加到 src/ir/__tests__/schema.test.ts
 import { StyleSchema } from '../schema.js';
 
 describe('Style', () => {
@@ -384,17 +381,17 @@ describe('Style', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: FAIL on missing `StyleSchema` export.
+预期：因缺少 `StyleSchema` 导出而失败。
 
-- [ ] **Step 3: Implement Style schemas**
+- [ ] **步骤 3：实现 Style schema**
 
-Append to `src/ir/schema.ts`:
+追加到 `src/ir/schema.ts`：
 
 ```ts
 export const FillSchema = z.object({
@@ -442,15 +439,15 @@ export const StyleSchema = z.object({
 export type Style = z.infer<typeof StyleSchema>;
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: 5 passed.
+预期：5 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/ir/
@@ -459,16 +456,16 @@ git commit -m "feat(sketch-to-component): IR Style schemas (fills, borders, shad
 
 ---
 
-## Task 5: IR — text & node schemas
+## 任务 5：IR — text 与 node schema
 
-**Files:**
-- Modify: `skills/sketch-to-component/scripts/src/ir/schema.ts`
-- Modify: `skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
+**文件：**
+- 修改：`skills/sketch-to-component/scripts/src/ir/schema.ts`
+- 修改：`skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
 
-- [ ] **Step 1: Append failing tests**
+- [ ] **步骤 1：追加失败测试**
 
 ```ts
-// append
+// 追加
 import { NodeSchema } from '../schema.js';
 
 describe('Node', () => {
@@ -503,17 +500,17 @@ describe('Node', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: FAIL on missing `NodeSchema` export.
+预期：因缺少 `NodeSchema` 导出而失败。
 
-- [ ] **Step 3: Implement Node union with recursion**
+- [ ] **步骤 3：实现带递归的 Node 联合类型**
 
-Append to `src/ir/schema.ts`:
+追加到 `src/ir/schema.ts`：
 
 ```ts
 const BaseNodeProps = {
@@ -622,15 +619,15 @@ export const NodeSchema: z.ZodType<NodeType> = z.lazy(() =>
 );
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: 7 passed.
+预期：7 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/ir/
@@ -639,16 +636,16 @@ git commit -m "feat(sketch-to-component): IR Node union (Text, Image, Shape, Gro
 
 ---
 
-## Task 6: IR — Symbol Master & root document
+## 任务 6：IR — Symbol Master 与根文档
 
-**Files:**
-- Modify: `skills/sketch-to-component/scripts/src/ir/schema.ts`
-- Modify: `skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
+**文件：**
+- 修改：`skills/sketch-to-component/scripts/src/ir/schema.ts`
+- 修改：`skills/sketch-to-component/scripts/src/ir/__tests__/schema.test.ts`
 
-- [ ] **Step 1: Append failing test**
+- [ ] **步骤 1：追加失败测试**
 
 ```ts
-// append
+// 追加
 import { DocumentSchema } from '../schema.js';
 
 describe('Document', () => {
@@ -671,17 +668,17 @@ describe('Document', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: FAIL on missing `DocumentSchema`.
+预期：因缺少 `DocumentSchema` 而失败。
 
-- [ ] **Step 3: Implement Document & SymbolMaster**
+- [ ] **步骤 3：实现 Document 与 SymbolMaster**
 
-Append to `src/ir/schema.ts`:
+追加到 `src/ir/schema.ts`：
 
 ```ts
 export const SymbolMasterSchema = z.object({
@@ -715,15 +712,15 @@ export const DocumentSchema = z.object({
 export type Document = z.infer<typeof DocumentSchema>;
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/ir/__tests__/schema.test.ts
 ```
 
-Expected: 8 passed.
+预期：8 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/ir/
@@ -732,13 +729,13 @@ git commit -m "feat(sketch-to-component): IR Document root with symbols, assets,
 
 ---
 
-## Task 7: Name sanitizer
+## 任务 7：名称清理器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/naming.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/naming.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/naming.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/naming.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/generator/__tests__/naming.test.ts
@@ -767,15 +764,15 @@ describe('naming', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/naming.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement naming**
+- [ ] **步骤 3：实现 naming**
 
 ```ts
 // src/generator/naming.ts
@@ -806,15 +803,15 @@ export function toCssVarName(rawName: string): string {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/naming.test.ts
 ```
 
-Expected: 5 passed.
+预期：5 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -823,13 +820,13 @@ git commit -m "feat(sketch-to-component): name sanitizer (PascalCase, CSS var, s
 
 ---
 
-## Task 8: CSS rule emitter
+## 任务 8：CSS 规则发射器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/css.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/css.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/css.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/css.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/generator/__tests__/css.test.ts
@@ -892,15 +889,15 @@ describe('css emitter', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/css.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement css emitter**
+- [ ] **步骤 3：实现 css 发射器**
 
 ```ts
 // src/generator/css.ts
@@ -959,15 +956,15 @@ export function emitStyleRules(style: Style): string[] {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/css.test.ts
 ```
 
-Expected: 6 passed.
+预期：6 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -976,13 +973,13 @@ git commit -m "feat(sketch-to-component): CSS rule emitter (layout, fills, borde
 
 ---
 
-## Task 9: Override → prop mapper
+## 任务 9：Override → prop 映射器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/overrides.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/overrides.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/overrides.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/overrides.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/generator/__tests__/overrides.test.ts
@@ -1030,15 +1027,15 @@ describe('applyOverridesToInstance', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/overrides.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement overrides mapper**
+- [ ] **步骤 3：实现 overrides 映射器**
 
 ```ts
 // src/generator/overrides.ts
@@ -1108,15 +1105,15 @@ export function applyOverridesToInstance(instance: { overrides: OverrideRecord[]
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/overrides.test.ts
 ```
 
-Expected: 5 passed.
+预期：5 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -1125,13 +1122,13 @@ git commit -m "feat(sketch-to-component): override → typed React prop mapping"
 
 ---
 
-## Task 10: TSX emitter for plain nodes
+## 任务 10：普通节点的 TSX 发射器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/tsx.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/tsx.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/tsx.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/tsx.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/generator/__tests__/tsx.test.ts
@@ -1188,15 +1185,15 @@ describe('emitNodeJsx', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/tsx.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement tsx emitter**
+- [ ] **步骤 3：实现 tsx 发射器**
 
 ```ts
 // src/generator/tsx.ts
@@ -1241,15 +1238,15 @@ function escapeAttr(s: string): string {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/tsx.test.ts
 ```
 
-Expected: 4 passed.
+预期：4 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -1258,13 +1255,13 @@ git commit -m "feat(sketch-to-component): TSX emitter for Text/Image/Shape/Group
 
 ---
 
-## Task 11: Symbol Master file emitter
+## 任务 11：Symbol Master 文件发射器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/symbols.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/symbols.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/symbols.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/symbols.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/generator/__tests__/symbols.test.ts
@@ -1306,15 +1303,15 @@ describe('emitSymbolMaster', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/symbols.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement symbol emitter**
+- [ ] **步骤 3：实现 symbol 发射器**
 
 ```ts
 // src/generator/symbols.ts
@@ -1397,15 +1394,15 @@ export function ${componentName}(${propDestructure}: ${componentName}Props) {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/symbols.test.ts
 ```
 
-Expected: 1 passed (with all 6 assertions).
+预期：1 个通过（含 6 条断言）。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -1414,16 +1411,16 @@ git commit -m "feat(sketch-to-component): Symbol Master → tsx + CSS Module fil
 
 ---
 
-## Task 12: TSX emitter for SymbolInstance with overrides
+## 任务 12：带 override 的 SymbolInstance TSX 发射器
 
-**Files:**
-- Modify: `skills/sketch-to-component/scripts/src/generator/tsx.ts`
-- Modify: `skills/sketch-to-component/scripts/src/generator/__tests__/tsx.test.ts`
+**文件：**
+- 修改：`skills/sketch-to-component/scripts/src/generator/tsx.ts`
+- 修改：`skills/sketch-to-component/scripts/src/generator/__tests__/tsx.test.ts`
 
-- [ ] **Step 1: Add failing test**
+- [ ] **步骤 1：追加失败测试**
 
 ```ts
-// append to src/generator/__tests__/tsx.test.ts
+// 追加到 src/generator/__tests__/tsx.test.ts
 import { emitSymbolInstanceJsx } from '../tsx.js';
 
 describe('emitSymbolInstanceJsx', () => {
@@ -1451,18 +1448,18 @@ describe('emitSymbolInstanceJsx', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/tsx.test.ts
 ```
 
-Expected: FAIL on missing export.
+预期：因缺少导出而失败。
 
-- [ ] **Step 3: Append `emitSymbolInstanceJsx` to `src/generator/tsx.ts`**
+- [ ] **步骤 3：在 `src/generator/tsx.ts` 中追加 `emitSymbolInstanceJsx`**
 
 ```ts
-// append to src/generator/tsx.ts
+// 追加到 src/generator/tsx.ts
 import { applyOverridesToInstance } from './overrides.js';
 
 type Instance = Extract<NodeType, { kind: 'SymbolInstance' }>;
@@ -1494,33 +1491,33 @@ function jsxAttrValue(v: unknown): string {
 }
 ```
 
-- [ ] **Step 4: Replace the `SymbolInstance` branch inside `emitNodeJsx`**
+- [ ] **步骤 4：替换 `emitNodeJsx` 内的 `SymbolInstance` 分支**
 
-In `src/generator/tsx.ts`, find:
+在 `src/generator/tsx.ts` 中查找：
 
 ```ts
     case 'SymbolInstance':
       return `<div className={${cls}}>{/* SymbolInstance ${node.masterId} */}</div>`;
 ```
 
-Replace with:
+替换为：
 
 ```ts
     case 'SymbolInstance':
       throw new Error('Use emitSymbolInstanceJsx for SymbolInstance nodes; emitNodeJsx does not have the master→component map');
 ```
 
-(Tests from Task 10 only exercise non-instance kinds, so they continue to pass. Top-level `generate()` in Task 13 routes SymbolInstance nodes through `emitSymbolInstanceJsx`.)
+（任务 10 的测试只覆盖非 instance 种类，因此仍会通过。任务 13 的顶层 `generate()` 将 SymbolInstance 节点路由到 `emitSymbolInstanceJsx`。）
 
-- [ ] **Step 5: Run test, expect PASS**
+- [ ] **步骤 5：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/tsx.test.ts
 ```
 
-Expected: 6 passed.
+预期：6 个通过。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/
@@ -1529,14 +1526,14 @@ git commit -m "feat(sketch-to-component): TSX emitter for SymbolInstance with ov
 
 ---
 
-## Task 13: Top-level generator (index)
+## 任务 13：顶层 generator（index）
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/generator/index.ts`
-- Create: `skills/sketch-to-component/scripts/src/generator/__tests__/index.test.ts`
-- Create: `skills/sketch-to-component/scripts/tests/fixtures/tiny-ir.json`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/generator/index.ts`
+- 创建：`skills/sketch-to-component/scripts/src/generator/__tests__/index.test.ts`
+- 创建：`skills/sketch-to-component/scripts/tests/fixtures/tiny-ir.json`
 
-- [ ] **Step 1: Hand-author the tiny fixture**
+- [ ] **步骤 1：手写 tiny fixture**
 
 ```json
 {
@@ -1582,7 +1579,7 @@ git commit -m "feat(sketch-to-component): TSX emitter for SymbolInstance with ov
 }
 ```
 
-- [ ] **Step 2: Write failing test**
+- [ ] **步骤 2：编写失败测试**
 
 ```ts
 // src/generator/__tests__/index.test.ts
@@ -1611,15 +1608,15 @@ describe('generate', () => {
 });
 ```
 
-- [ ] **Step 3: Run test, expect FAIL**
+- [ ] **步骤 3：运行测试，预期失败**
 
 ```bash
 npx vitest run src/generator/__tests__/index.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 4: Implement generator entry**
+- [ ] **步骤 4：实现 generator 入口**
 
 ```ts
 // src/generator/index.ts
@@ -1737,15 +1734,15 @@ export function Frame() {
 }
 ```
 
-- [ ] **Step 5: Run test, expect PASS**
+- [ ] **步骤 5：运行测试，预期通过**
 
 ```bash
 npx vitest run src/generator/__tests__/index.test.ts
 ```
 
-Expected: 1 passed (with 3 assertions).
+预期：1 个通过（含 3 条断言）。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/generator/ skills/sketch-to-component/scripts/tests/fixtures/tiny-ir.json
@@ -1754,13 +1751,13 @@ git commit -m "feat(sketch-to-component): top-level generator assembling Frame +
 
 ---
 
-## Task 14: Asset writer
+## 任务 14：Asset writer
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/assets/write-images.ts`
-- Create: `skills/sketch-to-component/scripts/src/assets/__tests__/write-images.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/assets/write-images.ts`
+- 创建：`skills/sketch-to-component/scripts/src/assets/__tests__/write-images.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [ ] **步骤 1：编写失败测试**
 
 ```ts
 // src/assets/__tests__/write-images.test.ts
@@ -1786,15 +1783,15 @@ describe('writeImages', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/assets/__tests__/write-images.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement asset writer**
+- [ ] **步骤 3：实现 asset writer**
 
 ```ts
 // src/assets/write-images.ts
@@ -1811,15 +1808,15 @@ export function writeImages(assets: Document['assets'], outDir: string): void {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/assets/__tests__/write-images.test.ts
 ```
 
-Expected: 1 passed.
+预期：1 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/assets/
@@ -1828,13 +1825,13 @@ git commit -m "feat(sketch-to-component): write base64 image assets to disk"
 
 ---
 
-## Task 15: MCP extractor client
+## 任务 15：MCP extractor 客户端
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/extractor/client.ts`
-- Create: `skills/sketch-to-component/scripts/src/extractor/__tests__/client.test.ts`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/extractor/client.ts`
+- 创建：`skills/sketch-to-component/scripts/src/extractor/__tests__/client.test.ts`
 
-- [ ] **Step 1: Write failing test (mocked fetch)**
+- [ ] **步骤 1：编写失败测试（mock fetch）**
 
 ```ts
 // src/extractor/__tests__/client.test.ts
@@ -1869,15 +1866,15 @@ describe('runCode', () => {
 });
 ```
 
-- [ ] **Step 2: Run test, expect FAIL**
+- [ ] **步骤 2：运行测试，预期失败**
 
 ```bash
 npx vitest run src/extractor/__tests__/client.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 3: Implement client**
+- [ ] **步骤 3：实现 client**
 
 ```ts
 // src/extractor/client.ts
@@ -1915,15 +1912,15 @@ export async function runCode(opts: RunCodeOptions): Promise<unknown> {
 }
 ```
 
-- [ ] **Step 4: Run test, expect PASS**
+- [ ] **步骤 4：运行测试，预期通过**
 
 ```bash
 npx vitest run src/extractor/__tests__/client.test.ts
 ```
 
-Expected: 2 passed.
+预期：2 个通过。
 
-- [ ] **Step 5: Commit**
+- [ ] **步骤 5：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/extractor/
@@ -1932,14 +1929,14 @@ git commit -m "feat(sketch-to-component): MCP run_code HTTP client with JSON unw
 
 ---
 
-## Task 16: Extractor script (runs inside Sketch)
+## 任务 16：Extractor 脚本（在 Sketch 内运行）
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/extractor/extract.js`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/extractor/extract.js`
 
-- [ ] **Step 1: Write the extractor JS body**
+- [ ] **步骤 1：编写 extractor JS 脚本体**
 
-This script is embedded as a string and POSTed via `runCode`. It must use only the `sketch` module (no Node APIs). It walks the selected layer, builds the IR, and base64-exports every Image. **No tests** at this step — it can only be exercised end-to-end against a real Sketch. Integration verification happens in Task 20.
+本脚本作为字符串嵌入并通过 `runCode` POST 出去。只能使用 `sketch` 模块（无 Node API）。它遍历选中图层、构建 IR，并对每个 Image 做 base64 导出。**本步骤不做单测** —— 只能针对真实 Sketch 做端到端演练。集成验证在任务 20 进行。
 
 ```js
 // src/extractor/extract.js
@@ -2068,15 +2065,15 @@ else {
 `;
 ```
 
-- [ ] **Step 2: Lint syntax**
+- [ ] **步骤 2：语法检查**
 
 ```bash
 cd skills/sketch-to-component/scripts && npx tsc --noEmit
 ```
 
-Expected: no errors.
+预期：无错误。
 
-- [ ] **Step 3: Commit**
+- [ ] **步骤 3：提交**
 
 ```bash
 git add skills/sketch-to-component/scripts/src/extractor/extract.js
@@ -2085,14 +2082,14 @@ git commit -m "feat(sketch-to-component): in-Sketch extractor producing IR JSON"
 
 ---
 
-## Task 17: Config loader
+## 任务 17：Config 加载器
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/config/load.ts`
-- Create: `skills/sketch-to-component/scripts/src/config/__tests__/load.test.ts`
-- Create: `skills/sketch-to-component/scripts/tests/fixtures/tiny-config.json`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/config/load.ts`
+- 创建：`skills/sketch-to-component/scripts/src/config/__tests__/load.test.ts`
+- 创建：`skills/sketch-to-component/scripts/tests/fixtures/tiny-config.json`
 
-- [ ] **Step 1: Write the fixture config**
+- [ ] **步骤 1：编写 fixture config**
 
 ```json
 {
@@ -2105,7 +2102,7 @@ git commit -m "feat(sketch-to-component): in-Sketch extractor producing IR JSON"
 }
 ```
 
-- [ ] **Step 2: Write failing test**
+- [ ] **步骤 2：编写失败测试**
 
 ```ts
 // src/config/__tests__/load.test.ts
@@ -2171,15 +2168,15 @@ describe('config loader', () => {
 });
 ```
 
-- [ ] **Step 3: Run test, expect FAIL**
+- [ ] **步骤 3：运行测试，预期失败**
 
 ```bash
 cd skills/sketch-to-component/scripts && npx vitest run src/config/__tests__/load.test.ts
 ```
 
-Expected: FAIL on missing module.
+预期：因缺少模块而失败。
 
-- [ ] **Step 4: Implement loader**
+- [ ] **步骤 4：实现 loader**
 
 ```ts
 // src/config/load.ts
@@ -2240,15 +2237,15 @@ export function resolveFrame(cfg: ResolvedConfig, name: string): ResolvedFrame {
 }
 ```
 
-- [ ] **Step 5: Run test, expect PASS**
+- [ ] **步骤 5：运行测试，预期通过**
 
 ```bash
 npx vitest run src/config/__tests__/load.test.ts
 ```
 
-Expected: 4 passed.
+预期：4 个通过。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts/src/config skills/sketch-to-component/scripts/tests/fixtures/tiny-config.json
@@ -2257,13 +2254,13 @@ git commit -m "feat(sketch-to-component): config loader (file + SKETCH_MCP_URL e
 
 ---
 
-## Task 18: CLI entry (sync / build / extract / generate)
+## 任务 18：CLI 入口（sync / build / extract / generate）
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/src/cli.ts`
-- Modify: `skills/sketch-to-component/scripts/package.json`
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/src/cli.ts`
+- 修改：`skills/sketch-to-component/scripts/package.json`
 
-- [ ] **Step 1: Implement CLI**
+- [ ] **步骤 1：实现 CLI**
 
 ```ts
 // src/cli.ts
@@ -2329,9 +2326,9 @@ const cmd = process.argv[2];
 })().catch(err => { console.error(err); process.exit(1); });
 ```
 
-- [ ] **Step 2: Update package.json scripts**
+- [ ] **步骤 2：更新 package.json scripts**
 
-Replace the `scripts` section with:
+将 `scripts` 节替换为：
 
 ```json
   "scripts": {
@@ -2344,26 +2341,26 @@ Replace the `scripts` section with:
   },
 ```
 
-- [ ] **Step 3: Sanity-typecheck**
+- [ ] **步骤 3：健全性类型检查**
 
 ```bash
 cd skills/sketch-to-component/scripts && npx tsc --noEmit
 ```
 
-Expected: no errors.
+预期：无错误。
 
-- [ ] **Step 4: Smoke-test the `generate` path with the tiny fixture**
+- [ ] **步骤 4：用 tiny fixture 冒烟测试 `generate` 路径**
 
 ```bash
 rm -rf /tmp/s2c-out && npm run generate -- --ir tests/fixtures/tiny-ir.json --out /tmp/s2c-out && ls /tmp/s2c-out
 ```
 
-Expected output (alphabetical):
+预期输出（按字母序）：
 ```
 Frame.module.css  Frame.tsx  MyButton.module.css  MyButton.tsx  assets  tokens.css
 ```
 
-- [ ] **Step 5: Smoke-test the `build` path with a temporary config**
+- [ ] **步骤 5：用临时 config 冒烟测试 `build` 路径**
 
 ```bash
 mkdir -p /tmp/s2c-proj/design/ir && cp tests/fixtures/tiny-ir.json /tmp/s2c-proj/design/ir/home.json
@@ -2379,9 +2376,9 @@ npm run build -- --name home --config /tmp/s2c-proj/sketch-to-component.config.j
 ls /tmp/s2c-proj/out/home
 ```
 
-Expected: same six entries listed in Step 4.
+预期：与步骤 4 列出的六项相同。
 
-- [ ] **Step 6: Commit**
+- [ ] **步骤 6：提交**
 
 ```bash
 git add skills/sketch-to-component/scripts/src/cli.ts skills/sketch-to-component/scripts/package.json
@@ -2390,64 +2387,64 @@ git commit -m "feat(sketch-to-component): CLI with sync/build/extract/generate +
 
 ---
 
-## Task 19: Full Vitest run
+## 任务 19：完整 Vitest 运行
 
-**Files:**
-- (none — execution only)
+**文件：**
+- （无 —— 仅执行）
 
-- [ ] **Step 1: Run the entire suite**
+- [ ] **步骤 1：运行完整测试套件**
 
 ```bash
 cd skills/sketch-to-component/scripts && npm test
 ```
 
-Expected: all suites green (schema 8, naming 5, css 6, overrides 5, tsx 6, symbols 1, index 1, write-images 1, extractor client 2, config 4 = 39 passed).
+预期：全部套件通过（schema 8、naming 5、css 6、overrides 5、tsx 6、symbols 1、index 1、write-images 1、extractor client 2、config 4，共 39 通过）。
 
-- [ ] **Step 2: If anything fails, fix and re-run, then commit**
+- [ ] **步骤 2：若有失败则修复并重跑，然后提交**
 
 ```bash
 git add -A skills/sketch-to-component/scripts
 git commit -m "fix(sketch-to-component): align suites for full green run"
 ```
 
-(Skip this commit if the suite was already green.)
+（若套件本已全绿则跳过此次提交。）
 
 ---
 
-## Task 20: Integration POC against real Sketch document
+## 任务 20：针对真实 Sketch 文档的集成 POC
 
-**Files:**
-- Create: `skills/sketch-to-component/scripts/tests/fixtures/frame-ir.json` (written by the run)
+**文件：**
+- 创建：`skills/sketch-to-component/scripts/tests/fixtures/frame-ir.json`（由本次运行写出）
 
-**Preconditions:**
-- Sketch.app is open with `/Users/blade/Desktop/figma-mcp测试.sketch`
-- A Frame is selected (use Page 1's `2.0-1备份 21` Frame)
-- MCP responds to the `initialize` probe (see SKILL.md)
+**前置条件：**
+- Sketch.app 已打开 `/Users/blade/Desktop/figma-mcp测试.sketch`
+- 已选中 Frame（使用 Page 1 的 `2.0-1备份 21` Frame）
+- MCP 对 `initialize` 探针有响应（见 SKILL.md）
 
-- [ ] **Step 1: Extract**
+- [ ] **步骤 1：提取**
 
 ```bash
 cd skills/sketch-to-component/scripts && npm run extract -- --out tests/fixtures/frame-ir.json
 ```
 
-Expected output: `IR written: …/tests/fixtures/frame-ir.json`
+预期输出：`IR written: …/tests/fixtures/frame-ir.json`
 
-- [ ] **Step 2: Generate**
+- [ ] **步骤 2：生成**
 
 ```bash
 rm -rf /tmp/s2c-real && npm run generate -- --ir tests/fixtures/frame-ir.json --out /tmp/s2c-real
 ls /tmp/s2c-real
 ```
 
-Expected: at least `Frame.tsx`, `Frame.module.css`, `tokens.css`, `assets/`, and one `.tsx`/`.module.css` pair per unique Symbol Master (9 expected from the fixture inventory).
+预期：至少包含 `Frame.tsx`、`Frame.module.css`、`tokens.css`、`assets/`，以及每个唯一 Symbol Master 各一对 `.tsx`/`.module.css`（按 fixture 清单应有 9 对）。
 
-- [ ] **Step 3: Confirm no parser errors**
+- [ ] **步骤 3：确认无解析错误**
 
 ```bash
 node --check /tmp/s2c-real/Frame.tsx 2>&1 || true
 ```
 
-Note: `node --check` does NOT understand TSX. Instead use TypeScript:
+注意：`node --check` 不理解 TSX。请改用 TypeScript：
 
 ```bash
 cd /tmp && cat > tsconfig.s2c.json <<'JSON'
@@ -2459,17 +2456,17 @@ JSON
 npx --yes typescript@5.8.3 -p tsconfig.s2c.json
 ```
 
-Expected: zero errors (or only `Cannot find module 'react'` — acceptable since we did not install react in `/tmp`; the parser shape is the relevant signal).
+预期：零错误（或仅有 `Cannot find module 'react'` —— 可接受，因未在 `/tmp` 安装 react；解析器形态才是相关信号）。
 
-- [ ] **Step 4: Eyeball one Symbol output**
+- [ ] **步骤 4：目视检查一个 Symbol 输出**
 
 ```bash
 ls /tmp/s2c-real/*.tsx | head -3 | xargs head -40
 ```
 
-Expected: each file begins with `import React from 'react'` and `import classes from './X.module.css'`, then `export interface XProps`, then `export function X(...)`.
+预期：每个文件以 `import React from 'react'` 与 `import classes from './X.module.css'` 开头，然后是 `export interface XProps`，再是 `export function X(...)`。
 
-- [ ] **Step 5: Commit the fixture for future regression tests**
+- [ ] **步骤 5：提交 fixture 供后续回归测试**
 
 ```bash
 cd /Users/blade/IdeaProjects/skill-collections
@@ -2479,39 +2476,39 @@ git commit -m "test(sketch-to-component): commit real-document IR fixture from P
 
 ---
 
-## Task 21: Documentation — workflows & contracts
+## 任务 21：文档 —— 工作流与契约
 
-**Files:**
-- Create: `skills/sketch-to-component/workflows/designer-publish-ir.md`
-- Create: `skills/sketch-to-component/workflows/developer-build.md`
-- Create: `skills/sketch-to-component/workflows/verify-output.md`
-- Create: `skills/sketch-to-component/docs/ir-schema.md`
-- Create: `skills/sketch-to-component/docs/override-mapping.md`
-- Create: `skills/sketch-to-component/docs/deployment.md`
-- Create: `skills/sketch-to-component/protocols/mcp-extractor-contract.md`
-- Create: `skills/sketch-to-component/protocols/config-schema.md`
+**文件：**
+- 创建：`skills/sketch-to-component/workflows/designer-publish-ir.md`
+- 创建：`skills/sketch-to-component/workflows/developer-build.md`
+- 创建：`skills/sketch-to-component/workflows/verify-output.md`
+- 创建：`skills/sketch-to-component/docs/ir-schema.md`
+- 创建：`skills/sketch-to-component/docs/override-mapping.md`
+- 创建：`skills/sketch-to-component/docs/deployment.md`
+- 创建：`skills/sketch-to-component/protocols/mcp-extractor-contract.md`
+- 创建：`skills/sketch-to-component/protocols/config-schema.md`
 
-- [ ] **Step 1: Write `workflows/designer-publish-ir.md`**
+- [ ] **步骤 1：编写 `workflows/designer-publish-ir.md`**
 
 ```markdown
-# Designer: Publish IR
+# 设计师：发布 IR
 
-Audience: the person who has Sketch.app and SketchMCP running.
+读者：已运行 Sketch.app 与 SketchMCP 的人员。
 
-## One-shot sync (recommended)
+## 一键 sync（推荐）
 
-1. Open the target document in Sketch.app.
-2. Select the Frame you want to publish.
-3. From the consumer project root:
+1. 在 Sketch.app 中打开目标文档。
+2. 选中要发布的 Frame。
+3. 在消费方项目根目录：
 
    ```bash
    cd path/to/skills/sketch-to-component/scripts
    npm run sync -- --name home --config /path/to/your-project/sketch-to-component.config.json
    ```
 
-   This extracts the selected Frame, writes the IR to `<irDir>/home.json`, and generates the React components into `<outDir>/home/`.
+   这会提取选中 Frame，将 IR 写入 `<irDir>/home.json`，并在 `<outDir>/home/` 生成 React 组件。
 
-4. Commit both the IR and the generated code:
+4. 同时提交 IR 与生成代码：
 
    ```bash
    cd /path/to/your-project
@@ -2519,187 +2516,187 @@ Audience: the person who has Sketch.app and SketchMCP running.
    git commit -m "design(home): publish IR + regenerate components"
    ```
 
-## Troubleshooting
+## 排错
 
-- `no selection` — click a Frame in Sketch and re-run.
-- `MCP HTTP 404` / connection refused — verify the MCP probe in SKILL.md Prerequisites.
-- `frames not found in config` — list expected frames in `sketch-to-component.config.json`.
+- `no selection` —— 在 Sketch 中点击 Frame 后重跑。
+- `MCP HTTP 404` / connection refused —— 按 SKILL.md 前置条件验证 MCP 探针。
+- `frames not found in config` —— 在 `sketch-to-component.config.json` 中列出预期 frames。
 ```
 
-- [ ] **Step 2: Write `workflows/developer-build.md`**
+- [ ] **步骤 2：编写 `workflows/developer-build.md`**
 
 ```markdown
-# Developer: Build from Committed IR
+# 开发者：从已提交 IR 构建
 
-Audience: any frontend developer. **No Sketch installation needed.**
+读者：任意前端开发者。**无需安装 Sketch。**
 
-1. Pull the latest IR from the repo (`git pull`).
-2. From the scripts folder:
+1. 从仓库拉取最新 IR（`git pull`）。
+2. 在 scripts 目录：
 
    ```bash
    cd path/to/skills/sketch-to-component/scripts
-   npm install                         # first time only
+   npm install                         # 仅首次
    npm run build -- --name home --config /path/to/your-project/sketch-to-component.config.json
    ```
 
-3. The generator reads `<irDir>/home.json` and writes regenerated code to `<outDir>/home/`. If your repo treats generated code as build output (i.e. `outDir` is gitignored), wire `npm run build -- --name <each frame>` into the consumer project's build step.
+3. 生成器读取 `<irDir>/home.json`，将重新生成的代码写入 `<outDir>/home/`。若仓库把生成代码视为构建产物（即 `outDir` 被 gitignore），把 `npm run build -- --name <each frame>` 接入消费方项目的 build 步骤。
 
-## When the IR is stale
+## 当 IR 已过时
 
-If a screen looks wrong:
-1. Inspect the IR JSON in `design/sketch-ir/` — it is human-readable.
-2. If the IR is stale, ask the designer to re-run `npm run sync` and commit the updated IR.
+若界面看起来不对：
+1. 检查 `design/sketch-ir/` 中的 IR JSON —— 人类可读。
+2. 若 IR 过时，请设计师重新运行 `npm run sync` 并提交更新后的 IR。
 ```
 
-- [ ] **Step 3: Write `workflows/verify-output.md`**
+- [ ] **步骤 3：编写 `workflows/verify-output.md`**
 
 ```markdown
-# Verify Generated Output
+# 校验生成输出
 
-Mechanical checks (must pass):
+机械检查（必须通过）：
 
 ```bash
-# Type-check the generated TSX against a stub project
+# 对 stub 项目中的生成 TSX 做类型检查
 npx --yes typescript@5.8.3 --noEmit --jsx preserve out/*.tsx
 ```
 
-Visual check (manual):
-1. Copy `out/` into a React project (Vite scaffold works: `npm create vite@latest`).
-2. Add `import './tokens.css';` to the entry, `import { Frame } from './Frame'` in `App.tsx`.
-3. `npm run dev`, open in a browser, compare against the Sketch Frame.
+视觉检查（手动）：
+1. 将 `out/` 复制到 React 项目（Vite 脚手架可用：`npm create vite@latest`）。
+2. 在入口添加 `import './tokens.css';`，在 `App.tsx` 中 `import { Frame } from './Frame'`。
+3. `npm run dev`，在浏览器打开，与 Sketch Frame 对比。
 
-Common discrepancies to expect:
-- Fonts may render differently if the Sketch font is not installed in the OS where the browser runs.
-- Absolute positioning means responsive resizing is not supported (out of scope).
-- Gradient fills are not yet emitted (see Limitations in SKILL.md).
+常见可预期差异：
+- 若浏览器所在 OS 未安装 Sketch 字体，字体渲染可能不同。
+- 绝对定位意味着不支持响应式缩放（范围外）。
+- 尚未输出渐变填充（见 SKILL.md 的限制）。
 ```
 
-- [ ] **Step 4: Write `docs/ir-schema.md`**
+- [ ] **步骤 4：编写 `docs/ir-schema.md`**
 
 ```markdown
-# IR Schema Reference
+# IR Schema 参考
 
-Source of truth: `scripts/src/ir/schema.ts`.
+权威来源：`scripts/src/ir/schema.ts`。
 
-## Top-level
+## 顶层
 
 ```ts
 Document = { root: GroupNode; symbols: Record<id, SymbolMaster>;
              assets: Record<id, Asset>; colorVariables: Record<id, ColorVariable> }
 ```
 
-## Node kinds
+## 节点种类
 
 - `Text` — `content`, `fontFamily`, `fontSize`, `fontWeight`, `color`, `align`, `decoration`
-- `Image` — `assetId` references `Document.assets`
-- `Shape` — leaf shape with `style`
-- `Group` / `Frame` — container with `children: NodeType[]` and `style`
-- `SymbolInstance` — `masterId` references `Document.symbols` + `overrides`
+- `Image` — `assetId` 引用 `Document.assets`
+- `Shape` — 带 `style` 的叶子 shape
+- `Group` / `Frame` — 容器，含 `children: NodeType[]` 与 `style`
+- `SymbolInstance` — `masterId` 引用 `Document.symbols` + `overrides`
 
-All nodes share `id`, `name`, `frame`, `visible`.
+所有节点共有 `id`, `name`, `frame`, `visible`。
 
-## Color
+## 颜色
 
-8-digit hex `#RRGGBBAA`. When sourced from a Color Variable, the original swatch name is preserved on the fill/border/shadow as `swatchName`, and an entry is added to `Document.colorVariables` so the CSS emitter can emit `var(--swatch-…)`.
+8 位 hex `#RRGGBBAA`。若来自 Color Variable，原始 swatch 名保留在 fill/border/shadow 的 `swatchName` 上，并在 `Document.colorVariables` 增加条目，供 CSS 发射器输出 `var(--swatch-…)`。
 
-## Overrides
+## Override
 
-Each override has `{ path, property, value, defaultValue, swatchName? }`. See `docs/override-mapping.md` for the supported property set.
+每个 override 为 `{ path, property, value, defaultValue, swatchName? }`。支持的属性集见 `docs/override-mapping.md`。
 ```
 
-- [ ] **Step 5: Write `docs/override-mapping.md`**
+- [ ] **步骤 5：编写 `docs/override-mapping.md`**
 
 ```markdown
-# Override → React Prop Mapping
+# Override → React Prop 映射
 
-| Sketch override property | React prop type | Notes |
+| Sketch override 属性 | React prop 类型 | 说明 |
 |---|---|---|
-| `stringValue` | `text_<slug>?: string` | Text content of a nested layer |
-| `textColor` | `textColor_<slug>?: string` | 8-digit hex |
+| `stringValue` | `text_<slug>?: string` | 嵌套图层的文本内容 |
+| `textColor` | `textColor_<slug>?: string` | 8 位 hex |
 | `textSize` | `textSize_<slug>?: number` | px |
 | `textWeight` | `textWeight_<slug>?: number` | 100–900 |
 | `isVisible` | `visible_<slug>?: boolean` | |
-| `color:fill-N` | `fillN_<slug>?: string` | One per fill index |
+| `color:fill-N` | `fillN_<slug>?: string` | 每个 fill 索引一条 |
 | `color:border-N` | `borderN_<slug>?: string` | |
 | `color:shadow-N` / `color:innershadow-N` | `shadowN_<slug>?: string` | |
-| `fillColor` | `tint_<slug>?: string` | Group tint |
-| `symbolID` | (not yet supported — inlined) | Nested symbol swap; deferred |
-| `layerStyle` | (not yet supported — inlined) | Shared style swap; deferred |
-| `horizontalSizing` / `verticalSizing` | (not emitted) | No Stack layouts in fixture; deferred |
+| `fillColor` | `tint_<slug>?: string` | Group 着色 |
+| `symbolID` | （尚未支持 —— 内联） | 嵌套 symbol 替换；延后 |
+| `layerStyle` | （尚未支持 —— 内联） | 共享样式替换；延后 |
+| `horizontalSizing` / `verticalSizing` | （不输出） | fixture 无 Stack 布局；延后 |
 
-`<slug>` is the last path segment of the override's `path` field. Defaults come from `defaultValue`. At call sites, the generator only emits props whose `value !== defaultValue`.
+`<slug>` 是 override `path` 字段的末段。默认值来自 `defaultValue`。调用点处，生成器只输出 `value !== defaultValue` 的 props。
 ```
 
-- [ ] **Step 6: Write `docs/deployment.md`**
+- [ ] **步骤 6：编写 `docs/deployment.md`**
 
 ```markdown
-# Deployment Options
+# 部署选项
 
-The IR JSON is the contract. Pick how it is produced.
+IR JSON 是契约。选择其生产方式。
 
-## Option A — Designer publishes IR (recommended)
+## 选项 A —— 设计师发布 IR（推荐）
 
-The designer runs `npm run sync` on their Mac (Sketch + SketchMCP local) and commits the IR JSON to the repo. Frontend developers only run `npm run build` — they need Node, not Sketch.
+设计师在 Mac 上运行 `npm run sync`（本地 Sketch + SketchMCP），将 IR JSON 提交到仓库。前端开发者只运行 `npm run build` —— 需要 Node，不需要 Sketch。
 
-Pros: reviewable via PR, works offline, no live service to operate, IRs are immutable history.
-Cons: designer needs to remember to re-sync after design changes.
+优点：可通过 PR review、可离线、无需运维在线服务、IR 是不可变历史。
+缺点：设计变更后设计师需记得重新 sync。
 
-## Option B — Shared MCP server (advanced)
+## 选项 B —— 共享 MCP 服务（进阶）
 
-One designated Mac runs Sketch + SketchMCP, with the port exposed over a private network (Tailscale, WireGuard, mTLS-fronted reverse proxy). Designers point their `SKETCH_MCP_URL` at it.
+指定一台 Mac 运行 Sketch + SketchMCP，端口经私有网络暴露（Tailscale、WireGuard、mTLS 前置反向代理）。设计师将 `SKETCH_MCP_URL` 指向它。
 
-**Security warning:** SketchMCP's `run_code` tool executes arbitrary ES2020 inside the host Sketch process. Anyone who can reach the URL can read or modify any open Sketch document on that machine. Do not expose it to the public internet. Use Tailscale ACLs or a mTLS-fronted proxy.
+**安全警告：** SketchMCP 的 `run_code` 工具在宿主 Sketch 进程内执行任意 ES2020。能访问该 URL 的任何人可读或修改该机器上任何已打开的 Sketch 文档。不要暴露到公网。使用 Tailscale ACL 或 mTLS 前置代理。
 
-Pros: one source of truth for the "live" file.
-Cons: the host machine must keep Sketch running and the right file open; no auth in MCP itself.
+优点：「实时」文件单一事实源。
+缺点：宿主机器须保持 Sketch 运行且打开正确文件；MCP 本身无认证。
 
-## Option C — Headless .sketch parsing (not implemented)
+## 选项 C —— 无头 `.sketch` 解析（未实现）
 
-A future extractor could parse `.sketch` zip files directly and produce IR without Sketch.app. This eliminates the macOS dependency entirely but loses runtime-resolved data (Override defaults, font metrics, rasterized images). Out of scope for this plan.
+未来提取器可直接解析 `.sketch` zip 并产出 IR，无需 Sketch.app。可完全消除 macOS 依赖，但会丢失运行时解析数据（Override 默认值、字体度量、栅格化图片）。本计划范围外。
 ```
 
-- [ ] **Step 7: Write `protocols/mcp-extractor-contract.md`**
+- [ ] **步骤 7：编写 `protocols/mcp-extractor-contract.md`**
 
 ```markdown
-# MCP Extractor Contract
+# MCP Extractor 契约
 
-The extractor body lives in `scripts/src/extractor/extract.js` as a single template literal `EXTRACTOR_JS`. It is sent verbatim to the SketchMCP `run_code` tool.
+提取器脚本体位于 `scripts/src/extractor/extract.js`，为模板字符串 `EXTRACTOR_JS`。原样发给 SketchMCP 的 `run_code` 工具。
 
-## Inputs
+## 输入
 
-- `sketch.getSelectedDocument()` must return a document.
-- `document.selectedLayers.layers[0]` is the root for extraction.
+- `sketch.getSelectedDocument()` 须返回 document。
+- `document.selectedLayers.layers[0]` 为提取根节点。
 
-## Output
+## 输出
 
-`console.log(JSON.stringify(Document))` exactly once.
+恰好一次 `console.log(JSON.stringify(Document))`。
 
-If no selection: `console.log(JSON.stringify({error:'no selection'}))`.
+若无选中：`console.log(JSON.stringify({error:'no selection'}))`。
 
-## Wire format
+## 线缆格式
 
-SketchMCP wraps `console.log` output in single quotes inside `result.content[0].text`. The client (`src/extractor/client.ts`) strips the outer quotes before `JSON.parse`.
+SketchMCP 将 `console.log` 输出包在 `result.content[0].text` 的单引号内。客户端（`src/extractor/client.ts`）在 `JSON.parse` 前剥掉外层引号。
 
-## Why this lives in JS, not TS
+## 为何用 JS 而非 TS
 
-`run_code` runs ES2020 inside Sketch — no Node, no TS, no imports. Keep it dependency-free.
+`run_code` 在 Sketch 内运行 ES2020 —— 无 Node、无 TS、无 import。保持零依赖。
 ```
 
-- [ ] **Step 8: Write `protocols/config-schema.md`**
+- [ ] **步骤 8：编写 `protocols/config-schema.md`**
 
 ```markdown
-# Config Schema
+# 配置 Schema
 
-`sketch-to-component.config.json` lives at the consumer repo root. Validated by `scripts/src/config/load.ts` (Zod).
+`sketch-to-component.config.json` 位于消费方仓库根目录。由 `scripts/src/config/load.ts`（Zod）校验。
 
-| Field | Type | Notes |
+| 字段 | 类型 | 说明 |
 |---|---|---|
-| `mcpUrl` | `string` (URL) | Default endpoint for `sync`/`extract`. Override per-invocation with `SKETCH_MCP_URL` env var. |
-| `irDir` | `string` (path) | Where committed IR JSONs live. Resolved relative to the config file's directory. |
-| `outDir` | `string` (path) | Where generated code is written. Each Frame goes into `<outDir>/<frame.name>/`. |
-| `frames` | `Array<{ name, ir }>` | Manifest of Frames. `name` is the CLI key (`--name <name>`); `ir` is the file name within `irDir`. |
+| `mcpUrl` | `string` (URL) | `sync`/`extract` 的默认端点。每次调用可用 `SKETCH_MCP_URL` 环境变量覆盖。 |
+| `irDir` | `string` (path) | 已提交 IR JSON 所在目录。相对于配置文件目录解析。 |
+| `outDir` | `string` (path) | 生成代码写入位置。每个 Frame 在 `<outDir>/<frame.name>/`。 |
+| `frames` | `Array<{ name, ir }>` | Frame 清单。`name` 为 CLI 键（`--name <name>`）；`ir` 为 `irDir` 内文件名。 |
 
-Example:
+示例：
 
 ```json
 {
@@ -2713,10 +2710,10 @@ Example:
 }
 ```
 
-Adding a new Frame requires three steps: (1) designer adds a `frames` entry; (2) `npm run sync --name <name>`; (3) commit the new IR + generated files.
+新增 Frame 需三步：(1) 设计师在 `frames` 增加条目；(2) `npm run sync --name <name>`；(3) 提交新 IR 与生成文件。
 ```
 
-- [ ] **Step 9: Commit**
+- [ ] **步骤 9：提交**
 
 ```bash
 git add skills/sketch-to-component/workflows skills/sketch-to-component/docs skills/sketch-to-component/protocols
@@ -2725,24 +2722,24 @@ git commit -m "docs(sketch-to-component): designer/developer workflows, IR/overr
 
 ---
 
-## Self-Review (executor: verify these before declaring done)
+## 自检（执行者：宣布完成前请核对）
 
-1. **Spec coverage** — every Override property in the fixture's histogram is either listed in `docs/override-mapping.md` Supported rows or in the deferred rows; the IR schema has nodes for every type in the fixture histogram (Artboard→Frame, SymbolInstance, Group, ShapePath→Shape, Text, Image, Shape); the no-Sketch-on-developer-machine requirement is met by Task 17 (config loader) + Task 18 `build` command + `workflows/developer-build.md`.
-2. **Placeholder scan** — no "TODO", "TBD", "Add appropriate…" in the plan or generated code. Every step has the exact code/command.
-3. **Type consistency** — `OverrideRecord`/`PropSpec`/`SymbolFiles`/`Document`/`ResolvedConfig`/`ResolvedFrame` names appear with the same signature in tests and implementation. `masterIdToComponent` parameter is named consistently in `emitSymbolInstanceJsx` and the generator's `masterMap`. `ColorVariableSchema` carries only `{name, color}`; `cssVarName` is derived in the generator via `toCssVarName(name)` — extractor and generator agree on this.
-4. **Identifier collisions** — `naming.toPascalIdentifier` appends a short hash for non-ASCII names; two distinct Symbol Masters with identical ASCII tokens get distinct file names because the hash uses `master.id` as the stable salt.
-5. **Config/env precedence** — `loadConfig` honors `SKETCH_MCP_URL` over the config file's `mcpUrl`. Tested in Task 17 step 2.
+1. **规格覆盖** — fixture 直方图中的每个 Override 属性要么列在 `docs/override-mapping.md` 的支持行，要么在延后行；IR schema 为 fixture 直方图中的每种类型提供节点（Artboard→Frame、SymbolInstance、Group、ShapePath→Shape、Text、Image、Shape）；「开发者机器无需 Sketch」由任务 17（config loader）+ 任务 18 `build` 命令 + `workflows/developer-build.md` 满足。
+2. **占位符扫描** — 计划或生成代码中无 "TODO"、"TBD"、"Add appropriate…"。每步都有确切的代码/命令。
+3. **类型一致性** — `OverrideRecord`/`PropSpec`/`SymbolFiles`/`Document`/`ResolvedConfig`/`ResolvedFrame` 在测试与实现中签名一致。`masterIdToComponent` 在 `emitSymbolInstanceJsx` 与 generator 的 `masterMap` 中命名一致。`ColorVariableSchema` 仅含 `{name, color}`；`cssVarName` 由 generator 通过 `toCssVarName(name)` 派生 —— extractor 与 generator 对此一致。
+4. **标识符冲突** — `naming.toPascalIdentifier` 对非 ASCII 名称追加短 hash；两个 ASCII token 相同的不同 Symbol Master 因 hash 使用 `master.id` 作稳定盐而得到不同文件名。
+5. **Config/环境优先级** — `loadConfig` 优先使用 `SKETCH_MCP_URL` 而非配置文件中的 `mcpUrl`。在任务 17 步骤 2 中测试。
 
-If any of the above fails, fix in-place and re-run the affected task's Vitest target.
+若任一项不满足，就地修复并重跑对应任务的 Vitest 目标。
 
 ---
 
-## Execution Handoff
+## 执行交接
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-19-sketch-to-component.md`. Two execution options:
+计划已完成并保存于 `docs/superpowers/plans/2026-05-19-sketch-to-component.md`。两种执行方式：
 
-**1. Subagent-Driven (recommended)** — Dispatch a fresh subagent per task; review between tasks; fast iteration. Use `superpowers:subagent-driven-development`.
+**1. 子 agent 驱动（推荐）** — 每个任务派一个新的子 agent；任务间 review；迭代快。使用 `superpowers:subagent-driven-development`。
 
-**2. Inline Execution** — Execute tasks in this session with checkpoints. Use `superpowers:executing-plans`.
+**2. 会话内联执行** — 在本会话中带检查点执行任务。使用 `superpowers:executing-plans`。
 
-Which approach?
+选择哪种方式？

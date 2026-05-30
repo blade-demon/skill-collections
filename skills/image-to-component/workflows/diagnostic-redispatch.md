@@ -1,31 +1,31 @@
-# Diagnostic Redispatch Workflow
+# 诊断重派发工作流
 
-Use this workflow before any re-dispatch after the first signature validation failure.
+在首次 signature 校验失败后的任何重派发之前使用本工作流。
 
-> **Validation is script-driven.** Before manually inspecting returned JSON, run:
+> **校验由脚本驱动。** 手动检查返回 JSON 前，运行：
 >
 > ```bash
 > echo '<subagent return JSON>' | npm run validate-signature -- --batch <batch-id> --expected-files <file1> <file2>
 > ```
 >
-> The script exits with code 1 and prints `{ "valid": false, "errors": [...] }` when the return is invalid. Use the printed `errors` array as the concrete validation errors to inject into the re-dispatch fence.
+> 返回无效时脚本以 code 1 退出并打印 `{ "valid": false, "errors": [...] }`。将打印的 `errors` 数组作为注入重派发 fence 的具体校验错误。
 
-## Trigger
+## 触发条件
 
-The first returned signature for a batch fails validation.
+某 batch 首次返回的 signature 校验失败。
 
-## Required Diagnosis
+## 必需诊断
 
-Before re-dispatching, the main agent must identify:
+重派发前，主 agent 必须识别：
 
-- Exact rule violated.
-- Exact slot or line.
-- Exact invalid token/operator/key when applicable.
-- Correction instruction for the subagent.
+- 违反的确切规则。
+- 确切的 slot 或行。
+- 适用时的无效 token/operator/key。
+- 给子 agent 的修正指令。
 
-Never resend the same prompt unchanged.
+永不原样重发相同 prompt。
 
-## Diagnostic Format
+## 诊断格式
 
 ```text
 Validation diagnosis:
@@ -37,7 +37,7 @@ Validation diagnosis:
 
 ## Dispatcher Instruction Fence
 
-Place the correction strictly inside the dispatcher-instructions fence:
+将修正严格放在 dispatcher-instructions fence 内：
 
 ```text
 ===dispatcher-instructions-begin===
@@ -53,19 +53,19 @@ Return a corrected JSON object only. Do not explain the screenshot.
 ===dispatcher-instructions-end===
 ```
 
-## Examples
+## 示例
 
-| Failure                                                                                                  | Correction                                                                              |
-| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `overlay` used as a role                                                                                 | Replace `overlay` with an allowed O-slot expression and include `overlay_type` in notes |
-| `status(error)`                                                                                          | `status` cannot take parentheses; use bare `status`                                     |
-| `card(title -> meta) -> media -> status` suspected as broken card internals and user confirmed internals | Put trailing `media` and `status` inside the `card(...)` container                      |
-| `notes: bg=blue`                                                                                         | Remove visual note keys; notes keys must come from the allowlist                        |
-| Unbalanced `card(title -> meta`                                                                          | Balance parentheses before returning                                                    |
+| 失败                                                                            | 修正                                                                      |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `overlay` 用作 role                                                             | 将 `overlay` 替换为允许的 O-slot 表达式，并在 notes 中包含 `overlay_type` |
+| `status(error)`                                                                 | `status` 不能带括号；使用 bare `status`                                   |
+| `card(title -> meta) -> media -> status` 疑似 card 内部断裂且用户确认 internals | 将 trailing `media` 与 `status` 放入 `card(...)` 容器内                   |
+| `notes: bg=blue`                                                                | 移除 visual note 键；notes 键必须来自 allowlist                           |
+| 不平衡的 `card(title -> meta`                                                   | 返回前平衡括号                                                            |
 
-## Second Failure
+## 第二次失败
 
-If the redispatched batch fails again, stop and ask:
+若重派发 batch 再次失败，停止并询问：
 
 ```text
 Signature validation failed twice for this batch.
@@ -82,6 +82,6 @@ B. Skip this batch
 C. Stop the workflow
 ```
 
-## Exit
+## 退出
 
-Exit when a corrected valid signature is received, the batch is skipped, or the workflow stops.
+收到 corrected 有效 signature、跳过 batch 或停止工作流时退出。
