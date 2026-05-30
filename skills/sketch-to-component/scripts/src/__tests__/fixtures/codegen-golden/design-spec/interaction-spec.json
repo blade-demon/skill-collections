@@ -1,0 +1,56 @@
+{
+  "approvedAt": "2026-05-30T00:00:00Z",
+  "approvedBy": "golden-bot",
+  "body": {
+    "components": [
+      {
+        "confidence": "medium",
+        "id": "ic_4f657fa91a08",
+        "name": "Component/Header",
+        "semanticNodeId": "s_10323803be24"
+      },
+      {
+        "confidence": "medium",
+        "id": "ic_5a05fc388c64",
+        "name": "Component/Card",
+        "semanticNodeId": "s_94001f671746"
+      }
+    ],
+    "coverage": {
+      "dataBinding": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "events": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "stateTransitions": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      },
+      "states": {
+        "notes": "visual delivery first; interaction deferred",
+        "status": "deferred"
+      }
+    },
+    "dataModels": [],
+    "events": [],
+    "stateTransitions": [],
+    "states": [],
+    "warnings": []
+  },
+  "generatedFrom": {
+    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "semanticViewHash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+    "sourceRef": {
+      "documentId": "codegen-golden-doc-1",
+      "fileName": "codegen-golden.sketch"
+    },
+    "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+  },
+  "kind": "interaction-spec",
+  "reason": "visual delivery first; interaction deferred",
+  "status": "deferred"
+}

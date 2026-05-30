@@ -24,6 +24,7 @@ describe('generateComponentPackage — guards', () => {
     expect(() =>
       generateComponentPackage({
         componentPlan,
+        visualView: input.visualView,
         semanticView: input.semanticView,
         interactionSpec: input.interactionSpec,
       }),
@@ -40,6 +41,7 @@ describe('generateComponentPackage — guards', () => {
     });
     const codegenInput: CodegenInput = {
       componentPlan: approved,
+      visualView: input.visualView,
       semanticView: input.semanticView,
       interactionSpec: input.interactionSpec,
     };
@@ -53,6 +55,7 @@ describe('generateComponentPackage — guards', () => {
 
     const result = generateComponentPackage({
       componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
+      visualView: input.visualView,
       semanticView: input.semanticView,
       interactionSpec: input.interactionSpec,
     });

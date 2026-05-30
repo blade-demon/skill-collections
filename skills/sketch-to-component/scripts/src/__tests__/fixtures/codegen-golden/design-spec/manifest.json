@@ -1,0 +1,62 @@
+{
+  "artifacts": [
+    {
+      "filename": "visual-view.json",
+      "generatedFrom": {
+        "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "sourceRef": {
+          "documentId": "codegen-golden-doc-1",
+          "fileName": "codegen-golden.sketch"
+        }
+      },
+      "hash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c",
+      "origin": "derived"
+    },
+    {
+      "filename": "semantic-view.json",
+      "generatedFrom": {
+        "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "sourceRef": {
+          "documentId": "codegen-golden-doc-1",
+          "fileName": "codegen-golden.sketch"
+        },
+        "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+      },
+      "hash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+      "origin": "derived"
+    },
+    {
+      "filename": "interaction-spec.json",
+      "generatedFrom": {
+        "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "semanticViewHash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+        "sourceRef": {
+          "documentId": "codegen-golden-doc-1",
+          "fileName": "codegen-golden.sketch"
+        },
+        "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+      },
+      "hash": "52f248253913f828ea3180d58b6b071757fc0fe869767cc780933020d70b0a10",
+      "origin": "derived"
+    },
+    {
+      "filename": "component-plan.json",
+      "generatedFrom": {
+        "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+        "interactionSpecHash": "52f248253913f828ea3180d58b6b071757fc0fe869767cc780933020d70b0a10",
+        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "semanticViewHash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+        "sourceRef": {
+          "documentId": "codegen-golden-doc-1",
+          "fileName": "codegen-golden.sketch"
+        },
+        "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+      },
+      "hash": "a42b703e3bd6c693363da3bdb5b1e0c56b6f4386ba81c02d86cad15717f69ea7",
+      "origin": "derived"
+    }
+  ]
+}
