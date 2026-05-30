@@ -1,10 +1,10 @@
-# 交互覆盖
+# Interaction coverage
 
-由已批准的 component-plan 覆盖快照生成；不得重新分类。
+Generated from the approved component-plan coverage snapshot; never re-classified.
 
-| 维度 | 状态 | 说明 |
+| Axis | Status | Notes |
 | --- | --- | --- |
-| states | deferred | 先交付视觉；交互延后 |
-| events | deferred | 先交付视觉；交互延后 |
-| dataBinding | deferred | 先交付视觉；交互延后 |
-| stateTransitions | deferred | 先交付视觉；交互延后 |
+| states | deferred | visual delivery first; interaction deferred |
+| events | deferred | visual delivery first; interaction deferred |
+| dataBinding | deferred | visual delivery first; interaction deferred |
+| stateTransitions | deferred | visual delivery first; interaction deferred |
