@@ -90,6 +90,52 @@ describe('buildVisualBlock', () => {
     });
   });
 
+  it('reads per-corner radius regardless of points array order', () => {
+    /* ShapePath edits and manual point manipulation can reorder the curvePoint
+     * array so the canonical TL → TR → BR → BL convention no longer holds.
+     * Each curvePoint still carries its `point: '{x, y}'` coord, so the
+     * extractor should classify corners by coordinate, not by index. */
+    const warnings: Warning[] = [];
+    const bubble = {
+      _class: 'rectangle',
+      do_objectID: 'bubble-reversed',
+      name: 'BubbleReversed',
+      frame: { _class: 'rect', x: 0, y: 0, width: 168, height: 48 },
+      fixedRadius: 0,
+      // Same per-corner radii as the chat-bubble case but supplied in
+      // reversed BL → BR → TR → TL order to defeat array-order lookup.
+      points: [
+        { _class: 'curvePoint', cornerRadius: 21, point: '{0, 1}' },
+        { _class: 'curvePoint', cornerRadius: 0, point: '{1, 1}' },
+        { _class: 'curvePoint', cornerRadius: 21, point: '{1, 0}' },
+        { _class: 'curvePoint', cornerRadius: 21, point: '{0, 0}' },
+      ],
+      style: { do_objectID: 'bubble-reversed-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'bubble-reversed-art',
+      name: 'BubbleReversedArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 100 },
+      layers: [bubble],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    expect(visual.root.children[0]?.style?.radius).toEqual({
+      topLeft: 21,
+      topRight: 21,
+      bottomRight: 0,
+      bottomLeft: 21,
+    });
+    // Coordinate-based resolution should succeed without the fallback warning.
+    expect(warnings.some((w) => w.code === 'radius-point-order-ambiguous')).toBe(false);
+  });
+
   it('collapses per-corner radius to a single number when all four corners are equal', () => {
     const warnings: Warning[] = [];
     const card = {
