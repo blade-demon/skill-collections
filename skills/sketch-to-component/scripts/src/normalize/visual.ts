@@ -596,6 +596,11 @@ const FONT_WEIGHTS: Record<string, number> = {
   black: 900,
 };
 
+const CSS_FONT_FAMILY_ALIASES: Record<string, string> = {
+  DINAlternate: 'DIN Alternate',
+  DINCondensed: 'DIN Condensed',
+};
+
 /**
  * 解析 Sketch 字体名称为字体族和数值粗细
  *
@@ -616,9 +621,12 @@ function parseFontName(name: string): { family: string; weight?: number } {
   // 只有在末尾包含 '-' 时才尝试提取粗细
   if (dash > 0) {
     const weight = FONT_WEIGHTS[name.slice(dash + 1).toLowerCase()];
-    if (weight !== undefined) return { family: name.slice(0, dash), weight };
+    if (weight !== undefined) {
+      const family = name.slice(0, dash);
+      return { family: CSS_FONT_FAMILY_ALIASES[family] ?? family, weight };
+    }
   }
-  return { family: name };
+  return { family: CSS_FONT_FAMILY_ALIASES[name] ?? name };
 }
 
 /**
