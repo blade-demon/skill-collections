@@ -238,6 +238,27 @@ describe('buildVisualBlock', () => {
     });
   });
 
+  it('maps Sketch DINAlternate PostScript names to the browser CSS family', () => {
+    const warnings: Warning[] = [];
+    const selected = selectArtboard(model);
+    const visual = buildVisualBlock({
+      model,
+      artboard: selected.artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    // 0305E181 — price text "643.08", Sketch font name DINAlternate-Bold.
+    // Browser CSS matches the installed macOS family as "DIN Alternate"; using
+    // the compact PostScript prefix "DINAlternate" can fall back to a wider
+    // font and make the price overlap the trailing "起" label.
+    const price = findBySourceNodeId(visual.root, '0305E181-06EB-4560-9918-46C3CE832442');
+
+    expect(price?.text?.style).toMatchObject({
+      fontFamily: 'DIN Alternate',
+      fontWeight: 700,
+    });
+  });
+
   it('leaves an unrecognised font name untouched and assigns no weight', () => {
     const warnings: Warning[] = [];
     const selected = selectArtboard(model);
