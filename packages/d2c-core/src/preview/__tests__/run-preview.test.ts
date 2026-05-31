@@ -19,6 +19,7 @@ describe('runPreview', () => {
       overrideUnmapped: 1,
       overrideUnsupported: 1,
       placeholderAssets: 1,
+      realAssets: 0,
     });
   });
 
