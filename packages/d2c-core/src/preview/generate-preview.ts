@@ -235,7 +235,22 @@ function nodeDeclarations(
     if (textStyle?.fontSize) declarations.push(`font-size: ${px(textStyle.fontSize)};`);
     if (textStyle?.fontWeight) declarations.push(`font-weight: ${textStyle.fontWeight};`);
     if (textStyle?.lineHeight) declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
-    if (textStyle?.color) declarations.push(`color: ${textStyle.color};`);
+    /* Gradient text: Sketch encodes gradient titles (e.g. "推荐理由：") as a
+     * style.fills[0] gradient on the text node. Normalize keeps gradient/image
+     * fills on text nodes for exactly this case; we render them via
+     * background-clip:text + transparent foreground. Radial/angular/missing
+     * gradient data falls through to the flat text colour, mirroring the
+     * shape-fill fallback above. See docs/text-gradient-investigation.md. */
+    const textFill = style?.fills?.[0];
+    const textGradientCss = textFill?.type === 'gradient' ? linearGradientCss(textFill) : undefined;
+    if (textGradientCss) {
+      declarations.push(`background-image: ${textGradientCss};`);
+      declarations.push('-webkit-background-clip: text;');
+      declarations.push('background-clip: text;');
+      declarations.push('color: transparent;');
+    } else if (textStyle?.color) {
+      declarations.push(`color: ${textStyle.color};`);
+    }
     if (textStyle?.textAlign) declarations.push(`text-align: ${textStyle.textAlign};`);
   }
 

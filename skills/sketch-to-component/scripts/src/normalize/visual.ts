@@ -677,14 +677,16 @@ function extractStyle(
   const style = node.style && typeof node.style === 'object' ? node.style : undefined;
   if (!style) return undefined;
   const result: Style = {};
-  /* Sketch 文本节点的 style.fills 编码的是"文本颜色"而非背景色
-   * 为避免预览/代码生成器将文本节点画成实色块（见 Gate-1 审阅缺陷 2026-05-22），
-   * 文本节点的填充被跳过。文本颜色已通过 extractText 的 text.style.color 捕获。
+  /* Sketch 文本节点的 style.fills 编码的是"文本颜色"而非背景色。
+   * 纯色 fill 已通过 extractText 的 text.style.color 捕获,在这里丢弃以避免
+   * 预览/代码生成器把文本画成实色块(见 Gate-1 审阅缺陷 2026-05-22)。
+   * 但渐变/图像 fill 不在 text.style.color 的表达能力之内,必须保留,
+   * 供 preview 走 `background-clip: text` 渲染镂空文字
+   * (见 docs/text-gradient-investigation.md)。
    */
-  if (kind !== 'text') {
-    const fills = normalizeFills(style.fills);
-    if (fills.length > 0) result.fills = fills;
-  }
+  const fills = normalizeFills(style.fills);
+  const keptFills = kind === 'text' ? fills.filter((f) => f.type !== 'color') : fills;
+  if (keptFills.length > 0) result.fills = keptFills;
   const borders = normalizeBorders(style.borders);
   if (borders.length > 0) result.borders = borders;
   const effects = normalizeEffects(style.shadows, style.innerShadows);

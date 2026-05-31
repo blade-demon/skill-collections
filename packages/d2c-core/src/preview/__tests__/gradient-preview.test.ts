@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { VisualView } from '../../ir';
+import type { VisualNode, VisualView } from '../../ir';
 import { generatePreview } from '../generate-preview';
 
 function makeGradientView(overrides: {
@@ -145,5 +145,75 @@ describe('generatePreview gradient fills', () => {
     const preview = generatePreview(view);
     expect(preview.css).not.toContain('linear-gradient');
     expect(preview.css).toContain('background-color: #FA5900FF;');
+  });
+
+  it('renders gradient text via background-clip:text + transparent foreground', () => {
+    /* Sketch encodes gradient titles like "推荐理由：" as style.fills[0]
+     * gradient on the text node. We render them through background-clip:text
+     * (with the -webkit- prefix for Safari) so the gradient masks the glyphs
+     * instead of falling back to a flat colour. See
+     * docs/text-gradient-investigation.md. */
+    const view = makeGradientView({ from: '{0, 0}', to: '{1, 0}' });
+    const textChild: VisualNode = {
+      id: 'node-text',
+      kind: 'text',
+      name: 'Title',
+      source: {
+        nodeId: 'text-1',
+        name: 'Title',
+        originalType: 'text',
+        provider: 'test',
+      },
+      layout: { x: 0, y: 0, width: 100, height: 32 },
+      text: {
+        content: '推荐理由：',
+        style: { color: '#111111FF', fontSize: 24 },
+      },
+      style: {
+        // Same gradient shape as the root; transplanted onto the text node.
+        fills: view.body.root.style?.fills,
+      },
+      children: [],
+    };
+    view.body.root.children = [textChild];
+
+    const preview = generatePreview(view);
+
+    expect(preview.css).toContain('background-image: linear-gradient(90deg,');
+    expect(preview.css).toContain('-webkit-background-clip: text;');
+    expect(preview.css).toContain('background-clip: text;');
+    expect(preview.css).toContain('color: transparent;');
+    // The flat text colour from text.style.color must NOT win when a gradient is rendered.
+    expect(preview.css).not.toContain('color: #111111FF;');
+  });
+
+  it('renders gradient text as flat colour when gradient data is malformed', () => {
+    // Strip raw.gradient on the text fill — should fall through to text.style.color.
+    const view = makeGradientView({});
+    const malformedFills: NonNullable<VisualNode['style']>['fills'] = [
+      { type: 'gradient', color: '#FA5900FF' },
+    ];
+    const textChild: VisualNode = {
+      id: 'node-text-fallback',
+      kind: 'text',
+      name: 'Title',
+      source: {
+        nodeId: 'text-fallback',
+        name: 'Title',
+        originalType: 'text',
+        provider: 'test',
+      },
+      layout: { x: 0, y: 0, width: 100, height: 32 },
+      text: { content: 'fallback', style: { color: '#123456FF' } },
+      style: { fills: malformedFills },
+      children: [],
+    };
+    view.body.root.children = [textChild];
+
+    const preview = generatePreview(view);
+    // No background-clip:text path emitted for the text node.
+    expect(preview.css).not.toContain('background-clip: text;');
+    // Flat colour fallback survives.
+    expect(preview.css).toContain('color: #123456FF;');
   });
 });
