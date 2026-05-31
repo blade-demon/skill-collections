@@ -216,7 +216,7 @@ function nodeDeclarations(
     );
   }
   const layerBlur = style?.effects?.find((effect) => effect.type === 'layerBlur');
-  if (layerBlur?.blur !== undefined) declarations.push(`filter: blur(${px(layerBlur.blur)});`);
+  if (layerBlur?.blur) declarations.push(`filter: blur(${px(layerBlur.blur)});`);
   if (style?.radius !== undefined)
     declarations.push(`border-radius: ${radiusValue(style.radius)};`);
   if (style?.opacity !== undefined) declarations.push(`opacity: ${formatNumber(style.opacity)};`);

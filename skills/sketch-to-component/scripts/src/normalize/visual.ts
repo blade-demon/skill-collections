@@ -999,7 +999,8 @@ function normalizeLayerBlur(value: unknown): Effect | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const raw = value as Record<string, unknown>;
   if (raw.isEnabled === false) return undefined;
-  if (typeof raw.radius !== 'number') return undefined;
+  // 用户启用了 blur 但 radius<=0 是无效配置,丢弃以避免产出 filter: blur(0px)。
+  if (typeof raw.radius !== 'number' || raw.radius <= 0) return undefined;
 
   const effect: Effect = {
     type: 'layerBlur',
