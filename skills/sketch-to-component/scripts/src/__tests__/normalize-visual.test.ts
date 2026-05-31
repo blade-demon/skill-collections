@@ -364,6 +364,88 @@ describe('buildVisualBlock', () => {
     expect(fills[0]?.raw).not.toBe(fills[1]?.raw);
   });
 
+  it('keeps a gradient fill on a text node but still drops solid-colour fills', () => {
+    /* Pure-colour text fills are captured by text.style.color and must NOT
+     * survive as style.fills (regression guard against the Gate-1 solid-block
+     * defect). Gradient / image fills, however, cannot be expressed by a single
+     * hex on text.style.color — they must round-trip through style.fills so
+     * preview can render background-clip:text. See
+     * docs/text-gradient-investigation.md. */
+    const warnings: Warning[] = [];
+    const linearGradient = {
+      _class: 'gradient',
+      gradientType: 0,
+      from: '{0, 0}',
+      to: '{1, 0}',
+      stops: [
+        { position: 0, color: { _class: 'color', red: 0, green: 0.4, blue: 1, alpha: 1 } },
+        { position: 1, color: { _class: 'color', red: 0.6, green: 0, blue: 1, alpha: 1 } },
+      ],
+    };
+    const gradientText = {
+      _class: 'text',
+      do_objectID: 'gradient-text-1',
+      name: '推荐理由',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 40 },
+      attributedString: { string: '推荐理由：', attributes: [] },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 1,
+            color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+            gradient: linearGradient,
+          },
+        ],
+      },
+      layers: [],
+    } as unknown as SketchNode;
+    const solidText = {
+      _class: 'text',
+      do_objectID: 'solid-text-1',
+      name: 'Solid',
+      frame: { _class: 'rect', x: 0, y: 50, width: 200, height: 40 },
+      attributedString: { string: 'Solid', attributes: [] },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 0,
+            color: { _class: 'color', red: 0.1, green: 0.2, blue: 0.3, alpha: 1 },
+          },
+        ],
+      },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'text-fill-art',
+      name: 'TextFillArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 100 },
+      layers: [gradientText, solidText],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+
+    const [gradientNode, solidNode] = visual.root.children;
+    expect(gradientNode?.kind).toBe('text');
+    expect(gradientNode?.style?.fills).toHaveLength(1);
+    expect(gradientNode?.style?.fills?.[0]?.type).toBe('gradient');
+    expect(
+      (gradientNode?.style?.fills?.[0]?.raw?.gradient as Record<string, unknown> | undefined)
+        ?.gradientType,
+    ).toBe(0);
+
+    expect(solidNode?.kind).toBe('text');
+    expect(solidNode?.style?.fills).toBeUndefined();
+    expect(solidNode?.text?.style?.color).toBeDefined();
+  });
+
   it('preserves shapePath bezier geometry as a normalized VectorPath', () => {
     /* shapePath curvePoints encode the outline in 0..1 of the layer frame, with
      * curveFrom/curveTo bezier control points gated by hasCurveFrom/To. We keep
