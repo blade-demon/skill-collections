@@ -209,12 +209,14 @@ function nodeDeclarations(
   if (!node.vector && border && shouldRenderBorder(border)) {
     declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
   }
-  const effect = style?.effects?.[0];
-  if (effect) {
+  const shadowEffect = style?.effects?.find((effect) => effect.type !== 'layerBlur');
+  if (shadowEffect) {
     declarations.push(
-      `box-shadow: ${px(effect.x ?? 0)} ${px(effect.y ?? 0)} ${px(effect.blur ?? 0)} ${px(effect.spread ?? 0)} ${effect.color ?? '#00000033'};`,
+      `box-shadow: ${px(shadowEffect.x ?? 0)} ${px(shadowEffect.y ?? 0)} ${px(shadowEffect.blur ?? 0)} ${px(shadowEffect.spread ?? 0)} ${shadowEffect.color ?? '#00000033'};`,
     );
   }
+  const layerBlur = style?.effects?.find((effect) => effect.type === 'layerBlur');
+  if (layerBlur?.blur !== undefined) declarations.push(`filter: blur(${px(layerBlur.blur)});`);
   if (style?.radius !== undefined)
     declarations.push(`border-radius: ${radiusValue(style.radius)};`);
   if (style?.opacity !== undefined) declarations.push(`opacity: ${formatNumber(style.opacity)};`);

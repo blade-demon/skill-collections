@@ -689,7 +689,7 @@ function extractStyle(
   if (keptFills.length > 0) result.fills = keptFills;
   const borders = normalizeBorders(style.borders);
   if (borders.length > 0) result.borders = borders;
-  const effects = normalizeEffects(style.shadows, style.innerShadows);
+  const effects = normalizeEffects(style.shadows, style.innerShadows, style.blur);
   if (effects.length > 0) result.effects = effects;
   // 透明度（contextSettings.opacity）
   const contextSettings = style.contextSettings as Record<string, unknown> | undefined;
@@ -964,9 +964,10 @@ function normalizeBorders(value: unknown): Border[] {
  *
  * @param shadows - 来自 Sketch 的外阴影数组
  * @param innerShadows - 来自 Sketch 的内阴影数组
+ * @param blur - 来自 Sketch 的 layer blur 对象
  * @returns 规范化后的效果对象数组
  */
-function normalizeEffects(shadows: unknown, innerShadows: unknown): Effect[] {
+function normalizeEffects(shadows: unknown, innerShadows: unknown, blur: unknown): Effect[] {
   const effects: Effect[] = [];
   // 同时处理两种阴影类型
   for (const [type, value] of [
@@ -989,7 +990,23 @@ function normalizeEffects(shadows: unknown, innerShadows: unknown): Effect[] {
       });
     }
   }
+  const layerBlur = normalizeLayerBlur(blur);
+  if (layerBlur) effects.push(layerBlur);
   return effects;
+}
+
+function normalizeLayerBlur(value: unknown): Effect | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  if (raw.isEnabled === false) return undefined;
+  if (typeof raw.radius !== 'number') return undefined;
+
+  const effect: Effect = {
+    type: 'layerBlur',
+    blur: raw.radius,
+  };
+  if (typeof raw.type === 'number') effect.raw = { sketchBlurType: raw.type };
+  return effect;
 }
 
 /**
