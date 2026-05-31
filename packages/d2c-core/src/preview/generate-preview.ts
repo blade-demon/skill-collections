@@ -1,4 +1,11 @@
-import { VisualViewSchema, type Fill, type VisualNode, type VisualView } from '../ir';
+import {
+  VisualViewSchema,
+  type Fill,
+  type VectorPath,
+  type VectorPoint,
+  type VisualNode,
+  type VisualView,
+} from '../ir';
 
 export interface PreviewAsset {
   path: string;
@@ -103,6 +110,11 @@ function renderNode(node: VisualNode, realAssets: ReadonlyMap<string, RealImageA
     const label = node.assetRef ? `Image placeholder: ${node.assetRef}` : 'Image placeholder';
     return `<div ${attrs}><span class="d2c-image-label">${escapeHtml(label)}</span></div>`;
   }
+  // Vector shapes (Sketch shapePath) render their real outline as inline SVG.
+  if (node.vector) {
+    const svg = renderVectorSvg(node, node.vector);
+    if (svg) return `<div ${attrs}>${svg}</div>`;
+  }
   if (node.children.length === 0) return `<div ${attrs}></div>`;
   return [
     `<div ${attrs}>`,
@@ -130,6 +142,15 @@ function renderCss(
     '',
     '.d2c-node {',
     '  box-sizing: border-box;',
+    '}',
+    '',
+    '.d2c-vector {',
+    '  position: absolute;',
+    '  inset: 0;',
+    '  width: 100%;',
+    '  height: 100%;',
+    '  display: block;',
+    '  overflow: visible;',
     '}',
     '',
     '.d2c-image-label {',
@@ -184,7 +205,8 @@ function nodeDeclarations(
     }
   }
   const border = style?.borders?.[0];
-  if (border && shouldRenderBorder(border)) {
+  // Vector nodes stroke their actual path inside the SVG, not a box border.
+  if (!node.vector && border && shouldRenderBorder(border)) {
     declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
   }
   const effect = style?.effects?.[0];
@@ -246,6 +268,57 @@ function shouldRenderBoxFill(node: VisualNode): boolean {
     if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
   }
   return true;
+}
+
+/**
+ * Render a vector node's preserved outline as an inline SVG that fills the node
+ * box. The path is scaled from normalized (0..1) anchors to the node's
+ * width/height; fill comes from the shape's first fill colour, stroke from its
+ * border. Returns '' when the geometry is too small to draw.
+ */
+function renderVectorSvg(node: VisualNode, vector: VectorPath): string {
+  const d = vectorPathData(vector, node.layout.width, node.layout.height);
+  if (!d) return '';
+  const fill = node.style?.fills?.[0]?.color ?? 'none';
+  const border = node.style?.borders?.[0];
+  const stroke =
+    border?.color !== undefined
+      ? ` stroke="${border.color}" stroke-width="${formatNumber(border.thickness ?? 1)}"`
+      : '';
+  const w = formatNumber(node.layout.width);
+  const h = formatNumber(node.layout.height);
+  return (
+    `<svg class="d2c-vector" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" ` +
+    `xmlns="http://www.w3.org/2000/svg"><path d="${d}" fill="${fill}"${stroke}/></svg>`
+  );
+}
+
+/**
+ * Convert a normalized VectorPath into an SVG path `d`. Each segment is a cubic
+ * bezier when either endpoint carries a control point on the shared side
+ * (`from.curveFrom` / `to.curveTo`), otherwise a straight line; a closed path
+ * appends the wrap-around segment and `Z`.
+ */
+function vectorPathData(vector: VectorPath, width: number, height: number): string | undefined {
+  const pts = vector.points;
+  if (pts.length < 2) return undefined;
+  const X = (n: number): string => formatNumber(n * width);
+  const Y = (n: number): string => formatNumber(n * height);
+  const segment = (from: VectorPoint, to: VectorPoint): string => {
+    if (from.curveFrom || to.curveTo) {
+      const c1 = from.curveFrom ?? { x: from.x, y: from.y };
+      const c2 = to.curveTo ?? { x: to.x, y: to.y };
+      return ` C ${X(c1.x)} ${Y(c1.y)}, ${X(c2.x)} ${Y(c2.y)}, ${X(to.x)} ${Y(to.y)}`;
+    }
+    return ` L ${X(to.x)} ${Y(to.y)}`;
+  };
+  let d = `M ${X(pts[0]!.x)} ${Y(pts[0]!.y)}`;
+  for (let i = 1; i < pts.length; i++) d += segment(pts[i - 1]!, pts[i]!);
+  if (vector.closed) {
+    d += segment(pts[pts.length - 1]!, pts[0]!);
+    d += ' Z';
+  }
+  return d;
 }
 
 /* Sketch position enum: 0 = center, 1 = inside, 2 = outside. */
