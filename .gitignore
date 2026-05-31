@@ -25,3 +25,6 @@ coverage/
 .env.local
 *.log
 .claude/worktrees/
+
+# sketch-to-component CLI scratch output
+**/.d2c-run-*/
