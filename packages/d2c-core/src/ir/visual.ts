@@ -104,6 +104,35 @@ export type AssetEntry = z.infer<typeof AssetEntrySchema>;
 export const VisualNodeKindSchema = z.enum(['frame', 'group', 'text', 'image', 'vector', 'shape']);
 export type VisualNodeKind = z.infer<typeof VisualNodeKindSchema>;
 
+/**
+ * One anchor of a vector path. Coordinates are normalized to the node frame
+ * (0..1, where {0,0} is top-left and {1,1} is bottom-right), matching Sketch's
+ * curvePoint encoding. `curveFrom` / `curveTo` are the absolute (also 0..1)
+ * cubic-bezier control points; when absent, the adjoining segment is straight.
+ */
+export const VectorPointSchema = z
+  .object({
+    x: z.number(),
+    y: z.number(),
+    curveFrom: z.object({ x: z.number(), y: z.number() }).strict().optional(),
+    curveTo: z.object({ x: z.number(), y: z.number() }).strict().optional(),
+  })
+  .strict();
+export type VectorPoint = z.infer<typeof VectorPointSchema>;
+
+/**
+ * Normalized vector outline preserved from a Sketch `shapePath` so preview /
+ * codegen can render the real silhouette (icons, stars, bubble tails) instead
+ * of dropping it. Renderers scale points by the node's layout width/height.
+ */
+export const VectorPathSchema = z
+  .object({
+    points: z.array(VectorPointSchema).min(2),
+    closed: z.boolean(),
+  })
+  .strict();
+export type VectorPath = z.infer<typeof VectorPathSchema>;
+
 export const SourceTraceSchema = z
   .object({
     nodeId: z.string().min(1),
@@ -142,6 +171,8 @@ export interface VisualNode {
   text?: TextContent;
   assetRef?: string;
   symbol?: SymbolTrace;
+  /** Preserved outline for vector shapes (Sketch shapePath); see VectorPath. */
+  vector?: VectorPath;
   children: VisualNode[];
 }
 
@@ -157,6 +188,7 @@ export const VisualNodeSchema: z.ZodType<VisualNode> = z.lazy(() =>
       text: TextContentSchema.optional(),
       assetRef: z.string().optional(),
       symbol: SymbolTraceSchema.optional(),
+      vector: VectorPathSchema.optional(),
       children: z.array(VisualNodeSchema),
     })
     .strict(),
