@@ -325,6 +325,33 @@ describe('buildVisualBlock', () => {
     expect(warnings.some((w) => w.code === 'clipping-mask-skipped')).toBe(true);
   });
 
+  it('preserves visible clipping-mask vector shapes used as icon artwork', () => {
+    const warnings: Warning[] = [];
+    const selected = selectArtboard(model);
+    const visual = buildVisualBlock({
+      model,
+      artboard: selected.artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    // 43E42698... is the blue star path inside "icon/首页/星星".
+    // Sketch also marks it as hasClippingMask so the highlight oval is clipped
+    // into the star shape. Dropping every mask layer removes the icon's main
+    // visible artwork and leaves only the highlight/blue dot fragments.
+    const starMask = findBySourceNodeId(visual.root, '43E42698-AB02-4D5A-BAA3-96745255D63E');
+
+    expect(starMask?.kind).toBe('shape');
+    expect(starMask?.vector).toBeDefined();
+    expect(starMask?.style?.fills?.[0]?.color).toBe('#0078FAFF');
+    expect(
+      warnings.some(
+        (w) =>
+          w.code === 'clipping-mask-skipped' &&
+          w.sourceNodeId === '43E42698-AB02-4D5A-BAA3-96745255D63E',
+      ),
+    ).toBe(false);
+  });
+
   it('preserves every gradient fill’s raw stops per-fill', () => {
     const warnings: Warning[] = [];
     const gradient = (gradientType: number) => ({
