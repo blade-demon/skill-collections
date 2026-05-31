@@ -1,14 +1,15 @@
-import { TextEncoder } from 'node:util';
+import { TextDecoder, TextEncoder } from 'node:util';
 import { isAbsolute } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { zipSync } from 'fflate';
 import { RawArtifactSchema } from '@skill-collections/d2c-core';
 
 import { ExtractError } from '../errors.js';
-import { extractRaw } from '../extract-raw.js';
+import { extractImageAssets, extractRaw } from '../extract-raw.js';
 import type { SketchRawModel } from '../sketch-raw-model.js';
 
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 function makeSketchZip(entries?: Partial<Record<string, string>>): Uint8Array {
   const defaultEntries = {
@@ -56,5 +57,34 @@ describe('extractRaw', () => {
         },
       ),
     ).rejects.toMatchObject({ code: 'bad-entry' } satisfies Partial<ExtractError>);
+  });
+});
+
+describe('extractImageAssets', () => {
+  it('mirrors real image bytes from the images/ folder, preserving file names', async () => {
+    const images = await extractImageAssets(
+      { source: 'file', filePath: './mock.sketch' },
+      {
+        readFile: async () =>
+          makeSketchZip({
+            'images/zz-second.png': 'SECOND-BYTES',
+            'images/aa-first.png': 'FIRST-BYTES',
+          }),
+      },
+    );
+
+    // sorted by file name for deterministic output
+    expect(images.map((i) => i.fileName)).toEqual(['aa-first.png', 'zz-second.png']);
+    expect(images[0]?.sourcePath).toBe('images/aa-first.png');
+    expect(decoder.decode(images[0]?.bytes)).toBe('FIRST-BYTES');
+    expect(decoder.decode(images[1]?.bytes)).toBe('SECOND-BYTES');
+  });
+
+  it('returns an empty list when the archive has no images', async () => {
+    const images = await extractImageAssets(
+      { source: 'file', filePath: './mock.sketch' },
+      { readFile: async () => makeSketchZip() },
+    );
+    expect(images).toEqual([]);
   });
 });

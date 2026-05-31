@@ -8,6 +8,40 @@ import { SketchRawModelSchema } from './sketch-raw-model.js';
 
 export type SketchExtractInput = { source: 'file'; filePath: string };
 
+/** A real bitmap asset pulled out of the .sketch archive, bytes included. */
+export interface ExtractedImageAsset {
+  /** Original path inside the .sketch zip, e.g. `images/ab12cd.png`. */
+  sourcePath: string;
+  /** Basename reused as the on-disk file name, e.g. `ab12cd.png`. */
+  fileName: string;
+  /** Raw image bytes (already unzipped). */
+  bytes: Uint8Array;
+}
+
+/**
+ * Pull the real bitmap bytes out of a .sketch archive.
+ *
+ * `extractRaw` keeps only asset *metadata* (path / kind / byteLength) in the
+ * DSL — the bytes are dropped after parsing, so preview/codegen can only render
+ * placeholders. This re-opens the archive and returns the `images/*` entries so
+ * the extract CLI can mirror them to disk (original file names preserved),
+ * making extract lossless for image assets without coupling to normalize's
+ * id scheme. Downstream consumers map a `design-ir` asset to its file via
+ * `basename(AssetEntry.originalPath)`.
+ */
+export async function extractImageAssets(
+  input: SketchExtractInput,
+  deps: ExtractRawDeps = {},
+): Promise<ExtractedImageAsset[]> {
+  const archive = await openSketchFile(resolve(input.filePath), deps);
+  const images: ExtractedImageAsset[] = [];
+  for (const [path, bytes] of archive.entries) {
+    if (path.endsWith('/') || !path.startsWith('images/')) continue;
+    images.push({ sourcePath: path, fileName: basename(path), bytes });
+  }
+  return images.sort((a, b) => a.fileName.localeCompare(b.fileName));
+}
+
 export interface ExtractRawDeps extends OpenSketchFileDeps {
   now?: () => Date;
 }

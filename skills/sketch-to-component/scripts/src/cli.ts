@@ -25,7 +25,7 @@ import {
 } from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
-import { extractRaw } from './extract-raw.js';
+import { extractImageAssets, extractRaw } from './extract-raw.js';
 import { normalizeSketchRaw } from './normalize.js';
 import type { SketchRawModel } from './sketch-raw-model.js';
 
@@ -197,12 +197,25 @@ async function runExtract(): Promise<void> {
   await mkdir(outputDir, { recursive: true });
   await writeFile(outputPath, rawJson, 'utf8');
 
+  /* Mirror the real bitmap bytes alongside the DSL so downstream preview/codegen
+   * can render actual images instead of placeholders. File names preserve the
+   * Sketch zip basename; design-ir assets map back via basename(originalPath). */
+  const images = await extractImageAssets({ source: 'file', filePath: args.filePath });
+  const imagesDir = join(outputDir, 'assets');
+  if (images.length > 0) {
+    await mkdir(imagesDir, { recursive: true });
+    for (const image of images) {
+      await writeFile(join(imagesDir, image.fileName), image.bytes);
+    }
+  }
+
   const payload = raw.payload as SketchRawModel;
   console.log(`provider: ${raw.provider}`);
   console.log(`documentId: ${raw.ref.documentId}`);
   console.log(`pages: ${payload.pages.length}`);
   console.log(`assets: ${payload.assets.length}`);
   console.log(`raw-dsl.json: ${outputPath} (${Buffer.byteLength(rawJson, 'utf8')} bytes)`);
+  console.log(`images: ${images.length}${images.length > 0 ? ` -> ${imagesDir}` : ''}`);
 }
 
 async function runNormalize(): Promise<void> {
