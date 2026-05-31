@@ -184,7 +184,7 @@ function nodeDeclarations(
     }
   }
   const border = style?.borders?.[0];
-  if (border?.color || border?.thickness !== undefined) {
+  if (border && shouldRenderBorder(border)) {
     declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
   }
   const effect = style?.effects?.[0];
@@ -245,6 +245,28 @@ function shouldRenderBoxFill(node: VisualNode): boolean {
     const originalType = node.source.originalType?.toLowerCase();
     if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
   }
+  return true;
+}
+
+/* Sketch position enum: 0 = center, 1 = inside, 2 = outside. */
+const BORDER_POSITION_INSIDE = 1;
+
+/**
+ * A Sketch sub-pixel *inside* stroke (e.g. the 0.5px white inner border on a
+ * chat bubble) is visually negligible in Sketch's own render, but emitting it
+ * as a CSS border paints a thin seam wherever the shape abuts a sibling — most
+ * visibly between a bubble body and its (separately rendered) tail. The
+ * box-model can't place that stroke along the shared silhouette the way Sketch
+ * does, so we skip these strokes. Borders ≥ 1px and non-inside strokes render
+ * as before. See chat-bubble-tail-fidelity-investigation.md.
+ */
+function shouldRenderBorder(
+  border: NonNullable<NonNullable<VisualNode['style']>['borders']>[number],
+): boolean {
+  const hasBorder = border.color !== undefined || border.thickness !== undefined;
+  if (!hasBorder) return false;
+  const thickness = border.thickness ?? 1;
+  if (thickness < 1 && border.position === BORDER_POSITION_INSIDE) return false;
   return true;
 }
 
