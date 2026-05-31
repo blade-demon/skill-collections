@@ -467,6 +467,54 @@ describe('buildVisualBlock', () => {
     expect(solidNode?.text?.style?.color).toBeDefined();
   });
 
+  it('preserves enabled Sketch layer blur as a visual effect', () => {
+    const warnings: Warning[] = [];
+    const blurredGlow = {
+      _class: 'rectangle',
+      do_objectID: 'blurred-glow',
+      name: 'Soft glow',
+      frame: { _class: 'rect', x: 10, y: -20, width: 120, height: 160 },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 0,
+            color: { _class: 'color', red: 1, green: 0.99, blue: 0.98, alpha: 1 },
+          },
+        ],
+        blur: {
+          _class: 'blur',
+          isEnabled: true,
+          radius: 50,
+          type: 0,
+        },
+      },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'blur-art',
+      name: 'BlurArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 200, height: 200 },
+      layers: [blurredGlow],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+
+    expect(visual.root.children[0]?.style?.effects).toEqual([
+      {
+        type: 'layerBlur',
+        blur: 50,
+        raw: { sketchBlurType: 0 },
+      },
+    ]);
+  });
+
   it('preserves shapePath bezier geometry as a normalized VectorPath', () => {
     /* shapePath curvePoints encode the outline in 0..1 of the layer frame, with
      * curveFrom/curveTo bezier control points gated by hasCurveFrom/To. We keep
