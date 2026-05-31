@@ -363,6 +363,97 @@ describe('buildVisualBlock', () => {
     // each fill carries its own raw object — not a shared reference
     expect(fills[0]?.raw).not.toBe(fills[1]?.raw);
   });
+
+  it('preserves shapePath bezier geometry as a normalized VectorPath', () => {
+    /* shapePath curvePoints encode the outline in 0..1 of the layer frame, with
+     * curveFrom/curveTo bezier control points gated by hasCurveFrom/To. We keep
+     * this geometry so preview/codegen can render the real silhouette (icons,
+     * stars, tails) instead of dropping shapePath shapes. */
+    const warnings: Warning[] = [];
+    const star = {
+      _class: 'shapePath',
+      do_objectID: 'star-1',
+      name: 'Star',
+      frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      isClosed: true,
+      points: [
+        { _class: 'curvePoint', point: '{0, 0}', hasCurveFrom: false, hasCurveTo: false },
+        {
+          _class: 'curvePoint',
+          point: '{1, 0}',
+          curveFrom: '{0.75, 0}',
+          curveTo: '{0.9, 0}',
+          hasCurveFrom: true,
+          hasCurveTo: false,
+        },
+        {
+          _class: 'curvePoint',
+          point: '{0.5, 1}',
+          curveTo: '{0.4, 0.8}',
+          hasCurveFrom: false,
+          hasCurveTo: true,
+        },
+      ],
+      style: { do_objectID: 'star-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'star-art',
+      name: 'StarArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [star],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const node = visual.root.children[0];
+
+    expect(node?.vector?.closed).toBe(true);
+    expect(node?.vector?.points).toEqual([
+      { x: 0, y: 0 }, // straight anchor — no control points
+      { x: 1, y: 0, curveFrom: { x: 0.75, y: 0 } }, // hasCurveFrom only (curveTo dropped)
+      { x: 0.5, y: 1, curveTo: { x: 0.4, y: 0.8 } }, // hasCurveTo only
+    ]);
+  });
+
+  it('does not attach vector geometry to non-shapePath shapes', () => {
+    /* A rectangle also carries points[], but its outline is already covered by
+     * box-model + radius, so we don't emit a VectorPath for it. */
+    const warnings: Warning[] = [];
+    const rect = {
+      _class: 'rectangle',
+      do_objectID: 'plain-rect',
+      name: 'Plain',
+      frame: { _class: 'rect', x: 0, y: 0, width: 30, height: 30 },
+      points: [
+        { _class: 'curvePoint', point: '{0, 0}' },
+        { _class: 'curvePoint', point: '{1, 0}' },
+        { _class: 'curvePoint', point: '{1, 1}' },
+        { _class: 'curvePoint', point: '{0, 1}' },
+      ],
+      style: { do_objectID: 'plain-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'rect-art',
+      name: 'RectArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [rect],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+
+    expect(visual.root.children[0]?.vector).toBeUndefined();
+  });
 });
 
 function findBySourceNodeId(node: VisualNode, nodeId: string): VisualNode | undefined {

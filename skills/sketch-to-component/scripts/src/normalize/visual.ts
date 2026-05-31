@@ -5,6 +5,8 @@ import type {
   Fill,
   Style,
   TextContent,
+  VectorPath,
+  VectorPoint,
   VisualBlock,
   VisualNode,
   VisualNodeKind,
@@ -266,6 +268,9 @@ function normalizeNode(
     const asset = registerImageAsset(node, context);
     visualNode.assetRef = asset.id;
   }
+  // 矢量形状(shapePath)保留贝塞尔路径几何,供 preview/codegen 还原真实轮廓
+  const vector = extractVectorPath(node, nodeClass);
+  if (vector) visualNode.vector = vector;
 
   return visualNode;
 }
@@ -833,6 +838,55 @@ function extractRadius(
     return node.fixedRadius;
   }
   return undefined;
+}
+
+/**
+ * 从 Sketch shapePath 提取归一化贝塞尔路径几何
+ *
+ * shapePath 的每个 curvePoint 含:
+ * - point: '{x, y}' 锚点(本地矩形 0..1 归一化)
+ * - curveFrom / curveTo: '{x, y}' 三次贝塞尔控制点(同样 0..1)
+ * - hasCurveFrom / hasCurveTo: 该侧是否为曲线段
+ * 外加 node.isClosed 表示路径是否闭合。
+ *
+ * 仅处理 shapePath(带显式 points 的矢量轮廓):oval/rectangle 已由
+ * 圆角/盒模型渲染,shapeGroup 由其 shapePath 子层各自携带几何。
+ * 坐标四舍五入到 6 位小数以保持产物确定性(byte-stable golden)。
+ *
+ * @param node - Sketch 节点
+ * @param nodeClass - 节点类型字符串
+ * @returns VectorPath,或 undefined(非 shapePath / 点数不足 / 解析失败)
+ */
+function extractVectorPath(node: SketchNode, nodeClass: string): VectorPath | undefined {
+  if (nodeClass !== 'shapePath') return undefined;
+  const rawPoints = Array.isArray(node.points)
+    ? (node.points as Array<Record<string, unknown>>)
+    : undefined;
+  if (!rawPoints || rawPoints.length < 2) return undefined;
+
+  const points: VectorPoint[] = [];
+  for (const p of rawPoints) {
+    if (!p || typeof p !== 'object') return undefined;
+    const anchor = parseCurvePointCoord(p.point);
+    if (!anchor) return undefined;
+    const point: VectorPoint = { x: round6(anchor.x), y: round6(anchor.y) };
+    // 仅在该侧标记为曲线时保留控制点;直线段不带控制点。
+    if (p.hasCurveFrom === true) {
+      const cf = parseCurvePointCoord(p.curveFrom);
+      if (cf) point.curveFrom = { x: round6(cf.x), y: round6(cf.y) };
+    }
+    if (p.hasCurveTo === true) {
+      const ct = parseCurvePointCoord(p.curveTo);
+      if (ct) point.curveTo = { x: round6(ct.x), y: round6(ct.y) };
+    }
+    points.push(point);
+  }
+  return { points, closed: node.isClosed === true };
+}
+
+/** 四舍五入到 6 位小数,保证矢量坐标在产物中确定且紧凑。 */
+function round6(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
 }
 
 /**
