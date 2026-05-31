@@ -176,7 +176,7 @@ function normalizeNode(
    * - 父节点标记 style.raw.maskedContent
    * - 预览/代码生成器用 overflow: hidden 近似裁剪效果
    */
-  if (node.hasClippingMask === true) {
+  if (node.hasClippingMask === true && !hasVisibleMaskArtwork(node)) {
     addWarning(
       context.warnings,
       'clipping-mask-skipped',
@@ -273,6 +273,21 @@ function normalizeNode(
   if (vector) visualNode.vector = vector;
 
   return visualNode;
+}
+
+/**
+ * 判断 Sketch mask 层是否同时承载可见图形。
+ *
+ * 有些 symbol 会把主图形路径本身标记为 hasClippingMask，用它裁剪后续
+ * 高光层；此时无条件跳过 mask 会丢失主图形。没有绘制样式的 mask 仍然
+ * 视为纯裁剪层，继续跳过以避免旧的灰色遮罩回归。
+ */
+function hasVisibleMaskArtwork(node: SketchNode): boolean {
+  const style = node.style && typeof node.style === 'object' ? node.style : undefined;
+  if (!style) return false;
+  if (normalizeFills(style.fills).length > 0) return true;
+  if (normalizeBorders(style.borders).length > 0) return true;
+  return normalizeEffects(style.shadows, style.innerShadows, style.blur).length > 0;
 }
 
 /**
