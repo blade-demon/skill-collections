@@ -3,7 +3,24 @@ import { VisualViewSchema, type Fill, type VisualNode, type VisualView } from '.
 export interface PreviewAsset {
   path: string;
   assetId: string;
-  content: string;
+  /** Placeholder SVGs are text; real bitmaps are raw bytes. */
+  content: string | Uint8Array;
+}
+
+/** A real image the caller resolved from disk, keyed by VisualNode.assetRef. */
+export interface RealImageAsset {
+  /** On-disk file name to reference and re-emit, e.g. `ab12cd.png`. */
+  fileName: string;
+  bytes: Uint8Array;
+}
+
+export interface GeneratePreviewOptions {
+  /**
+   * Real images keyed by `VisualNode.assetRef`. When an image node's assetRef
+   * is present, preview renders the actual bitmap; otherwise it falls back to
+   * the generated placeholder SVG. Defaults to none (all placeholders).
+   */
+  realAssets?: ReadonlyMap<string, RealImageAsset>;
 }
 
 export interface GeneratePreviewResult {
@@ -12,31 +29,47 @@ export interface GeneratePreviewResult {
   assets: PreviewAsset[];
   stats: {
     placeholderAssets: number;
+    realAssets: number;
   };
 }
 
-export function generatePreview(input: VisualView): GeneratePreviewResult {
+export function generatePreview(
+  input: VisualView,
+  options: GeneratePreviewOptions = {},
+): GeneratePreviewResult {
   const visualView = VisualViewSchema.parse(input);
-  const placeholderAssets = collectPlaceholderAssets(visualView.body.root);
-  const html = renderHtml(visualView.body.root);
-  const css = renderCss(visualView.body.root, placeholderAssets);
-  const assets = [...placeholderAssets.values()].map(({ assetId, width, height }) => ({
-    path: `assets/${assetId}.svg`,
+  const realAssets = options.realAssets ?? new Map<string, RealImageAsset>();
+  // Placeholders only for image nodes without a resolved real image.
+  const placeholderAssets = collectPlaceholderAssets(visualView.body.root, realAssets);
+  const usedRealAssets = collectUsedRealAssets(visualView.body.root, realAssets);
+  const html = renderHtml(visualView.body.root, realAssets);
+  const css = renderCss(visualView.body.root, placeholderAssets, realAssets);
+
+  const placeholderPreviewAssets: PreviewAsset[] = [...placeholderAssets.values()].map(
+    ({ assetId, width, height }) => ({
+      path: `assets/${assetId}.svg`,
+      assetId,
+      content: renderPlaceholderSvg(assetId, width, height),
+    }),
+  );
+  const realPreviewAssets: PreviewAsset[] = [...usedRealAssets].map(([assetId, real]) => ({
+    path: `assets/${real.fileName}`,
     assetId,
-    content: renderPlaceholderSvg(assetId, width, height),
+    content: real.bytes,
   }));
 
   return {
     html,
     css,
-    assets,
+    assets: [...placeholderPreviewAssets, ...realPreviewAssets],
     stats: {
-      placeholderAssets: assets.length,
+      placeholderAssets: placeholderPreviewAssets.length,
+      realAssets: realPreviewAssets.length,
     },
   };
 }
 
-function renderHtml(root: VisualNode): string {
+function renderHtml(root: VisualNode, realAssets: ReadonlyMap<string, RealImageAsset>): string {
   return [
     '<!doctype html>',
     '<html lang="en">',
@@ -48,7 +81,7 @@ function renderHtml(root: VisualNode): string {
     '</head>',
     '<body>',
     '  <main class="d2c-preview">',
-    indent(renderNode(root), 4),
+    indent(renderNode(root, realAssets), 4),
     '  </main>',
     '</body>',
     '</html>',
@@ -56,25 +89,33 @@ function renderHtml(root: VisualNode): string {
   ].join('\n');
 }
 
-function renderNode(node: VisualNode): string {
+function renderNode(node: VisualNode, realAssets: ReadonlyMap<string, RealImageAsset>): string {
   const className = nodeClassName(node);
   const attrs = `class="d2c-node ${className}" data-node-id="${escapeAttr(node.id)}" data-kind="${node.kind}"`;
   if (node.kind === 'text') {
     return `<div ${attrs}>${escapeHtml(node.text?.content ?? '')}</div>`;
   }
   if (node.kind === 'image') {
+    // Real images render via background-image (CSS); only placeholders get the label.
+    if (node.assetRef && realAssets.has(node.assetRef)) {
+      return `<div ${attrs}></div>`;
+    }
     const label = node.assetRef ? `Image placeholder: ${node.assetRef}` : 'Image placeholder';
     return `<div ${attrs}><span class="d2c-image-label">${escapeHtml(label)}</span></div>`;
   }
   if (node.children.length === 0) return `<div ${attrs}></div>`;
   return [
     `<div ${attrs}>`,
-    ...node.children.map((child) => indent(renderNode(child), 2)),
+    ...node.children.map((child) => indent(renderNode(child, realAssets), 2)),
     '</div>',
   ].join('\n');
 }
 
-function renderCss(root: VisualNode, placeholderAssets: Map<string, PlaceholderAsset>): string {
+function renderCss(
+  root: VisualNode,
+  placeholderAssets: Map<string, PlaceholderAsset>,
+  realAssets: ReadonlyMap<string, RealImageAsset>,
+): string {
   const rules = [
     'html, body {',
     '  margin: 0;',
@@ -106,7 +147,7 @@ function renderCss(root: VisualNode, placeholderAssets: Map<string, PlaceholderA
 
   walk(root, (node, isRoot) => {
     rules.push(`${nodeSelector(node)} {`);
-    for (const declaration of nodeDeclarations(node, isRoot, placeholderAssets)) {
+    for (const declaration of nodeDeclarations(node, isRoot, placeholderAssets, realAssets)) {
       rules.push(`  ${declaration}`);
     }
     rules.push('}');
@@ -120,6 +161,7 @@ function nodeDeclarations(
   node: VisualNode,
   isRoot: boolean,
   placeholderAssets: Map<string, PlaceholderAsset>,
+  realAssets: ReadonlyMap<string, RealImageAsset>,
 ): string[] {
   const declarations = [
     `position: ${isRoot ? 'relative' : 'absolute'};`,
@@ -176,12 +218,21 @@ function nodeDeclarations(
   }
 
   if (node.kind === 'image' && node.assetRef) {
-    const placeholder = placeholderAssets.get(node.assetRef);
-    if (placeholder) {
-      declarations.push(`background-image: url("./assets/${placeholder.assetId}.svg");`);
-      declarations.push('background-size: cover;');
+    const real = realAssets.get(node.assetRef);
+    if (real) {
+      // Real bitmap: contain (not cover) so the whole image shows without crop.
+      declarations.push(`background-image: url("./assets/${cssUrl(real.fileName)}");`);
+      declarations.push('background-size: contain;');
       declarations.push('background-position: center;');
       declarations.push('background-repeat: no-repeat;');
+    } else {
+      const placeholder = placeholderAssets.get(node.assetRef);
+      if (placeholder) {
+        declarations.push(`background-image: url("./assets/${placeholder.assetId}.svg");`);
+        declarations.push('background-size: cover;');
+        declarations.push('background-position: center;');
+        declarations.push('background-repeat: no-repeat;');
+      }
     }
   }
 
@@ -203,10 +254,18 @@ interface PlaceholderAsset {
   height: number;
 }
 
-function collectPlaceholderAssets(root: VisualNode): Map<string, PlaceholderAsset> {
+function collectPlaceholderAssets(
+  root: VisualNode,
+  realAssets: ReadonlyMap<string, RealImageAsset>,
+): Map<string, PlaceholderAsset> {
   const assets = new Map<string, PlaceholderAsset>();
   walk(root, (node) => {
-    if (node.kind === 'image' && node.assetRef && !assets.has(node.assetRef)) {
+    if (
+      node.kind === 'image' &&
+      node.assetRef &&
+      !realAssets.has(node.assetRef) &&
+      !assets.has(node.assetRef)
+    ) {
       assets.set(node.assetRef, {
         assetId: node.assetRef,
         width: node.layout.width,
@@ -215,6 +274,21 @@ function collectPlaceholderAssets(root: VisualNode): Map<string, PlaceholderAsse
     }
   });
   return assets;
+}
+
+/** Real images actually referenced by an image node, deduped by assetRef. */
+function collectUsedRealAssets(
+  root: VisualNode,
+  realAssets: ReadonlyMap<string, RealImageAsset>,
+): Map<string, RealImageAsset> {
+  const used = new Map<string, RealImageAsset>();
+  walk(root, (node) => {
+    if (node.kind === 'image' && node.assetRef && !used.has(node.assetRef)) {
+      const real = realAssets.get(node.assetRef);
+      if (real) used.set(node.assetRef, real);
+    }
+  });
+  return used;
 }
 
 function renderPlaceholderSvg(assetId: string, width: number, height: number): string {
@@ -264,6 +338,11 @@ function radiusValue(
 
 function cssString(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+/** Escape a file name for safe use inside a double-quoted CSS url(). */
+function cssUrl(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 function px(value: number): string {

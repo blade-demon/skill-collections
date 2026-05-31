@@ -1,5 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   runPreview as runCorePreview,
@@ -22,6 +22,7 @@ import {
   type ContractManifest,
   type CodegenFilePlan,
   type DesignSpecInput,
+  type RealImageAsset,
 } from '@skill-collections/d2c-core';
 
 import { ExtractError } from './errors.js';
@@ -46,6 +47,8 @@ export interface PreviewCliArgs {
   command: 'preview';
   designIrPath: string;
   outDir: string;
+  /** Optional dir of real images (extract's <out>/ir/assets) for real rendering. */
+  assetsDir?: string;
 }
 
 function argValue(argv: string[], name: string): string | undefined {
@@ -87,7 +90,10 @@ export function parsePreviewArgs(argv: string[]): PreviewCliArgs | undefined {
   const outDir = argValue(argv, '--out');
   if (!designIrPath || !outDir) return undefined;
 
-  return { command, designIrPath, outDir };
+  const args: PreviewCliArgs = { command, designIrPath, outDir };
+  const assetsDir = argValue(argv, '--assets');
+  if (assetsDir !== undefined) args.assetsDir = assetsDir;
+  return args;
 }
 
 export interface ContractCliArgs {
@@ -170,7 +176,7 @@ export function parseContractArgs(argv: string[]): ContractCliArgs | undefined {
 function printUsage(): void {
   console.error('Usage: npm run extract -- --file <path> --out <dir>');
   console.error('   or: npm run normalize -- --raw <path> --out <dir> [--artboard <id|name>]');
-  console.error('   or: npm run preview -- --design-ir <path> --out <dir>');
+  console.error('   or: npm run preview -- --design-ir <path> --out <dir> [--assets <dir>]');
   console.error(
     '   or: npm run contract -- (--file <path> [--artboard <id|name>] | --design-ir <path>) --out <dir> --mode presentational --interaction-mode <omitted|deferred> --approval-reason <str> --approved-by <str> --approved-at <iso>',
   );
@@ -250,7 +256,10 @@ async function runPreview(): Promise<void> {
   }
 
   const designIr = JSON.parse(await readFile(args.designIrPath, 'utf8')) as DesignIR;
-  const preview = runCorePreview(designIr);
+  const realAssets = args.assetsDir
+    ? await loadRealImageAssets(designIr, args.assetsDir)
+    : undefined;
+  const preview = runCorePreview(designIr, realAssets ? { realAssets } : {});
   const previewDir = join(args.outDir, 'preview');
   const assetsDir = join(previewDir, 'assets');
   const viewsDir = join(args.outDir, 'ir', 'views');
@@ -266,7 +275,9 @@ async function runPreview(): Promise<void> {
   await writeFile(reportPath, preview.report, 'utf8');
   await writeFile(visualViewPath, preview.visualViewJson, 'utf8');
   for (const asset of preview.assets) {
-    await writeFile(join(previewDir, asset.path), asset.content, 'utf8');
+    // String content (placeholder SVG) writes as utf8; Uint8Array (real bitmap)
+    // writes raw — passing no encoding handles both.
+    await writeFile(join(previewDir, asset.path), asset.content);
   }
 
   console.log(`requiresApproval: ${preview.requiresApproval}`);
@@ -274,6 +285,7 @@ async function runPreview(): Promise<void> {
   console.log(`overrideUnmapped: ${preview.stats.overrideUnmapped}`);
   console.log(`overrideUnsupported: ${preview.stats.overrideUnsupported}`);
   console.log(`placeholderAssets: ${preview.stats.placeholderAssets}`);
+  console.log(`realAssets: ${preview.stats.realAssets}`);
   console.log(
     `visual-view.json: ${visualViewPath} (${Buffer.byteLength(preview.visualViewJson, 'utf8')} bytes)`,
   );
@@ -282,6 +294,34 @@ async function runPreview(): Promise<void> {
   console.log(
     `visual-review-report.md: ${reportPath} (${Buffer.byteLength(preview.report, 'utf8')} bytes)`,
   );
+}
+
+/**
+ * Resolve real image bytes for preview from an extract assets dir.
+ *
+ * Maps each `design-ir` image asset to `<assetsDir>/<basename(originalPath)>`
+ * (the file names extract mirrors). Missing files are skipped so preview falls
+ * back to a placeholder for them. Keyed by `AssetEntry.id`, which equals the
+ * image node's `assetRef`.
+ */
+async function loadRealImageAssets(
+  designIr: DesignIR,
+  assetsDir: string,
+): Promise<Map<string, RealImageAsset>> {
+  const realAssets = new Map<string, RealImageAsset>();
+  for (const asset of designIr.visual.assets) {
+    if (asset.kind !== 'image') continue;
+    const source = asset.originalPath ?? asset.ref;
+    const fileName = basename(source);
+    if (!fileName) continue;
+    try {
+      const bytes = await readFile(join(assetsDir, fileName));
+      realAssets.set(asset.id, { fileName, bytes });
+    } catch {
+      // Missing/unreadable → leave it to the placeholder path.
+    }
+  }
+  return realAssets;
 }
 
 /* ── contract (Stage 5D) ─────────────────────────────────────────────────── */

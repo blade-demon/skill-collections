@@ -5,10 +5,13 @@ export interface GenerateVisualReviewReportInput {
   visualView: VisualView;
   warnings: Warning[];
   placeholderAssets: PreviewAsset[];
+  /** Count of image nodes rendered with a real bitmap (not a placeholder). */
+  realAssets?: number;
 }
 
 export function generateVisualReviewReport(input: GenerateVisualReviewReportInput): string {
   const counts = countNodes(input.visualView.body.root);
+  const realAssets = input.realAssets ?? 0;
   const lines = [
     '# Visual Review Report',
     '',
@@ -16,6 +19,7 @@ export function generateVisualReviewReport(input: GenerateVisualReviewReportInpu
     `Total nodes: ${counts.total}`,
     `Text nodes: ${counts.text}`,
     `Placeholder assets: ${input.placeholderAssets.length}`,
+    `Real image assets: ${realAssets}`,
     '',
     '## Placeholder Assets',
     '',
@@ -41,7 +45,7 @@ export function generateVisualReviewReport(input: GenerateVisualReviewReportInpu
 
   lines.push('', '## Known Limitations', '');
   lines.push(
-    '- Image content is represented by deterministic placeholders; real image export is out of scope for Stage 4.',
+    '- Image nodes render real bitmaps when the asset is provided; otherwise a deterministic placeholder is used.',
   );
   lines.push('- Automated screenshot diff is not run in Stage 4.');
   lines.push('');
