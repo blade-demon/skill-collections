@@ -242,7 +242,12 @@ function nodeDeclarations(
 
   if (node.kind === 'text') {
     const textStyle = node.text?.style;
-    declarations.push('white-space: pre-wrap;');
+    if (isSketchAutoWidthText(node)) {
+      declarations.push('width: max-content;');
+      declarations.push('white-space: nowrap;');
+    } else {
+      declarations.push('white-space: pre-wrap;');
+    }
     if (textStyle?.fontFamily)
       declarations.push(`font-family: ${cssString(textStyle.fontFamily)};`);
     if (textStyle?.fontSize) declarations.push(`font-size: ${px(textStyle.fontSize)};`);
@@ -287,6 +292,10 @@ function nodeDeclarations(
   }
 
   return declarations;
+}
+
+function isSketchAutoWidthText(node: VisualNode): boolean {
+  return node.style?.raw?.sketchTextBehaviour === 0;
 }
 
 function shouldRenderBoxFill(node: VisualNode): boolean {

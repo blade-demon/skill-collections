@@ -143,6 +143,32 @@ describe('buildVisualBlock', () => {
     );
   });
 
+  it('preserves Sketch auto-width text behavior for overridden single-line labels', () => {
+    const warnings: Warning[] = [];
+    const selected = selectArtboard(model);
+    const visual = buildVisualBlock({
+      model,
+      artboard: selected.artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const featureText = findTextByContent(visual.root, '一般公务用车');
+    const promptText = findTextByContent(visual.root, '我的出差报销标准是什么');
+    const featureChip = findBySourceNodeId(visual.root, 'E664F64D-C3A2-4C0A-BE78-A9D0904C909D');
+    const trailingChip = findBySourceNodeId(visual.root, 'AC30CF44-3A16-43E0-A32A-75BF7CD1C3C7');
+
+    expect(featureText?.text?.content).toBe('一般公务用车');
+    expect(featureText?.source.nodeId).toBe('637D5F1B-C6FC-4DFC-B52B-A4F45DDC775F');
+    expect(featureText?.style?.raw?.sketchTextBehaviour).toBe(0);
+    expect(featureText?.layout.width).toBeGreaterThan(36);
+    expect(featureChip?.layout.width).toBeGreaterThan(84);
+    expect(trailingChip?.layout.x).toBeGreaterThan(288);
+    expect(promptText?.text?.content).toBe('我的出差报销标准是什么');
+    expect(promptText?.source.nodeId).toBe('E5B9C7D5-CFEA-415F-A74F-F4AACAFCAFCB');
+    expect(promptText?.style?.raw?.sketchTextBehaviour).toBe(0);
+    expect(promptText?.layout.width).toBeGreaterThan(98);
+  });
+
   it('reads per-corner radius from Sketch points[].cornerRadius (chat-bubble case)', () => {
     /* Sketch stores per-corner radius on each curvePoint, not in fixedRadius.
      * A chat-bubble rectangle typically has 3 rounded corners and 1 square
@@ -931,4 +957,13 @@ function collectSymbolMasterIds(node: VisualNode | undefined): string[] {
   };
   walk(node);
   return out;
+}
+
+function findTextByContent(node: VisualNode, content: string): VisualNode | undefined {
+  if (node.text?.content === content) return node;
+  for (const child of node.children) {
+    const found = findTextByContent(child, content);
+    if (found) return found;
+  }
+  return undefined;
 }

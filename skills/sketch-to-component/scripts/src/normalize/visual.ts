@@ -289,6 +289,7 @@ function normalizeNode(
   // 文本节点提取文本内容和字体信息，并应用 symbol stringValue 覆盖
   if (kind === 'text') {
     visualNode.text = applyTextOverride(extractText(node), options.symbolOverrides);
+    applyTextBehavior(node, visualNode);
   }
   // 图像节点注册资源并建立引用
   if (kind === 'image') {
@@ -298,6 +299,7 @@ function normalizeNode(
   // 矢量形状(shapePath)保留贝塞尔路径几何,供 preview/codegen 还原真实轮廓
   const vector = extractVectorPath(node, nodeClass);
   if (vector) visualNode.vector = vector;
+  if (!options.isRoot) adjustAutoWidthLayout(visualNode);
 
   return visualNode;
 }
@@ -392,6 +394,94 @@ function applyTextOverride(
 ): TextContent {
   const content = readStringOverride(overrides, 'stringValue');
   return content === undefined ? text : { ...text, content };
+}
+
+function applyTextBehavior(node: SketchNode, visualNode: VisualNode): void {
+  const textBehaviour = typeof node.textBehaviour === 'number' ? node.textBehaviour : undefined;
+  if (textBehaviour === undefined) return;
+  if (!visualNode.style) visualNode.style = {};
+  if (!visualNode.style.raw) visualNode.style.raw = {};
+  visualNode.style.raw.sketchTextBehaviour = textBehaviour;
+  if (textBehaviour !== 0 || !visualNode.text?.content) return;
+
+  const estimatedWidth = estimateSingleLineTextWidth(
+    visualNode.text.content,
+    visualNode.text.style?.fontSize,
+  );
+  if (estimatedWidth > visualNode.layout.width) {
+    visualNode.layout.width = estimatedWidth;
+    visualNode.style.raw.autoWidthText = true;
+  }
+}
+
+function estimateSingleLineTextWidth(content: string, fontSize = 14): number {
+  let width = 0;
+  for (const char of content) {
+    if (/\s/.test(char)) width += fontSize * 0.35;
+    else if (/[\u2E80-\u9FFF\uF900-\uFAFF]/u.test(char)) width += fontSize;
+    else if (/[A-Z0-9]/.test(char)) width += fontSize * 0.65;
+    else width += fontSize * 0.55;
+  }
+  return Math.ceil(width);
+}
+
+function adjustAutoWidthLayout(node: VisualNode): void {
+  if (node.children.length === 0 || !node.children.some(hasAutoWidthTextDescendant)) return;
+  if (node.style?.raw?.maskedContent === true) return;
+  reflowHorizontalRow(node);
+  const oldWidth = node.layout.width;
+  const maxRight = maxChildRight(node.children);
+  if (maxRight <= oldWidth) return;
+  node.layout.width = maxRight;
+  stretchFullWidthBackground(node, oldWidth, node.layout.width);
+}
+
+function hasAutoWidthTextDescendant(node: VisualNode): boolean {
+  if (node.kind === 'text' && node.style?.raw?.autoWidthText === true) return true;
+  return node.children.some(hasAutoWidthTextDescendant);
+}
+
+function reflowHorizontalRow(node: VisualNode): void {
+  if (node.children.length < 2 || !isHorizontalRow(node.children)) return;
+  const ordered = [...node.children].sort((a, b) => a.layout.x - b.layout.x);
+  for (let i = 1; i < ordered.length; i++) {
+    const previous = ordered[i - 1]!;
+    const current = ordered[i]!;
+    const originalGap =
+      current.layout.x - (previous.layout.x + previous.layout.width) > 0
+        ? current.layout.x - (previous.layout.x + previous.layout.width)
+        : 0;
+    const nextX = previous.layout.x + previous.layout.width + originalGap;
+    if (nextX > current.layout.x) current.layout.x = nextX;
+  }
+}
+
+function isHorizontalRow(children: readonly VisualNode[]): boolean {
+  const first = children[0];
+  if (!first) return false;
+  return children.every(
+    (child) =>
+      Math.abs(child.layout.y - first.layout.y) < 1e-6 &&
+      Math.abs(child.layout.height - first.layout.height) < 1e-6,
+  );
+}
+
+function maxChildRight(children: readonly VisualNode[]): number {
+  return children.reduce((max, child) => Math.max(max, child.layout.x + child.layout.width), 0);
+}
+
+function stretchFullWidthBackground(node: VisualNode, oldWidth: number, newWidth: number): void {
+  for (const child of node.children) {
+    if (
+      child.kind === 'shape' &&
+      Math.abs(child.layout.x) < 1e-6 &&
+      Math.abs(child.layout.y) < 1e-6 &&
+      Math.abs(child.layout.width - oldWidth) < 1e-6 &&
+      Math.abs(child.layout.height - node.layout.height) < 1e-6
+    ) {
+      child.layout.width = newWidth;
+    }
+  }
 }
 
 /**
@@ -513,6 +603,7 @@ function normalizeSymbolInstance(
   if (style) visualNode.style = style;
   // 标记实例节点为有裁剪内容
   if (hadClippingMaskChild) markMaskedContent(visualNode);
+  adjustAutoWidthLayout(visualNode);
   return visualNode;
 }
 

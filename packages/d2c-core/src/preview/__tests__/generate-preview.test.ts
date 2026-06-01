@@ -106,6 +106,29 @@ describe('generatePreview', () => {
       'background-color: #000000FF;',
     );
   });
+
+  it('renders Sketch auto-width text as a single intrinsic line', () => {
+    const designIr = makeDesignIR();
+    const textNode = designIr.visual.root.children[0]?.children[0];
+    if (!textNode?.text) throw new Error('Fixture text node missing');
+    textNode.id = 'node-auto-text';
+    textNode.layout = { x: 0, y: 0, width: 36, height: 17 };
+    textNode.style = {
+      raw: { sketchTextBehaviour: 0 },
+    };
+    textNode.text = {
+      content: '一般公务用车',
+      style: { fontSize: 12 },
+    };
+
+    const { visualView } = deriveVisualView(designIr);
+    const preview = generatePreview(visualView);
+    const textRule = cssRule(preview.css, '.d2c-node-auto-text');
+
+    expect(textRule).toContain('white-space: nowrap;');
+    expect(textRule).toContain('width: max-content;');
+    expect(textRule).not.toContain('white-space: pre-wrap;');
+  });
 });
 
 function cssRule(css: string, selector: string): string {
