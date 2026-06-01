@@ -143,6 +143,385 @@ describe('buildVisualBlock', () => {
     );
   });
 
+  it('applies symbol color overrides to fill and border targets while expanding masters', () => {
+    const warnings: Warning[] = [];
+    const orange = {
+      _class: 'color',
+      red: 1,
+      green: 0.619607843137255,
+      blue: 0,
+      alpha: 1,
+    };
+    const purple = {
+      _class: 'color',
+      red: 0.5,
+      green: 0.25,
+      blue: 1,
+      alpha: 1,
+    };
+    const master = {
+      _class: 'symbolMaster',
+      do_objectID: 'paint-master',
+      name: 'PaintedIcon',
+      symbolID: 'painted-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+      layers: [
+        {
+          _class: 'group',
+          do_objectID: 'tinted-group',
+          name: 'TintedGroup',
+          frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 12 },
+          layers: [
+            {
+              _class: 'rectangle',
+              do_objectID: 'group-fill-target',
+              name: 'GroupFillTarget',
+              frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 12 },
+              style: {
+                fills: [
+                  {
+                    isEnabled: true,
+                    fillType: 0,
+                    color: { _class: 'color', red: 0, green: 0.55, blue: 1, alpha: 1 },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          _class: 'shapePath',
+          do_objectID: 'direct-fill-target',
+          name: 'DirectFillTarget',
+          frame: { _class: 'rect', x: 0, y: 12, width: 12, height: 12 },
+          isClosed: true,
+          points: [
+            { _class: 'curvePoint', point: '{0, 0}' },
+            { _class: 'curvePoint', point: '{1, 0}' },
+            { _class: 'curvePoint', point: '{1, 1}' },
+            { _class: 'curvePoint', point: '{0, 1}' },
+          ],
+          style: {
+            fills: [
+              {
+                isEnabled: true,
+                fillType: 0,
+                color: { _class: 'color', red: 0, green: 0.55, blue: 1, alpha: 1 },
+              },
+            ],
+          },
+        },
+        {
+          _class: 'shapePath',
+          do_objectID: 'border-target',
+          name: 'BorderTarget',
+          frame: { _class: 'rect', x: 12, y: 12, width: 12, height: 12 },
+          isClosed: false,
+          points: [
+            { _class: 'curvePoint', point: '{0, 0}' },
+            { _class: 'curvePoint', point: '{1, 1}' },
+          ],
+          style: {
+            borders: [
+              {
+                isEnabled: true,
+                fillType: 0,
+                color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+                position: 1,
+                thickness: 1,
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'paint-art',
+      name: 'PaintArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'paint-instance',
+          name: 'PaintedIcon',
+          symbolID: 'painted-symbol',
+          frame: { _class: 'rect', x: 8, y: 8, width: 24, height: 24 },
+          overrideValues: [
+            {
+              _class: 'overrideValue',
+              value: orange,
+              overrideName: 'tinted-group_fillColor',
+            },
+            {
+              _class: 'overrideValue',
+              value: orange,
+              overrideName: 'direct-fill-target_color:fill-0',
+            },
+            {
+              _class: 'overrideValue',
+              value: purple,
+              overrideName: 'border-target_color:border-0',
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: { mastersBySymbolId: new Map([['painted-symbol', master]]) },
+      warnings,
+    });
+
+    expect(findBySourceNodeId(visual.root, 'group-fill-target')?.style?.fills?.[0]?.color).toBe(
+      '#FF9E00FF',
+    );
+    expect(findBySourceNodeId(visual.root, 'direct-fill-target')?.style?.fills?.[0]?.color).toBe(
+      '#FF9E00FF',
+    );
+    expect(findBySourceNodeId(visual.root, 'border-target')?.style?.borders?.[0]?.color).toBe(
+      '#8040FFFF',
+    );
+  });
+
+  it('lets a nested indexed fill override win over an ancestor fillColor tint', () => {
+    /* Regression: 父级 fillColor 通过子树传播时,后代上更具体的 color:fill-N
+     * 必须在应用顺序上覆盖 tint。先前实现在父节点 normalize 末尾递归
+     * 重写所有后代填充,直接清掉子节点已经写入的具体颜色。 */
+    const warnings: Warning[] = [];
+    const orange = { _class: 'color', red: 1, green: 0.619607843137255, blue: 0, alpha: 1 };
+    const blue = { _class: 'color', red: 0, green: 0.4, blue: 1, alpha: 1 };
+    const master = {
+      _class: 'symbolMaster',
+      do_objectID: 'specificity-master',
+      name: 'SpecificityIcon',
+      symbolID: 'specificity-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+      layers: [
+        {
+          _class: 'group',
+          do_objectID: 'outer-group',
+          name: 'OuterGroup',
+          frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+          layers: [
+            {
+              _class: 'rectangle',
+              do_objectID: 'specific-child',
+              name: 'SpecificChild',
+              frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+              style: {
+                fills: [
+                  {
+                    isEnabled: true,
+                    fillType: 0,
+                    color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'specificity-art',
+      name: 'SpecificityArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'specificity-instance',
+          name: 'SpecificityIcon',
+          symbolID: 'specificity-symbol',
+          frame: { _class: 'rect', x: 8, y: 8, width: 24, height: 24 },
+          overrideValues: [
+            {
+              _class: 'overrideValue',
+              value: orange,
+              overrideName: 'outer-group_fillColor',
+            },
+            {
+              _class: 'overrideValue',
+              value: blue,
+              overrideName: 'outer-group/specific-child_color:fill-0',
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: { mastersBySymbolId: new Map([['specificity-symbol', master]]) },
+      warnings,
+    });
+    expect(findBySourceNodeId(visual.root, 'specific-child')?.style?.fills?.[0]?.color).toBe(
+      '#0066FFFF',
+    );
+  });
+
+  it('tints descendant text color when fillColor cascades through a group', () => {
+    /* Sketch tint 同样影响文本颜色,后者存在 text.style.color。 */
+    const warnings: Warning[] = [];
+    const orange = { _class: 'color', red: 1, green: 0.619607843137255, blue: 0, alpha: 1 };
+    const master = {
+      _class: 'symbolMaster',
+      do_objectID: 'tinted-text-master',
+      name: 'TintedTextSymbol',
+      symbolID: 'tinted-text-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 100, height: 32 },
+      layers: [
+        {
+          _class: 'group',
+          do_objectID: 'label-group',
+          name: 'LabelGroup',
+          frame: { _class: 'rect', x: 0, y: 0, width: 100, height: 32 },
+          layers: [
+            {
+              _class: 'text',
+              do_objectID: 'label-text',
+              name: 'LabelText',
+              frame: { _class: 'rect', x: 0, y: 0, width: 100, height: 32 },
+              attributedString: {
+                string: 'Hello',
+                attributes: [
+                  {
+                    attributes: {
+                      MSAttributedStringColorAttribute: {
+                        _class: 'color',
+                        red: 0,
+                        green: 0,
+                        blue: 0,
+                        alpha: 1,
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'tinted-text-art',
+      name: 'TintedTextArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 120, height: 40 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'tinted-text-instance',
+          name: 'TintedTextSymbol',
+          symbolID: 'tinted-text-symbol',
+          frame: { _class: 'rect', x: 10, y: 4, width: 100, height: 32 },
+          overrideValues: [
+            {
+              _class: 'overrideValue',
+              value: orange,
+              overrideName: 'label-group_fillColor',
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: { mastersBySymbolId: new Map([['tinted-text-symbol', master]]) },
+      warnings,
+    });
+    expect(findBySourceNodeId(visual.root, 'label-text')?.text?.style?.color).toBe('#FF9E00FF');
+  });
+
+  it('applies color overrides targeting the symbol instance itself', () => {
+    /* 零段 fillColor 直接落在 symbolInstance 节点:之前的实现仅在常规
+     * normalizeNode 中调用 applyColorOverrides,instance 分支会静默丢弃。 */
+    const warnings: Warning[] = [];
+    const orange = { _class: 'color', red: 1, green: 0.619607843137255, blue: 0, alpha: 1 };
+    const masterInner = {
+      _class: 'symbolMaster',
+      do_objectID: 'inner-master',
+      name: 'InnerSymbol',
+      symbolID: 'inner-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+      layers: [
+        {
+          _class: 'rectangle',
+          do_objectID: 'inner-fill',
+          name: 'InnerFill',
+          frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+          style: {
+            fills: [
+              {
+                isEnabled: true,
+                fillType: 0,
+                color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as SketchNode;
+    const masterOuter = {
+      _class: 'symbolMaster',
+      do_objectID: 'outer-master',
+      name: 'OuterSymbol',
+      symbolID: 'outer-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'inner-instance',
+          name: 'InnerInstance',
+          symbolID: 'inner-symbol',
+          frame: { _class: 'rect', x: 8, y: 8, width: 24, height: 24 },
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'instance-tint-art',
+      name: 'InstanceTintArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 60, height: 60 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'outer-instance',
+          name: 'OuterInstance',
+          symbolID: 'outer-symbol',
+          frame: { _class: 'rect', x: 10, y: 10, width: 40, height: 40 },
+          overrideValues: [
+            {
+              _class: 'overrideValue',
+              value: orange,
+              overrideName: 'inner-instance_fillColor',
+            },
+          ],
+        },
+      ],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: {
+        mastersBySymbolId: new Map([
+          ['inner-symbol', masterInner],
+          ['outer-symbol', masterOuter],
+        ]),
+      },
+      warnings,
+    });
+    // fillColor 沿 symbolInstance 进入其 master 展开的子树,
+    // 子节点的 fill 被 tint 为橙色。
+    expect(findBySourceNodeId(visual.root, 'inner-fill')?.style?.fills?.[0]?.color).toBe(
+      '#FF9E00FF',
+    );
+  });
+
   it('preserves Sketch auto-width text behavior for overridden single-line labels', () => {
     const warnings: Warning[] = [];
     const selected = selectArtboard(model);

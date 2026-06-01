@@ -299,6 +299,10 @@ function normalizeNode(
   // 矢量形状(shapePath)保留贝塞尔路径几何,供 preview/codegen 还原真实轮廓
   const vector = extractVectorPath(node, nodeClass);
   if (vector) visualNode.vector = vector;
+  // 在 text/image/vector 全部装配之后再 tint:
+  // - 文本颜色存在 visualNode.text.style.color,需先有 text 才能改写;
+  // - compound SVG 已先把子树清空,这里也不会做无效写入。
+  applyColorOverrides(visualNode, options.symbolOverrides);
   if (!options.isRoot) adjustAutoWidthLayout(visualNode);
 
   return visualNode;
@@ -364,7 +368,14 @@ function overridesForChild(
 ): ParsedSymbolOverride[] {
   if (!overrides || overrides.length === 0) return [];
   return overrides.flatMap((override) => {
-    if (override.pathSegments.length === 0) return [];
+    if (override.pathSegments.length === 0) {
+      // fillColor 是 Sketch "Tint" 风格的广义覆盖,需要沿子树继续传递:
+      // 子节点上更具体的 color:fill-N 在自身规范化时按顺序应用,从而覆盖
+      // 这层 ambient tint(见 readDirectColorOverrides 的应用顺序)。
+      // 其他零段覆盖项(stringValue / symbolID / color:fill-N / color:border-N)
+      // 已在当前节点消费,不再向下泄漏。
+      return override.property === 'fillColor' ? [{ ...override }] : [];
+    }
     if (override.pathSegments[0] !== childId) return [{ ...override }];
     return [{ ...override, pathSegments: override.pathSegments.slice(1) }];
   });
@@ -394,6 +405,113 @@ function applyTextOverride(
 ): TextContent {
   const content = readStringOverride(overrides, 'stringValue');
   return content === undefined ? text : { ...text, content };
+}
+
+function applyColorOverrides(
+  node: VisualNode,
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): void {
+  const colorOverrides = readDirectColorOverrides(overrides);
+  if (!colorOverrides) return;
+
+  // 先应用广义 tint,再应用 indexed,使更具体的覆盖最终胜出。
+  if (colorOverrides.fillColor) {
+    applyFillColorTint(node, colorOverrides.fillColor);
+  }
+  for (const [index, color] of colorOverrides.fills) {
+    applyIndexedFillColor(node, index, color);
+  }
+  for (const [index, color] of colorOverrides.borders) {
+    applyIndexedBorderColor(node, index, color);
+  }
+}
+
+interface DirectColorOverrides {
+  fillColor?: string;
+  fills: Map<number, string>;
+  borders: Map<number, string>;
+}
+
+function readDirectColorOverrides(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): DirectColorOverrides | undefined {
+  if (!overrides) return undefined;
+  const result: DirectColorOverrides = { fills: new Map(), borders: new Map() };
+  for (const override of overrides) {
+    if (override.pathSegments.length !== 0) continue;
+    const color = colorToHex(override.value);
+    if (!color) continue;
+    if (override.property === 'fillColor') {
+      result.fillColor = color;
+      continue;
+    }
+    const fillIndex = parseIndexedColorOverride(override.property, 'color:fill-');
+    if (fillIndex !== undefined) {
+      result.fills.set(fillIndex, color);
+      continue;
+    }
+    const borderIndex = parseIndexedColorOverride(override.property, 'color:border-');
+    if (borderIndex !== undefined) {
+      result.borders.set(borderIndex, color);
+    }
+  }
+  if (result.fillColor || result.fills.size > 0 || result.borders.size > 0) return result;
+  return undefined;
+}
+
+function parseIndexedColorOverride(property: string, prefix: string): number | undefined {
+  if (!property.startsWith(prefix)) return undefined;
+  const rawIndex = property.slice(prefix.length);
+  if (!/^\d+$/.test(rawIndex)) return undefined;
+  return Number.parseInt(rawIndex, 10);
+}
+
+/**
+ * 应用 Sketch tint 风格的 fillColor 覆盖到当前节点。
+ *
+ * 非递归: 沿子树的传播由 overridesForChild 完成,每个后代在自身规范化时
+ * 重新评估 tint(并可被自身的 indexed 覆盖覆写)。这避免了"父级 tint 在
+ * 子级完成规范化后回头清掉子级 indexed 覆盖"的回归。
+ *
+ * 文本节点的颜色存在 text.style.color 而非 style.fills,这里一并 tint
+ * 以匹配 Sketch 中文本随符号 tint 变色的预期;边框由专门的
+ * color:border-N 处理,避免误改用户显式描边。
+ */
+function applyFillColorTint(node: VisualNode, color: string): void {
+  if (node.kind === 'text') {
+    if (node.text) {
+      const nextStyle = { ...(node.text.style ?? {}), color };
+      node.text = { ...node.text, style: nextStyle };
+    }
+    return;
+  }
+  if (node.style?.fills?.length) {
+    node.style = {
+      ...node.style,
+      fills: node.style.fills.map((fill) => ({ ...fill, color })),
+    };
+  }
+}
+
+function applyIndexedFillColor(node: VisualNode, index: number, color: string): void {
+  if (node.kind === 'text') return;
+  const fills = node.style?.fills;
+  if (!fills?.[index]) return;
+  if (!node.style) return;
+  node.style = {
+    ...node.style,
+    fills: fills.map((fill, i) => (i === index ? { ...fill, color } : fill)),
+  };
+}
+
+function applyIndexedBorderColor(node: VisualNode, index: number, color: string): void {
+  const borders = node.style?.borders;
+  if (!borders?.[index]) return;
+  if (!node.style) return;
+  node.style = {
+    ...node.style,
+    borders: borders.map((border, i) => (i === index ? { ...border, color } : border)),
+  };
 }
 
 function applyTextBehavior(node: SketchNode, visualNode: VisualNode): void {
@@ -601,6 +719,10 @@ function normalizeSymbolInstance(
   };
   const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
+  // 直接打到实例自身的颜色覆盖(零段 fillColor / color:fill-N / color:border-N)
+  // 需要在这里消费。常规节点路径在 normalizeNode 内已 tint,但 symbolInstance
+  // 走单独分支,缺这一步会让 instance 自带 fills/borders 上的覆盖被静默丢弃。
+  applyColorOverrides(visualNode, options.symbolOverrides);
   // 标记实例节点为有裁剪内容
   if (hadClippingMaskChild) markMaskedContent(visualNode);
   adjustAutoWidthLayout(visualNode);
