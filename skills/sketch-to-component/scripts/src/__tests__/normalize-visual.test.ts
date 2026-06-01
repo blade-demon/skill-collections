@@ -48,6 +48,101 @@ describe('buildVisualBlock', () => {
     expect(statusBar?.children.length).toBeGreaterThan(0);
   });
 
+  it('indexes foreign library symbols so their instances can expand', () => {
+    const warnings: Warning[] = [];
+    const foreignMaster = {
+      _class: 'symbolMaster',
+      do_objectID: 'foreign-master',
+      name: 'ForeignClose',
+      symbolID: 'foreign-close-symbol',
+      frame: { _class: 'rect', x: 0, y: 0, width: 24, height: 24 },
+      layers: [
+        {
+          _class: 'shapePath',
+          do_objectID: 'foreign-close-path',
+          name: 'ClosePath',
+          frame: { _class: 'rect', x: 4, y: 4, width: 16, height: 16 },
+          isClosed: false,
+          points: [
+            { _class: 'curvePoint', point: '{0, 0}' },
+            { _class: 'curvePoint', point: '{1, 1}' },
+          ],
+          style: {
+            fills: [
+              {
+                isEnabled: true,
+                fillType: 0,
+                color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as SketchNode;
+    const foreignModel = {
+      ...model,
+      document: {
+        ...model.document,
+        foreignSymbols: [{ _class: 'MSImmutableForeignSymbol', symbolMaster: foreignMaster }],
+      },
+    };
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'foreign-art',
+      name: 'ForeignArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [
+        {
+          _class: 'symbolInstance',
+          do_objectID: 'foreign-close-instance',
+          name: 'Close',
+          symbolID: 'foreign-close-symbol',
+          frame: { _class: 'rect', x: 8, y: 8, width: 24, height: 24 },
+        },
+      ],
+    } as unknown as SketchNode;
+    const visual = buildVisualBlock({
+      model: foreignModel,
+      artboard,
+      symbols: buildSymbolIndex(foreignModel),
+      warnings,
+    });
+    const closeIcon = findBySourceNodeId(visual.root, 'foreign-close-instance');
+
+    expect(closeIcon?.symbol?.masterId).toBe('foreign-close-symbol');
+    expect(closeIcon?.children.length).toBeGreaterThan(0);
+    expect(
+      warnings.some(
+        (w) => w.code === 'missing-symbol-master' && w.sourceNodeId === 'foreign-close-instance',
+      ),
+    ).toBe(false);
+  });
+
+  it('applies nested symbol text and symbolID overrides while expanding masters', () => {
+    const warnings: Warning[] = [];
+    const selected = selectArtboard(model);
+    const visual = buildVisualBlock({
+      model,
+      artboard: selected.artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const featureBar = findBySourceNodeId(visual.root, '3A23B2B2-08FB-43C5-9AE4-9EC1E6A2D132');
+
+    expect(collectText(featureBar)).toEqual(['订机票', '订酒店', '一般公务用车', '报销']);
+    expect(collectSymbolMasterIds(featureBar)).toEqual(
+      expect.arrayContaining([
+        '9FE2A3D6-6F0E-43EE-874E-6570409C9160',
+        '29CF06C2-9422-4525-9A70-551A869E1FE4',
+        'CD56CFDC-6180-4C8D-A97E-3DF6F8137D02',
+        '2C2C1B59-FAC3-41CF-8A03-505BAD2511E9',
+      ]),
+    );
+    expect(collectText(featureBar)).not.toEqual(
+      expect.arrayContaining(['车险续保', '查保单', '叫代驾', '北大医生']),
+    );
+  });
+
   it('reads per-corner radius from Sketch points[].cornerRadius (chat-bubble case)', () => {
     /* Sketch stores per-corner radius on each curvePoint, not in fixedRadius.
      * A chat-bubble rectangle typically has 3 rounded corners and 1 square
@@ -325,6 +420,61 @@ describe('buildVisualBlock', () => {
     expect(warnings.some((w) => w.code === 'clipping-mask-skipped')).toBe(true);
   });
 
+  it('skips styled rectangular clipping masks instead of rendering placeholder blocks', () => {
+    const warnings: Warning[] = [];
+    const mask = {
+      _class: 'rectangle',
+      do_objectID: 'styled-rect-mask',
+      name: 'StyledMask',
+      hasClippingMask: true,
+      frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 0,
+            color: { _class: 'color', red: 0.8, green: 0.8, blue: 0.8, alpha: 1 },
+          },
+        ],
+      },
+      layers: [],
+    } as unknown as SketchNode;
+    const clipped = {
+      _class: 'rectangle',
+      do_objectID: 'clipped-content',
+      name: 'ClippedContent',
+      frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      style: { do_objectID: 'clipped-style' },
+      layers: [],
+    } as unknown as SketchNode;
+    const group = {
+      _class: 'group',
+      do_objectID: 'styled-mask-group',
+      name: 'StyledMaskGroup',
+      frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      layers: [mask, clipped],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'styled-mask-art',
+      name: 'StyledMaskArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [group],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+
+    expect(visual.root.children[0]?.children.map((child) => child.source.nodeId)).toEqual([
+      'clipped-content',
+    ]);
+    expect(warnings.some((w) => w.sourceNodeId === 'styled-rect-mask')).toBe(true);
+  });
+
   it('preserves visible clipping-mask vector shapes used as icon artwork', () => {
     const warnings: Warning[] = [];
     const selected = selectArtboard(model);
@@ -350,6 +500,124 @@ describe('buildVisualBlock', () => {
           w.sourceNodeId === '43E42698-AB02-4D5A-BAA3-96745255D63E',
       ),
     ).toBe(false);
+  });
+
+  it('collapses filled shapeGroups into compound SVG artwork instead of child boolean layers', () => {
+    const warnings: Warning[] = [];
+    const shapeGroup = {
+      _class: 'shapeGroup',
+      do_objectID: 'compound-group',
+      name: 'Compound',
+      frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 0,
+            color: { _class: 'color', red: 0, green: 0.5, blue: 1, alpha: 1 },
+          },
+        ],
+      },
+      layers: [
+        {
+          _class: 'shapePath',
+          do_objectID: 'compound-red-child',
+          name: 'BooleanChild',
+          frame: { _class: 'rect', x: 0, y: 0, width: 20, height: 20 },
+          isClosed: true,
+          points: [
+            { _class: 'curvePoint', point: '{0, 0}' },
+            { _class: 'curvePoint', point: '{1, 0}' },
+            { _class: 'curvePoint', point: '{1, 1}' },
+            { _class: 'curvePoint', point: '{0, 1}' },
+          ],
+          style: {
+            fills: [
+              {
+                isEnabled: true,
+                fillType: 0,
+                color: { _class: 'color', red: 1, green: 0, blue: 0, alpha: 1 },
+              },
+            ],
+          },
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'compound-art',
+      name: 'CompoundArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [shapeGroup],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const node = visual.root.children[0];
+
+    expect(node?.children).toHaveLength(0);
+    expect(node?.style?.fills?.[0]?.color).toBe('#0080FFFF');
+    expect(node?.style?.raw?.compoundSvgPath).toContain('M 0 0');
+  });
+
+  it('keeps compound shapeGroup child coordinates local and applies rectangle rotation', () => {
+    const warnings: Warning[] = [];
+    const shapeGroup = {
+      _class: 'shapeGroup',
+      do_objectID: 'plus-group',
+      name: 'Plus',
+      frame: { _class: 'rect', x: 10, y: 0, width: 6.5, height: 6.5 },
+      style: {
+        fills: [
+          {
+            isEnabled: true,
+            fillType: 0,
+            color: { _class: 'color', red: 0, green: 0, blue: 0, alpha: 1 },
+          },
+        ],
+      },
+      layers: [
+        {
+          _class: 'rectangle',
+          do_objectID: 'vertical-plus-bar',
+          name: 'Vertical',
+          frame: { _class: 'rect', x: 2.5, y: 0, width: 1.5, height: 6.5 },
+          rotation: 0,
+        },
+        {
+          _class: 'rectangle',
+          do_objectID: 'horizontal-plus-bar',
+          name: 'Horizontal',
+          frame: { _class: 'rect', x: 2.5, y: 0, width: 1.5, height: 6.5 },
+          rotation: 90,
+        },
+      ],
+    } as unknown as SketchNode;
+    const artboard = {
+      _class: 'artboard',
+      do_objectID: 'plus-art',
+      name: 'PlusArt',
+      frame: { _class: 'rect', x: 0, y: 0, width: 40, height: 40 },
+      layers: [shapeGroup],
+    } as unknown as SketchNode;
+
+    const visual = buildVisualBlock({
+      model,
+      artboard,
+      symbols: buildSymbolIndex(model),
+      warnings,
+    });
+    const path = `${visual.root.children[0]?.style?.raw?.compoundSvgPath ?? ''}`;
+
+    expect(path).not.toContain('-');
+    expect(path).toContain('M 2.5 0');
+    expect(path).toContain('L 0 2.5');
+    expect(path).toContain('M 6.5 2.5');
+    expect(visual.root.children[0]?.style?.raw?.compoundFillRule).toBeUndefined();
   });
 
   it('preserves every gradient fill’s raw stops per-fill', () => {
@@ -641,4 +909,26 @@ function findBySourceNodeId(node: VisualNode, nodeId: string): VisualNode | unde
     if (found) return found;
   }
   return undefined;
+}
+
+function collectText(node: VisualNode | undefined): string[] {
+  if (!node) return [];
+  const out: string[] = [];
+  const walk = (current: VisualNode): void => {
+    if (current.text?.content) out.push(current.text.content);
+    for (const child of current.children) walk(child);
+  };
+  walk(node);
+  return out;
+}
+
+function collectSymbolMasterIds(node: VisualNode | undefined): string[] {
+  if (!node) return [];
+  const out: string[] = [];
+  const walk = (current: VisualNode): void => {
+    if (current.symbol?.masterId) out.push(current.symbol.masterId);
+    for (const child of current.children) walk(child);
+  };
+  walk(node);
+  return out;
 }

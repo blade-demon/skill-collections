@@ -21,10 +21,10 @@ export function applySymbolOverrides(visual: VisualBlock): ApplyOverridesResult 
     overrideUnsupported: 0,
   };
 
-  walk(cloned.root, (node) => {
+  walkPostOrder(cloned.root, (node) => {
     for (const override of node.symbol?.overrides ?? []) {
-      const textTargetId = parseTextOverrideTarget(override.path);
-      if (!textTargetId || typeof override.value !== 'string') {
+      const textTargetPath = parseTextOverrideTargetPath(override.path);
+      if (!textTargetPath || typeof override.value !== 'string') {
         stats.overrideUnsupported += 1;
         warnings.push(
           makeWarning(
@@ -36,7 +36,7 @@ export function applySymbolOverrides(visual: VisualBlock): ApplyOverridesResult 
         continue;
       }
 
-      const target = findTextNode(node, textTargetId);
+      const target = findTextNodeByOverridePath(node, textTargetPath);
       if (!target?.text) {
         stats.overrideUnmapped += 1;
         warnings.push(
@@ -60,11 +60,49 @@ export function applySymbolOverrides(visual: VisualBlock): ApplyOverridesResult 
   return { visual: cloned, warnings, stats };
 }
 
-function parseTextOverrideTarget(path: string): string | undefined {
+function parseTextOverrideTargetPath(path: string): string[] | undefined {
   const lastSegment = path.split('/').filter(Boolean).at(-1);
   if (!lastSegment?.endsWith('_stringValue')) return undefined;
-  const nodeId = lastSegment.slice(0, -'_stringValue'.length);
-  return nodeId.length > 0 ? nodeId : undefined;
+  const prefix = path.slice(0, -'_stringValue'.length);
+  const segments = prefix.split('/').filter(Boolean);
+  return segments.length > 0 ? segments : undefined;
+}
+
+function findTextNodeByOverridePath(
+  root: VisualNode,
+  sourceNodePath: readonly string[],
+): VisualNode | undefined {
+  const scoped = findTextNodeByPath(root, sourceNodePath);
+  return scoped ?? findTextNode(root, sourceNodePath[sourceNodePath.length - 1] ?? '');
+}
+
+function findTextNodeByPath(
+  root: VisualNode,
+  sourceNodePath: readonly string[],
+): VisualNode | undefined {
+  if (sourceNodePath.length === 0) return undefined;
+  let candidates: VisualNode[] = [root];
+  for (let i = 0; i < sourceNodePath.length; i++) {
+    const sourceNodeId = sourceNodePath[i];
+    if (!sourceNodeId) return undefined;
+    const matches = candidates.flatMap((candidate) =>
+      findDescendantsBySourceNodeId(candidate, sourceNodeId),
+    );
+    if (matches.length === 0) return undefined;
+    if (i === sourceNodePath.length - 1) {
+      return matches.find((node) => node.kind === 'text' && node.text);
+    }
+    candidates = matches;
+  }
+  return undefined;
+}
+
+function findDescendantsBySourceNodeId(root: VisualNode, sourceNodeId: string): VisualNode[] {
+  const matches: VisualNode[] = [];
+  walk(root, (node) => {
+    if (node !== root && node.source.nodeId === sourceNodeId) matches.push(node);
+  });
+  return matches;
 }
 
 function findTextNode(root: VisualNode, sourceNodeId: string): VisualNode | undefined {
@@ -80,6 +118,11 @@ function findTextNode(root: VisualNode, sourceNodeId: string): VisualNode | unde
 function walk(node: VisualNode, visit: (node: VisualNode) => void): void {
   visit(node);
   for (const child of node.children) walk(child, visit);
+}
+
+function walkPostOrder(node: VisualNode, visit: (node: VisualNode) => void): void {
+  for (const child of node.children) walkPostOrder(child, visit);
+  visit(node);
 }
 
 function makeWarning(code: string, node: VisualNode, message: string): Warning {

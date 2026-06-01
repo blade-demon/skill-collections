@@ -15,14 +15,27 @@ export interface SymbolIndex {
 
 export function buildSymbolIndex(model: SketchRawModel): SymbolIndex {
   const mastersBySymbolId = new Map<string, SketchNode>();
+  const addMaster = (node: SketchNode): void => {
+    if (getNodeClass(node) === 'symbolMaster' && typeof node.symbolID === 'string') {
+      mastersBySymbolId.set(node.symbolID, node);
+    }
+  };
+
   for (const page of getPages(model)) {
     for (const layer of getPageLayers(page)) {
-      const node = asSketchNode(layer);
-      if (getNodeClass(node) === 'symbolMaster' && typeof node.symbolID === 'string') {
-        mastersBySymbolId.set(node.symbolID, node);
-      }
+      addMaster(asSketchNode(layer));
     }
   }
+
+  const foreignSymbols = Array.isArray(model.document.foreignSymbols)
+    ? model.document.foreignSymbols
+    : [];
+  for (const foreign of foreignSymbols) {
+    if (!foreign || typeof foreign !== 'object') continue;
+    const record = foreign as Record<string, unknown>;
+    addMaster(asSketchNode(record.symbolMaster ?? record.originalMaster));
+  }
+
   return { mastersBySymbolId };
 }
 

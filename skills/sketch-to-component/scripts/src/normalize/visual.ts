@@ -24,6 +24,7 @@ import {
   isVisible,
   readFrame,
   readNumber,
+  type SketchFrame,
   type SketchNode,
 } from './sketch-nodes.js';
 import {
@@ -89,6 +90,7 @@ export function buildVisualBlock(input: BuildVisualBlockInput): VisualBlock {
     isRoot: true,
     visitedSymbols: new Set(),
     instancePath: [],
+    symbolOverrides: [],
   });
   if (!root) {
     throw new Error('Selected artboard could not be normalized');
@@ -133,6 +135,19 @@ interface NormalizeNodeOptions {
    * 符号外部的节点使用空列表；符号内部的节点包含所有父符号实例的 ID
    */
   instancePath: readonly string[];
+  /**
+   * Symbol overrides relative to the node currently being normalized. The
+   * traversal strips one node-id segment at each level, so a direct override
+   * for the current node has an empty pathSegments array.
+   */
+  symbolOverrides?: readonly ParsedSymbolOverride[];
+}
+
+interface ParsedSymbolOverride {
+  path: string;
+  pathSegments: readonly string[];
+  property: string;
+  value: unknown;
 }
 
 /**
@@ -230,6 +245,7 @@ function normalizeNode(
         visitedSymbols: new Set(options.visitedSymbols),
         containerResize: childContainerResize,
         instancePath: options.instancePath,
+        symbolOverrides: overridesForChild(options.symbolOverrides, getNodeId(child)),
       }),
     )
     .filter((child): child is VisualNode => Boolean(child));
@@ -259,10 +275,21 @@ function normalizeNode(
   // 提取并附加样式信息（填充、边框、效果、透明度等）
   const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
+  const compoundSvgPath = extractCompoundSvgPath(node, nodeClass);
+  if (compoundSvgPath && visualNode.style?.fills?.length) {
+    if (!visualNode.style.raw) visualNode.style.raw = {};
+    visualNode.style.raw.compoundSvgPath = compoundSvgPath;
+    if (hasSubtractiveBoolean(node)) {
+      visualNode.style.raw.compoundFillRule = 'evenodd';
+    }
+    visualNode.children = [];
+  }
   // 标记父节点为有裁剪内容，供后续处理
   if (hadClippingMaskChild) markMaskedContent(visualNode);
-  // 文本节点提取文本内容和字体信息
-  if (kind === 'text') visualNode.text = extractText(node);
+  // 文本节点提取文本内容和字体信息，并应用 symbol stringValue 覆盖
+  if (kind === 'text') {
+    visualNode.text = applyTextOverride(extractText(node), options.symbolOverrides);
+  }
   // 图像节点注册资源并建立引用
   if (kind === 'image') {
     const asset = registerImageAsset(node, context);
@@ -283,6 +310,7 @@ function normalizeNode(
  * 视为纯裁剪层，继续跳过以避免旧的灰色遮罩回归。
  */
 function hasVisibleMaskArtwork(node: SketchNode): boolean {
+  if (getNodeClass(node) !== 'shapePath') return false;
   const style = node.style && typeof node.style === 'object' ? node.style : undefined;
   if (!style) return false;
   if (normalizeFills(style.fills).length > 0) return true;
@@ -303,6 +331,67 @@ function markMaskedContent(visualNode: VisualNode): void {
   if (!visualNode.style) visualNode.style = {};
   if (!visualNode.style.raw) visualNode.style.raw = {};
   visualNode.style.raw.maskedContent = true;
+}
+
+function parseSymbolOverrides(
+  overrides: Array<{ path: string; value: unknown }> | undefined,
+): ParsedSymbolOverride[] {
+  if (!overrides) return [];
+  return overrides.flatMap((override) => {
+    const parsed = parseSymbolOverridePath(override.path);
+    return parsed ? [{ ...parsed, path: override.path, value: override.value }] : [];
+  });
+}
+
+function parseSymbolOverridePath(
+  path: string,
+): Omit<ParsedSymbolOverride, 'path' | 'value'> | undefined {
+  const segments = path.split('/').filter((segment) => segment.length > 0);
+  const last = segments.pop();
+  if (!last) return undefined;
+  const propertySeparator = last.lastIndexOf('_');
+  if (propertySeparator <= 0 || propertySeparator === last.length - 1) return undefined;
+  const targetId = last.slice(0, propertySeparator);
+  const property = last.slice(propertySeparator + 1);
+  return { pathSegments: [...segments, targetId], property };
+}
+
+function overridesForChild(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+  childId: string,
+): ParsedSymbolOverride[] {
+  if (!overrides || overrides.length === 0) return [];
+  return overrides.flatMap((override) => {
+    if (override.pathSegments.length === 0) return [];
+    if (override.pathSegments[0] !== childId) return [{ ...override }];
+    return [{ ...override, pathSegments: override.pathSegments.slice(1) }];
+  });
+}
+
+function readStringOverride(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+  property: string,
+): string | undefined {
+  if (!overrides) return undefined;
+  for (let i = overrides.length - 1; i >= 0; i--) {
+    const override = overrides[i];
+    if (
+      override?.property === property &&
+      override.pathSegments.length === 0 &&
+      typeof override.value === 'string'
+    ) {
+      return override.value;
+    }
+  }
+  return undefined;
+}
+
+function applyTextOverride(
+  text: TextContent,
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): TextContent {
+  const content = readStringOverride(overrides, 'stringValue');
+  return content === undefined ? text : { ...text, content };
 }
 
 /**
@@ -327,7 +416,12 @@ function normalizeSymbolInstance(
   options: NormalizeNodeOptions,
 ): VisualNode {
   const symbolId = typeof node.symbolID === 'string' ? node.symbolID : undefined;
-  const master = getMasterForInstance(node, context.symbols, context.warnings);
+  const effectiveSymbolId = readStringOverride(options.symbolOverrides, 'symbolID') ?? symbolId;
+  const lookupNode =
+    effectiveSymbolId && effectiveSymbolId !== symbolId
+      ? { ...node, symbolID: effectiveSymbolId }
+      : node;
+  const master = getMasterForInstance(lookupNode, context.symbols, context.warnings);
   const rawFrame = readFrame(node);
   const rc = readNumber(node.resizingConstraint, DEFAULT_RESIZING_CONSTRAINT);
   // 应用约束算法计算实例的最终尺寸
@@ -349,16 +443,16 @@ function normalizeSymbolInstance(
   let hadClippingMaskChild = false;
 
   // 检测循环符号展开：若当前符号已在访问路径中，停止展开
-  if (symbolId && options.visitedSymbols.has(symbolId)) {
+  if (effectiveSymbolId && options.visitedSymbols.has(effectiveSymbolId)) {
     addWarning(
       context.warnings,
       'symbol-cycle',
-      `Stopped cyclic symbol expansion for ${symbolId}`,
+      `Stopped cyclic symbol expansion for ${effectiveSymbolId}`,
       node,
     );
   } else if (master) {
     const nextVisited = new Set(options.visitedSymbols);
-    if (symbolId) nextVisited.add(symbolId);
+    if (effectiveSymbolId) nextVisited.add(effectiveSymbolId);
     const masterFrame = readFrame(master);
     const masterSize: ContainerSize = { width: masterFrame.width, height: masterFrame.height };
     const instanceSize: ContainerSize = { width: newFrame.width, height: newFrame.height };
@@ -372,6 +466,10 @@ function normalizeSymbolInstance(
      */
     const childInstancePath = [...options.instancePath, getNodeId(node)];
     const masterChildren = getLayers(master);
+    const activeOverrides = [
+      ...parseSymbolOverrides(extractOverrides(node)),
+      ...(options.symbolOverrides ?? []),
+    ];
     hadClippingMaskChild = masterChildren.some((c) => c.hasClippingMask === true);
     children = cleanChildren(
       masterChildren
@@ -380,6 +478,7 @@ function normalizeSymbolInstance(
             visitedSymbols: nextVisited,
             containerResize: masterContainerResize,
             instancePath: childInstancePath,
+            symbolOverrides: overridesForChild(activeOverrides, getNodeId(child)),
           }),
         )
         .filter((child): child is VisualNode => Boolean(child)),
@@ -405,7 +504,7 @@ function normalizeSymbolInstance(
     // 保留符号实例的元数据，包括主控 ID、实例 ID 和覆盖项
     symbol: {
       instanceId: getNodeId(node),
-      masterId: symbolId,
+      masterId: effectiveSymbolId,
       overrides: extractOverrides(node),
     },
     children,
@@ -907,6 +1006,133 @@ function extractVectorPath(node: SketchNode, nodeClass: string): VectorPath | un
     points.push(point);
   }
   return { points, closed: node.isClosed === true };
+}
+
+function extractCompoundSvgPath(node: SketchNode, nodeClass: string): string | undefined {
+  if (nodeClass !== 'shapeGroup') return undefined;
+  const paths = getLayers(node).flatMap((child) => compoundPathForNode(child, { x: 0, y: 0 }));
+  return paths.length > 0 ? paths.join(' ') : undefined;
+}
+
+function compoundPathForNode(node: SketchNode, offset: { x: number; y: number }): string[] {
+  const nodeClass = getNodeClass(node);
+  if (!isVisible(node) || node.hasClippingMask === true) return [];
+  const frame = readFrame(node);
+  const nextOffset = { x: offset.x + frame.x, y: offset.y + frame.y };
+  if (nodeClass === 'shapeGroup' || nodeClass === 'group') {
+    return getLayers(node).flatMap((child) => compoundPathForNode(child, nextOffset));
+  }
+  if (frame.width <= 0 || frame.height <= 0) return [];
+  if (nodeClass === 'shapePath') {
+    const vector = extractVectorPath(node, nodeClass);
+    return vector ? [svgPathFromVector(vector, frame, offset, readRotation(node))] : [];
+  }
+  if (nodeClass === 'rectangle') return [svgPathFromRect(frame, offset, readRotation(node))];
+  if (nodeClass === 'oval') return [svgPathFromOval(frame, offset)];
+  return [];
+}
+
+function hasSubtractiveBoolean(node: SketchNode): boolean {
+  const bool = node.booleanOperation;
+  if (typeof bool === 'number' && bool > 0) return true;
+  return getLayers(node).some(hasSubtractiveBoolean);
+}
+
+function svgPathFromVector(
+  vector: VectorPath,
+  frame: SketchFrame,
+  offset: { x: number; y: number },
+  rotation: number,
+): string {
+  const pts = vector.points;
+  const point = (n: { x: number; y: number }): { x: number; y: number } =>
+    rotatePoint(
+      { x: offset.x + frame.x + n.x * frame.width, y: offset.y + frame.y + n.y * frame.height },
+      { x: offset.x + frame.x + frame.width / 2, y: offset.y + frame.y + frame.height / 2 },
+      rotation,
+    );
+  const xy = (n: { x: number; y: number }): string => {
+    const p = point(n);
+    return `${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)}`;
+  };
+  const segment = (from: VectorPoint, to: VectorPoint): string => {
+    if (from.curveFrom || to.curveTo) {
+      const c1 = from.curveFrom ?? { x: from.x, y: from.y };
+      const c2 = to.curveTo ?? { x: to.x, y: to.y };
+      return ` C ${xy(c1)}, ${xy(c2)}, ${xy(to)}`;
+    }
+    return ` L ${xy(to)}`;
+  };
+  let d = `M ${xy(pts[0]!)}`;
+  for (let i = 1; i < pts.length; i++) d += segment(pts[i - 1]!, pts[i]!);
+  if (vector.closed) {
+    d += segment(pts[pts.length - 1]!, pts[0]!);
+    d += ' Z';
+  }
+  return d;
+}
+
+function svgPathFromRect(
+  frame: SketchFrame,
+  offset: { x: number; y: number },
+  rotation: number,
+): string {
+  const x = offset.x + frame.x;
+  const y = offset.y + frame.y;
+  const center = { x: x + frame.width / 2, y: y + frame.height / 2 };
+  const corners = [
+    { x, y },
+    { x: x + frame.width, y },
+    { x: x + frame.width, y: y + frame.height },
+    { x, y: y + frame.height },
+  ].map((point) => rotatePoint(point, center, rotation));
+  return [
+    `M ${formatSvgNumber(corners[0]!.x)} ${formatSvgNumber(corners[0]!.y)}`,
+    `L ${formatSvgNumber(corners[1]!.x)} ${formatSvgNumber(corners[1]!.y)}`,
+    `L ${formatSvgNumber(corners[2]!.x)} ${formatSvgNumber(corners[2]!.y)}`,
+    `L ${formatSvgNumber(corners[3]!.x)} ${formatSvgNumber(corners[3]!.y)}`,
+    'Z',
+  ].join(' ');
+}
+
+function svgPathFromOval(frame: SketchFrame, offset: { x: number; y: number }): string {
+  const x = offset.x + frame.x;
+  const y = offset.y + frame.y;
+  const rx = frame.width / 2;
+  const ry = frame.height / 2;
+  const cx = x + rx;
+  const cy = y + ry;
+  return [
+    `M ${formatSvgNumber(cx - rx)} ${formatSvgNumber(cy)}`,
+    `A ${formatSvgNumber(rx)} ${formatSvgNumber(ry)} 0 1 0 ${formatSvgNumber(cx + rx)} ${formatSvgNumber(cy)}`,
+    `A ${formatSvgNumber(rx)} ${formatSvgNumber(ry)} 0 1 0 ${formatSvgNumber(cx - rx)} ${formatSvgNumber(cy)}`,
+    'Z',
+  ].join(' ');
+}
+
+function readRotation(node: SketchNode): number {
+  return typeof node.rotation === 'number' && Number.isFinite(node.rotation) ? node.rotation : 0;
+}
+
+function rotatePoint(
+  point: { x: number; y: number },
+  center: { x: number; y: number },
+  degrees: number,
+): { x: number; y: number } {
+  if (degrees === 0) return point;
+  const radians = (degrees * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return {
+    x: center.x + dx * cos - dy * sin,
+    y: center.y + dx * sin + dy * cos,
+  };
+}
+
+function formatSvgNumber(value: number): string {
+  return `${round6(value)}`;
 }
 
 /** 四舍五入到 6 位小数,保证矢量坐标在产物中确定且紧凑。 */

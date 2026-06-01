@@ -110,6 +110,8 @@ function renderNode(node: VisualNode, realAssets: ReadonlyMap<string, RealImageA
     const label = node.assetRef ? `Image placeholder: ${node.assetRef}` : 'Image placeholder';
     return `<div ${attrs}><span class="d2c-image-label">${escapeHtml(label)}</span></div>`;
   }
+  const compoundSvg = renderCompoundSvg(node);
+  if (compoundSvg) return `<div ${attrs}>${compoundSvg}</div>`;
   // Vector shapes (Sketch shapePath) render their real outline as inline SVG.
   if (node.vector) {
     const svg = renderVectorSvg(node, node.vector);
@@ -151,6 +153,15 @@ function renderCss(
     '  height: 100%;',
     '  display: block;',
     '  overflow: visible;',
+    '}',
+    '',
+    '.d2c-compound-vector {',
+    '  position: absolute;',
+    '  inset: 0;',
+    '  width: 100%;',
+    '  height: 100%;',
+    '  display: block;',
+    '  overflow: hidden;',
     '}',
     '',
     '.d2c-image-label {',
@@ -279,12 +290,29 @@ function nodeDeclarations(
 }
 
 function shouldRenderBoxFill(node: VisualNode): boolean {
+  if (typeof node.style?.raw?.compoundSvgPath === 'string') return false;
   if (node.kind === 'text') return false;
   if (node.kind === 'shape') {
     const originalType = node.source.originalType?.toLowerCase();
     if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
   }
   return true;
+}
+
+function renderCompoundSvg(node: VisualNode): string | undefined {
+  const path = node.style?.raw?.compoundSvgPath;
+  if (typeof path !== 'string' || path.length === 0) return undefined;
+  const fill = node.style?.fills?.[0]?.color ?? 'none';
+  const fillRule =
+    typeof node.style?.raw?.compoundFillRule === 'string'
+      ? ` fill-rule="${escapeAttr(node.style.raw.compoundFillRule)}"`
+      : '';
+  const w = formatNumber(node.layout.width);
+  const h = formatNumber(node.layout.height);
+  return (
+    `<svg class="d2c-compound-vector" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" ` +
+    `xmlns="http://www.w3.org/2000/svg"><path d="${escapeAttr(path)}" fill="${fill}"${fillRule}/></svg>`
+  );
 }
 
 /**
