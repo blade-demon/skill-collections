@@ -110,6 +110,8 @@ function renderNode(node: VisualNode, realAssets: ReadonlyMap<string, RealImageA
     const label = node.assetRef ? `Image placeholder: ${node.assetRef}` : 'Image placeholder';
     return `<div ${attrs}><span class="d2c-image-label">${escapeHtml(label)}</span></div>`;
   }
+  const compoundSvg = renderCompoundSvg(node);
+  if (compoundSvg) return `<div ${attrs}>${compoundSvg}</div>`;
   // Vector shapes (Sketch shapePath) render their real outline as inline SVG.
   if (node.vector) {
     const svg = renderVectorSvg(node, node.vector);
@@ -151,6 +153,15 @@ function renderCss(
     '  height: 100%;',
     '  display: block;',
     '  overflow: visible;',
+    '}',
+    '',
+    '.d2c-compound-vector {',
+    '  position: absolute;',
+    '  inset: 0;',
+    '  width: 100%;',
+    '  height: 100%;',
+    '  display: block;',
+    '  overflow: hidden;',
     '}',
     '',
     '.d2c-image-label {',
@@ -231,7 +242,12 @@ function nodeDeclarations(
 
   if (node.kind === 'text') {
     const textStyle = node.text?.style;
-    declarations.push('white-space: pre-wrap;');
+    if (isSketchAutoWidthText(node)) {
+      declarations.push('width: max-content;');
+      declarations.push('white-space: nowrap;');
+    } else {
+      declarations.push('white-space: pre-wrap;');
+    }
     if (textStyle?.fontFamily)
       declarations.push(`font-family: ${cssString(textStyle.fontFamily)};`);
     if (textStyle?.fontSize) declarations.push(`font-size: ${px(textStyle.fontSize)};`);
@@ -278,13 +294,39 @@ function nodeDeclarations(
   return declarations;
 }
 
+function isSketchAutoWidthText(node: VisualNode): boolean {
+  return node.style?.raw?.sketchTextBehaviour === 0;
+}
+
 function shouldRenderBoxFill(node: VisualNode): boolean {
+  if (typeof node.style?.raw?.compoundSvgPath === 'string') return false;
   if (node.kind === 'text') return false;
   if (node.kind === 'shape') {
     const originalType = node.source.originalType?.toLowerCase();
     if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
   }
   return true;
+}
+
+function renderCompoundSvg(node: VisualNode): string | undefined {
+  const path = node.style?.raw?.compoundSvgPath;
+  if (typeof path !== 'string' || path.length === 0) return undefined;
+  const fill = node.style?.fills?.[0];
+  // 渐变填充时 fill.color 是 Sketch 残留的"暗色"实色,不能直接拿来当 fill;
+  // 优先走 SVG <defs> 渲染真实渐变,失败再退到实色。
+  const gradient = fill ? svgGradientFill(fill, `grad-${node.id}-fill-0`) : undefined;
+  const fillRef = gradient?.fillRef ?? fill?.color ?? 'none';
+  const fillRule =
+    typeof node.style?.raw?.compoundFillRule === 'string'
+      ? ` fill-rule="${escapeAttr(node.style.raw.compoundFillRule)}"`
+      : '';
+  const w = formatNumber(node.layout.width);
+  const h = formatNumber(node.layout.height);
+  return (
+    `<svg class="d2c-compound-vector" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" ` +
+    `xmlns="http://www.w3.org/2000/svg">${gradient?.defs ?? ''}` +
+    `<path d="${escapeAttr(path)}" fill="${fillRef}"${fillRule}/></svg>`
+  );
 }
 
 /**
@@ -296,7 +338,9 @@ function shouldRenderBoxFill(node: VisualNode): boolean {
 function renderVectorSvg(node: VisualNode, vector: VectorPath): string {
   const d = vectorPathData(vector, node.layout.width, node.layout.height);
   if (!d) return '';
-  const fill = node.style?.fills?.[0]?.color ?? 'none';
+  const fill = node.style?.fills?.[0];
+  const gradient = fill ? svgGradientFill(fill, `grad-${node.id}-fill-0`) : undefined;
+  const fillRef = gradient?.fillRef ?? fill?.color ?? 'none';
   const border = node.style?.borders?.[0];
   const stroke =
     border?.color !== undefined
@@ -306,7 +350,8 @@ function renderVectorSvg(node: VisualNode, vector: VectorPath): string {
   const h = formatNumber(node.layout.height);
   return (
     `<svg class="d2c-vector" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" ` +
-    `xmlns="http://www.w3.org/2000/svg"><path d="${d}" fill="${fill}"${stroke}/></svg>`
+    `xmlns="http://www.w3.org/2000/svg">${gradient?.defs ?? ''}` +
+    `<path d="${d}" fill="${fillRef}"${stroke}/></svg>`
   );
 }
 
@@ -513,6 +558,89 @@ function linearGradientCss(fill: Fill): string | undefined {
     .join(', ');
 
   return `linear-gradient(${formatNumber(angleDeg)}deg, ${stopsCss})`;
+}
+
+/**
+ * 把 Sketch 渐变填充转成 inline SVG 可用的 <defs> + fill="url(#id)" 引用。
+ *
+ * 仅处理 linear / radial(0/1) — angular(2) SVG 无原生 conic-gradient,
+ * 由调用方回退到实色,以避免静默错色。同样,所有解析失败都返回 undefined
+ * 让调用方走实色回退。
+ */
+function svgGradientFill(fill: Fill, id: string): { defs: string; fillRef: string } | undefined {
+  if (fill.type !== 'gradient') return undefined;
+  const raw = fill.raw;
+  if (!raw || typeof raw !== 'object') return undefined;
+  const gradient = (raw as { gradient?: unknown }).gradient;
+  if (!gradient || typeof gradient !== 'object') return undefined;
+  const g = gradient as Record<string, unknown>;
+
+  const from = parseGradientPoint(g.from);
+  const to = parseGradientPoint(g.to);
+  if (!from || !to) return undefined;
+
+  const stops = Array.isArray(g.stops) ? g.stops : undefined;
+  if (!stops || stops.length === 0) return undefined;
+  const stopMarkup = svgGradientStopMarkup(stops);
+  if (!stopMarkup) return undefined;
+
+  const escId = escapeAttr(id);
+  if (g.gradientType === 0) {
+    if (from.x === to.x && from.y === to.y) return undefined;
+    return {
+      defs:
+        `<defs><linearGradient id="${escId}" gradientUnits="objectBoundingBox" ` +
+        `x1="${formatNumber(from.x)}" y1="${formatNumber(from.y)}" ` +
+        `x2="${formatNumber(to.x)}" y2="${formatNumber(to.y)}">${stopMarkup}` +
+        `</linearGradient></defs>`,
+      fillRef: `url(#${escId})`,
+    };
+  }
+  if (g.gradientType === 1) {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const r = Math.sqrt(dx * dx + dy * dy);
+    if (r === 0) return undefined;
+    return {
+      defs:
+        `<defs><radialGradient id="${escId}" gradientUnits="objectBoundingBox" ` +
+        `cx="${formatNumber(from.x)}" cy="${formatNumber(from.y)}" ` +
+        `r="${formatNumber(roundTo(r, 10000))}">${stopMarkup}` +
+        `</radialGradient></defs>`,
+      fillRef: `url(#${escId})`,
+    };
+  }
+  return undefined;
+}
+
+function svgGradientStopMarkup(stops: readonly unknown[]): string | undefined {
+  const ordered: Array<{ position: number; hex: string; alpha: number }> = [];
+  for (const stop of stops) {
+    if (!stop || typeof stop !== 'object') return undefined;
+    const s = stop as Record<string, unknown>;
+    const position = typeof s.position === 'number' ? s.position : undefined;
+    const parsed = parseSvgStopColor(s.color);
+    if (position === undefined || !parsed) return undefined;
+    ordered.push({ position, hex: parsed.hex, alpha: parsed.alpha });
+  }
+  ordered.sort((a, b) => a.position - b.position);
+  return ordered
+    .map(({ position, hex, alpha }) => {
+      const opacityAttr = alpha >= 1 ? '' : ` stop-opacity="${formatNumber(roundTo(alpha, 1000))}"`;
+      return `<stop offset="${formatNumber(roundTo(position * 100, 100))}%" stop-color="${hex}"${opacityAttr}/>`;
+    })
+    .join('');
+}
+
+function parseSvgStopColor(value: unknown): { hex: string; alpha: number } | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const c = value as Record<string, unknown>;
+  const r = colorChannel(c.red);
+  const g = colorChannel(c.green);
+  const b = colorChannel(c.blue);
+  const alphaRaw = typeof c.alpha === 'number' && Number.isFinite(c.alpha) ? c.alpha : 1;
+  const alpha = Math.max(0, Math.min(1, alphaRaw));
+  return { hex: `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}`, alpha };
 }
 
 function parseGradientPoint(value: unknown): { x: number; y: number } | undefined {

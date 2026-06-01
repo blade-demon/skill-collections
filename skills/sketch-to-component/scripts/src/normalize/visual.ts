@@ -24,6 +24,7 @@ import {
   isVisible,
   readFrame,
   readNumber,
+  type SketchFrame,
   type SketchNode,
 } from './sketch-nodes.js';
 import {
@@ -89,6 +90,7 @@ export function buildVisualBlock(input: BuildVisualBlockInput): VisualBlock {
     isRoot: true,
     visitedSymbols: new Set(),
     instancePath: [],
+    symbolOverrides: [],
   });
   if (!root) {
     throw new Error('Selected artboard could not be normalized');
@@ -133,6 +135,19 @@ interface NormalizeNodeOptions {
    * 符号外部的节点使用空列表；符号内部的节点包含所有父符号实例的 ID
    */
   instancePath: readonly string[];
+  /**
+   * Symbol overrides relative to the node currently being normalized. The
+   * traversal strips one node-id segment at each level, so a direct override
+   * for the current node has an empty pathSegments array.
+   */
+  symbolOverrides?: readonly ParsedSymbolOverride[];
+}
+
+interface ParsedSymbolOverride {
+  path: string;
+  pathSegments: readonly string[];
+  property: string;
+  value: unknown;
 }
 
 /**
@@ -230,6 +245,7 @@ function normalizeNode(
         visitedSymbols: new Set(options.visitedSymbols),
         containerResize: childContainerResize,
         instancePath: options.instancePath,
+        symbolOverrides: overridesForChild(options.symbolOverrides, getNodeId(child)),
       }),
     )
     .filter((child): child is VisualNode => Boolean(child));
@@ -259,10 +275,22 @@ function normalizeNode(
   // 提取并附加样式信息（填充、边框、效果、透明度等）
   const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
+  const compoundSvgPath = extractCompoundSvgPath(node, nodeClass);
+  if (compoundSvgPath && visualNode.style?.fills?.length) {
+    if (!visualNode.style.raw) visualNode.style.raw = {};
+    visualNode.style.raw.compoundSvgPath = compoundSvgPath;
+    if (hasSubtractiveBoolean(node)) {
+      visualNode.style.raw.compoundFillRule = 'evenodd';
+    }
+    visualNode.children = [];
+  }
   // 标记父节点为有裁剪内容，供后续处理
   if (hadClippingMaskChild) markMaskedContent(visualNode);
-  // 文本节点提取文本内容和字体信息
-  if (kind === 'text') visualNode.text = extractText(node);
+  // 文本节点提取文本内容和字体信息，并应用 symbol stringValue 覆盖
+  if (kind === 'text') {
+    visualNode.text = applyTextOverride(extractText(node), options.symbolOverrides);
+    applyTextBehavior(node, visualNode);
+  }
   // 图像节点注册资源并建立引用
   if (kind === 'image') {
     const asset = registerImageAsset(node, context);
@@ -271,6 +299,11 @@ function normalizeNode(
   // 矢量形状(shapePath)保留贝塞尔路径几何,供 preview/codegen 还原真实轮廓
   const vector = extractVectorPath(node, nodeClass);
   if (vector) visualNode.vector = vector;
+  // 在 text/image/vector 全部装配之后再 tint:
+  // - 文本颜色存在 visualNode.text.style.color,需先有 text 才能改写;
+  // - compound SVG 已先把子树清空,这里也不会做无效写入。
+  applyColorOverrides(visualNode, options.symbolOverrides);
+  if (!options.isRoot) adjustAutoWidthLayout(visualNode);
 
   return visualNode;
 }
@@ -283,6 +316,7 @@ function normalizeNode(
  * 视为纯裁剪层，继续跳过以避免旧的灰色遮罩回归。
  */
 function hasVisibleMaskArtwork(node: SketchNode): boolean {
+  if (getNodeClass(node) !== 'shapePath') return false;
   const style = node.style && typeof node.style === 'object' ? node.style : undefined;
   if (!style) return false;
   if (normalizeFills(style.fills).length > 0) return true;
@@ -303,6 +337,269 @@ function markMaskedContent(visualNode: VisualNode): void {
   if (!visualNode.style) visualNode.style = {};
   if (!visualNode.style.raw) visualNode.style.raw = {};
   visualNode.style.raw.maskedContent = true;
+}
+
+function parseSymbolOverrides(
+  overrides: Array<{ path: string; value: unknown }> | undefined,
+): ParsedSymbolOverride[] {
+  if (!overrides) return [];
+  return overrides.flatMap((override) => {
+    const parsed = parseSymbolOverridePath(override.path);
+    return parsed ? [{ ...parsed, path: override.path, value: override.value }] : [];
+  });
+}
+
+function parseSymbolOverridePath(
+  path: string,
+): Omit<ParsedSymbolOverride, 'path' | 'value'> | undefined {
+  const segments = path.split('/').filter((segment) => segment.length > 0);
+  const last = segments.pop();
+  if (!last) return undefined;
+  const propertySeparator = last.lastIndexOf('_');
+  if (propertySeparator <= 0 || propertySeparator === last.length - 1) return undefined;
+  const targetId = last.slice(0, propertySeparator);
+  const property = last.slice(propertySeparator + 1);
+  return { pathSegments: [...segments, targetId], property };
+}
+
+function overridesForChild(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+  childId: string,
+): ParsedSymbolOverride[] {
+  if (!overrides || overrides.length === 0) return [];
+  return overrides.flatMap((override) => {
+    if (override.pathSegments.length === 0) {
+      // fillColor 是 Sketch "Tint" 风格的广义覆盖,需要沿子树继续传递:
+      // 子节点上更具体的 color:fill-N 在自身规范化时按顺序应用,从而覆盖
+      // 这层 ambient tint(见 readDirectColorOverrides 的应用顺序)。
+      // 其他零段覆盖项(stringValue / symbolID / color:fill-N / color:border-N)
+      // 已在当前节点消费,不再向下泄漏。
+      return override.property === 'fillColor' ? [{ ...override }] : [];
+    }
+    if (override.pathSegments[0] !== childId) return [{ ...override }];
+    return [{ ...override, pathSegments: override.pathSegments.slice(1) }];
+  });
+}
+
+function readStringOverride(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+  property: string,
+): string | undefined {
+  if (!overrides) return undefined;
+  for (let i = overrides.length - 1; i >= 0; i--) {
+    const override = overrides[i];
+    if (
+      override?.property === property &&
+      override.pathSegments.length === 0 &&
+      typeof override.value === 'string'
+    ) {
+      return override.value;
+    }
+  }
+  return undefined;
+}
+
+function applyTextOverride(
+  text: TextContent,
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): TextContent {
+  const content = readStringOverride(overrides, 'stringValue');
+  return content === undefined ? text : { ...text, content };
+}
+
+function applyColorOverrides(
+  node: VisualNode,
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): void {
+  const colorOverrides = readDirectColorOverrides(overrides);
+  if (!colorOverrides) return;
+
+  // 先应用广义 tint,再应用 indexed,使更具体的覆盖最终胜出。
+  if (colorOverrides.fillColor) {
+    applyFillColorTint(node, colorOverrides.fillColor);
+  }
+  for (const [index, color] of colorOverrides.fills) {
+    applyIndexedFillColor(node, index, color);
+  }
+  for (const [index, color] of colorOverrides.borders) {
+    applyIndexedBorderColor(node, index, color);
+  }
+}
+
+interface DirectColorOverrides {
+  fillColor?: string;
+  fills: Map<number, string>;
+  borders: Map<number, string>;
+}
+
+function readDirectColorOverrides(
+  overrides: readonly ParsedSymbolOverride[] | undefined,
+): DirectColorOverrides | undefined {
+  if (!overrides) return undefined;
+  const result: DirectColorOverrides = { fills: new Map(), borders: new Map() };
+  for (const override of overrides) {
+    if (override.pathSegments.length !== 0) continue;
+    const color = colorToHex(override.value);
+    if (!color) continue;
+    if (override.property === 'fillColor') {
+      result.fillColor = color;
+      continue;
+    }
+    const fillIndex = parseIndexedColorOverride(override.property, 'color:fill-');
+    if (fillIndex !== undefined) {
+      result.fills.set(fillIndex, color);
+      continue;
+    }
+    const borderIndex = parseIndexedColorOverride(override.property, 'color:border-');
+    if (borderIndex !== undefined) {
+      result.borders.set(borderIndex, color);
+    }
+  }
+  if (result.fillColor || result.fills.size > 0 || result.borders.size > 0) return result;
+  return undefined;
+}
+
+function parseIndexedColorOverride(property: string, prefix: string): number | undefined {
+  if (!property.startsWith(prefix)) return undefined;
+  const rawIndex = property.slice(prefix.length);
+  if (!/^\d+$/.test(rawIndex)) return undefined;
+  return Number.parseInt(rawIndex, 10);
+}
+
+/**
+ * 应用 Sketch tint 风格的 fillColor 覆盖到当前节点。
+ *
+ * 非递归: 沿子树的传播由 overridesForChild 完成,每个后代在自身规范化时
+ * 重新评估 tint(并可被自身的 indexed 覆盖覆写)。这避免了"父级 tint 在
+ * 子级完成规范化后回头清掉子级 indexed 覆盖"的回归。
+ *
+ * 文本节点的颜色存在 text.style.color 而非 style.fills,这里一并 tint
+ * 以匹配 Sketch 中文本随符号 tint 变色的预期;边框由专门的
+ * color:border-N 处理,避免误改用户显式描边。
+ */
+function applyFillColorTint(node: VisualNode, color: string): void {
+  if (node.kind === 'text') {
+    if (node.text) {
+      const nextStyle = { ...(node.text.style ?? {}), color };
+      node.text = { ...node.text, style: nextStyle };
+    }
+    return;
+  }
+  if (node.style?.fills?.length) {
+    node.style = {
+      ...node.style,
+      fills: node.style.fills.map((fill) => ({ ...fill, color })),
+    };
+  }
+}
+
+function applyIndexedFillColor(node: VisualNode, index: number, color: string): void {
+  if (node.kind === 'text') return;
+  const fills = node.style?.fills;
+  if (!fills?.[index]) return;
+  if (!node.style) return;
+  node.style = {
+    ...node.style,
+    fills: fills.map((fill, i) => (i === index ? { ...fill, color } : fill)),
+  };
+}
+
+function applyIndexedBorderColor(node: VisualNode, index: number, color: string): void {
+  const borders = node.style?.borders;
+  if (!borders?.[index]) return;
+  if (!node.style) return;
+  node.style = {
+    ...node.style,
+    borders: borders.map((border, i) => (i === index ? { ...border, color } : border)),
+  };
+}
+
+function applyTextBehavior(node: SketchNode, visualNode: VisualNode): void {
+  const textBehaviour = typeof node.textBehaviour === 'number' ? node.textBehaviour : undefined;
+  if (textBehaviour === undefined) return;
+  if (!visualNode.style) visualNode.style = {};
+  if (!visualNode.style.raw) visualNode.style.raw = {};
+  visualNode.style.raw.sketchTextBehaviour = textBehaviour;
+  if (textBehaviour !== 0 || !visualNode.text?.content) return;
+
+  const estimatedWidth = estimateSingleLineTextWidth(
+    visualNode.text.content,
+    visualNode.text.style?.fontSize,
+  );
+  if (estimatedWidth > visualNode.layout.width) {
+    visualNode.layout.width = estimatedWidth;
+    visualNode.style.raw.autoWidthText = true;
+  }
+}
+
+function estimateSingleLineTextWidth(content: string, fontSize = 14): number {
+  let width = 0;
+  for (const char of content) {
+    if (/\s/.test(char)) width += fontSize * 0.35;
+    else if (/[\u2E80-\u9FFF\uF900-\uFAFF]/u.test(char)) width += fontSize;
+    else if (/[A-Z0-9]/.test(char)) width += fontSize * 0.65;
+    else width += fontSize * 0.55;
+  }
+  return Math.ceil(width);
+}
+
+function adjustAutoWidthLayout(node: VisualNode): void {
+  if (node.children.length === 0 || !node.children.some(hasAutoWidthTextDescendant)) return;
+  if (node.style?.raw?.maskedContent === true) return;
+  reflowHorizontalRow(node);
+  const oldWidth = node.layout.width;
+  const maxRight = maxChildRight(node.children);
+  if (maxRight <= oldWidth) return;
+  node.layout.width = maxRight;
+  stretchFullWidthBackground(node, oldWidth, node.layout.width);
+}
+
+function hasAutoWidthTextDescendant(node: VisualNode): boolean {
+  if (node.kind === 'text' && node.style?.raw?.autoWidthText === true) return true;
+  return node.children.some(hasAutoWidthTextDescendant);
+}
+
+function reflowHorizontalRow(node: VisualNode): void {
+  if (node.children.length < 2 || !isHorizontalRow(node.children)) return;
+  const ordered = [...node.children].sort((a, b) => a.layout.x - b.layout.x);
+  for (let i = 1; i < ordered.length; i++) {
+    const previous = ordered[i - 1]!;
+    const current = ordered[i]!;
+    const originalGap =
+      current.layout.x - (previous.layout.x + previous.layout.width) > 0
+        ? current.layout.x - (previous.layout.x + previous.layout.width)
+        : 0;
+    const nextX = previous.layout.x + previous.layout.width + originalGap;
+    if (nextX > current.layout.x) current.layout.x = nextX;
+  }
+}
+
+function isHorizontalRow(children: readonly VisualNode[]): boolean {
+  const first = children[0];
+  if (!first) return false;
+  return children.every(
+    (child) =>
+      Math.abs(child.layout.y - first.layout.y) < 1e-6 &&
+      Math.abs(child.layout.height - first.layout.height) < 1e-6,
+  );
+}
+
+function maxChildRight(children: readonly VisualNode[]): number {
+  return children.reduce((max, child) => Math.max(max, child.layout.x + child.layout.width), 0);
+}
+
+function stretchFullWidthBackground(node: VisualNode, oldWidth: number, newWidth: number): void {
+  for (const child of node.children) {
+    if (
+      child.kind === 'shape' &&
+      Math.abs(child.layout.x) < 1e-6 &&
+      Math.abs(child.layout.y) < 1e-6 &&
+      Math.abs(child.layout.width - oldWidth) < 1e-6 &&
+      Math.abs(child.layout.height - node.layout.height) < 1e-6
+    ) {
+      child.layout.width = newWidth;
+    }
+  }
 }
 
 /**
@@ -327,7 +624,12 @@ function normalizeSymbolInstance(
   options: NormalizeNodeOptions,
 ): VisualNode {
   const symbolId = typeof node.symbolID === 'string' ? node.symbolID : undefined;
-  const master = getMasterForInstance(node, context.symbols, context.warnings);
+  const effectiveSymbolId = readStringOverride(options.symbolOverrides, 'symbolID') ?? symbolId;
+  const lookupNode =
+    effectiveSymbolId && effectiveSymbolId !== symbolId
+      ? { ...node, symbolID: effectiveSymbolId }
+      : node;
+  const master = getMasterForInstance(lookupNode, context.symbols, context.warnings);
   const rawFrame = readFrame(node);
   const rc = readNumber(node.resizingConstraint, DEFAULT_RESIZING_CONSTRAINT);
   // 应用约束算法计算实例的最终尺寸
@@ -349,16 +651,16 @@ function normalizeSymbolInstance(
   let hadClippingMaskChild = false;
 
   // 检测循环符号展开：若当前符号已在访问路径中，停止展开
-  if (symbolId && options.visitedSymbols.has(symbolId)) {
+  if (effectiveSymbolId && options.visitedSymbols.has(effectiveSymbolId)) {
     addWarning(
       context.warnings,
       'symbol-cycle',
-      `Stopped cyclic symbol expansion for ${symbolId}`,
+      `Stopped cyclic symbol expansion for ${effectiveSymbolId}`,
       node,
     );
   } else if (master) {
     const nextVisited = new Set(options.visitedSymbols);
-    if (symbolId) nextVisited.add(symbolId);
+    if (effectiveSymbolId) nextVisited.add(effectiveSymbolId);
     const masterFrame = readFrame(master);
     const masterSize: ContainerSize = { width: masterFrame.width, height: masterFrame.height };
     const instanceSize: ContainerSize = { width: newFrame.width, height: newFrame.height };
@@ -372,6 +674,10 @@ function normalizeSymbolInstance(
      */
     const childInstancePath = [...options.instancePath, getNodeId(node)];
     const masterChildren = getLayers(master);
+    const activeOverrides = [
+      ...parseSymbolOverrides(extractOverrides(node)),
+      ...(options.symbolOverrides ?? []),
+    ];
     hadClippingMaskChild = masterChildren.some((c) => c.hasClippingMask === true);
     children = cleanChildren(
       masterChildren
@@ -380,6 +686,7 @@ function normalizeSymbolInstance(
             visitedSymbols: nextVisited,
             containerResize: masterContainerResize,
             instancePath: childInstancePath,
+            symbolOverrides: overridesForChild(activeOverrides, getNodeId(child)),
           }),
         )
         .filter((child): child is VisualNode => Boolean(child)),
@@ -405,15 +712,20 @@ function normalizeSymbolInstance(
     // 保留符号实例的元数据，包括主控 ID、实例 ID 和覆盖项
     symbol: {
       instanceId: getNodeId(node),
-      masterId: symbolId,
+      masterId: effectiveSymbolId,
       overrides: extractOverrides(node),
     },
     children,
   };
   const style = extractStyle(node, kind, context);
   if (style) visualNode.style = style;
+  // 直接打到实例自身的颜色覆盖(零段 fillColor / color:fill-N / color:border-N)
+  // 需要在这里消费。常规节点路径在 normalizeNode 内已 tint,但 symbolInstance
+  // 走单独分支,缺这一步会让 instance 自带 fills/borders 上的覆盖被静默丢弃。
+  applyColorOverrides(visualNode, options.symbolOverrides);
   // 标记实例节点为有裁剪内容
   if (hadClippingMaskChild) markMaskedContent(visualNode);
+  adjustAutoWidthLayout(visualNode);
   return visualNode;
 }
 
@@ -907,6 +1219,133 @@ function extractVectorPath(node: SketchNode, nodeClass: string): VectorPath | un
     points.push(point);
   }
   return { points, closed: node.isClosed === true };
+}
+
+function extractCompoundSvgPath(node: SketchNode, nodeClass: string): string | undefined {
+  if (nodeClass !== 'shapeGroup') return undefined;
+  const paths = getLayers(node).flatMap((child) => compoundPathForNode(child, { x: 0, y: 0 }));
+  return paths.length > 0 ? paths.join(' ') : undefined;
+}
+
+function compoundPathForNode(node: SketchNode, offset: { x: number; y: number }): string[] {
+  const nodeClass = getNodeClass(node);
+  if (!isVisible(node) || node.hasClippingMask === true) return [];
+  const frame = readFrame(node);
+  const nextOffset = { x: offset.x + frame.x, y: offset.y + frame.y };
+  if (nodeClass === 'shapeGroup' || nodeClass === 'group') {
+    return getLayers(node).flatMap((child) => compoundPathForNode(child, nextOffset));
+  }
+  if (frame.width <= 0 || frame.height <= 0) return [];
+  if (nodeClass === 'shapePath') {
+    const vector = extractVectorPath(node, nodeClass);
+    return vector ? [svgPathFromVector(vector, frame, offset, readRotation(node))] : [];
+  }
+  if (nodeClass === 'rectangle') return [svgPathFromRect(frame, offset, readRotation(node))];
+  if (nodeClass === 'oval') return [svgPathFromOval(frame, offset)];
+  return [];
+}
+
+function hasSubtractiveBoolean(node: SketchNode): boolean {
+  const bool = node.booleanOperation;
+  if (typeof bool === 'number' && bool > 0) return true;
+  return getLayers(node).some(hasSubtractiveBoolean);
+}
+
+function svgPathFromVector(
+  vector: VectorPath,
+  frame: SketchFrame,
+  offset: { x: number; y: number },
+  rotation: number,
+): string {
+  const pts = vector.points;
+  const point = (n: { x: number; y: number }): { x: number; y: number } =>
+    rotatePoint(
+      { x: offset.x + frame.x + n.x * frame.width, y: offset.y + frame.y + n.y * frame.height },
+      { x: offset.x + frame.x + frame.width / 2, y: offset.y + frame.y + frame.height / 2 },
+      rotation,
+    );
+  const xy = (n: { x: number; y: number }): string => {
+    const p = point(n);
+    return `${formatSvgNumber(p.x)} ${formatSvgNumber(p.y)}`;
+  };
+  const segment = (from: VectorPoint, to: VectorPoint): string => {
+    if (from.curveFrom || to.curveTo) {
+      const c1 = from.curveFrom ?? { x: from.x, y: from.y };
+      const c2 = to.curveTo ?? { x: to.x, y: to.y };
+      return ` C ${xy(c1)}, ${xy(c2)}, ${xy(to)}`;
+    }
+    return ` L ${xy(to)}`;
+  };
+  let d = `M ${xy(pts[0]!)}`;
+  for (let i = 1; i < pts.length; i++) d += segment(pts[i - 1]!, pts[i]!);
+  if (vector.closed) {
+    d += segment(pts[pts.length - 1]!, pts[0]!);
+    d += ' Z';
+  }
+  return d;
+}
+
+function svgPathFromRect(
+  frame: SketchFrame,
+  offset: { x: number; y: number },
+  rotation: number,
+): string {
+  const x = offset.x + frame.x;
+  const y = offset.y + frame.y;
+  const center = { x: x + frame.width / 2, y: y + frame.height / 2 };
+  const corners = [
+    { x, y },
+    { x: x + frame.width, y },
+    { x: x + frame.width, y: y + frame.height },
+    { x, y: y + frame.height },
+  ].map((point) => rotatePoint(point, center, rotation));
+  return [
+    `M ${formatSvgNumber(corners[0]!.x)} ${formatSvgNumber(corners[0]!.y)}`,
+    `L ${formatSvgNumber(corners[1]!.x)} ${formatSvgNumber(corners[1]!.y)}`,
+    `L ${formatSvgNumber(corners[2]!.x)} ${formatSvgNumber(corners[2]!.y)}`,
+    `L ${formatSvgNumber(corners[3]!.x)} ${formatSvgNumber(corners[3]!.y)}`,
+    'Z',
+  ].join(' ');
+}
+
+function svgPathFromOval(frame: SketchFrame, offset: { x: number; y: number }): string {
+  const x = offset.x + frame.x;
+  const y = offset.y + frame.y;
+  const rx = frame.width / 2;
+  const ry = frame.height / 2;
+  const cx = x + rx;
+  const cy = y + ry;
+  return [
+    `M ${formatSvgNumber(cx - rx)} ${formatSvgNumber(cy)}`,
+    `A ${formatSvgNumber(rx)} ${formatSvgNumber(ry)} 0 1 0 ${formatSvgNumber(cx + rx)} ${formatSvgNumber(cy)}`,
+    `A ${formatSvgNumber(rx)} ${formatSvgNumber(ry)} 0 1 0 ${formatSvgNumber(cx - rx)} ${formatSvgNumber(cy)}`,
+    'Z',
+  ].join(' ');
+}
+
+function readRotation(node: SketchNode): number {
+  return typeof node.rotation === 'number' && Number.isFinite(node.rotation) ? node.rotation : 0;
+}
+
+function rotatePoint(
+  point: { x: number; y: number },
+  center: { x: number; y: number },
+  degrees: number,
+): { x: number; y: number } {
+  if (degrees === 0) return point;
+  const radians = (degrees * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return {
+    x: center.x + dx * cos - dy * sin,
+    y: center.y + dx * sin + dy * cos,
+  };
+}
+
+function formatSvgNumber(value: number): string {
+  return `${round6(value)}`;
 }
 
 /** 四舍五入到 6 位小数,保证矢量坐标在产物中确定且紧凑。 */
