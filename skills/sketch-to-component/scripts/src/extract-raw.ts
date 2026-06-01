@@ -1,10 +1,11 @@
 import { basename, resolve } from 'node:path';
 import { RawArtifactSchema, type RawArtifact } from '@skill-collections/d2c-core';
+import type FileFormat from '@sketch-hq/sketch-file-format-ts';
 
 import { acquireFromFile } from './acquire-from-file.js';
 import { ExtractError } from './errors.js';
 import { openSketchFile, type OpenSketchFileDeps } from './open-sketch-file.js';
-import { SketchRawModelSchema } from './sketch-raw-model.js';
+import { safeParseSketchRawModel } from './sketch-raw-model.js';
 
 export type SketchExtractInput = { source: 'file'; filePath: string };
 
@@ -51,8 +52,12 @@ interface AcquiredSketchRawModel {
   model: unknown;
 }
 
-function getDocumentId(document: Record<string, unknown>): string {
-  const documentId = document.do_objectID;
+function getDocumentId(document: FileFormat.Document): string {
+  // Defensive: zod only verified that `document` is a non-empty object, not
+  // that `do_objectID` is present and a string. Keep the runtime check —
+  // newer Sketch versions or corrupt files could violate the FileFormat
+  // contract that `do_objectID: Uuid` (a string) is always set.
+  const documentId: unknown = (document as { do_objectID?: unknown }).do_objectID;
   if (typeof documentId !== 'string' || documentId.length === 0) {
     throw new ExtractError('bad-entry', 'document.do_objectID is required');
   }
@@ -82,7 +87,7 @@ export async function extractRaw(
   deps: ExtractRawDeps = {},
 ): Promise<RawArtifact> {
   const acquired = await acquire(input, deps);
-  const parsedModel = SketchRawModelSchema.safeParse(acquired.model);
+  const parsedModel = safeParseSketchRawModel(acquired.model);
   if (!parsedModel.success) {
     throw new ExtractError('bad-entry', parsedModel.error.message, {
       cause: parsedModel.error,

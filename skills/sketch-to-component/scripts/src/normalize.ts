@@ -6,7 +6,7 @@ import {
   type RawArtifact,
   type Warning,
 } from '@skill-collections/d2c-core';
-import { SketchRawModelSchema } from './sketch-raw-model.js';
+import { safeParseSketchRawModel } from './sketch-raw-model.js';
 import { selectArtboard, type SelectArtboardOptions } from './normalize/select-artboard.js';
 import { deriveSemanticBlock } from './normalize/semantic.js';
 import { buildSymbolIndex } from './normalize/symbols.js';
@@ -33,7 +33,7 @@ export async function normalizeParsedSketchRaw(
   if (raw.provider !== 'sketch') {
     throw new Error(`Sketch normalize expected provider "sketch", got "${raw.provider}"`);
   }
-  const modelParsed = SketchRawModelSchema.safeParse(raw.payload);
+  const modelParsed = safeParseSketchRawModel(raw.payload);
   if (!modelParsed.success) {
     throw new Error(`Invalid SketchRawModel payload: ${modelParsed.error.message}`);
   }

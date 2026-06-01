@@ -8,7 +8,7 @@ import { selectArtboard } from '../normalize/select-artboard.js';
 import type { SketchRawModel } from '../sketch-raw-model.js';
 import rawFixture from './fixtures/sketch-raw.min.json';
 
-const model = rawFixture.payload as SketchRawModel;
+const model = rawFixture.payload as unknown as SketchRawModel;
 
 describe('deriveSemanticBlock', () => {
   it('creates very thin candidates from symbol and naming heuristics', () => {

@@ -8,7 +8,7 @@ import type { SketchNode } from '../normalize/sketch-nodes.js';
 import type { SketchRawModel } from '../sketch-raw-model.js';
 import rawFixture from './fixtures/sketch-raw.min.json';
 
-const model = rawFixture.payload as SketchRawModel;
+const model = rawFixture.payload as unknown as SketchRawModel;
 
 describe('buildVisualBlock', () => {
   it('normalizes the selected artboard into a v0.2 visual block', () => {
@@ -79,13 +79,17 @@ describe('buildVisualBlock', () => {
         },
       ],
     } as unknown as SketchNode;
+    // Partial mock of FileFormat.ForeignSymbol — production ForeignSymbol
+    // requires do_objectID/libraryID/sourceLibraryName/symbolPrivate/originalMaster
+    // that the test does not exercise. Cast through `unknown` matches the
+    // `asSketchRawModel` boundary convention.
     const foreignModel = {
       ...model,
       document: {
         ...model.document,
         foreignSymbols: [{ _class: 'MSImmutableForeignSymbol', symbolMaster: foreignMaster }],
       },
-    };
+    } as unknown as SketchRawModel;
     const artboard = {
       _class: 'artboard',
       do_objectID: 'foreign-art',
