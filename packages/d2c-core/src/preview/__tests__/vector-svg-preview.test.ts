@@ -74,6 +74,61 @@ describe('generatePreview vector SVG rendering', () => {
     expect(preview.html).not.toContain(' Z'); // open path
   });
 
+  it('renders a linear gradient fill via <defs><linearGradient> instead of the dormant solid', () => {
+    /* Sketch keeps a vestigial solid color alongside gradient fills (the "old"
+     * color you get back if you flip the fill type to solid). The preview used
+     * to render that vestigial color directly, painting blue gradient icons
+     * orange. Gradient fills must resolve to a SVG <linearGradient> reference. */
+    const square: VectorPath = {
+      closed: true,
+      points: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 1, y: 1 },
+        { x: 0, y: 1 },
+      ],
+    };
+    const preview = generatePreview(
+      makeVectorView(square, {
+        fills: [
+          {
+            type: 'gradient',
+            color: '#FF9E00FF',
+            raw: {
+              fillType: 1,
+              gradient: {
+                _class: 'gradient',
+                gradientType: 0,
+                from: '{0.5, 0}',
+                to: '{0.5, 1}',
+                stops: [
+                  {
+                    _class: 'gradientStop',
+                    position: 0,
+                    color: { _class: 'color', alpha: 1, red: 0.34, green: 0.77, blue: 1 },
+                  },
+                  {
+                    _class: 'gradientStop',
+                    position: 1,
+                    color: { _class: 'color', alpha: 1, red: 0, green: 0.6, blue: 1 },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(preview.html).toContain('<linearGradient id="grad-node-vec-fill-0"');
+    expect(preview.html).toContain('x1="0.5" y1="0" x2="0.5" y2="1"');
+    expect(preview.html).toContain('stop-color="#57C4FF"');
+    expect(preview.html).toContain('stop-color="#0099FF"');
+    expect(preview.html).toContain('fill="url(#grad-node-vec-fill-0)"');
+    // The dormant solid must NOT leak into the path fill.
+    expect(preview.html).not.toContain('fill="#FF9E00FF"');
+  });
+
   it('strokes the path from the border and emits no CSS box border', () => {
     const line: VectorPath = {
       closed: false,
