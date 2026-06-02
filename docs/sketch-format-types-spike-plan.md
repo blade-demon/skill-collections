@@ -34,6 +34,7 @@ npm install -D -w @skill-collections/sketch-to-component-scripts \
 ```
 
 约束：
+
 - 必须装在 `skills/sketch-to-component/scripts` 的 `devDependencies`，不进入
   `dependencies`。该包只服务 TS，运行时不应依赖。
 - 全部 import 使用 `import type { FileFormat } from '@sketch-hq/sketch-file-format-ts'`，
@@ -52,7 +53,7 @@ npm install -D -w @skill-collections/sketch-to-component-scripts \
   ```ts
   interface SketchRawModel {
     meta: FileFormat.Meta;
-    document: FileFormat.Document;  // pages 字段官方已是 FileRef[]，无需 Omit
+    document: FileFormat.Document; // pages 字段官方已是 FileRef[]，无需 Omit
     pages: Array<{ id: string; path: string; data: FileFormat.Page }>;
     assets: SketchAssetEntry[];
   }
@@ -88,8 +89,8 @@ export const MISSING_CLASS_SENTINEL = '<missing-class>';
 export const INVALID_CLASS_SENTINEL = '<invalid-class>';
 
 export function asAnyLayer(value: unknown): SketchLayerLike | undefined;
-export function getLayerClass(value: unknown): string;  // 返回真实 _class 或 sentinel
-export function getLayerId(value: unknown): string;     // 返回真实 do_objectID 或 sentinel
+export function getLayerClass(value: unknown): string; // 返回真实 _class 或 sentinel
+export function getLayerId(value: unknown): string; // 返回真实 do_objectID 或 sentinel
 
 // 按需添加的 type guards（只放本 spike 实际用到的）
 export function isSymbolMaster(layer: SketchLayerLike): layer is FileFormat.SymbolMaster;
@@ -101,6 +102,7 @@ export function isText(layer: SketchLayerLike): layer is FileFormat.Text;
 ```
 
 设计要点：
+
 - `asAnyLayer` 返回 `undefined` 表示"连像 layer 的对象都不是"（null/原始值/无 `_class` 字段都映射到 undefined）。
 - `getLayerClass` 区分两类异常并以 sentinel 返回，让上层 warning 能区分：
   - `<missing-class>` —— 没有 `_class` 字段 —— 文件结构 corrupt
@@ -115,11 +117,13 @@ export function isText(layer: SketchLayerLike): layer is FileFormat.Text;
 享受 `FileFormat.*` 类型。
 
 **不允许的改动**：
+
 - 不修改控制流（不改 if 分支、不改循环结构）
 - 不删字段访问（即使 TS 报"字段不存在"也用 `as` 局部圈住 + TODO 注释，留给后续 PR）
 - 不"顺手"修任何看起来不对的逻辑
 
 迁移完后：
+
 - `npm run typecheck -w @skill-collections/sketch-to-component-scripts` 必须过
 - `npm test -w @skill-collections/sketch-to-component-scripts` 必须全绿
 
@@ -127,42 +131,45 @@ export function isText(layer: SketchLayerLike): layer is FileFormat.Text;
 
 `docs/sketch-format-types-spike-report.md`，至少包含：
 
-| 列 | 含义 |
-|---|---|
-| 位置 | 文件:行 |
-| 现象 | TS 报什么 / 旧代码摸什么字段 |
+| 列   | 含义                                             |
+| ---- | ------------------------------------------------ |
+| 位置 | 文件:行                                          |
+| 现象 | TS 报什么 / 旧代码摸什么字段                     |
 | 类别 | `type-only` / `guard-required` / `behavior-risk` |
-| 应对 | 这次怎么处理（cast / guard / TODO） |
-| 备注 | 是否疑似旧 bug、是否 FileFormat 缺字段 |
+| 应对 | 这次怎么处理（cast / guard / TODO）              |
+| 备注 | 是否疑似旧 bug、是否 FileFormat 缺字段           |
 
 三类含义：
+
 - **type-only**：单纯类型收紧，旧代码访问的字段在 FileFormat 中存在，TS 报错
   只是因为旧代码用了 `unknown`。处理方式：换成 FileFormat 类型，行为完全不变。
 - **guard-required**：FileFormat 把字段标 optional 而旧代码当作必有。需要在
   访问前加 `?.` 或 guard。**可能**暴露旧 bug，但不主动修，记录在报告里。
 - **behavior-risk**：FileFormat 没有该字段 / 字段名不同 / 旧代码逻辑明显依赖
   特定 shape，迁移后行为可能变化。**本次 spike 一律保持原行为**（局部 cast
-  + TODO），把决策推到后续 PR。
+  - TODO），把决策推到后续 PR。
 
 报告产出后：
+
 - 若 `behavior-risk` 数量 ≤ 3 且都有明确归因 → 建议继续向 `select-artboard.ts`
   推进
 - 若 ≥ 5 或有任何项无法解释 → 停下来先解决/讨论，不推进 visual.ts
 
 ## 已知边界与回退策略
 
-| 场景 | 处理 |
-|---|---|
-| FileFormat 类型缺新版字段 | 局部 `(layer as FileFormat.X & { newField?: ... })` + TODO；同类 ≥ 3 处再考虑 module augmentation |
-| FileFormat 字段类型比实际更严（例如官方写 `string`，实际允许 `null`）| 局部 cast，记录在报告 |
-| zod 校验失败 | `asSketchRawModel` 直接抛 `ExtractError`（行为同当前） |
-| `asAnyLayer` 返回 undefined | 调用方现有的 `warnings.push({ code: 'unknown-node-class', ... })` 路径继续工作 |
+| 场景                                                                  | 处理                                                                                              |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| FileFormat 类型缺新版字段                                             | 局部 `(layer as FileFormat.X & { newField?: ... })` + TODO；同类 ≥ 3 处再考虑 module augmentation |
+| FileFormat 字段类型比实际更严（例如官方写 `string`，实际允许 `null`） | 局部 cast，记录在报告                                                                             |
+| zod 校验失败                                                          | `asSketchRawModel` 直接抛 `ExtractError`（行为同当前）                                            |
+| `asAnyLayer` 返回 undefined                                           | 调用方现有的 `warnings.push({ code: 'unknown-node-class', ... })` 路径继续工作                    |
 
 ## 提交策略
 
 PR 标题：`Introduce Sketch file-format types and centralize unsafe Sketch casts (spike)`
 
 PR 描述要点：
+
 - 明确这是 spike，不承诺零行为变化
 - 列出 spike 报告里 `guard-required` / `behavior-risk` 条目，说明已知未修
 - 列出后续 PR 计划（select-artboard → symbols → visual）

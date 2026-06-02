@@ -134,9 +134,7 @@ export function asSketchRawModel(value: unknown): SketchRawModel {
  */
 export function safeParseSketchRawModel(
   value: unknown,
-):
-  | { success: true; data: SketchRawModel }
-  | { success: false; error: z.ZodError } {
+): { success: true; data: SketchRawModel } | { success: false; error: z.ZodError } {
   const parsed = SketchRawModelSchema.safeParse(value);
   if (!parsed.success) return { success: false, error: parsed.error };
   return { success: true, data: value as SketchRawModel };
