@@ -5,7 +5,10 @@ import type { SketchNode } from '../normalize/sketch-nodes.js';
 import type { SketchRawModel } from '../sketch-raw-model.js';
 import rawFixture from './fixtures/sketch-raw.min.json';
 
-const model = rawFixture.payload as SketchRawModel;
+// Fixture is a partial Sketch payload — full `FileFormat.Meta` etc. would
+// require dozens of unrelated fields. The double cast mirrors the
+// `asSketchRawModel` boundary convention (zod-shallow + TS-deep).
+const model = rawFixture.payload as unknown as SketchRawModel;
 
 describe('selectArtboard', () => {
   it('selects the only non-symbol-library artboard by default', () => {
@@ -33,7 +36,7 @@ describe('selectArtboard', () => {
     screenPage.data.layers = [
       artboard,
       { ...structuredClone(artboard), do_objectID: 'other-artboard' },
-    ];
+    ] as unknown as typeof screenPage.data.layers;
 
     expect(() => selectArtboard(duplicate)).toThrow(/Multiple artboards/);
   });

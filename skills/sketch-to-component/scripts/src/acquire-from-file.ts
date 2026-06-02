@@ -1,6 +1,6 @@
 import { ExtractError } from './errors.js';
 import type { SketchArchive } from './open-sketch-file.js';
-import { type SketchAssetEntry, type SketchPage, type SketchRawModel } from './sketch-raw-model.js';
+import { type SketchAssetEntry, type SketchRawModelInput } from './sketch-raw-model.js';
 
 const decoder = new TextDecoder();
 const PAGE_ENTRY_RE = /^pages\/([^/]+)\.json$/;
@@ -24,10 +24,18 @@ function classifyAsset(path: string): SketchAssetEntry['kind'] {
   return 'other';
 }
 
-export function acquireFromFile(archive: SketchArchive): SketchRawModel {
+/**
+ * Build a pre-validation model from a Sketch zip archive. The return type
+ * is `SketchRawModelInput` (loose `Record<string, unknown>` at the
+ * FileFormat slots) — it intentionally does NOT promise FileFormat-typed
+ * shapes. `extract-raw.ts` runs the model through `safeParseSketchRawModel`
+ * to validate and cross into the typed `SketchRawModel` on the other side
+ * of the boundary.
+ */
+export function acquireFromFile(archive: SketchArchive): SketchRawModelInput {
   let document: Record<string, unknown> | undefined;
   let meta: Record<string, unknown> | undefined;
-  const pages: SketchPage[] = [];
+  const pages: SketchRawModelInput['pages'] = [];
   const assets: SketchAssetEntry[] = [];
 
   const entries = [...archive.entries.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -69,7 +77,7 @@ export function acquireFromFile(archive: SketchArchive): SketchRawModel {
     throw new ExtractError('missing-entry', 'Missing required Sketch entries: pages/*.json');
   }
 
-  const model: SketchRawModel = {
+  const model: SketchRawModelInput = {
     meta,
     document,
     pages: pages.sort((a, b) => a.path.localeCompare(b.path)),
