@@ -6,6 +6,7 @@ import type { CodegenFilePlan, CodegenInput } from '../target';
 import {
   approvedCodegenInput,
   approvedMixedTextMediaInput,
+  approvedNestedRebasingInput,
   approvedStyledCardInput,
   approvedStubPropsInput as codegenInput,
 } from './codegen-fixtures';
@@ -138,6 +139,23 @@ describe('generateComponentPackage — React content', () => {
     expect(css).toContain('line-height: 38px;');
     expect(css).toContain('left: 14px;');
     expect(css).toContain('top: 12px;');
+  });
+
+  it('rebases nested children to their frame-local origin, not the absolute canvas position (real KeyboardInput3 repro)', () => {
+    const filePlan = generateComponentPackage(approvedNestedRebasingInput());
+    const cssAll = filePlan.files
+      .filter((f) => f.path.endsWith('.module.css'))
+      .map((f) => f.content)
+      .join('\n');
+
+    // `box` sits at frame-local (4,4) inside the 36×36 `panel`. Pre-fix codegen
+    // subtracted the already-relative parent origin (295,11) → left:-291 top:-7,
+    // rendering the box ~290px outside its frame. Bounds are parent-relative, so
+    // the child must keep its local offset.
+    expect(cssAll).toContain('left: 4px;');
+    expect(cssAll).toContain('top: 4px;');
+    expect(cssAll).not.toContain('left: -291px;');
+    expect(cssAll).not.toContain('top: -7px;');
   });
 
   it('records a d2c provenance block (mode + Gate 2 level + upstream hashes) in package.json', () => {

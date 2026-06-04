@@ -400,21 +400,22 @@ function componentCss(
     const semanticNode = context.semanticById.get(semanticNodeId);
     if (semanticNode === undefined) continue;
     const visualNode = context.visualById.get(semanticNode.primaryVisualNodeId);
-    const parentBounds =
-      semanticNode.parentId !== undefined && renderedSemanticNodeIds.has(semanticNode.parentId)
-        ? context.semanticById.get(semanticNode.parentId)?.bounds
-        : rootSemanticNode?.bounds;
-    const left = semanticNode.bounds.x - (parentBounds?.x ?? 0);
-    const top = semanticNode.bounds.y - (parentBounds?.y ?? 0);
+    // Position from the node's own parent-relative frame (visual layout, which
+    // the semantic bounds mirror). The rendered DOM parent — the component root
+    // for top-level children, else the enclosing rendered node — is exactly the
+    // frame these coordinates are relative to, so they map straight to CSS
+    // left/top with no rebasing. Mirrors the preview renderer and avoids
+    // double-subtracting the parent origin for symbol-instance-local children.
+    const rect = visualNode?.layout ?? semanticNode.bounds;
     lines.push(
       '',
       `.${classNameForSemanticId(semanticNode.id)} {`,
       '  position: absolute;',
       '  box-sizing: border-box;',
-      `  left: ${px(left)};`,
-      `  top: ${px(top)};`,
-      `  width: ${px(semanticNode.bounds.width)};`,
-      `  height: ${px(Math.max(semanticNode.bounds.height, 1))};`,
+      `  left: ${px(rect.x)};`,
+      `  top: ${px(rect.y)};`,
+      `  width: ${px(rect.width)};`,
+      `  height: ${px(Math.max(rect.height, 1))};`,
     );
     if (visualNode !== undefined) {
       lines.push(...visualStyleDeclarations(visualNode).map((d) => `  ${d}`));

@@ -162,7 +162,9 @@ export function styledCardDesignIr(): DesignIR {
           text(
             'cta-label',
             'Start',
-            { x: 42, y: 196, width: 70, height: 20 },
+            // parent-relative to `cta` (28,184): real normalized layout is
+            // parent-relative, so nested coordinates are offsets, not absolute.
+            { x: 14, y: 12, width: 70, height: 20 },
             {
               fontFamily: 'Inter',
               fontSize: 14,
@@ -213,6 +215,61 @@ export function styledCardDesignIr(): DesignIR {
 export function approvedStyledCardInput(): CodegenInput {
   const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
     designIr: styledCardDesignIr(),
+    mode: 'presentational',
+    interactionMode: 'deferred',
+    approval: APPROVAL,
+  });
+  return {
+    componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
+    visualView,
+    semanticView,
+    interactionSpec,
+  };
+}
+
+/**
+ * Mirrors the real KeyboardInput3 symbol-instance repro. `panel` is a 36×36
+ * component-sized frame placed at the parent-relative offset (295,11); its own
+ * children sit at frame-local coordinates (4,4) / (13,17.25). Bounds are
+ * parent-relative (identical to visual layout — see the real design-ir), so the
+ * children must keep their local offsets. The pre-fix codegen subtracted the
+ * already-relative parent origin, producing left:-291 / -282 — i.e. rendering
+ * the children ~290px outside the 36×36 frame.
+ */
+export function nestedRebasingDesignIr(): DesignIR {
+  const root = frame('screen', 'Screen', { x: 0, y: 0, width: 375, height: 200 }, [
+    frame('panel', 'KeyboardInput3', { x: 295, y: 11, width: 36, height: 36 }, [
+      frame('box', 'Box', { x: 4, y: 4, width: 28, height: 28 }, [], {
+        style: { borders: [{ type: 'color', color: '#198CFEFF', thickness: 1.5 }] },
+      }),
+      frame('bar', 'Bar', { x: 13, y: 17.25, width: 10, height: 1.5 }, [], {
+        style: { fills: [{ type: 'color', color: '#198CFEFF' }] },
+      }),
+    ]),
+  ]);
+
+  return {
+    schemaVersion: 'd2c.design-ir/v0.2.0',
+    source: {
+      provider: 'test',
+      ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
+      rootName: 'Screen',
+    },
+    visual: {
+      artboard: { width: root.layout.width, height: root.layout.height },
+      root,
+      assets: [],
+    },
+    semantic: { candidates: [] },
+    interaction: { status: 'draft' },
+    warnings: [],
+  };
+}
+
+/** Approved presentational input reproducing the nested component-boundary rebasing bug. */
+export function approvedNestedRebasingInput(): CodegenInput {
+  const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
+    designIr: nestedRebasingDesignIr(),
     mode: 'presentational',
     interactionMode: 'deferred',
     approval: APPROVAL,
