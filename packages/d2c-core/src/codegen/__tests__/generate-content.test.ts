@@ -128,6 +128,12 @@ describe('generateComponentPackage — React content', () => {
 
     expect(tsx).toContain('Launch faster');
     expect(tsx).toContain('Start');
+    expect(tsx).toContain('data-d2c-node-id="node-root"');
+    expect(tsx).toContain('data-d2c-node-id="node-eyebrow"');
+    expect(tsx).toContain('data-d2c-node-id="node-title"');
+    expect(tsx).toContain('data-d2c-node-id="node-subtitle"');
+    expect(tsx).toContain('data-d2c-node-id="node-cta"');
+    expect(tsx).toContain('data-d2c-node-id="node-cta-label"');
     expect(css).toContain('width: 390px;');
     expect(css).toContain('height: 260px;');
     expect(css).toContain('background-color: #F8FAFCFF;');
