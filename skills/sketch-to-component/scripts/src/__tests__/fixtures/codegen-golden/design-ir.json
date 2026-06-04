@@ -1,74 +1,205 @@
 {
   "schemaVersion": "d2c.design-ir/v0.2.0",
   "source": {
-    "provider": "sketch",
+    "provider": "test",
     "ref": {
-      "fileName": "codegen-golden.sketch",
-      "documentId": "codegen-golden-doc-1"
+      "fileName": "fixture.sketch",
+      "documentId": "doc-1"
     },
-    "rootName": "Codegen Golden Screen"
+    "rootName": "Launch Panel"
   },
   "visual": {
     "artboard": {
-      "width": 375,
-      "height": 812
+      "width": 390,
+      "height": 260
     },
-    "assets": [],
     "root": {
       "id": "node-root",
       "kind": "frame",
-      "name": "GoldenScreen",
+      "name": "LaunchPanel",
       "source": {
-        "nodeId": "root-1",
-        "name": "Golden Screen",
-        "originalType": "artboard",
-        "provider": "sketch"
+        "nodeId": "root",
+        "name": "root",
+        "originalType": "frame",
+        "provider": "test"
       },
       "layout": {
         "x": 0,
         "y": 0,
-        "width": 375,
-        "height": 812
+        "width": 390,
+        "height": 260
       },
       "children": [
         {
-          "id": "node-header",
-          "kind": "frame",
-          "name": "Component/Header",
+          "id": "node-eyebrow",
+          "kind": "text",
+          "name": "Text-eyebrow",
           "source": {
-            "nodeId": "header-1",
-            "name": "Component/Header",
-            "originalType": "group",
-            "provider": "sketch"
+            "nodeId": "eyebrow",
+            "name": "eyebrow",
+            "originalType": "text",
+            "provider": "test"
           },
           "layout": {
-            "x": 0,
-            "y": 0,
-            "width": 375,
-            "height": 80
+            "x": 28,
+            "y": 28,
+            "width": 180,
+            "height": 20
+          },
+          "text": {
+            "content": "D2C Preview",
+            "style": {
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": 700,
+              "lineHeight": 18,
+              "color": "#2563EBFF"
+            }
           },
           "children": []
         },
         {
-          "id": "node-card",
-          "kind": "frame",
-          "name": "Component/Card",
+          "id": "node-title",
+          "kind": "text",
+          "name": "Text-title",
           "source": {
-            "nodeId": "card-1",
-            "name": "Component/Card",
-            "originalType": "group",
-            "provider": "sketch"
+            "nodeId": "title",
+            "name": "title",
+            "originalType": "text",
+            "provider": "test"
           },
           "layout": {
-            "x": 0,
-            "y": 100,
-            "width": 375,
-            "height": 200
+            "x": 28,
+            "y": 60,
+            "width": 300,
+            "height": 42
+          },
+          "text": {
+            "content": "Launch faster",
+            "style": {
+              "fontFamily": "Inter",
+              "fontSize": 32,
+              "fontWeight": 800,
+              "lineHeight": 38,
+              "color": "#0F172AFF"
+            }
           },
           "children": []
+        },
+        {
+          "id": "node-subtitle",
+          "kind": "text",
+          "name": "Text-subtitle",
+          "source": {
+            "nodeId": "subtitle",
+            "name": "subtitle",
+            "originalType": "text",
+            "provider": "test"
+          },
+          "layout": {
+            "x": 28,
+            "y": 112,
+            "width": 315,
+            "height": 46
+          },
+          "text": {
+            "content": "Generated React should preserve layout, text and visual styling.",
+            "style": {
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": 400,
+              "lineHeight": 22,
+              "color": "#475569FF"
+            }
+          },
+          "children": []
+        },
+        {
+          "id": "node-cta",
+          "kind": "frame",
+          "name": "Primary CTA",
+          "source": {
+            "nodeId": "cta",
+            "name": "cta",
+            "originalType": "frame",
+            "provider": "test"
+          },
+          "layout": {
+            "x": 28,
+            "y": 184,
+            "width": 132,
+            "height": 44
+          },
+          "children": [
+            {
+              "id": "node-cta-label",
+              "kind": "text",
+              "name": "Text-cta-label",
+              "source": {
+                "nodeId": "cta-label",
+                "name": "cta-label",
+                "originalType": "text",
+                "provider": "test"
+              },
+              "layout": {
+                "x": 42,
+                "y": 196,
+                "width": 70,
+                "height": 20
+              },
+              "text": {
+                "content": "Start",
+                "style": {
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": 700,
+                  "lineHeight": 20,
+                  "color": "#FFFFFFFF",
+                  "textAlign": "center"
+                }
+              },
+              "children": []
+            }
+          ],
+          "style": {
+            "fills": [
+              {
+                "type": "color",
+                "color": "#2563EBFF"
+              }
+            ],
+            "radius": 22
+          }
         }
-      ]
-    }
+      ],
+      "style": {
+        "fills": [
+          {
+            "type": "color",
+            "color": "#F8FAFCFF"
+          }
+        ],
+        "borders": [
+          {
+            "type": "color",
+            "color": "#CBD5E1FF",
+            "thickness": 1
+          }
+        ],
+        "effects": [
+          {
+            "type": "dropShadow",
+            "x": 0,
+            "y": 18,
+            "blur": 40,
+            "spread": -18,
+            "color": "#0F172A33"
+          }
+        ],
+        "radius": 24
+      }
+    },
+    "assets": []
   },
   "semantic": {
     "candidates": []

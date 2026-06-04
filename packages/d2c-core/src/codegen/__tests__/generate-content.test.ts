@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { generateComponentPackage } from '../generate';
 import type { CodegenFilePlan, CodegenInput } from '../target';
-import { approvedStubPropsInput as codegenInput } from './codegen-fixtures';
+import {
+  approvedCodegenInput,
+  approvedMixedTextMediaInput,
+  approvedStyledCardInput,
+  approvedStubPropsInput as codegenInput,
+} from './codegen-fixtures';
 
 function fileFor(plan: CodegenFilePlan, path: string): string {
   const file = plan.files.find((f) => f.path === path);
@@ -62,6 +67,77 @@ describe('generateComponentPackage — React content', () => {
       // presentational-stub props are optional
       expect(tsx).toMatch(new RegExp(`\\b${prop.name}\\?:`));
     }
+  });
+
+  it('renders semantic text children instead of an empty root shell', () => {
+    const input = approvedCodegenInput();
+    const name = exportNameFor(input, input.componentPlan.body.rootComponent.id);
+    const filePlan = generateComponentPackage(input);
+    const tsx = fileFor(filePlan, `src/${name}/${name}.tsx`);
+
+    expect(tsx).not.toContain('return <div className={styles.root} />;');
+    expect(tsx).toContain('Hello 0');
+
+    const composer = input.componentPlan.body.exports.find(
+      (exp) => exp.kind === 'named' && exp.exportName === 'ComponentInputComposer',
+    );
+    expect(composer).toBeDefined();
+    const composerTsx = fileFor(filePlan, 'src/ComponentInputComposer/ComponentInputComposer.tsx');
+    expect(composerTsx).toContain('Type here');
+  });
+
+  it('imports planned child components referenced from generated component bodies', () => {
+    const filePlan = generateComponentPackage(approvedCodegenInput());
+    const componentFiles = filePlan.files.filter((file) => file.path.endsWith('.tsx'));
+    const references = componentFiles.flatMap((file) =>
+      [...file.content.matchAll(/<([A-Z][A-Za-z0-9]*) \/>/g)].map((match) => ({
+        component: match[1]!,
+        file,
+      })),
+    );
+
+    expect(
+      references.length,
+      'fixture should render at least one planned child component',
+    ).toBeGreaterThan(0);
+    for (const { component, file } of references) {
+      expect(
+        file.content,
+        `${file.path} references <${component} /> without importing it`,
+      ).toContain(`from '../${component}';`);
+    }
+  });
+
+  it('uses source text as the fallback for optional presentational-stub props', () => {
+    const input = approvedMixedTextMediaInput();
+    const name = exportNameFor(input, input.componentPlan.body.rootComponent.id);
+    const tsx = fileFor(generateComponentPackage(input), `src/${name}/${name}.tsx`);
+
+    expect(tsx).toContain("textTitle ?? 'Title'");
+    expect(tsx).toContain("textSubtitle ?? 'Subtitle'");
+    expect(tsx).toContain("textCaption ?? 'Caption'");
+  });
+
+  it('preserves core visual styling for a styled no-asset card', () => {
+    const input = approvedStyledCardInput();
+    const name = exportNameFor(input, input.componentPlan.body.rootComponent.id);
+    const filePlan = generateComponentPackage(input);
+    const tsx = fileFor(filePlan, `src/${name}/${name}.tsx`);
+    const css = fileFor(filePlan, `src/${name}/${name}.module.css`);
+
+    expect(tsx).toContain('Launch faster');
+    expect(tsx).toContain('Start');
+    expect(css).toContain('width: 390px;');
+    expect(css).toContain('height: 260px;');
+    expect(css).toContain('background-color: #F8FAFCFF;');
+    expect(css).toContain('border: 1px solid #CBD5E1FF;');
+    expect(css).toContain('border-radius: 24px;');
+    expect(css).toContain('box-shadow: 0px 18px 40px -18px #0F172A33;');
+    expect(css).toContain('background-color: #2563EBFF;');
+    expect(css).toContain('font-weight: 800;');
+    expect(css).toContain('line-height: 38px;');
+    expect(css).toContain('left: 14px;');
+    expect(css).toContain('top: 12px;');
   });
 
   it('records a d2c provenance block (mode + Gate 2 level + upstream hashes) in package.json', () => {

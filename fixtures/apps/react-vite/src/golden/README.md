@@ -1,4 +1,4 @@
-# GoldenScreen
+# LaunchPanel
 
 > **This package is presentational / behavior-stubbed.** Interaction handlers
 > and data bindings are placeholders. Do not import into business code without

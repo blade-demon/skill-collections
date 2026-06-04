@@ -6,13 +6,33 @@
  * sorted by path. v1 covers presentational delivery only — event handlers and
  * data bindings are behavior-stubbed (plan docs/stage-6-codegen-plan.md §3.7).
  */
-import type { ComponentPlan, PlannedComponent } from '../../contract/component-plan-schema';
+import type {
+  ComponentPlan,
+  PlannedComponent,
+  PlannedProp,
+} from '../../contract/component-plan-schema';
+import type { VisualNode } from '../../ir/visual';
+import type { SemanticNode } from '../../semantic/schema';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import type { CodegenFile, CodegenFilePlan, CodegenInput, TargetGenerator } from '../target';
 
 interface ExportInfo {
   exportName: string;
   kind: 'default' | 'named';
+}
+
+interface ReactCodegenContext {
+  semanticById: Map<string, SemanticNode>;
+  visualById: Map<string, VisualNode>;
+  componentBySemanticId: Map<string, PlannedComponent>;
+  exportByComponentId: Map<string, ExportInfo>;
+  propByComponentAndSemanticId: Map<string, Map<string, PlannedProp>>;
+}
+
+interface RenderResult {
+  lines: string[];
+  semanticNodeIds: Set<string>;
+  childComponentIds: Set<string>;
 }
 
 const STUB_HEADER = [
@@ -34,37 +54,387 @@ function kebabCase(pascal: string): string {
   return pascal.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-function componentTsx(component: PlannedComponent, exp: ExportInfo): string {
-  const { exportName: name, kind } = exp;
-  const sig = kind === 'default' ? `export default function ${name}` : `export function ${name}`;
-  const lines: string[] = [`import styles from './${name}.module.css';`, ''];
+function buildContext(input: CodegenInput): ReactCodegenContext {
+  const semanticById = new Map<string, SemanticNode>();
+  for (const node of input.semanticView.body.nodes) semanticById.set(node.id, node);
 
-  if (component.props.length === 0) {
-    lines.push(STUB_HEADER, `${sig}() {`, `  return <div className={styles.root} />;`, '}');
-    return lines.join('\n') + '\n';
+  const visualById = new Map<string, VisualNode>();
+  const visitVisual = (node: VisualNode): void => {
+    visualById.set(node.id, node);
+    for (const child of node.children) visitVisual(child);
+  };
+  visitVisual(input.visualView.body.root);
+
+  const componentBySemanticId = new Map<string, PlannedComponent>();
+  for (const component of input.componentPlan.body.components) {
+    componentBySemanticId.set(component.semanticNodeId, component);
   }
 
-  lines.push(`export interface ${name}Props {`);
-  for (const prop of component.props) {
-    lines.push(`  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`);
+  const dataModelSourceById = new Map<string, string>();
+  for (const dataModel of input.interactionSpec.body.dataModels) {
+    dataModelSourceById.set(dataModel.id, dataModel.source);
   }
-  lines.push('}', '', STUB_HEADER);
 
-  const destructure = component.props.map((p) => p.name).join(', ');
-  lines.push(
-    `${sig}({ ${destructure} }: ${name}Props) {`,
-    '  return (',
-    `    <div className={styles.root}>`,
-  );
-  for (const prop of component.props) {
-    lines.push(`      {${prop.name}}`);
+  const propByComponentAndSemanticId = new Map<string, Map<string, PlannedProp>>();
+  for (const component of input.componentPlan.body.components) {
+    const props = new Map<string, PlannedProp>();
+    for (const prop of component.props) {
+      if (prop.interactionRefId === undefined) continue;
+      const semanticNodeId = dataModelSourceById.get(prop.interactionRefId);
+      if (semanticNodeId !== undefined) props.set(semanticNodeId, prop);
+    }
+    propByComponentAndSemanticId.set(component.id, props);
   }
-  lines.push('    </div>', '  );', '}');
-  return lines.join('\n') + '\n';
+
+  return {
+    semanticById,
+    visualById,
+    componentBySemanticId,
+    exportByComponentId: exportsByComponentId(input.componentPlan),
+    propByComponentAndSemanticId,
+  };
 }
 
-function componentCss(): string {
-  return ['.root {', '  display: block;', '}'].join('\n') + '\n';
+function classNameForSemanticId(semanticNodeId: string): string {
+  return `node_${stableSha256(semanticNodeId).slice(0, 12)}`;
+}
+
+function styleLookup(className: string): string {
+  return `styles['${className}']`;
+}
+
+function stringLiteral(value: string): string {
+  return `'${value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')}'`;
+}
+
+function fallbackText(semanticNode: SemanticNode, visualNode: VisualNode | undefined): string {
+  return visualNode?.text?.content ?? semanticNode.name;
+}
+
+function px(value: number): string {
+  return `${formatNumber(value)}px`;
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(4)));
+}
+
+function cssString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function radiusValue(radius: NonNullable<NonNullable<VisualNode['style']>['radius']>): string {
+  if (typeof radius === 'number') return px(radius);
+  return `${px(radius.topLeft)} ${px(radius.topRight)} ${px(radius.bottomRight)} ${px(radius.bottomLeft)}`;
+}
+
+function shouldRenderBoxFill(node: VisualNode): boolean {
+  if (typeof node.style?.raw?.compoundSvgPath === 'string') return false;
+  if (node.kind === 'text') return false;
+  if (node.kind === 'shape') {
+    const originalType = node.source.originalType?.toLowerCase();
+    if (originalType === 'shapegroup' || originalType === 'shapepath') return false;
+  }
+  return true;
+}
+
+const BORDER_POSITION_INSIDE = 1;
+
+function shouldRenderBorder(
+  border: NonNullable<NonNullable<VisualNode['style']>['borders']>[number],
+): boolean {
+  const hasBorder = border.color !== undefined || border.thickness !== undefined;
+  if (!hasBorder) return false;
+  const thickness = border.thickness ?? 1;
+  if (thickness < 1 && border.position === BORDER_POSITION_INSIDE) return false;
+  return true;
+}
+
+function visualStyleDeclarations(node: VisualNode): string[] {
+  const declarations: string[] = [];
+  const style = node.style;
+  const fill = style?.fills?.[0];
+  if (fill && shouldRenderBoxFill(node)) {
+    if (fill.color !== undefined) declarations.push(`background-color: ${fill.color};`);
+  }
+
+  const border = style?.borders?.[0];
+  if (!node.vector && border && shouldRenderBorder(border)) {
+    declarations.push(`border: ${px(border.thickness ?? 1)} solid ${border.color ?? '#000000FF'};`);
+  }
+
+  const shadowEffect = style?.effects?.find((effect) => effect.type !== 'layerBlur');
+  if (shadowEffect) {
+    declarations.push(
+      `box-shadow: ${px(shadowEffect.x ?? 0)} ${px(shadowEffect.y ?? 0)} ${px(shadowEffect.blur ?? 0)} ${px(shadowEffect.spread ?? 0)} ${shadowEffect.color ?? '#00000033'};`,
+    );
+  }
+
+  const layerBlur = style?.effects?.find((effect) => effect.type === 'layerBlur');
+  if (layerBlur?.blur) declarations.push(`filter: blur(${px(layerBlur.blur)});`);
+  if (style?.radius !== undefined)
+    declarations.push(`border-radius: ${radiusValue(style.radius)};`);
+  if (style?.opacity !== undefined) declarations.push(`opacity: ${formatNumber(style.opacity)};`);
+  if (style?.raw && (style.raw as Record<string, unknown>).maskedContent === true) {
+    declarations.push('overflow: hidden;');
+  }
+
+  return declarations;
+}
+
+function textStyleDeclarations(node: VisualNode): string[] {
+  const declarations: string[] = ['overflow: hidden;'];
+  if (node.style?.raw?.sketchTextBehaviour === 0) {
+    declarations.push('width: max-content;', 'white-space: nowrap;');
+  } else {
+    declarations.push('white-space: pre-wrap;');
+  }
+
+  const textStyle = node.text?.style;
+  if (textStyle?.fontFamily !== undefined)
+    declarations.push(`font-family: ${cssString(textStyle.fontFamily)};`);
+  if (textStyle?.fontSize !== undefined) declarations.push(`font-size: ${px(textStyle.fontSize)};`);
+  if (textStyle?.fontWeight !== undefined)
+    declarations.push(`font-weight: ${textStyle.fontWeight};`);
+  if (textStyle?.lineHeight !== undefined)
+    declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
+  if (textStyle?.color !== undefined) declarations.push(`color: ${textStyle.color};`);
+  if (textStyle?.textAlign !== undefined) declarations.push(`text-align: ${textStyle.textAlign};`);
+
+  return declarations;
+}
+
+function textExpression(args: {
+  component: PlannedComponent;
+  semanticNode: SemanticNode;
+  visualNode?: VisualNode;
+  context: ReactCodegenContext;
+}): string {
+  const { component, semanticNode, visualNode, context } = args;
+  const prop = context.propByComponentAndSemanticId.get(component.id)?.get(semanticNode.id);
+  const fallback = stringLiteral(fallbackText(semanticNode, visualNode));
+  if (prop === undefined) return `{${fallback}}`;
+  return `{${prop.name} ?? ${fallback}}`;
+}
+
+function renderSemanticNode(
+  semanticNodeId: string,
+  component: PlannedComponent,
+  context: ReactCodegenContext,
+  depth: number,
+): RenderResult {
+  const semanticNode = context.semanticById.get(semanticNodeId);
+  if (semanticNode === undefined) {
+    return { lines: [], semanticNodeIds: new Set(), childComponentIds: new Set() };
+  }
+
+  const className = classNameForSemanticId(semanticNode.id);
+  const classExpr = styleLookup(className);
+  const indent = ' '.repeat(depth);
+  const childIndent = ' '.repeat(depth + 2);
+  const semanticNodeIds = new Set<string>([semanticNode.id]);
+  const childComponentIds = new Set<string>();
+
+  const plannedChild = context.componentBySemanticId.get(semanticNode.id);
+  if (plannedChild !== undefined && plannedChild.id !== component.id) {
+    const childExport = context.exportByComponentId.get(plannedChild.id);
+    if (childExport !== undefined) {
+      childComponentIds.add(plannedChild.id);
+      return {
+        lines: [
+          `${indent}<div className={${classExpr}}>`,
+          `${childIndent}<${childExport.exportName} />`,
+          `${indent}</div>`,
+        ],
+        semanticNodeIds,
+        childComponentIds,
+      };
+    }
+  }
+
+  const visualNode = context.visualById.get(semanticNode.primaryVisualNodeId);
+  if (semanticNode.kind === 'text' || visualNode?.text !== undefined) {
+    return {
+      lines: [
+        `${indent}<div className={${classExpr}}>${textExpression({
+          component,
+          semanticNode,
+          visualNode,
+          context,
+        })}</div>`,
+      ],
+      semanticNodeIds,
+      childComponentIds,
+    };
+  }
+
+  if (semanticNode.kind === 'media' || visualNode?.kind === 'image') {
+    const prop = context.propByComponentAndSemanticId.get(component.id)?.get(semanticNode.id);
+    const label = stringLiteral(semanticNode.name);
+    const ariaLabel = prop === undefined ? label : `{${prop.name} ?? ${label}}`;
+    return {
+      lines: [`${indent}<div className={${classExpr}} role="img" aria-label=${ariaLabel} />`],
+      semanticNodeIds,
+      childComponentIds,
+    };
+  }
+
+  const childLines: string[] = [];
+  for (const childId of semanticNode.childIds) {
+    const rendered = renderSemanticNode(childId, component, context, depth + 2);
+    childLines.push(...rendered.lines);
+    for (const id of rendered.semanticNodeIds) semanticNodeIds.add(id);
+    for (const id of rendered.childComponentIds) childComponentIds.add(id);
+  }
+
+  if (childLines.length === 0) {
+    return {
+      lines: [`${indent}<div className={${classExpr}} />`],
+      semanticNodeIds,
+      childComponentIds,
+    };
+  }
+
+  return {
+    lines: [`${indent}<div className={${classExpr}}>`, ...childLines, `${indent}</div>`],
+    semanticNodeIds,
+    childComponentIds,
+  };
+}
+
+function renderComponentBody(
+  component: PlannedComponent,
+  context: ReactCodegenContext,
+): RenderResult {
+  const lines: string[] = [];
+  const semanticNodeIds = new Set<string>();
+  const childComponentIds = new Set<string>();
+  for (const semanticNodeId of component.childSemanticNodeIds) {
+    const rendered = renderSemanticNode(semanticNodeId, component, context, 6);
+    lines.push(...rendered.lines);
+    for (const id of rendered.semanticNodeIds) semanticNodeIds.add(id);
+    for (const id of rendered.childComponentIds) childComponentIds.add(id);
+  }
+  return { lines, semanticNodeIds, childComponentIds };
+}
+
+function componentImport(exp: ExportInfo): string {
+  if (exp.kind === 'default') return `import ${exp.exportName} from '../${exp.exportName}';`;
+  return `import { ${exp.exportName} } from '../${exp.exportName}';`;
+}
+
+function componentTsx(
+  component: PlannedComponent,
+  exp: ExportInfo,
+  context: ReactCodegenContext,
+): { content: string; renderedSemanticNodeIds: Set<string> } {
+  const { exportName: name, kind } = exp;
+  const sig = kind === 'default' ? `export default function ${name}` : `export function ${name}`;
+  const rendered = renderComponentBody(component, context);
+  const childImports = [...rendered.childComponentIds]
+    .map((componentId) => context.exportByComponentId.get(componentId))
+    .filter((childExport): childExport is ExportInfo => childExport !== undefined)
+    .sort((a, b) => (a.exportName < b.exportName ? -1 : a.exportName > b.exportName ? 1 : 0))
+    .map(componentImport);
+  const lines: string[] = [`import styles from './${name}.module.css';`, ...childImports, ''];
+
+  if (component.props.length === 0) {
+    lines.push(STUB_HEADER, `${sig}() {`);
+  } else {
+    lines.push(`export interface ${name}Props {`);
+    for (const prop of component.props) {
+      lines.push(`  ${prop.name}${prop.required ? '' : '?'}: ${prop.type};`);
+    }
+    lines.push('}', '', STUB_HEADER);
+
+    const destructure = component.props.map((p) => p.name).join(', ');
+    lines.push(`${sig}({ ${destructure} }: ${name}Props) {`);
+  }
+
+  if (rendered.lines.length === 0) {
+    lines.push(`  return <div className={styles.root} />;`, '}');
+    return { content: lines.join('\n') + '\n', renderedSemanticNodeIds: rendered.semanticNodeIds };
+  }
+
+  lines.push(
+    '  return (',
+    `    <div className={styles.root}>`,
+    ...rendered.lines,
+    '    </div>',
+    '  );',
+    '}',
+  );
+  return { content: lines.join('\n') + '\n', renderedSemanticNodeIds: rendered.semanticNodeIds };
+}
+
+function componentCss(
+  component: PlannedComponent,
+  context: ReactCodegenContext,
+  renderedSemanticNodeIds: Set<string>,
+): string {
+  const rootSemanticNode = context.semanticById.get(component.semanticNodeId);
+  const rootVisualNode =
+    rootSemanticNode === undefined
+      ? undefined
+      : context.visualById.get(rootSemanticNode.primaryVisualNodeId);
+  const rootWidth = rootVisualNode?.layout.width ?? rootSemanticNode?.bounds.width ?? 0;
+  const rootHeight = rootVisualNode?.layout.height ?? rootSemanticNode?.bounds.height ?? 0;
+  const lines = [
+    '.root {',
+    '  display: block;',
+    '  position: relative;',
+    '  box-sizing: border-box;',
+    `  width: ${px(Math.max(rootWidth, 1))};`,
+    `  height: ${px(Math.max(rootHeight, 1))};`,
+    '  overflow: hidden;',
+  ];
+  if (rootVisualNode !== undefined)
+    lines.push(...visualStyleDeclarations(rootVisualNode).map((d) => `  ${d}`));
+  lines.push('}');
+
+  for (const semanticNodeId of [...renderedSemanticNodeIds].sort()) {
+    const semanticNode = context.semanticById.get(semanticNodeId);
+    if (semanticNode === undefined) continue;
+    const visualNode = context.visualById.get(semanticNode.primaryVisualNodeId);
+    const parentBounds =
+      semanticNode.parentId !== undefined && renderedSemanticNodeIds.has(semanticNode.parentId)
+        ? context.semanticById.get(semanticNode.parentId)?.bounds
+        : rootSemanticNode?.bounds;
+    const left = semanticNode.bounds.x - (parentBounds?.x ?? 0);
+    const top = semanticNode.bounds.y - (parentBounds?.y ?? 0);
+    lines.push(
+      '',
+      `.${classNameForSemanticId(semanticNode.id)} {`,
+      '  position: absolute;',
+      '  box-sizing: border-box;',
+      `  left: ${px(left)};`,
+      `  top: ${px(top)};`,
+      `  width: ${px(semanticNode.bounds.width)};`,
+      `  height: ${px(Math.max(semanticNode.bounds.height, 1))};`,
+    );
+    if (visualNode !== undefined) {
+      lines.push(...visualStyleDeclarations(visualNode).map((d) => `  ${d}`));
+    }
+    if (semanticNode.kind === 'text' || visualNode?.text !== undefined) {
+      if (visualNode !== undefined)
+        lines.push(...textStyleDeclarations(visualNode).map((d) => `  ${d}`));
+    } else if (semanticNode.kind === 'media' || visualNode?.kind === 'image') {
+      lines.push(
+        '  display: block;',
+        '  background: rgba(0, 0, 0, 0.06);',
+        '  border: 1px dashed rgba(0, 0, 0, 0.2);',
+      );
+    } else {
+      lines.push('  display: block;');
+    }
+    lines.push('}');
+  }
+
+  return lines.join('\n') + '\n';
 }
 
 function componentIndex(name: string, kind: 'default' | 'named'): string {
@@ -154,7 +524,8 @@ export const reactGenerator: TargetGenerator = {
         `react codegen: v1 generates presentational plans only; '${componentPlan.mode}' is not yet implemented`,
       );
     }
-    const exportsMap = exportsByComponentId(componentPlan);
+    const context = buildContext(input);
+    const exportsMap = context.exportByComponentId;
     const files: CodegenFile[] = [];
     const warnings: string[] = [];
 
@@ -165,11 +536,15 @@ export const reactGenerator: TargetGenerator = {
         continue;
       }
       const { exportName, kind } = exp;
+      const tsx = componentTsx(component, exp, context);
       files.push({
         path: `src/${exportName}/${exportName}.tsx`,
-        content: componentTsx(component, exp),
+        content: tsx.content,
       });
-      files.push({ path: `src/${exportName}/${exportName}.module.css`, content: componentCss() });
+      files.push({
+        path: `src/${exportName}/${exportName}.module.css`,
+        content: componentCss(component, context, tsx.renderedSemanticNodeIds),
+      });
       files.push({ path: `src/${exportName}/index.ts`, content: componentIndex(exportName, kind) });
     }
 

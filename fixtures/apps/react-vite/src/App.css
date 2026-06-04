@@ -95,6 +95,36 @@
   }
 }
 
+#d2c-golden {
+  padding: 40px 32px;
+  background: var(--social-bg);
+
+  @media (max-width: 1024px) {
+    padding: 28px 20px;
+  }
+}
+
+.d2c-golden__frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 760px);
+  min-height: 320px;
+  margin: 0 auto;
+  overflow: auto;
+  padding: 24px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.d2c-golden__frame > * {
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+
 #docs {
   border-right: 1px solid var(--border);
 

@@ -1,72 +1,203 @@
 {
   "body": {
     "artboard": {
-      "height": 812,
-      "width": 375
+      "height": 260,
+      "width": 390
     },
     "assets": [],
     "root": {
       "children": [
         {
           "children": [],
-          "id": "node-header",
-          "kind": "frame",
+          "id": "node-eyebrow",
+          "kind": "text",
           "layout": {
-            "height": 80,
-            "width": 375,
-            "x": 0,
-            "y": 0
+            "height": 20,
+            "width": 180,
+            "x": 28,
+            "y": 28
           },
-          "name": "Component/Header",
+          "name": "Text-eyebrow",
           "source": {
-            "name": "Component/Header",
-            "nodeId": "header-1",
-            "originalType": "group",
-            "provider": "sketch"
+            "name": "eyebrow",
+            "nodeId": "eyebrow",
+            "originalType": "text",
+            "provider": "test"
+          },
+          "text": {
+            "content": "D2C Preview",
+            "style": {
+              "color": "#2563EBFF",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": 700,
+              "lineHeight": 18
+            }
           }
         },
         {
           "children": [],
-          "id": "node-card",
+          "id": "node-title",
+          "kind": "text",
+          "layout": {
+            "height": 42,
+            "width": 300,
+            "x": 28,
+            "y": 60
+          },
+          "name": "Text-title",
+          "source": {
+            "name": "title",
+            "nodeId": "title",
+            "originalType": "text",
+            "provider": "test"
+          },
+          "text": {
+            "content": "Launch faster",
+            "style": {
+              "color": "#0F172AFF",
+              "fontFamily": "Inter",
+              "fontSize": 32,
+              "fontWeight": 800,
+              "lineHeight": 38
+            }
+          }
+        },
+        {
+          "children": [],
+          "id": "node-subtitle",
+          "kind": "text",
+          "layout": {
+            "height": 46,
+            "width": 315,
+            "x": 28,
+            "y": 112
+          },
+          "name": "Text-subtitle",
+          "source": {
+            "name": "subtitle",
+            "nodeId": "subtitle",
+            "originalType": "text",
+            "provider": "test"
+          },
+          "text": {
+            "content": "Generated React should preserve layout, text and visual styling.",
+            "style": {
+              "color": "#475569FF",
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": 400,
+              "lineHeight": 22
+            }
+          }
+        },
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "node-cta-label",
+              "kind": "text",
+              "layout": {
+                "height": 20,
+                "width": 70,
+                "x": 42,
+                "y": 196
+              },
+              "name": "Text-cta-label",
+              "source": {
+                "name": "cta-label",
+                "nodeId": "cta-label",
+                "originalType": "text",
+                "provider": "test"
+              },
+              "text": {
+                "content": "Start",
+                "style": {
+                  "color": "#FFFFFFFF",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": 700,
+                  "lineHeight": 20,
+                  "textAlign": "center"
+                }
+              }
+            }
+          ],
+          "id": "node-cta",
           "kind": "frame",
           "layout": {
-            "height": 200,
-            "width": 375,
-            "x": 0,
-            "y": 100
+            "height": 44,
+            "width": 132,
+            "x": 28,
+            "y": 184
           },
-          "name": "Component/Card",
+          "name": "Primary CTA",
           "source": {
-            "name": "Component/Card",
-            "nodeId": "card-1",
-            "originalType": "group",
-            "provider": "sketch"
+            "name": "cta",
+            "nodeId": "cta",
+            "originalType": "frame",
+            "provider": "test"
+          },
+          "style": {
+            "fills": [
+              {
+                "color": "#2563EBFF",
+                "type": "color"
+              }
+            ],
+            "radius": 22
           }
         }
       ],
       "id": "node-root",
       "kind": "frame",
       "layout": {
-        "height": 812,
-        "width": 375,
+        "height": 260,
+        "width": 390,
         "x": 0,
         "y": 0
       },
-      "name": "GoldenScreen",
+      "name": "LaunchPanel",
       "source": {
-        "name": "Golden Screen",
-        "nodeId": "root-1",
-        "originalType": "artboard",
-        "provider": "sketch"
+        "name": "root",
+        "nodeId": "root",
+        "originalType": "frame",
+        "provider": "test"
+      },
+      "style": {
+        "borders": [
+          {
+            "color": "#CBD5E1FF",
+            "thickness": 1,
+            "type": "color"
+          }
+        ],
+        "effects": [
+          {
+            "blur": 40,
+            "color": "#0F172A33",
+            "spread": -18,
+            "type": "dropShadow",
+            "x": 0,
+            "y": 18
+          }
+        ],
+        "fills": [
+          {
+            "color": "#F8FAFCFF",
+            "type": "color"
+          }
+        ],
+        "radius": 24
       }
     }
   },
   "generatedFrom": {
-    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+    "designIrHash": "7554884b4cf3d525a3257f8b575ecec6de40a1d9a1ec6ba3384eb359a7820ef9",
     "schemaVersion": "d2c.design-ir/v0.2.0",
     "sourceRef": {
-      "documentId": "codegen-golden-doc-1",
-      "fileName": "codegen-golden.sketch"
+      "documentId": "doc-1",
+      "fileName": "fixture.sketch"
     }
   },
   "kind": "visual-view"

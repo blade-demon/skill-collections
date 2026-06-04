@@ -1,35 +1,6 @@
 {
   "body": {
-    "componentCandidates": [
-      {
-        "boundary": "visual-region",
-        "confidence": "medium",
-        "evidence": [
-          {
-            "kind": "visual-node",
-            "nodeId": "node-header",
-            "reason": "name prefix match"
-          }
-        ],
-        "id": "cc_20ba435eaaf6",
-        "rootSemanticNodeId": "s_10323803be24",
-        "suggestedName": "Component/Header"
-      },
-      {
-        "boundary": "visual-region",
-        "confidence": "medium",
-        "evidence": [
-          {
-            "kind": "visual-node",
-            "nodeId": "node-card",
-            "reason": "name prefix match"
-          }
-        ],
-        "id": "cc_584879fac20c",
-        "rootSemanticNodeId": "s_94001f671746",
-        "suggestedName": "Component/Card"
-      }
-    ],
+    "componentCandidates": [],
     "layoutCandidates": [
       {
         "caveats": [],
@@ -43,30 +14,24 @@
         "caveats": [],
         "confidence": "high",
         "constraints": [],
-        "id": "lc_9fce15e13e17",
+        "id": "lc_3f354bf1d98d",
         "kind": "absolute",
-        "semanticNodeId": "s_10323803be24"
-      },
-      {
-        "caveats": [],
-        "confidence": "high",
-        "constraints": [],
-        "id": "lc_913e81e49847",
-        "kind": "absolute",
-        "semanticNodeId": "s_94001f671746"
+        "semanticNodeId": "s_99fcdc2c32a5"
       }
     ],
     "nodes": [
       {
         "bounds": {
-          "height": 812,
-          "width": 375,
+          "height": 260,
+          "width": 390,
           "x": 0,
           "y": 0
         },
         "childIds": [
-          "s_10323803be24",
-          "s_94001f671746"
+          "s_37595ab02d04",
+          "s_8cc7f5e7d061",
+          "s_6684d9358673",
+          "s_99fcdc2c32a5"
         ],
         "confidence": "high",
         "evidence": [
@@ -78,13 +43,13 @@
         ],
         "id": "s_7bd9a8fb13c0",
         "kind": "screen",
-        "name": "GoldenScreen",
+        "name": "LaunchPanel",
         "primaryVisualNodeId": "node-root",
         "source": {
           "nodeIds": [
-            "root-1"
+            "root"
           ],
-          "provider": "sketch"
+          "provider": "test"
         },
         "visualNodeIds": [
           "node-root"
@@ -92,82 +57,184 @@
       },
       {
         "bounds": {
-          "height": 80,
-          "width": 375,
-          "x": 0,
-          "y": 0
+          "height": 20,
+          "width": 180,
+          "x": 28,
+          "y": 28
         },
         "childIds": [],
-        "confidence": "medium",
+        "confidence": "high",
         "evidence": [
           {
             "kind": "visual-node",
-            "nodeId": "node-header",
-            "reason": "name prefix match"
+            "nodeId": "node-eyebrow",
+            "reason": "text node"
           }
         ],
-        "id": "s_10323803be24",
-        "kind": "component",
-        "name": "Component/Header",
+        "id": "s_37595ab02d04",
+        "kind": "text",
+        "name": "Text-eyebrow",
         "parentId": "s_7bd9a8fb13c0",
-        "primaryVisualNodeId": "node-header",
+        "primaryVisualNodeId": "node-eyebrow",
         "source": {
           "nodeIds": [
-            "header-1"
+            "eyebrow"
           ],
-          "provider": "sketch"
+          "provider": "test"
         },
         "visualNodeIds": [
-          "node-header"
+          "node-eyebrow"
         ]
       },
       {
         "bounds": {
-          "height": 200,
-          "width": 375,
-          "x": 0,
-          "y": 100
+          "height": 42,
+          "width": 300,
+          "x": 28,
+          "y": 60
         },
         "childIds": [],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-title",
+            "reason": "text node"
+          }
+        ],
+        "id": "s_8cc7f5e7d061",
+        "kind": "text",
+        "name": "Text-title",
+        "parentId": "s_7bd9a8fb13c0",
+        "primaryVisualNodeId": "node-title",
+        "source": {
+          "nodeIds": [
+            "title"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-title"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 46,
+          "width": 315,
+          "x": 28,
+          "y": 112
+        },
+        "childIds": [],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-subtitle",
+            "reason": "text node"
+          }
+        ],
+        "id": "s_6684d9358673",
+        "kind": "text",
+        "name": "Text-subtitle",
+        "parentId": "s_7bd9a8fb13c0",
+        "primaryVisualNodeId": "node-subtitle",
+        "source": {
+          "nodeIds": [
+            "subtitle"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-subtitle"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 44,
+          "width": 132,
+          "x": 28,
+          "y": 184
+        },
+        "childIds": [
+          "s_38e4420b4b99"
+        ],
         "confidence": "medium",
         "evidence": [
           {
             "kind": "visual-node",
-            "nodeId": "node-card",
-            "reason": "name prefix match"
+            "nodeId": "node-cta",
+            "reason": "frame grouping"
           }
         ],
-        "id": "s_94001f671746",
-        "kind": "component",
-        "name": "Component/Card",
+        "id": "s_99fcdc2c32a5",
+        "kind": "region",
+        "name": "Primary CTA",
         "parentId": "s_7bd9a8fb13c0",
-        "primaryVisualNodeId": "node-card",
+        "primaryVisualNodeId": "node-cta",
         "source": {
           "nodeIds": [
-            "card-1"
+            "cta"
           ],
-          "provider": "sketch"
+          "provider": "test"
         },
         "visualNodeIds": [
-          "node-card"
+          "node-cta"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 20,
+          "width": 70,
+          "x": 42,
+          "y": 196
+        },
+        "childIds": [],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-cta-label",
+            "reason": "text node"
+          }
+        ],
+        "id": "s_38e4420b4b99",
+        "kind": "text",
+        "name": "Text-cta-label",
+        "parentId": "s_99fcdc2c32a5",
+        "primaryVisualNodeId": "node-cta-label",
+        "source": {
+          "nodeIds": [
+            "cta-label"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-cta-label"
         ]
       }
     ],
     "repeatedPatterns": [],
     "screen": {
-      "name": "GoldenScreen",
+      "name": "LaunchPanel",
       "semanticNodeId": "s_7bd9a8fb13c0"
     },
-    "warnings": []
+    "warnings": [
+      {
+        "code": "repeated-pattern-grid-skipped",
+        "message": "parent s_7bd9a8fb13c0: 3 same-kind 'text' siblings span both axes; grid not detected by 5A",
+        "severity": "info",
+        "sourceNodeId": "s_7bd9a8fb13c0"
+      }
+    ]
   },
   "generatedFrom": {
-    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
+    "designIrHash": "7554884b4cf3d525a3257f8b575ecec6de40a1d9a1ec6ba3384eb359a7820ef9",
     "schemaVersion": "d2c.design-ir/v0.2.0",
     "sourceRef": {
-      "documentId": "codegen-golden-doc-1",
-      "fileName": "codegen-golden.sketch"
+      "documentId": "doc-1",
+      "fileName": "fixture.sketch"
     },
-    "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+    "visualViewHash": "abfc87ea19b52c89a4e8e52fd9b6491de1e17b19807441c4642bf174be3fec6b"
   },
   "kind": "semantic-view"
 }
