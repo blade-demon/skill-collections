@@ -26,6 +26,7 @@
     "build:samples": "npm run build --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
     "build:fixtures": "npm run build:fixtures:react",
     "build:fixtures:react": "npm run build --prefix fixtures/apps/react-vite",
+    "test:fixtures:react": "npm run test --prefix fixtures/apps/react-vite",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:samples": "npm run lint --workspace samples/design-to-spec/search-panel --workspace samples/design-to-spec/feedback-form --if-present",
@@ -36,7 +37,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:fixtures": "npm run check:fixtures:react",
-    "check:fixtures:react": "npm run lint:fixtures:react && npm run build:fixtures:react",
+    "check:fixtures:react": "npm run lint:fixtures:react && npm run test:fixtures:react && npm run build:fixtures:react",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run test:all && npm run build:samples",
     "check:full": "npm run check && npm run check:fixtures"
   },

@@ -1,8 +1,8 @@
 {
   "approval": {
     "acknowledgedBehaviorStubbed": true,
-    "approvedAt": "2026-05-30T00:00:00Z",
-    "approvedBy": "golden-bot",
+    "approvedAt": "2026-05-29T00:00:00Z",
+    "approvedBy": "alice",
     "gate": "gate-2",
     "level": "presentational"
   },
@@ -11,65 +11,29 @@
     "components": [
       {
         "childSemanticNodeIds": [
-          "s_10323803be24",
-          "s_94001f671746"
+          "s_37595ab02d04",
+          "s_8cc7f5e7d061",
+          "s_6684d9358673",
+          "s_99fcdc2c32a5"
         ],
         "confidence": "high",
         "dataBindings": [],
         "eventBindings": [],
         "id": "pc_d6850462270e",
-        "name": "GoldenScreen",
+        "name": "LaunchPanel",
         "props": [],
         "renderAs": "component",
         "role": "root",
         "semanticNodeId": "s_7bd9a8fb13c0",
         "warnings": []
-      },
-      {
-        "childSemanticNodeIds": [],
-        "confidence": "medium",
-        "dataBindings": [],
-        "eventBindings": [],
-        "id": "pc_d39927778717",
-        "name": "ComponentHeader",
-        "props": [],
-        "renderAs": "component",
-        "role": "component",
-        "semanticNodeId": "s_10323803be24",
-        "warnings": []
-      },
-      {
-        "childSemanticNodeIds": [],
-        "confidence": "medium",
-        "dataBindings": [],
-        "eventBindings": [],
-        "id": "pc_95033c0a7555",
-        "name": "ComponentCard",
-        "props": [],
-        "renderAs": "component",
-        "role": "component",
-        "semanticNodeId": "s_94001f671746",
-        "warnings": []
       }
     ],
     "exports": [
       {
-        "exportName": "GoldenScreen",
-        "id": "pe_9a74988f6096",
+        "exportName": "LaunchPanel",
+        "id": "pe_fc1a9ea6e883",
         "kind": "default",
         "plannedComponentId": "pc_d6850462270e"
-      },
-      {
-        "exportName": "ComponentHeader",
-        "id": "pe_34185477a1f2",
-        "kind": "named",
-        "plannedComponentId": "pc_d39927778717"
-      },
-      {
-        "exportName": "ComponentCard",
-        "id": "pe_fc76cd3b8ecd",
-        "kind": "named",
-        "plannedComponentId": "pc_95033c0a7555"
       }
     ],
     "interactionCoverage": {
@@ -104,31 +68,24 @@
         "caveats": [],
         "confidence": "high",
         "constraints": [],
-        "id": "pl_320d73a814fd",
-        "layoutCandidateId": "lc_9fce15e13e17",
-        "semanticNodeId": "s_10323803be24",
-        "strategy": "absolute"
-      },
-      {
-        "caveats": [],
-        "confidence": "high",
-        "constraints": [],
-        "id": "pl_ad8f6ca0b8d3",
-        "layoutCandidateId": "lc_913e81e49847",
-        "semanticNodeId": "s_94001f671746",
+        "id": "pl_2f33f1570019",
+        "layoutCandidateId": "lc_3f354bf1d98d",
+        "semanticNodeId": "s_99fcdc2c32a5",
         "strategy": "absolute"
       }
     ],
     "rootComponent": {
       "childSemanticNodeIds": [
-        "s_10323803be24",
-        "s_94001f671746"
+        "s_37595ab02d04",
+        "s_8cc7f5e7d061",
+        "s_6684d9358673",
+        "s_99fcdc2c32a5"
       ],
       "confidence": "high",
       "dataBindings": [],
       "eventBindings": [],
       "id": "pc_d6850462270e",
-      "name": "GoldenScreen",
+      "name": "LaunchPanel",
       "props": [],
       "renderAs": "component",
       "role": "root",
@@ -143,15 +100,15 @@
     "warnings": []
   },
   "generatedFrom": {
-    "designIrHash": "0baf9e054c3ca0eaf9ebfe82b9ca1f20e146cd977b3dd5225f0ae67b656dea7b",
-    "interactionSpecHash": "52f248253913f828ea3180d58b6b071757fc0fe869767cc780933020d70b0a10",
+    "designIrHash": "7554884b4cf3d525a3257f8b575ecec6de40a1d9a1ec6ba3384eb359a7820ef9",
+    "interactionSpecHash": "8f472569ad5b08d3b056e5bb1569a6f87fd805c4f2c5e9865cb8fe218fd69ef3",
     "schemaVersion": "d2c.design-ir/v0.2.0",
-    "semanticViewHash": "8ac0b9919ac96d5419907fee732871f724de5d34587a9677e1dbb03ade80bcdd",
+    "semanticViewHash": "189cdcb4576f92eb2946c51b64ddf8885ebaefd2bf515cee56122788bd4fe6df",
     "sourceRef": {
-      "documentId": "codegen-golden-doc-1",
-      "fileName": "codegen-golden.sketch"
+      "documentId": "doc-1",
+      "fileName": "fixture.sketch"
     },
-    "visualViewHash": "8b361945a7a740f2fdcaf84bbf04fa15b1a3b10e088628eeaf1cc5e42893362c"
+    "visualViewHash": "abfc87ea19b52c89a4e8e52fd9b6491de1e17b19807441c4642bf174be3fec6b"
   },
   "kind": "component-plan",
   "mode": "presentational",
