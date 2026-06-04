@@ -185,8 +185,8 @@
         "bounds": {
           "height": 20,
           "width": 70,
-          "x": 42,
-          "y": 196
+          "x": 14,
+          "y": 12
         },
         "childIds": [],
         "confidence": "high",
@@ -228,13 +228,13 @@
     ]
   },
   "generatedFrom": {
-    "designIrHash": "7554884b4cf3d525a3257f8b575ecec6de40a1d9a1ec6ba3384eb359a7820ef9",
+    "designIrHash": "0553fabf4dba9c4ff38c17d1526bb8c5fa4dba50f861278fdfd05b146786319e",
     "schemaVersion": "d2c.design-ir/v0.2.0",
     "sourceRef": {
       "documentId": "doc-1",
       "fileName": "fixture.sketch"
     },
-    "visualViewHash": "abfc87ea19b52c89a4e8e52fd9b6491de1e17b19807441c4642bf174be3fec6b"
+    "visualViewHash": "2edeaa28aee7fdfe1d381725ffe6ce7a445fd71b6e105ac8f4fc4dbf47b7a695"
   },
   "kind": "semantic-view"
 }
