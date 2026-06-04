@@ -221,7 +221,7 @@ function textStyleDeclarations(node: VisualNode): string[] {
   if (textStyle?.lineHeight !== undefined)
     declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
   if (textStyle?.color !== undefined) declarations.push(`color: ${textStyle.color};`);
-  if (textStyle?.textAlign !== undefined) declarations.push(`text-align: ${textStyle.textAlign};`);
+  declarations.push(`text-align: ${textStyle?.textAlign ?? 'left'};`);
 
   return declarations;
 }

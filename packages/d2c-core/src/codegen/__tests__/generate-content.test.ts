@@ -143,6 +143,8 @@ describe('generateComponentPackage — React content', () => {
     expect(css).toContain('background-color: #2563EBFF;');
     expect(css).toContain('font-weight: 800;');
     expect(css).toContain('line-height: 38px;');
+    expect(css).toContain('text-align: left;');
+    expect(css).toContain('text-align: center;');
     expect(css).toContain('left: 14px;');
     expect(css).toContain('top: 12px;');
   });
