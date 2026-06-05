@@ -1,0 +1,26 @@
+:root {
+  color: #111827;
+  background: #f3f4f6;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+.visual-harness {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.visual-harness__hostile-scope {
+  display: inline-block;
+  color: #ff00ff;
+  font-size: 99px;
+  line-height: 99px;
+  text-align: center;
+}
