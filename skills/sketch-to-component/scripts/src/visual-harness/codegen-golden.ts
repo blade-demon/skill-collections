@@ -8,7 +8,22 @@ export interface NodeMetrics {
   nodeId: string;
   present: boolean;
   rect: { x: number; y: number; width: number; height: number };
-  styles: { textAlign: string; fontSize: string; color: string };
+  styles: {
+    textAlign: string;
+    fontSize: string;
+    color: string;
+    backgroundColor: string;
+    borderColor: string;
+    borderWidth: string;
+    borderRadius: string;
+    boxShadow: string;
+  };
+}
+
+export interface HarnessNodes {
+  nodeIds: string[];
+  rootNodeId: string;
+  textNodeIds: Set<string>;
 }
 
 interface ReviewHtmlInput {
@@ -24,15 +39,8 @@ type PresentNodeMetrics = NodeMetrics & { present: true };
 
 const fixtureDir = fileURLToPath(new URL('../__tests__/fixtures/codegen-golden', import.meta.url));
 const defaultOutDir = '/private/tmp/skill-collections-visual-harness/codegen-golden';
-const nodeIds = [
-  'node-root',
-  'node-eyebrow',
-  'node-title',
-  'node-subtitle',
-  'node-cta',
-  'node-cta-label',
-] as const;
-const textNodeIds = new Set(['node-eyebrow', 'node-title', 'node-subtitle', 'node-cta-label']);
+const visualStyleKeys = ['backgroundColor', 'borderWidth', 'borderRadius', 'boxShadow'] as const;
+const textStyleKeys = ['textAlign', 'fontSize', 'color'] as const;
 
 function escapeHtml(value: string): string {
   return value
@@ -47,6 +55,39 @@ function normalizeStyleValue(key: keyof NodeMetrics['styles'], value: string): s
   return value;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function deriveHarnessNodesFromSemanticView(value: unknown): HarnessNodes {
+  if (!isRecord(value) || !isRecord(value.body) || !Array.isArray(value.body.nodes)) {
+    throw new Error('semantic-view fixture does not contain body.nodes');
+  }
+
+  const nodeIds: string[] = [];
+  const textNodeIds = new Set<string>();
+  let rootNodeId: string | undefined;
+
+  for (const node of value.body.nodes) {
+    if (!isRecord(node) || typeof node.primaryVisualNodeId !== 'string') continue;
+    if (!nodeIds.includes(node.primaryVisualNodeId)) {
+      nodeIds.push(node.primaryVisualNodeId);
+    }
+    if (node.kind === 'screen' && rootNodeId === undefined) {
+      rootNodeId = node.primaryVisualNodeId;
+    }
+    if (node.kind === 'text') {
+      textNodeIds.add(node.primaryVisualNodeId);
+    }
+  }
+
+  if (nodeIds.length === 0) {
+    throw new Error('semantic-view fixture does not contain visual node coverage');
+  }
+
+  return { nodeIds, rootNodeId: rootNodeId ?? nodeIds[0]!, textNodeIds };
+}
+
 function metricIsPresent(metric: NodeMetrics | undefined): metric is PresentNodeMetrics {
   return metric?.present === true;
 }
@@ -58,12 +99,13 @@ function formatMetricNumber(value: number): string {
 export function assertComparableMetrics(
   baselineMetrics: NodeMetrics[],
   candidateMetrics: NodeMetrics[],
+  harnessNodes: HarnessNodes,
 ): string[] {
   const failures: string[] = [];
   const candidateById = new Map(candidateMetrics.map((metric) => [metric.nodeId, metric]));
   const baselineById = new Map(baselineMetrics.map((metric) => [metric.nodeId, metric]));
-  const baselineRoot = baselineById.get('node-root');
-  const candidateRoot = candidateById.get('node-root');
+  const baselineRoot = baselineById.get(harnessNodes.rootNodeId);
+  const candidateRoot = candidateById.get(harnessNodes.rootNodeId);
   for (const baseline of baselineMetrics) {
     const candidate = candidateById.get(baseline.nodeId);
     const baselinePresent = metricIsPresent(baseline);
@@ -84,8 +126,28 @@ export function assertComparableMetrics(
         );
       }
     }
+    for (const key of visualStyleKeys) {
+      const expected = normalizeStyleValue(key, baseline.styles[key]);
+      const actual = normalizeStyleValue(key, candidate.styles[key]);
+      if (actual !== expected) {
+        failures.push(
+          `${baseline.nodeId} style ${key} mismatch: expected ${expected}, got ${actual}`,
+        );
+      }
+    }
+    const expectedBorderWidth = normalizeStyleValue('borderWidth', baseline.styles.borderWidth);
+    const actualBorderWidth = normalizeStyleValue('borderWidth', candidate.styles.borderWidth);
+    if (expectedBorderWidth !== '0px' || actualBorderWidth !== '0px') {
+      const expected = normalizeStyleValue('borderColor', baseline.styles.borderColor);
+      const actual = normalizeStyleValue('borderColor', candidate.styles.borderColor);
+      if (actual !== expected) {
+        failures.push(
+          `${baseline.nodeId} style borderColor mismatch: expected ${expected}, got ${actual}`,
+        );
+      }
+    }
     if (
-      baseline.nodeId !== 'node-root' &&
+      baseline.nodeId !== harnessNodes.rootNodeId &&
       metricIsPresent(baselineRoot) &&
       metricIsPresent(candidateRoot)
     ) {
@@ -109,8 +171,8 @@ export function assertComparableMetrics(
         }
       }
     }
-    if (!textNodeIds.has(baseline.nodeId)) continue;
-    for (const key of ['textAlign', 'fontSize', 'color'] as const) {
+    if (!harnessNodes.textNodeIds.has(baseline.nodeId)) continue;
+    for (const key of textStyleKeys) {
       const expected = normalizeStyleValue(key, baseline.styles[key]);
       const actual = normalizeStyleValue(key, candidate.styles[key]);
       if (actual !== expected) {
@@ -136,7 +198,13 @@ export function renderReviewHtml(input: ReviewHtmlInput): string {
       const candidateTextAlign = metricIsPresent(candidate)
         ? candidate.styles.textAlign
         : 'missing';
-      return `<tr><td>${escapeHtml(baseline.nodeId)}</td><td>${baselineSize}</td><td>${candidateSize}</td><td>${escapeHtml(candidateTextAlign)}</td></tr>`;
+      const candidateBackground = metricIsPresent(candidate)
+        ? candidate.styles.backgroundColor
+        : 'missing';
+      const candidateRadius = metricIsPresent(candidate)
+        ? candidate.styles.borderRadius
+        : 'missing';
+      return `<tr><td>${escapeHtml(baseline.nodeId)}</td><td>${baselineSize}</td><td>${candidateSize}</td><td>${escapeHtml(candidateTextAlign)}</td><td>${escapeHtml(candidateBackground)}</td><td>${escapeHtml(candidateRadius)}</td></tr>`;
     })
     .join('\n');
   const failures = input.failures.length
@@ -166,7 +234,7 @@ export function renderReviewHtml(input: ReviewHtmlInput): string {
   </div>
   <h2>Metric Result</h2>
   ${failures}
-  <table><thead><tr><th>Node</th><th>Baseline size</th><th>Candidate size</th><th>Candidate text-align</th></tr></thead><tbody>${rows}</tbody></table>
+  <table><thead><tr><th>Node</th><th>Baseline size</th><th>Candidate size</th><th>Candidate text-align</th><th>Candidate background</th><th>Candidate radius</th></tr></thead><tbody>${rows}</tbody></table>
 </body>
 </html>
 `;
@@ -183,6 +251,7 @@ function inlinePreview(html: string, css: string): string {
 async function captureMetrics(
   page: import('playwright').Page,
   selectorAttr: 'data-node-id' | 'data-d2c-node-id',
+  nodeIds: readonly string[],
 ): Promise<NodeMetrics[]> {
   return page.evaluate(
     ({ ids, attr }) =>
@@ -193,7 +262,16 @@ async function captureMetrics(
             nodeId,
             present: false,
             rect: { x: 0, y: 0, width: 0, height: 0 },
-            styles: { textAlign: 'missing', fontSize: 'missing', color: 'missing' },
+            styles: {
+              textAlign: 'missing',
+              fontSize: 'missing',
+              color: 'missing',
+              backgroundColor: 'missing',
+              borderColor: 'missing',
+              borderWidth: 'missing',
+              borderRadius: 'missing',
+              boxShadow: 'missing',
+            },
           };
         }
         const rect = node.getBoundingClientRect();
@@ -211,6 +289,11 @@ async function captureMetrics(
             textAlign: style.textAlign,
             fontSize: style.fontSize,
             color: style.color,
+            backgroundColor: style.backgroundColor,
+            borderColor: style.borderTopColor,
+            borderWidth: style.borderTopWidth,
+            borderRadius: style.borderTopLeftRadius,
+            boxShadow: style.boxShadow,
           },
         };
       }),
@@ -229,6 +312,8 @@ async function main(): Promise<void> {
 
   await mkdir(outDir, { recursive: true });
   const designIr = (await readJson(join(fixtureDir, 'design-ir.json'))) as DesignIR;
+  const semanticView = await readJson(join(fixtureDir, 'design-spec', 'semantic-view.json'));
+  const harnessNodes = deriveHarnessNodesFromSemanticView(semanticView);
   const preview = runPreview(designIr);
   await writeFile(join(outDir, 'baseline-preview.html'), preview.html, 'utf8');
   await writeFile(join(outDir, 'baseline-preview.css'), preview.css, 'utf8');
@@ -239,14 +324,22 @@ async function main(): Promise<void> {
     const baselinePage = await browser.newPage({ viewport: { width: 520, height: 360 } });
     await baselinePage.setContent(inlinePreview(preview.html, preview.css), { waitUntil: 'load' });
     await baselinePage.screenshot({ path: join(outDir, 'baseline.png'), fullPage: true });
-    const baselineMetrics = await captureMetrics(baselinePage, 'data-node-id');
+    const baselineMetrics = await captureMetrics(
+      baselinePage,
+      'data-node-id',
+      harnessNodes.nodeIds,
+    );
 
     const candidatePage = await browser.newPage({ viewport: { width: 520, height: 360 } });
     await candidatePage.goto(candidateUrl, { waitUntil: 'networkidle' });
     await candidatePage.screenshot({ path: join(outDir, 'candidate.png'), fullPage: true });
-    const candidateMetrics = await captureMetrics(candidatePage, 'data-d2c-node-id');
+    const candidateMetrics = await captureMetrics(
+      candidatePage,
+      'data-d2c-node-id',
+      harnessNodes.nodeIds,
+    );
 
-    const failures = assertComparableMetrics(baselineMetrics, candidateMetrics);
+    const failures = assertComparableMetrics(baselineMetrics, candidateMetrics, harnessNodes);
     await writeFile(
       join(outDir, 'baseline-metrics.json'),
       `${JSON.stringify(baselineMetrics, null, 2)}\n`,
