@@ -6,6 +6,7 @@ import { runPreview, type DesignIR } from '@skill-collections/d2c-core';
 
 export interface NodeMetrics {
   nodeId: string;
+  present: boolean;
   rect: { x: number; y: number; width: number; height: number };
   styles: { textAlign: string; fontSize: string; color: string };
 }
@@ -18,6 +19,8 @@ interface ReviewHtmlInput {
   candidateMetrics: NodeMetrics[];
   failures: string[];
 }
+
+type PresentNodeMetrics = NodeMetrics & { present: true };
 
 const fixtureDir = fileURLToPath(new URL('../__tests__/fixtures/codegen-golden', import.meta.url));
 const defaultOutDir = '/private/tmp/skill-collections-visual-harness/codegen-golden';
@@ -44,16 +47,34 @@ function normalizeStyleValue(key: keyof NodeMetrics['styles'], value: string): s
   return value;
 }
 
+function metricIsPresent(metric: NodeMetrics | undefined): metric is PresentNodeMetrics {
+  return metric?.present === true;
+}
+
+function formatMetricNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+}
+
 export function assertComparableMetrics(
   baselineMetrics: NodeMetrics[],
   candidateMetrics: NodeMetrics[],
 ): string[] {
   const failures: string[] = [];
   const candidateById = new Map(candidateMetrics.map((metric) => [metric.nodeId, metric]));
+  const baselineById = new Map(baselineMetrics.map((metric) => [metric.nodeId, metric]));
+  const baselineRoot = baselineById.get('node-root');
+  const candidateRoot = candidateById.get('node-root');
   for (const baseline of baselineMetrics) {
     const candidate = candidateById.get(baseline.nodeId);
-    if (candidate === undefined) {
+    const baselinePresent = metricIsPresent(baseline);
+    const candidatePresent = metricIsPresent(candidate);
+    if (!baselinePresent) {
+      failures.push(`${baseline.nodeId} missing from baseline metrics`);
+    }
+    if (!candidatePresent) {
       failures.push(`${baseline.nodeId} missing from candidate metrics`);
+    }
+    if (!baselinePresent || !candidatePresent) {
       continue;
     }
     for (const key of ['width', 'height'] as const) {
@@ -61,6 +82,31 @@ export function assertComparableMetrics(
         failures.push(
           `${baseline.nodeId} rect ${key} mismatch: expected ${baseline.rect[key]}, got ${candidate.rect[key]}`,
         );
+      }
+    }
+    if (
+      baseline.nodeId !== 'node-root' &&
+      metricIsPresent(baselineRoot) &&
+      metricIsPresent(candidateRoot)
+    ) {
+      const relativePairs = [
+        [
+          'relativeX',
+          baseline.rect.x - baselineRoot.rect.x,
+          candidate.rect.x - candidateRoot.rect.x,
+        ],
+        [
+          'relativeY',
+          baseline.rect.y - baselineRoot.rect.y,
+          candidate.rect.y - candidateRoot.rect.y,
+        ],
+      ] as const;
+      for (const [label, expected, actual] of relativePairs) {
+        if (Math.abs(actual - expected) > 0.5) {
+          failures.push(
+            `${baseline.nodeId} rect ${label} mismatch: expected ${formatMetricNumber(expected)}, got ${formatMetricNumber(actual)}`,
+          );
+        }
       }
     }
     if (!textNodeIds.has(baseline.nodeId)) continue;
@@ -81,7 +127,16 @@ export function renderReviewHtml(input: ReviewHtmlInput): string {
   const rows = input.baselineMetrics
     .map((baseline) => {
       const candidate = input.candidateMetrics.find((metric) => metric.nodeId === baseline.nodeId);
-      return `<tr><td>${escapeHtml(baseline.nodeId)}</td><td>${baseline.rect.width}x${baseline.rect.height}</td><td>${candidate ? `${candidate.rect.width}x${candidate.rect.height}` : 'missing'}</td><td>${escapeHtml(candidate?.styles.textAlign ?? 'missing')}</td></tr>`;
+      const baselineSize = metricIsPresent(baseline)
+        ? `${baseline.rect.width}x${baseline.rect.height}`
+        : 'missing';
+      const candidateSize = metricIsPresent(candidate)
+        ? `${candidate.rect.width}x${candidate.rect.height}`
+        : 'missing';
+      const candidateTextAlign = metricIsPresent(candidate)
+        ? candidate.styles.textAlign
+        : 'missing';
+      return `<tr><td>${escapeHtml(baseline.nodeId)}</td><td>${baselineSize}</td><td>${candidateSize}</td><td>${escapeHtml(candidateTextAlign)}</td></tr>`;
     })
     .join('\n');
   const failures = input.failures.length
@@ -136,6 +191,7 @@ async function captureMetrics(
         if (!(node instanceof HTMLElement)) {
           return {
             nodeId,
+            present: false,
             rect: { x: 0, y: 0, width: 0, height: 0 },
             styles: { textAlign: 'missing', fontSize: 'missing', color: 'missing' },
           };
@@ -144,6 +200,7 @@ async function captureMetrics(
         const style = getComputedStyle(node);
         return {
           nodeId,
+          present: true,
           rect: {
             x: Math.round(rect.x * 100) / 100,
             y: Math.round(rect.y * 100) / 100,
