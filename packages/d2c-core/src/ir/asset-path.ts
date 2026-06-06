@@ -13,7 +13,10 @@ import type { AssetEntry } from './visual';
  * The file name extract mirrors on disk for an asset: the POSIX basename of
  * `originalPath` (falling back to `ref`). Case is preserved; the codegen output
  * name lowercases the extension separately.
+ *
+ * Uses `||` (not `??`): an empty-string `originalPath` is schema-allowed but
+ * useless, so fall back to the always-non-empty `ref` (`z.string().min(1)`).
  */
 export function assetSourceFileName(asset: AssetEntry): string {
-  return posix.basename(asset.originalPath ?? asset.ref);
+  return posix.basename(asset.originalPath || asset.ref);
 }

@@ -123,7 +123,7 @@ function symbolInstance(
  * asset catalog matches the nodes that reference it (a real design-ir is never
  * inconsistent this way). Codegen needs these to resolve media to package files.
  */
-function collectImageAssets(root: VisualNode): AssetEntry[] {
+export function collectImageAssets(root: VisualNode): AssetEntry[] {
   const byId = new Map<string, AssetEntry>();
   const visit = (node: VisualNode): void => {
     if (node.kind === 'image' && node.assetRef !== undefined && !byId.has(node.assetRef)) {

@@ -132,6 +132,27 @@ CLI writing:
 - after successful preflight: remove `outDir/src`, write text files, copy assets;
 - stale `src/assets` files disappear through the existing `rm(outDir/src)` behavior.
 
+## Known Limitations (provider-neutrality, deferred)
+
+`ir/asset-path.ts` and `codegen/assets.ts` are placed as provider-neutral, but
+two source-name assumptions only hold for the current Sketch provider (which
+emits flat, sha-named `images/<sha>.png` refs). Surfaced in the Task 1–4 review;
+deferred because no in-tree provider triggers them. Revisit when adding a second
+provider (MasterGo, etc.):
+
+1. **Querystring / fragment in extension** — `codegenAssetOutputPath` derives the
+   extension via `posix.extname(sourceFileName)`. A ref like `image.png?v=2`
+   yields ext `.png?v=2`: the required-extension guard passes, but the output
+   path and CSS `url(...)` carry the query verbatim and the CLI tries to copy a
+   file literally named with `?`. Fix: strip `?`/`#` before `extname`.
+2. **Basename collision across distinct assetRefs** — `sourceFileName =
+   basename(originalPath || ref)`. Two distinct assetRefs with the same basename
+   (e.g. `a/icon.png`, `b/icon.png`) get distinct hashed `outputPath`s but the
+   same `sourceFileName`, so the CLI copies one on-disk file to both
+   destinations. This is a pipeline-wide assumption (extract also mirrors by
+   basename, so it would collide on write too); holds for Sketch. Fix when a
+   provider with non-flat asset layout lands: namespace the mirrored file name.
+
 ## Task 1: Add Pure Asset Path And Copy-Plan Contracts
 
 **Files:**
