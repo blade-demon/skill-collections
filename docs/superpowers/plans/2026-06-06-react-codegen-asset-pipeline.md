@@ -319,32 +319,52 @@ git commit -m "feat(d2c): plan deterministic codegen assets"
 **Files:**
 
 - Modify: `packages/d2c-core/src/codegen/react/generate.ts`
-- Modify: `packages/d2c-core/src/codegen/__tests__/codegen-fixtures.ts`
+- Modify: `packages/d2c-core/src/semantic/__tests__/fixtures.ts`
+- Modify: `packages/d2c-core/src/contract/__tests__/fixtures.ts`
 - Modify: `packages/d2c-core/src/codegen/__tests__/generate-content.test.ts`
 - Modify: `packages/d2c-core/src/codegen/__tests__/generate.test.ts`
+- Modify: `packages/d2c-core/src/codegen/__tests__/generate-guards.test.ts`
 
-- [ ] **Step 1: Make the media fixture resolvable**
+- [ ] **Step 1: Make media fixtures resolvable at the design-IR layer**
 
-Update `approvedMixedTextMediaInput()` so `visualView.body.assets` contains:
+The view builders leave `visual.assets` empty while image nodes still carry an
+`assetRef`. Two facts force the fix down to the design-IR layer:
+
+1. Mutating `visualView.body.assets` post-hoc is **not viable** — it breaks the
+   `semanticView.visualViewHash` chain that `deriveComponentPlan` validates.
+2. The gap is **not limited to the mixed fixture**: `makeFullChatView` (via
+   `bridgedFullChat`, used by `approvedCodegenInput` / `approvedStubPropsInput`)
+   has avatar image nodes (`asset-img`), so every media-bearing fixture would
+   otherwise throw on the required-asset check (~17 tests).
+
+Instead, make the shared `wrapDesignIR` builders auto-collect one `AssetEntry`
+per distinct image-node `assetRef`, so the whole derivation chain stays
+consistent and matches a real design-IR (whose asset catalog always covers its
+node `assetRef`s):
 
 ```ts
-[
-  {
-    id: 'asset-hero',
-    kind: 'image',
-    ref: 'images/hero.png',
-    originalPath: 'images/hero.png',
-  },
-  {
-    id: 'asset-avatar',
-    kind: 'image',
-    ref: 'images/avatar.png',
-    originalPath: 'images/avatar.png',
-  },
-]
+function collectImageAssets(root: VisualNode): AssetEntry[] {
+  const byId = new Map<string, AssetEntry>();
+  const visit = (node: VisualNode): void => {
+    if (node.kind === 'image' && node.assetRef !== undefined && !byId.has(node.assetRef)) {
+      byId.set(node.assetRef, {
+        id: node.assetRef,
+        kind: 'image',
+        ref: `${node.assetRef}.png`,
+        originalPath: `${node.assetRef}.png`,
+      });
+    }
+    for (const child of node.children) visit(child);
+  };
+  visit(root);
+  return [...byId.values()];
+}
+// wrapDesignIR: visual.assets = collectImageAssets(root)
 ```
 
-Keep the existing media-node `assetRef` values unchanged.
+Keep the existing media-node `assetRef` values unchanged. `codegen-fixtures.ts`
+needs no edit — the consistent chain flows through `presentationalInput` /
+`runContract` automatically.
 
 - [ ] **Step 2: Write failing React output tests**
 
