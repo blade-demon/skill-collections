@@ -91,9 +91,10 @@ jobs:
       - name: Start visual harness fixture
         if: steps.changes.outputs.relevant == 'true'
         run: |
+          mkdir -p "$RUNNER_TEMP/codegen-visual-regression"
           npm run dev --prefix fixtures/apps/react-vite -- \
             --host 127.0.0.1 --port 5179 --strictPort \
-            > "$RUNNER_TEMP/visual-harness-vite.log" 2>&1 &
+            > "$RUNNER_TEMP/codegen-visual-regression/vite.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/visual-harness-vite.pid"
           for attempt in {1..30}; do
             if curl --fail --silent \
@@ -102,7 +103,7 @@ jobs:
             fi
             sleep 1
           done
-          cat "$RUNNER_TEMP/visual-harness-vite.log"
+          cat "$RUNNER_TEMP/codegen-visual-regression/vite.log"
           exit 1
 
       - name: Run codegen visual regression

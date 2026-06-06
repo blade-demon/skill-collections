@@ -15,6 +15,14 @@ test('CI exposes a path-aware codegen visual regression gate', async () => {
   assert.match(workflow, /codegen-golden\/\*/)
   assert.match(workflow, /npx playwright install --with-deps chromium/)
   assert.match(workflow, /visual-harness\.html/)
+  assert.match(
+    workflow,
+    /mkdir -p "\$RUNNER_TEMP\/codegen-visual-regression"/,
+  )
+  assert.match(
+    workflow,
+    /> "\$RUNNER_TEMP\/codegen-visual-regression\/vite\.log" 2>&1 &/,
+  )
   assert.match(workflow, /visual-harness:codegen/)
   assert.match(workflow, /actions\/upload-artifact@v4/)
   assert.match(
