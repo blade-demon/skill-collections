@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-while IFS= read -r path; do
+while IFS= read -r path || [ -n "$path" ]; do
   case "$path" in
     .github/scripts/detect-visual-regression-changes.sh | \
       .github/workflows/check.yml | \

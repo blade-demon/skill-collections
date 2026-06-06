@@ -67,3 +67,13 @@ test('visual regression path detector ignores unrelated inputs', () => {
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout.trim(), 'false')
 })
+
+test('visual regression path detector reads a final line without a newline', () => {
+  const result = spawnSync('bash', [detectorPath], {
+    encoding: 'utf8',
+    input: 'packages/d2c-core/src/codegen/react/generate.ts',
+  })
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stdout.trim(), 'true')
+})
