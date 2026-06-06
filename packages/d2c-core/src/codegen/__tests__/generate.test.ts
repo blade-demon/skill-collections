@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { generateComponentPackage } from '../generate';
-import { approvedCodegenInput as codegenInput } from './codegen-fixtures';
+import {
+  approvedCodegenInput as codegenInput,
+  approvedMixedTextMediaInput,
+  approvedStyledCardInput,
+} from './codegen-fixtures';
 
 describe('generateComponentPackage — presentational React', () => {
   it('returns a deterministic file plan with sorted, unique paths', () => {
@@ -33,5 +37,22 @@ describe('generateComponentPackage — presentational React', () => {
   it('emits a src/index.ts barrel', () => {
     const paths = generateComponentPackage(codegenInput()).files.map((f) => f.path);
     expect(paths).toContain('src/index.ts');
+  });
+
+  it('returns a deterministic, outputPath-sorted asset copy plan', () => {
+    const a = generateComponentPackage(approvedMixedTextMediaInput());
+    const b = generateComponentPackage(approvedMixedTextMediaInput());
+
+    expect(a.assets).toEqual(b.assets);
+    expect(a.assets.length).toBeGreaterThan(0);
+
+    const paths = a.assets.map((asset) => asset.outputPath);
+    expect(paths).toEqual([...paths].sort());
+    // One entry per unique assetRef.
+    expect(new Set(a.assets.map((asset) => asset.assetRef)).size).toBe(a.assets.length);
+  });
+
+  it('emits no asset copy plan when the plan has no media assets', () => {
+    expect(generateComponentPackage(approvedStyledCardInput()).assets).toEqual([]);
   });
 });

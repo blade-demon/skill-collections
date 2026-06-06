@@ -48,7 +48,7 @@ describe('generateComponentPackage — guards', () => {
     expect(() => generateComponentPackage(codegenInput)).toThrow(/presentational/i);
   });
 
-  it('warns and does not emit asset files when the plan carries assets (post-v1)', () => {
+  it('returns an asset copy plan (not binary files) and drops the post-v1 warning', () => {
     const input = presentationalInput(makeMixedTextMediaView);
     const { componentPlan } = deriveComponentPlan(input);
     expect(componentPlan.body.assetPlan.length, 'fixture should carry an asset').toBeGreaterThan(0);
@@ -60,7 +60,11 @@ describe('generateComponentPackage — guards', () => {
       interactionSpec: input.interactionSpec,
     });
 
-    expect(result.warnings.some((w) => /asset/i.test(w))).toBe(true);
+    // The pure generator describes the copy plan but never emits the bytes;
+    // the CLI copies them at the filesystem boundary.
+    expect(result.assets.length).toBeGreaterThan(0);
     expect(result.files.some((f) => f.path.includes('/assets/'))).toBe(false);
+    // The blanket "asset generation is post-v1" warning is gone.
+    expect(result.warnings.some((w) => /not emitted/i.test(w))).toBe(false);
   });
 });

@@ -14,6 +14,7 @@ import type {
 import type { VisualNode } from '../../ir/visual';
 import type { SemanticNode } from '../../semantic/schema';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
+import { resolveCodegenAssets } from '../assets';
 import type { CodegenFile, CodegenFilePlan, CodegenInput, TargetGenerator } from '../target';
 
 interface ExportInfo {
@@ -27,6 +28,8 @@ interface ReactCodegenContext {
   componentBySemanticId: Map<string, PlannedComponent>;
   exportByComponentId: Map<string, ExportInfo>;
   propByComponentAndSemanticId: Map<string, Map<string, PlannedProp>>;
+  /** Resolved package asset path per media semantic node (see ../assets). */
+  assetOutputPathBySemanticId: Map<string, string>;
 }
 
 interface RenderResult {
@@ -54,7 +57,10 @@ function kebabCase(pascal: string): string {
   return pascal.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-function buildContext(input: CodegenInput): ReactCodegenContext {
+function buildContext(
+  input: CodegenInput,
+  assetOutputPathBySemanticId: Map<string, string>,
+): ReactCodegenContext {
   const semanticById = new Map<string, SemanticNode>();
   for (const node of input.semanticView.body.nodes) semanticById.set(node.id, node);
 
@@ -92,6 +98,7 @@ function buildContext(input: CodegenInput): ReactCodegenContext {
     componentBySemanticId,
     exportByComponentId: exportsByComponentId(input.componentPlan),
     propByComponentAndSemanticId,
+    assetOutputPathBySemanticId,
   };
 }
 
@@ -450,11 +457,26 @@ function componentCss(
       if (visualNode !== undefined)
         lines.push(...textStyleDeclarations(visualNode).map((d) => `  ${d}`));
     } else if (semanticNode.kind === 'media' || visualNode?.kind === 'image') {
-      lines.push(
-        '  display: block;',
-        '  background: rgba(0, 0, 0, 0.06);',
-        '  border: 1px dashed rgba(0, 0, 0, 0.2);',
-      );
+      const assetOutputPath = context.assetOutputPathBySemanticId.get(semanticNode.id);
+      if (assetOutputPath !== undefined) {
+        // Reference the CLI-copied asset relative to this component's CSS module
+        // (src/<Component>/ → ../assets/...). `contain` mirrors the preview
+        // renderer; the bytes are copied at the CLI boundary, not here.
+        lines.push(
+          '  display: block;',
+          `  background-image: url("${assetOutputPath.replace(/^src\//, '../')}");`,
+          '  background-size: contain;',
+          '  background-position: center;',
+          '  background-repeat: no-repeat;',
+        );
+      } else {
+        // Optional asset that did not resolve: keep the visible placeholder.
+        lines.push(
+          '  display: block;',
+          '  background: rgba(0, 0, 0, 0.06);',
+          '  border: 1px dashed rgba(0, 0, 0, 0.2);',
+        );
+      }
     } else {
       lines.push('  display: block;');
     }
@@ -551,7 +573,13 @@ export const reactGenerator: TargetGenerator = {
         `react codegen: v1 generates presentational plans only; '${componentPlan.mode}' is not yet implemented`,
       );
     }
-    const context = buildContext(input);
+    // Resolve assets first: a required media asset missing its visual-view entry
+    // throws here, so generation fails loudly rather than emitting a placeholder.
+    const resolvedAssets = resolveCodegenAssets({
+      plannedAssets: componentPlan.body.assetPlan,
+      visualAssets: input.visualView.body.assets,
+    });
+    const context = buildContext(input, resolvedAssets.outputPathBySemanticNodeId);
     const exportsMap = context.exportByComponentId;
     const files: CodegenFile[] = [];
     const warnings: string[] = [];
@@ -575,12 +603,6 @@ export const reactGenerator: TargetGenerator = {
       files.push({ path: `src/${exportName}/index.ts`, content: componentIndex(exportName, kind) });
     }
 
-    if (componentPlan.body.assetPlan.length > 0) {
-      warnings.push(
-        `react codegen: ${componentPlan.body.assetPlan.length} planned asset(s) are not emitted yet (asset generation is post-v1)`,
-      );
-    }
-
     files.push({ path: 'src/index.ts', content: packageBarrel(componentPlan) });
     files.push({ path: 'package.json', content: packageJson(input) });
     files.push({ path: 'README.md', content: readme(componentPlan) });
@@ -598,7 +620,10 @@ export const reactGenerator: TargetGenerator = {
       seen.add(key);
     }
 
-    // Asset emission is wired in Task 2; Task 1 lands the contract field only.
-    return { files, assets: [], warnings };
+    return {
+      files,
+      assets: resolvedAssets.assets,
+      warnings: [...resolvedAssets.warnings, ...warnings],
+    };
   },
 };
