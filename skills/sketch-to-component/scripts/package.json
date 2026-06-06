@@ -12,7 +12,8 @@
     "preview": "tsx src/cli.ts preview",
     "contract": "tsx src/cli.ts contract",
     "codegen": "tsx src/cli.ts codegen",
-    "approve": "tsx src/cli.ts approve"
+    "approve": "tsx src/cli.ts approve",
+    "visual-harness:codegen": "tsx src/visual-harness/codegen-golden.ts"
   },
   "dependencies": {
     "@skill-collections/d2c-core": "*",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@sketch-hq/sketch-file-format-ts": "^6.5.0",
     "@types/node": "^20.12.0",
+    "playwright": "^1.59.1",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "vitest": "^3.1.4"

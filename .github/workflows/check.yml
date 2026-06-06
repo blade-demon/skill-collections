@@ -28,3 +28,89 @@ jobs:
 
       - name: Run full repository check
         run: npm run check:full
+
+  visual-regression:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: visual-regression-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant visual changes
+        id: changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/visual-changed-files.txt"
+          relevant="$(
+            bash .github/scripts/detect-visual-regression-changes.sh \
+              < "$RUNNER_TEMP/visual-changed-files.txt"
+          )"
+          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare visual regression artifacts
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/codegen-visual-regression"
+          cp "$RUNNER_TEMP/visual-changed-files.txt" \
+            "$RUNNER_TEMP/codegen-visual-regression/changed-files.txt"
+
+      - name: Setup Node
+        if: steps.changes.outputs.relevant == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install root workspace dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        run: npm ci
+
+      - name: Install fixture dependencies
+        if: steps.changes.outputs.relevant == 'true'
+        run: npm ci --prefix fixtures/apps/react-vite
+
+      - name: Install Playwright Chromium
+        if: steps.changes.outputs.relevant == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Start visual harness fixture
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          npm run dev --prefix fixtures/apps/react-vite -- \
+            --host 127.0.0.1 --port 5179 --strictPort \
+            > "$RUNNER_TEMP/codegen-visual-regression/vite.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/visual-harness-vite.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent \
+              http://127.0.0.1:5179/visual-harness.html > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/codegen-visual-regression/vite.log"
+          exit 1
+
+      - name: Run codegen visual regression
+        if: steps.changes.outputs.relevant == 'true'
+        run: |
+          npm run visual-harness:codegen \
+            --workspace @skill-collections/sketch-to-component-scripts -- \
+            --candidate-url http://127.0.0.1:5179/visual-harness.html \
+            --out "$RUNNER_TEMP/codegen-visual-regression"
+
+      - name: Upload visual regression artifacts
+        if: always() && steps.changes.outputs.relevant == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: codegen-visual-regression
+          path: ${{ runner.temp }}/codegen-visual-regression
+          retention-days: 7
+          if-no-files-found: error

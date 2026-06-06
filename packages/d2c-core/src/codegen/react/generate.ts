@@ -111,6 +111,24 @@ function stringLiteral(value: string): string {
     .replace(/\n/g, '\\n')}'`;
 }
 
+function jsxAttrValue(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+function d2cNodeIdAttr(visualNode?: VisualNode): string {
+  return visualNode === undefined ? '' : ` data-d2c-node-id="${jsxAttrValue(visualNode.id)}"`;
+}
+
+function rootVisualNodeFor(
+  component: PlannedComponent,
+  context: ReactCodegenContext,
+): VisualNode | undefined {
+  const rootSemanticNode = context.semanticById.get(component.semanticNodeId);
+  return rootSemanticNode === undefined
+    ? undefined
+    : context.visualById.get(rootSemanticNode.primaryVisualNodeId);
+}
+
 function fallbackText(semanticNode: SemanticNode, visualNode: VisualNode | undefined): string {
   return visualNode?.text?.content ?? semanticNode.name;
 }
@@ -203,7 +221,7 @@ function textStyleDeclarations(node: VisualNode): string[] {
   if (textStyle?.lineHeight !== undefined)
     declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
   if (textStyle?.color !== undefined) declarations.push(`color: ${textStyle.color};`);
-  if (textStyle?.textAlign !== undefined) declarations.push(`text-align: ${textStyle.textAlign};`);
+  declarations.push(`text-align: ${textStyle?.textAlign ?? 'left'};`);
 
   return declarations;
 }
@@ -238,6 +256,8 @@ function renderSemanticNode(
   const childIndent = ' '.repeat(depth + 2);
   const semanticNodeIds = new Set<string>([semanticNode.id]);
   const childComponentIds = new Set<string>();
+  const visualNode = context.visualById.get(semanticNode.primaryVisualNodeId);
+  const nodeIdAttr = d2cNodeIdAttr(visualNode);
 
   const plannedChild = context.componentBySemanticId.get(semanticNode.id);
   if (plannedChild !== undefined && plannedChild.id !== component.id) {
@@ -246,7 +266,7 @@ function renderSemanticNode(
       childComponentIds.add(plannedChild.id);
       return {
         lines: [
-          `${indent}<div className={${classExpr}}>`,
+          `${indent}<div className={${classExpr}}${nodeIdAttr}>`,
           `${childIndent}<${childExport.exportName} />`,
           `${indent}</div>`,
         ],
@@ -256,11 +276,10 @@ function renderSemanticNode(
     }
   }
 
-  const visualNode = context.visualById.get(semanticNode.primaryVisualNodeId);
   if (semanticNode.kind === 'text' || visualNode?.text !== undefined) {
     return {
       lines: [
-        `${indent}<div className={${classExpr}}>${textExpression({
+        `${indent}<div className={${classExpr}}${nodeIdAttr}>${textExpression({
           component,
           semanticNode,
           visualNode,
@@ -277,7 +296,9 @@ function renderSemanticNode(
     const label = stringLiteral(semanticNode.name);
     const ariaLabel = prop === undefined ? label : `{${prop.name} ?? ${label}}`;
     return {
-      lines: [`${indent}<div className={${classExpr}} role="img" aria-label=${ariaLabel} />`],
+      lines: [
+        `${indent}<div className={${classExpr}}${nodeIdAttr} role="img" aria-label=${ariaLabel} />`,
+      ],
       semanticNodeIds,
       childComponentIds,
     };
@@ -293,14 +314,18 @@ function renderSemanticNode(
 
   if (childLines.length === 0) {
     return {
-      lines: [`${indent}<div className={${classExpr}} />`],
+      lines: [`${indent}<div className={${classExpr}}${nodeIdAttr} />`],
       semanticNodeIds,
       childComponentIds,
     };
   }
 
   return {
-    lines: [`${indent}<div className={${classExpr}}>`, ...childLines, `${indent}</div>`],
+    lines: [
+      `${indent}<div className={${classExpr}}${nodeIdAttr}>`,
+      ...childLines,
+      `${indent}</div>`,
+    ],
     semanticNodeIds,
     childComponentIds,
   };
@@ -335,6 +360,7 @@ function componentTsx(
   const { exportName: name, kind } = exp;
   const sig = kind === 'default' ? `export default function ${name}` : `export function ${name}`;
   const rendered = renderComponentBody(component, context);
+  const rootVisualNode = rootVisualNodeFor(component, context);
   const childImports = [...rendered.childComponentIds]
     .map((componentId) => context.exportByComponentId.get(componentId))
     .filter((childExport): childExport is ExportInfo => childExport !== undefined)
@@ -356,13 +382,13 @@ function componentTsx(
   }
 
   if (rendered.lines.length === 0) {
-    lines.push(`  return <div className={styles.root} />;`, '}');
+    lines.push(`  return <div className={styles.root}${d2cNodeIdAttr(rootVisualNode)} />;`, '}');
     return { content: lines.join('\n') + '\n', renderedSemanticNodeIds: rendered.semanticNodeIds };
   }
 
   lines.push(
     '  return (',
-    `    <div className={styles.root}>`,
+    `    <div className={styles.root}${d2cNodeIdAttr(rootVisualNode)}>`,
     ...rendered.lines,
     '    </div>',
     '  );',

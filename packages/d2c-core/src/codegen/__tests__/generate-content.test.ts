@@ -128,6 +128,12 @@ describe('generateComponentPackage — React content', () => {
 
     expect(tsx).toContain('Launch faster');
     expect(tsx).toContain('Start');
+    expect(tsx).toContain('data-d2c-node-id="node-root"');
+    expect(tsx).toContain('data-d2c-node-id="node-eyebrow"');
+    expect(tsx).toContain('data-d2c-node-id="node-title"');
+    expect(tsx).toContain('data-d2c-node-id="node-subtitle"');
+    expect(tsx).toContain('data-d2c-node-id="node-cta"');
+    expect(tsx).toContain('data-d2c-node-id="node-cta-label"');
     expect(css).toContain('width: 390px;');
     expect(css).toContain('height: 260px;');
     expect(css).toContain('background-color: #F8FAFCFF;');
@@ -137,6 +143,8 @@ describe('generateComponentPackage — React content', () => {
     expect(css).toContain('background-color: #2563EBFF;');
     expect(css).toContain('font-weight: 800;');
     expect(css).toContain('line-height: 38px;');
+    expect(css).toContain('text-align: left;');
+    expect(css).toContain('text-align: center;');
     expect(css).toContain('left: 14px;');
     expect(css).toContain('top: 12px;');
   });
