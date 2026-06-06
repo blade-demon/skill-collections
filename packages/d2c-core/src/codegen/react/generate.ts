@@ -598,6 +598,7 @@ export const reactGenerator: TargetGenerator = {
       seen.add(key);
     }
 
-    return { files, warnings };
+    // Asset emission is wired in Task 2; Task 1 lands the contract field only.
+    return { files, assets: [], warnings };
   },
 };

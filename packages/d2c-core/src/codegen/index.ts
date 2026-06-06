@@ -10,4 +10,5 @@
 export * from './sign-off';
 export * from './verify-design-spec';
 export * from './target';
+export * from './assets';
 export * from './generate';

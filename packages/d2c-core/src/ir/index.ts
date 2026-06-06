@@ -5,6 +5,7 @@
  */
 export * from './version';
 export * from './visual';
+export * from './asset-path';
 export * from './semantic';
 export * from './schema';
 export * from './generated-from';
