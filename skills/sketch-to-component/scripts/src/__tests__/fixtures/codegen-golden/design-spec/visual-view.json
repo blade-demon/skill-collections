@@ -4,7 +4,14 @@
       "height": 260,
       "width": 390
     },
-    "assets": [],
+    "assets": [
+      {
+        "id": "asset-launch-panel",
+        "kind": "image",
+        "originalPath": "images/launch-panel.png",
+        "ref": "images/launch-panel.png"
+      }
+    ],
     "root": {
       "children": [
         {
@@ -147,6 +154,44 @@
             ],
             "radius": 22
           }
+        },
+        {
+          "assetRef": "asset-launch-panel",
+          "children": [],
+          "id": "node-logo",
+          "kind": "image",
+          "layout": {
+            "height": 60,
+            "width": 110,
+            "x": 250,
+            "y": 60
+          },
+          "name": "Logo",
+          "source": {
+            "name": "logo",
+            "nodeId": "logo",
+            "originalType": "bitmap",
+            "provider": "test"
+          }
+        },
+        {
+          "assetRef": "asset-launch-panel",
+          "children": [],
+          "id": "node-badge",
+          "kind": "image",
+          "layout": {
+            "height": 60,
+            "width": 110,
+            "x": 250,
+            "y": 140
+          },
+          "name": "Badge",
+          "source": {
+            "name": "badge",
+            "nodeId": "badge",
+            "originalType": "bitmap",
+            "provider": "test"
+          }
         }
       ],
       "id": "node-root",
@@ -193,7 +238,7 @@
     }
   },
   "generatedFrom": {
-    "designIrHash": "0553fabf4dba9c4ff38c17d1526bb8c5fa4dba50f861278fdfd05b146786319e",
+    "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
     "schemaVersion": "d2c.design-ir/v0.2.0",
     "sourceRef": {
       "documentId": "doc-1",

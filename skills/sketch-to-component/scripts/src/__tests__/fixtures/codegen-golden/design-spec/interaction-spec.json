@@ -28,14 +28,14 @@
     "warnings": []
   },
   "generatedFrom": {
-    "designIrHash": "0553fabf4dba9c4ff38c17d1526bb8c5fa4dba50f861278fdfd05b146786319e",
+    "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
     "schemaVersion": "d2c.design-ir/v0.2.0",
-    "semanticViewHash": "4498009677b38de7ebee8ab338149d3184ffb4f1bddcd7ebaec44e4f80344c7d",
+    "semanticViewHash": "412717bab595587825bd259c9bf484a1e8bed58831f21f6a3ffbbc22a8b54ad8",
     "sourceRef": {
       "documentId": "doc-1",
       "fileName": "fixture.sketch"
     },
-    "visualViewHash": "2edeaa28aee7fdfe1d381725ffe6ce7a445fd71b6e105ac8f4fc4dbf47b7a695"
+    "visualViewHash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc"
   },
   "kind": "interaction-spec",
   "reason": "visual delivery first; interaction deferred",

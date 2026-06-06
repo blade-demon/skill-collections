@@ -31,7 +31,9 @@
           "s_37595ab02d04",
           "s_8cc7f5e7d061",
           "s_6684d9358673",
-          "s_99fcdc2c32a5"
+          "s_99fcdc2c32a5",
+          "s_f8821b903f89",
+          "s_9667e446b8d5"
         ],
         "confidence": "high",
         "evidence": [
@@ -211,6 +213,68 @@
         "visualNodeIds": [
           "node-cta-label"
         ]
+      },
+      {
+        "bounds": {
+          "height": 60,
+          "width": 110,
+          "x": 250,
+          "y": 60
+        },
+        "childIds": [],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-logo",
+            "reason": "image node"
+          }
+        ],
+        "id": "s_f8821b903f89",
+        "kind": "media",
+        "name": "Logo",
+        "parentId": "s_7bd9a8fb13c0",
+        "primaryVisualNodeId": "node-logo",
+        "source": {
+          "nodeIds": [
+            "logo"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-logo"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 60,
+          "width": 110,
+          "x": 250,
+          "y": 140
+        },
+        "childIds": [],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-badge",
+            "reason": "image node"
+          }
+        ],
+        "id": "s_9667e446b8d5",
+        "kind": "media",
+        "name": "Badge",
+        "parentId": "s_7bd9a8fb13c0",
+        "primaryVisualNodeId": "node-badge",
+        "source": {
+          "nodeIds": [
+            "badge"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-badge"
+        ]
       }
     ],
     "repeatedPatterns": [],
@@ -228,13 +292,13 @@
     ]
   },
   "generatedFrom": {
-    "designIrHash": "0553fabf4dba9c4ff38c17d1526bb8c5fa4dba50f861278fdfd05b146786319e",
+    "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
     "schemaVersion": "d2c.design-ir/v0.2.0",
     "sourceRef": {
       "documentId": "doc-1",
       "fileName": "fixture.sketch"
     },
-    "visualViewHash": "2edeaa28aee7fdfe1d381725ffe6ce7a445fd71b6e105ac8f4fc4dbf47b7a695"
+    "visualViewHash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc"
   },
   "kind": "semantic-view"
 }

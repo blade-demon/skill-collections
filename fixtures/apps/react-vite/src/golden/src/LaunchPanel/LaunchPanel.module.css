@@ -79,6 +79,20 @@
   text-align: left;
 }
 
+.node_dd14b663bc97 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 250px;
+  top: 140px;
+  width: 110px;
+  height: 60px;
+  display: block;
+  background-image: url("../assets/asset-d5a83ea0345e.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .node_31e5d24ffb91 {
   position: absolute;
   box-sizing: border-box;
@@ -89,4 +103,18 @@
   background-color: #2563EBFF;
   border-radius: 22px;
   display: block;
+}
+
+.node_e641a79e1cd0 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 250px;
+  top: 60px;
+  width: 110px;
+  height: 60px;
+  display: block;
+  background-image: url("../assets/asset-d5a83ea0345e.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }

@@ -170,6 +170,44 @@
             ],
             "radius": 22
           }
+        },
+        {
+          "id": "node-logo",
+          "kind": "image",
+          "name": "Logo",
+          "source": {
+            "nodeId": "logo",
+            "name": "logo",
+            "originalType": "bitmap",
+            "provider": "test"
+          },
+          "layout": {
+            "x": 250,
+            "y": 60,
+            "width": 110,
+            "height": 60
+          },
+          "assetRef": "asset-launch-panel",
+          "children": []
+        },
+        {
+          "id": "node-badge",
+          "kind": "image",
+          "name": "Badge",
+          "source": {
+            "nodeId": "badge",
+            "name": "badge",
+            "originalType": "bitmap",
+            "provider": "test"
+          },
+          "layout": {
+            "x": 250,
+            "y": 140,
+            "width": 110,
+            "height": 60
+          },
+          "assetRef": "asset-launch-panel",
+          "children": []
         }
       ],
       "style": {
@@ -199,7 +237,14 @@
         "radius": 24
       }
     },
-    "assets": []
+    "assets": [
+      {
+        "id": "asset-launch-panel",
+        "ref": "images/launch-panel.png",
+        "kind": "image",
+        "originalPath": "images/launch-panel.png"
+      }
+    ]
   },
   "semantic": {
     "candidates": []
