@@ -81,18 +81,18 @@ component `.root` 仍是 relative block；普通嵌套容器自身仍由其父�
 3. **DOM 顺序不匹配**：子节点的 `childIds` 发射顺序 ≠ 主轴排序顺序（flex 按 DOM 顺序
    布局，不按坐标 → 会视觉错位）。
 4. **负 gap**：任一相邻间距 < 0（子项重叠 / 错序）。
-5. **主轴位置漂移 > 0.5px**：用均值 gap 重建每个子项主轴起点
+5. **负 padding**：`first.x < 0` 或 `first.y < 0`。
+6. **主轴位置漂移 > 0.5px**：用均值 gap 重建每个子项主轴起点
    （`pos[0]=lead`，`pos[i]=pos[i-1]+size[i-1]+meanGap`），与实际主轴起点比较，任一 |差| > 0.5px。
-6. **跨轴起点方差 > 0.5px**：`align-items: flex-start` 会把所有子项跨轴起点对齐到
+7. **跨轴起点方差 > 0.5px**：`align-items: flex-start` 会把所有子项跨轴起点对齐到
    stack 的 `padding-left` / inline 的 `padding-top`；任一子项实际跨轴起点与首项相差
    > 0.5px → 会漂移。
-7. **负 padding**：`first.x < 0` 或 `first.y < 0`。
 
 warning 文案**精确字符串**（含容器 nodeId + 具体原因），同输入同输出；多容器回退时
 warning **不重复、顺序确定**。7 条模板、排序规则、去重 key、返回方式锁定在 plan
 「Warning 契约」。
 
-> 注：#5/#6 把保真直接焊进投影——flex 只在能在 0.5px 内复刻原绝对几何时才发，否则
+> 注：#6/#7 把保真直接焊进投影——flex 只在能在 0.5px 内复刻原绝对几何时才发，否则
 > 保留 absolute 子项定位。真实快照里两个 layout 的 similarity 均为 1.00（均匀 gap、对齐一致），
 > 不会被挡。
 

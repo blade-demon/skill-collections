@@ -233,13 +233,12 @@ baseline，也没有覆盖 asset emission。
 
 > **状态（PR-3 部分解决）：** React generator 现在**消费已有的** `stack` / `inline`
 > `layoutPlan`，把命中容器投影为 flex（`stack` → `flex-direction: column`，`inline` → `row`，
-> 含 mean-gap + 首项 padding），直接子项改为 flow（`position: relative` + `flex: 0 0 auto`
->
-> - 显式宽高）。投影是**保真前提**：仅当均值 gap 能在 0.5px 内复刻原绝对几何时才发 flex，
->   否则确定性回退到 absolute 子项定位并向 `CodegenFilePlan.warnings` 追加精确 warning。
->   **未解决**：上游 inference 仍默认给多数布局判 `absolute`（即下文「上游原因」），
->   grid / overlay 仍不在范围。详见
->   `docs/superpowers/plans/2026-06-07-react-codegen-layout-plan.md`。
+> 含 mean-gap + 首项 padding），直接子项改为 flow（`position: relative`、`flex: 0 0 auto`、
+> 显式宽高）。投影是**保真前提**：仅当均值 gap 能在 0.5px 内复刻原绝对几何时才发 flex，
+> 否则确定性回退到 absolute 子项定位并向 `CodegenFilePlan.warnings` 追加精确 warning。
+> **未解决**：上游 inference 仍默认给多数布局判 `absolute`（即下文「上游原因」），
+> grid / overlay 仍不在范围。详见
+> `docs/superpowers/plans/2026-06-07-react-codegen-layout-plan.md`。
 
 ### 现象
 
