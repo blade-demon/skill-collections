@@ -98,6 +98,11 @@ fresh codegen 与现有 `d2c-real-react/fixed` 的 CSS 完全一致。TSX 的主
 
 **优先级：P0**
 
+> **状态（PR-2 已解决）：** 经 reference + CLI copy 落地。真实 `d2c.sketch` 全链路验证：
+> 4 个 planned asset 全部解析 → 去重为 3 个唯一 PNG 落入 `generated-react/src/assets/`，
+> media 节点输出 `background-image`、0 个虚线占位、无 `not emitted yet` warning。详见
+> `docs/superpowers/plans/2026-06-06-react-codegen-asset-pipeline.md`。
+
 ### 现象
 
 `component-plan.json` 已经包含 4 条 `assetPlan`，其中对应 3 个去重后的真实 bitmap。

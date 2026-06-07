@@ -35,7 +35,7 @@ Provider 特定的提取与规范化代码留在 `skills/<provider>-to-component
 然后将校验后的 IR 交给本包。
 
 尚未纳入范围：截图 diff 自动化，以及完全可恢复的管线 runner —— 下方 Stage 5D contract runner
-在一次纯 pass 中链接 derive 步骤，但持久化与恢复部分运行是后续切片。Codegen（Stage 6）当前生成展示型 React 包；交互式生成与资源输出是后续切片。
+在一次纯 pass 中链接 derive 步骤，但持久化与恢复部分运行是后续切片。Codegen（Stage 6）当前生成展示型 React 包（含 bitmap 资源，经 CLI 复制进 `src/assets/`）；交互式生成与 vector 资源是后续切片。
 
 ## Semantic View（Stage 5A）
 
@@ -197,6 +197,7 @@ buildContractManifest(input, result); // 纯；每个 contract artifact 一条�
 - `verifyDesignSpec(input)` —— Gate 2 输入校验：schema 解析四个 contract artifact + manifest，核对每个 manifest hash，遍历 `generatedFrom` 链，要求 `component-plan.status === 'approved'`。故意无 `mode` 参数 —— mode 是 plan 的属性。
 - `approveComponentPlan(plan, signOff)` —— 签收：将 draft plan 翻转为 `approved`（仅 status + approval 块；body 不动）。
 - `generateComponentPackage(input)` —— 按 plan 自身 `body.target.framework` 分发；拒绝任何非 approved plan。React target 为每个组件发出 `.tsx`/`.module.css`/`index.ts`、包 barrel、`package.json`、presentational README banner 及 `interaction-coverage.md`（从 plan 的 coverage 快照格式化 —— 永不重新分类）。
+- **bitmap 资源（reference + CLI copy）**：media 节点发出 `background-image: url("../assets/asset-<hash>.png")`，`CodegenFilePlan.assets` 给出纯文本复制计划（`assetRef`/`sourceFileName`/`outputPath`/`required`，按 `assetRef` 去重、`outputPath` 排序）。core 不碰字节；`required` asset 解析不到即抛错。字节由 Sketch CLI 从 `--assets` 目录复制（见下）。
 
 生成的 `package.json` 携带 `d2c` 来源块：
 
@@ -217,7 +218,7 @@ Contract hash 覆盖**整个** artifact，含 approval 字段，因此签收会�
 
 ### Golden
 
-`fixtures/apps/react-vite/src/golden/` 是已提交的无资源、已批准 React `design-spec/` 的预期包。
+`fixtures/apps/react-vite/src/golden/` 是已提交的、含 bitmap 资源、已批准 React `design-spec/` 的预期包（两个 media 节点复用一个 `assetRef` → 去重为单个 `src/assets/*.png`）。
 一份副本服务两个目的：`codegen-golden` 测试（在 `skills/sketch-to-component/scripts`）将生成字节与之比较，
 `npm run check:fixtures` 经 `tsc -b && vite build` 编译以证明输出可构建。用 Sketch CLI 重新生成：
 
@@ -228,12 +229,13 @@ npm run contract -- --design-ir <ir> --out <tmp> --mode presentational \
 npm run approve  -- --spec <tmp>/design-spec --approved-by … --approved-at … \
   --acknowledge-behavior-stubbed
 npm run codegen  -- --spec <tmp>/design-spec --design-ir <ir> \
+  --assets <ir-dir>/assets \
   --out <repo>/fixtures/apps/react-vite/src/golden
 ```
 
 ### 不在范围内（Stage 6 v1）
 
-交互式生成、资源输出、第二 target 及 reuse-input CLI 路径为后续切片。
+交互式生成、vector / 复杂资源、第二 target 及 reuse-input CLI 路径为后续切片（bitmap 资源已经过 reference + CLI copy 落地）。
 
 ## Verification
 

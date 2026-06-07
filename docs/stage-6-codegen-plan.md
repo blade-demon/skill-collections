@@ -159,15 +159,18 @@ contract hash;identity-hash 为后续优化"(或开 issue 记 Option B),消除�
   见 6A)的共同前置**——interaction-spec 的 `approved` 同样没有 derive 出口,sign-off 要设计成一等
   步骤,而不是散落在 fixture 里手搓 approval 块。interaction-spec 的签字以同构方式提供(6A 落地)。
 
-### 3.5 asset 划界(v1 不生成 asset)
+### 3.5 asset 划界(bitmap 已落地：reference + CLI copy)
 
 **现状(已核实):** `contract` CLI 只写 `design-spec/`(四 JSON)+ `ir/design-ir.json`,
-**不落 asset 字节**;落 asset 的是 `preview` 子命令(`cli.ts:239-240`,以 utf8 写 SVG / data-URI)。
-所以 `design-spec/` 里没有 Stage 6 可读的 asset 来源。
+**不落 asset 字节**;`extract` 把真实 bitmap 落进 `ir/assets/`(basename = `originalPath` 的
+basename),`preview` 复用同一目录渲染真图。
 
-**决策:** v1 codegen 只处理**无 asset 的 approved plan**(5D golden 本身就无 media → `assetPlan`
-为空)。asset emission + 把 asset 落进 `design-spec/assets/`(或另定来源)作为 Stage 6 后续 PR。
-若 plan 的 `assetPlan` 非空而 v1 未实现,生成器**显式报错或 warn 并跳过**,不静默产出坏引用。
+**决策(已更新 — 见 docs/superpowers/plans/2026-06-06-react-codegen-asset-pipeline.md):**
+React bitmap asset 已通过 **reference + CLI copy** 落地。core 仍纯文本输出:`CodegenFilePlan`
+新增 `assets` 复制计划元数据(无字节);`codegen` CLI 用 `--assets <dir>` 把真实字节复制进包的
+`src/assets/`,media 节点发出 `background-image: url("../assets/asset-<hash>.png")`。`required`
+asset 解析不到即**抛错**(不静默坏引用);plan 含 asset 时 `--assets` 必填。vector asset 仍不在范围。
+(历史:v1 曾只处理无 asset plan;现已支持 bitmap。)
 
 ### 3.6 确定性
 
@@ -223,7 +226,7 @@ presentational 跑通后,作为单独切片,且依赖 6A 把 approved 的 intera
 
 要点:plan → 内存 `CodegenFilePlan`,不写盘;只做 presentational;组件 / CSS / types / barrels /
 `package.json` d2c block / README banner / `interaction-coverage.md`;确定性 + 文件名冲突检测(§3.6);
-`assetPlan` 非空时按 §3.5 报错或 warn-skip。
+`assetPlan` 处理见 §3.5(bitmap asset emission 已由后续资产链路 PR 落地)。
 
 > 体量提示:输出种类多,若 PR 过大,可拆"组件 + CSS + types"与"barrels + 包元信息 + coverage"两刀。
 
