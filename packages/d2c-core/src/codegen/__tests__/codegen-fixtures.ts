@@ -112,6 +112,17 @@ function text(
   };
 }
 
+function shape(id: string, layout: VisualNode['layout'], children: VisualNode[] = []): VisualNode {
+  return {
+    id: `node-${id}`,
+    kind: 'shape',
+    name: `Shape-${id}`,
+    source: source(id, 'shape'),
+    layout,
+    children,
+  };
+}
+
 export function styledCardDesignIr(): DesignIR {
   const root = frame(
     'root',
@@ -279,5 +290,134 @@ export function approvedNestedRebasingInput(): CodegenInput {
     visualView,
     semanticView,
     interactionSpec,
+  };
+}
+
+export function stackInlineLayoutDesignIr(): DesignIR {
+  const root = frame('layout-screen', 'LayoutScreen', { x: 0, y: 0, width: 320, height: 260 }, [
+    frame('stack-component', 'StackCard', { x: 20, y: 20, width: 260, height: 100 }, [
+      shape('stack-item-a', { x: 12, y: 8, width: 80, height: 20 }),
+      shape('stack-item-b', { x: 12, y: 38, width: 80, height: 20 }),
+      shape('stack-item-c', { x: 12, y: 68, width: 80, height: 20 }),
+    ]),
+    frame('inline-container', 'InlineContainer', { x: 20, y: 140, width: 260, height: 80 }, [
+      frame('inline-item-a', 'InlineItemA', { x: 10, y: 10, width: 60, height: 50 }, [
+        shape('inline-nested-a', { x: 4, y: 5, width: 20, height: 10 }),
+      ]),
+      frame('inline-item-b', 'InlineItemB', { x: 80, y: 10, width: 60, height: 50 }, [
+        shape('inline-nested-b', { x: 4, y: 5, width: 20, height: 10 }),
+      ]),
+      frame('inline-item-c', 'InlineItemC', { x: 150, y: 10, width: 60, height: 50 }, [
+        shape('inline-nested-c', { x: 4, y: 5, width: 20, height: 10 }),
+      ]),
+    ]),
+  ]);
+
+  return {
+    schemaVersion: 'd2c.design-ir/v0.2.0',
+    source: {
+      provider: 'test',
+      ref: { fileName: 'layout-fixture.sketch', documentId: 'layout-doc' },
+      rootName: 'Layout Screen',
+    },
+    visual: {
+      artboard: { width: root.layout.width, height: root.layout.height },
+      root,
+      assets: [],
+    },
+    semantic: {
+      candidates: [
+        {
+          nodeId: 'node-stack-component',
+          candidateName: 'StackCard',
+          confidence: 'high',
+          reason: 'layout projection fixture component boundary',
+        },
+      ],
+    },
+    interaction: { status: 'draft' },
+    warnings: [],
+  };
+}
+
+function stackInlineDraftInput(): CodegenInput {
+  const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
+    designIr: stackInlineLayoutDesignIr(),
+    mode: 'presentational',
+    interactionMode: 'deferred',
+    approval: APPROVAL,
+  });
+  const inlineSemanticNodeId = semanticView.body.nodes.find(
+    (node) => node.primaryVisualNodeId === 'node-inline-container',
+  )?.id;
+  if (inlineSemanticNodeId === undefined) {
+    throw new Error('layout fixture invariant: inline container semantic node missing');
+  }
+  const inlineComponentId = componentPlan.body.components.find(
+    (component) => component.semanticNodeId === inlineSemanticNodeId,
+  )?.id;
+  if (inlineComponentId === undefined) {
+    throw new Error('layout fixture invariant: inferred inline component missing');
+  }
+
+  return {
+    componentPlan: {
+      ...componentPlan,
+      body: {
+        ...componentPlan.body,
+        components: componentPlan.body.components.filter(
+          (component) => component.id !== inlineComponentId,
+        ),
+        exports: componentPlan.body.exports.filter(
+          (entry) => entry.plannedComponentId !== inlineComponentId,
+        ),
+      },
+    },
+    visualView,
+    semanticView,
+    interactionSpec,
+  };
+}
+
+/**
+ * Root component stays absolute, a planned child component owns a stack
+ * `.root`, and the sibling inline container remains ordinary nested markup.
+ */
+export function approvedStackInlineInput(): CodegenInput {
+  const input = stackInlineDraftInput();
+  return {
+    ...input,
+    componentPlan: approveComponentPlan(input.componentPlan, SIGN_OFF),
+  };
+}
+
+/**
+ * Same graph as approvedStackInlineInput, but the root itself is stack so the
+ * ordinary inline container is simultaneously a flow child and flex container.
+ */
+export function approvedNestedFlexContainersInput(): CodegenInput {
+  const input = stackInlineDraftInput();
+  const rootSemanticNodeId = input.componentPlan.body.rootComponent.semanticNodeId;
+  const componentPlan = {
+    ...input.componentPlan,
+    body: {
+      ...input.componentPlan.body,
+      layoutPlan: input.componentPlan.body.layoutPlan.map((layout) =>
+        layout.semanticNodeId === rootSemanticNodeId
+          ? {
+              id: 'layout-root-stack-test',
+              semanticNodeId: rootSemanticNodeId,
+              strategy: 'stack' as const,
+              confidence: 'high' as const,
+              constraints: [],
+              caveats: ['test fixture: root stack projection'],
+            }
+          : layout,
+      ),
+    },
+  };
+  return {
+    ...input,
+    componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
   };
 }
