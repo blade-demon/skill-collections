@@ -3,59 +3,59 @@
     {
       "filename": "visual-view.json",
       "generatedFrom": {
-        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
         "sourceRef": {
           "documentId": "golden-doc-1",
           "fileName": "contract-golden.sketch"
         }
       },
-      "hash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623",
+      "hash": "c5a2a556e41ad611bd1da28854447fc06bb804e9d19ceea48461f6fb28b95ce0",
       "origin": "derived"
     },
     {
       "filename": "semantic-view.json",
       "generatedFrom": {
-        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
         "sourceRef": {
           "documentId": "golden-doc-1",
           "fileName": "contract-golden.sketch"
         },
-        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+        "visualViewHash": "c5a2a556e41ad611bd1da28854447fc06bb804e9d19ceea48461f6fb28b95ce0"
       },
-      "hash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+      "hash": "6f2287418b6665a61e9347785fbb4ef96af71eed8c27563ad51302c6ad7192d9",
       "origin": "derived"
     },
     {
       "filename": "interaction-spec.json",
       "generatedFrom": {
-        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
-        "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+        "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
+        "semanticViewHash": "6f2287418b6665a61e9347785fbb4ef96af71eed8c27563ad51302c6ad7192d9",
         "sourceRef": {
           "documentId": "golden-doc-1",
           "fileName": "contract-golden.sketch"
         },
-        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+        "visualViewHash": "c5a2a556e41ad611bd1da28854447fc06bb804e9d19ceea48461f6fb28b95ce0"
       },
-      "hash": "c36e34cff49dda1c8ce681229dac550594ba06c19236412950699c675af0f34f",
+      "hash": "a0f52cdf9616e421a5829e36dd0f884f379652922b6a3fc3bd4e82b372c3b04c",
       "origin": "derived"
     },
     {
       "filename": "component-plan.json",
       "generatedFrom": {
-        "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-        "interactionSpecHash": "c36e34cff49dda1c8ce681229dac550594ba06c19236412950699c675af0f34f",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
-        "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+        "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+        "interactionSpecHash": "a0f52cdf9616e421a5829e36dd0f884f379652922b6a3fc3bd4e82b372c3b04c",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
+        "semanticViewHash": "6f2287418b6665a61e9347785fbb4ef96af71eed8c27563ad51302c6ad7192d9",
         "sourceRef": {
           "documentId": "golden-doc-1",
           "fileName": "contract-golden.sketch"
         },
-        "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+        "visualViewHash": "c5a2a556e41ad611bd1da28854447fc06bb804e9d19ceea48461f6fb28b95ce0"
       },
-      "hash": "0aed90618dbf6bf938fb80847adb55d17ee3fd7b29c6315995d4c0fa5305ee17",
+      "hash": "cb2138319428e552348d3b4608527d53e7163e3c0f5398f89430d405d37205e7",
       "origin": "derived"
     }
   ]

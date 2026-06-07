@@ -9,8 +9,8 @@ describe('normalizeSketchRaw', () => {
   it('produces a valid v0.2 design IR from the desensitized fixture', async () => {
     const ir = await normalizeSketchRaw(rawFixture);
 
-    expect(ir.schemaVersion).toBe('d2c.design-ir/v0.2.0');
-    expect(ir.source.provider).toBe('sketch');
+    expect(ir.schemaVersion).toBe('d2c.design-ir/v0.3.0');
+    expect(ir.source.提供方).toBe('sketch');
     expect(ir.source.rootName).toBe('2.0-1备份 21');
     expect(ir.visual.root.kind).toBe('frame');
     expect(ir.semantic.candidates.length).toBeGreaterThan(0);

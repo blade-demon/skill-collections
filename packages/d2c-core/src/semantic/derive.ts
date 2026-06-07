@@ -232,7 +232,7 @@ function walkVisualNode(
     evidence,
     source: {
       nodeIds: [visualNode.source.nodeId],
-      ...(visualNode.source.provider !== undefined ? { provider: visualNode.source.provider } : {}),
+      ...(visualNode.source.提供方 !== undefined ? { 提供方: visualNode.source.提供方 } : {}),
     },
   };
 

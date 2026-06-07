@@ -11,7 +11,7 @@ import type { AssetEntry, DesignIR, VisualNode, VisualView } from '../../ir';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 
 function source(nodeId: string, originalType = 'group'): VisualNode['source'] {
-  return { nodeId, name: nodeId, originalType, provider: 'test' };
+  return { nodeId, name: nodeId, originalType, 提供方: 'test' };
 }
 
 function frame(
@@ -146,9 +146,9 @@ function wrapDesignIR(
   candidates: DesignIR['semantic']['candidates'] = [],
 ): DesignIR {
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName,
     },

@@ -24,7 +24,7 @@
                 "name": "stack-item-a",
                 "nodeId": "stack-item-a",
                 "originalType": "shape",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "fills": [
@@ -51,7 +51,7 @@
                 "name": "stack-item-b",
                 "nodeId": "stack-item-b",
                 "originalType": "shape",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "fills": [
@@ -78,7 +78,7 @@
                 "name": "stack-item-c",
                 "nodeId": "stack-item-c",
                 "originalType": "shape",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "fills": [
@@ -104,7 +104,7 @@
             "name": "stack-component",
             "nodeId": "stack-component",
             "originalType": "frame",
-            "provider": "test"
+            "提供方": "test"
           },
           "style": {
             "fills": [
@@ -135,7 +135,7 @@
                     "name": "inline-nested-a",
                     "nodeId": "inline-nested-a",
                     "originalType": "shape",
-                    "provider": "test"
+                    "提供方": "test"
                   },
                   "style": {
                     "fills": [
@@ -161,7 +161,7 @@
                 "name": "inline-item-a",
                 "nodeId": "inline-item-a",
                 "originalType": "frame",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "borders": [
@@ -197,7 +197,7 @@
                     "name": "inline-nested-b",
                     "nodeId": "inline-nested-b",
                     "originalType": "shape",
-                    "provider": "test"
+                    "提供方": "test"
                   },
                   "style": {
                     "fills": [
@@ -223,7 +223,7 @@
                 "name": "inline-item-b",
                 "nodeId": "inline-item-b",
                 "originalType": "frame",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "borders": [
@@ -259,7 +259,7 @@
                     "name": "inline-nested-c",
                     "nodeId": "inline-nested-c",
                     "originalType": "shape",
-                    "provider": "test"
+                    "提供方": "test"
                   },
                   "style": {
                     "fills": [
@@ -285,7 +285,7 @@
                 "name": "inline-item-c",
                 "nodeId": "inline-item-c",
                 "originalType": "frame",
-                "provider": "test"
+                "提供方": "test"
               },
               "style": {
                 "borders": [
@@ -318,7 +318,7 @@
             "name": "inline-container",
             "nodeId": "inline-container",
             "originalType": "frame",
-            "provider": "test"
+            "提供方": "test"
           },
           "style": {
             "fills": [
@@ -344,7 +344,7 @@
         "name": "layout-screen",
         "nodeId": "layout-screen",
         "originalType": "frame",
-        "provider": "test"
+        "提供方": "test"
       },
       "style": {
         "borders": [
@@ -365,8 +365,8 @@
     }
   },
   "generatedFrom": {
-    "designIrHash": "c579f34ee8650c6e060126acf71f572189c288e048a827640219d8b814fb63ac",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "designIrHash": "73aff5d2e51c73729f069f107cb5bf1b7fe036108cd7ae3775f42a9fca9bafdc",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
     "sourceRef": {
       "documentId": "layout-doc",
       "fileName": "layout-fixture.sketch"

@@ -22,7 +22,7 @@
             "name": "Component/Header",
             "nodeId": "header-1",
             "originalType": "group",
-            "provider": "sketch"
+            "提供方": "sketch"
           }
         },
         {
@@ -40,7 +40,7 @@
             "name": "Component/Card",
             "nodeId": "card-1",
             "originalType": "group",
-            "provider": "sketch"
+            "提供方": "sketch"
           }
         },
         {
@@ -59,7 +59,7 @@
             "name": "Hero",
             "nodeId": "hero-1",
             "originalType": "bitmap",
-            "provider": "sketch"
+            "提供方": "sketch"
           }
         }
       ],
@@ -76,13 +76,13 @@
         "name": "Golden Screen",
         "nodeId": "root-1",
         "originalType": "artboard",
-        "provider": "sketch"
+        "提供方": "sketch"
       }
     }
   },
   "generatedFrom": {
-    "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
     "sourceRef": {
       "documentId": "golden-doc-1",
       "fileName": "contract-golden.sketch"

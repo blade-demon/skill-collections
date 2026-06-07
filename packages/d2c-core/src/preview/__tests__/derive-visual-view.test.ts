@@ -11,7 +11,7 @@ describe('deriveVisualView', () => {
 
     expect(result.visualView.kind).toBe('visual-view');
     expect(result.visualView.generatedFrom).toEqual({
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       designIrHash: stableSha256(stableJson(designIr)),
     });

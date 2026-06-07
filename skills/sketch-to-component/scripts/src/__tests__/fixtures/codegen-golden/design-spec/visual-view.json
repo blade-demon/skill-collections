@@ -29,7 +29,7 @@
             "name": "eyebrow",
             "nodeId": "eyebrow",
             "originalType": "text",
-            "provider": "test"
+            "提供方": "test"
           },
           "text": {
             "content": "D2C Preview",
@@ -57,7 +57,7 @@
             "name": "title",
             "nodeId": "title",
             "originalType": "text",
-            "provider": "test"
+            "提供方": "test"
           },
           "text": {
             "content": "Launch faster",
@@ -85,7 +85,7 @@
             "name": "subtitle",
             "nodeId": "subtitle",
             "originalType": "text",
-            "provider": "test"
+            "提供方": "test"
           },
           "text": {
             "content": "Generated React should preserve layout, text and visual styling.",
@@ -115,7 +115,7 @@
                 "name": "cta-label",
                 "nodeId": "cta-label",
                 "originalType": "text",
-                "provider": "test"
+                "提供方": "test"
               },
               "text": {
                 "content": "Start",
@@ -143,7 +143,7 @@
             "name": "cta",
             "nodeId": "cta",
             "originalType": "frame",
-            "provider": "test"
+            "提供方": "test"
           },
           "style": {
             "fills": [
@@ -171,7 +171,7 @@
             "name": "logo",
             "nodeId": "logo",
             "originalType": "bitmap",
-            "provider": "test"
+            "提供方": "test"
           }
         },
         {
@@ -190,7 +190,7 @@
             "name": "badge",
             "nodeId": "badge",
             "originalType": "bitmap",
-            "provider": "test"
+            "提供方": "test"
           }
         }
       ],
@@ -207,7 +207,7 @@
         "name": "root",
         "nodeId": "root",
         "originalType": "frame",
-        "provider": "test"
+        "提供方": "test"
       },
       "style": {
         "borders": [
@@ -238,8 +238,8 @@
     }
   },
   "generatedFrom": {
-    "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "designIrHash": "7e742a1d1b74cd608e6c55bc9ff402fb0547d0f06c037a063a6091cc9d649d23",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
     "sourceRef": {
       "documentId": "doc-1",
       "fileName": "fixture.sketch"

@@ -7,7 +7,7 @@ function makeMaskedView(maskedContent: boolean | undefined): VisualView {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'mask.sketch', documentId: 'doc-mask' },
       designIrHash: 'sha256-placeholder',
     },
@@ -22,7 +22,7 @@ function makeMaskedView(maskedContent: boolean | undefined): VisualView {
           nodeId: 'root',
           name: 'Root',
           originalType: 'artboard',
-          provider: 'test',
+          提供方: 'test',
         },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         style: maskedContent === undefined ? undefined : { raw: { maskedContent } },

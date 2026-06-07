@@ -12,7 +12,7 @@ import minimalDesignIR from './fixtures/minimal-design-ir.json';
 
 describe('Design IR v0.2 visual and semantic schemas', () => {
   it('uses the v0.2.0 schema version', () => {
-    expect(DESIGN_IR_SCHEMA_VERSION).toBe('d2c.design-ir/v0.2.0');
+    expect(DESIGN_IR_SCHEMA_VERSION).toBe('d2c.design-ir/v0.3.0');
   });
 
   it('requires a real visual block instead of a loose object', () => {
@@ -38,7 +38,7 @@ describe('Design IR v0.2 visual and semantic schemas', () => {
         nodeId: 'sketch-node-1',
         name: 'Hero',
         originalType: 'bitmap',
-        provider: 'sketch',
+        提供方: 'sketch',
       },
       layout: { x: 12, y: 20, width: 100, height: 80 },
       style: {

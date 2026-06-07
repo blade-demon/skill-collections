@@ -31,7 +31,7 @@ import {
 /* ── shared fixtures ─────────────────────────────────────────────────────── */
 
 const generatedFrom = {
-  schemaVersion: 'd2c.design-ir/v0.2.0',
+  schemaVersion: 'd2c.design-ir/v0.3.0',
   designIrHash: 'a'.repeat(64),
   visualViewHash: 'b'.repeat(64),
   semanticViewHash: 'c'.repeat(64),

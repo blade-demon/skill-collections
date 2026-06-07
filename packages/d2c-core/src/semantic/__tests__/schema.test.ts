@@ -35,7 +35,7 @@ function makeValidBody(): SemanticViewBody {
         bounds: { x: 0, y: 0, width: 375, height: 812 },
         confidence: 'high',
         evidence: [{ kind: 'visual-node', nodeId: 'v_root', reason: 'root frame' }],
-        source: { nodeIds: ['v_root'], provider: 'sketch' },
+        source: { nodeIds: ['v_root'], 提供方: 'sketch' },
       },
     ],
     componentCandidates: [],

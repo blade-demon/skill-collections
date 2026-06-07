@@ -30,8 +30,8 @@ export async function normalizeParsedSketchRaw(
   raw: RawArtifact,
   options: NormalizeSketchOptions = {},
 ): Promise<DesignIR> {
-  if (raw.provider !== 'sketch') {
-    throw new Error(`Sketch normalize expected provider "sketch", got "${raw.provider}"`);
+  if (raw.提供方 !== 'sketch') {
+    throw new Error(`Sketch normalize expected provider "sketch", got "${raw.提供方}"`);
   }
   const modelParsed = safeParseSketchRawModel(raw.payload);
   if (!modelParsed.success) {
@@ -52,7 +52,7 @@ export async function normalizeParsedSketchRaw(
   const ir: DesignIR = {
     schemaVersion: DESIGN_IR_SCHEMA_VERSION,
     source: {
-      provider: 'sketch',
+      提供方: 'sketch',
       ref: raw.ref,
       rootName: getNodeName(selected.artboard),
     },

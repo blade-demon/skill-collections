@@ -48,7 +48,7 @@ export const bridgedMultiKindRepeatParent = (): DeriveInteractionSpecInput =>
 /* ── 5B-specific raw VisualNode helpers ──────────────────────────────────── */
 
 function source(nodeId: string, originalType = 'group'): VisualNode['source'] {
-  return { nodeId, name: nodeId, originalType, provider: 'test' };
+  return { nodeId, name: nodeId, originalType, 提供方: 'test' };
 }
 
 function frame(
@@ -91,9 +91,9 @@ function image(
 
 function wrapDesignIR(root: VisualNode, rootName: string): DesignIR {
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName,
     },

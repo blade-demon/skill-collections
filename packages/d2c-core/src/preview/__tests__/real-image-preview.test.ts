@@ -7,7 +7,7 @@ function makeImageView(assetRef: string): VisualView {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'img.sketch', documentId: 'doc-img' },
       designIrHash: 'sha256-placeholder',
     },
@@ -18,14 +18,14 @@ function makeImageView(assetRef: string): VisualView {
         id: 'node-root',
         kind: 'frame',
         name: 'Root',
-        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', provider: 'test' },
+        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', 提供方: 'test' },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         children: [
           {
             id: 'node-img',
             kind: 'image',
             name: 'Photo',
-            source: { nodeId: 'img', name: 'Photo', originalType: 'bitmap', provider: 'test' },
+            source: { nodeId: 'img', name: 'Photo', originalType: 'bitmap', 提供方: 'test' },
             layout: { x: 0, y: 0, width: 80, height: 60 },
             assetRef,
             children: [],

@@ -74,7 +74,7 @@ ir/
 
 ```json
 {
-  "schemaVersion": "d2c.design-ir/v0.2.0",
+  "schemaVersion": "d2c.design-ir/v0.3.0",
   "source": {
     "provider": "sketch",
     "ref": { "fileName": "example.sketch", "documentId": "doc-1" },

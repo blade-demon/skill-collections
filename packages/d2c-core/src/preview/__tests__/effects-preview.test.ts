@@ -7,7 +7,7 @@ function makeGlowView(effects: Effect[]): VisualView {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'blur.sketch', documentId: 'doc-blur' },
       designIrHash: 'sha256-placeholder',
     },
@@ -18,7 +18,7 @@ function makeGlowView(effects: Effect[]): VisualView {
         id: 'node-root',
         kind: 'frame',
         name: 'Root',
-        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', provider: 'test' },
+        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', 提供方: 'test' },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         children: [
           {
@@ -29,7 +29,7 @@ function makeGlowView(effects: Effect[]): VisualView {
               nodeId: 'glow',
               name: 'Glow',
               originalType: 'rectangle',
-              provider: 'test',
+              提供方: 'test',
             },
             layout: { x: 10, y: -20, width: 80, height: 120 },
             style: {

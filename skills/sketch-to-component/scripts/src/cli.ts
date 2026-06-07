@@ -256,7 +256,7 @@ async function runExtract(): Promise<void> {
   }
 
   const payload = raw.payload as SketchRawModel;
-  console.log(`provider: ${raw.provider}`);
+  console.log(`提供方: ${raw.提供方}`);
   console.log(`documentId: ${raw.ref.documentId}`);
   console.log(`pages: ${payload.pages.length}`);
   console.log(`assets: ${payload.assets.length}`);

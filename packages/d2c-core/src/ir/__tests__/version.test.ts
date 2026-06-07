@@ -3,9 +3,9 @@ import { DESIGN_IR_SCHEMA_VERSION, isCompatible, parseSchemaVersion } from '../v
 
 describe('parseSchemaVersion', () => {
   it('parses a well-formed version', () => {
-    expect(parseSchemaVersion('d2c.design-ir/v0.2.0')).toEqual({
+    expect(parseSchemaVersion('d2c.design-ir/v0.3.0')).toEqual({
       family: 'd2c.design-ir',
-      version: { major: 0, minor: 2, patch: 0 },
+      version: { major: 0, minor: 3, patch: 0 },
     });
   });
 
@@ -21,7 +21,7 @@ describe('isCompatible', () => {
   });
 
   it('ignores patch differences', () => {
-    expect(isCompatible('d2c.design-ir/v0.2.9').ok).toBe(true);
+    expect(isCompatible('d2c.design-ir/v0.3.9').ok).toBe(true);
   });
 
   it('classifies a malformed string', () => {

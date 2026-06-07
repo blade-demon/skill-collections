@@ -69,7 +69,7 @@ describe('generatePreview', () => {
         nodeId: 'vector-group',
         name: 'Vector Group',
         originalType: 'shapeGroup',
-        provider: 'test',
+        提供方: 'test',
       },
       layout: { x: 160, y: 140, width: 40, height: 24 },
       style: {
@@ -84,7 +84,7 @@ describe('generatePreview', () => {
             nodeId: 'vector-path',
             name: 'Vector Path',
             originalType: 'shapePath',
-            provider: 'test',
+            提供方: 'test',
           },
           layout: { x: 0, y: 0, width: 40, height: 24 },
           style: {

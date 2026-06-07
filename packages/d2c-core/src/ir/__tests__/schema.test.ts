@@ -22,7 +22,7 @@ describe('DesignIRSchema', () => {
   });
 
   it('rejects an empty source.ref (no trace anchor)', () => {
-    const ir = { ...minimalDesignIR, source: { provider: 'sketch', ref: {} } };
+    const ir = { ...minimalDesignIR, source: { 提供方: 'sketch', ref: {} } };
     expect(DesignIRSchema.safeParse(ir).success).toBe(false);
   });
 

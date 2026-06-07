@@ -24,7 +24,7 @@ describe('validateDesignIR', () => {
   it('rejects a missing source trace', () => {
     const result = validateDesignIR({
       ...minimalDesignIR,
-      source: { provider: 'sketch', ref: {} },
+      source: { 提供方: 'sketch', ref: {} },
     });
     expect(result.ok).toBe(false);
   });
@@ -36,6 +36,6 @@ describe('assertDesignIR', () => {
   });
 
   it('returns the typed value on valid input', () => {
-    expect(assertDesignIR(minimalDesignIR).source.provider).toBe('sketch');
+    expect(assertDesignIR(minimalDesignIR).source.提供方).toBe('sketch');
   });
 });

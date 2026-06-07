@@ -2,13 +2,13 @@
  * Schema family and current version for the canonical Design IR.
  *
  * A `schemaVersion` string has the shape `<family>/v<major>.<minor>.<patch>`,
- * e.g. `d2c.design-ir/v0.2.0`.
+ * e.g. `d2c.design-ir/v0.3.0`.
  */
 export const DESIGN_IR_SCHEMA_FAMILY = 'd2c.design-ir';
-export const DESIGN_IR_SCHEMA_VERSION = `${DESIGN_IR_SCHEMA_FAMILY}/v0.2.0` as const;
+export const DESIGN_IR_SCHEMA_VERSION = `${DESIGN_IR_SCHEMA_FAMILY}/v0.3.0` as const;
 
 const SUPPORTED_MAJOR = 0;
-const SUPPORTED_MINOR = 2;
+const SUPPORTED_MINOR = 3;
 
 export interface SemVer {
   major: number;

@@ -7,7 +7,7 @@ function makeBorderedShapeView(border: Border): VisualView {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'border.sketch', documentId: 'doc-border' },
       designIrHash: 'sha256-placeholder',
     },
@@ -18,14 +18,14 @@ function makeBorderedShapeView(border: Border): VisualView {
         id: 'node-root',
         kind: 'frame',
         name: 'Root',
-        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', provider: 'test' },
+        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', 提供方: 'test' },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         children: [
           {
             id: 'node-rect',
             kind: 'shape',
             name: 'Rect',
-            source: { nodeId: 'rect', name: 'Rect', originalType: 'rectangle', provider: 'test' },
+            source: { nodeId: 'rect', name: 'Rect', originalType: 'rectangle', 提供方: 'test' },
             layout: { x: 0, y: 0, width: 80, height: 40 },
             style: { borders: [border] },
             children: [],

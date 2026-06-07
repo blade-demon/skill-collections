@@ -113,7 +113,7 @@
           "nodeIds": [
             "layout-screen"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-layout-screen"
@@ -154,7 +154,7 @@
           "nodeIds": [
             "stack-component"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-stack-component"
@@ -185,7 +185,7 @@
           "nodeIds": [
             "stack-item-a"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-stack-item-a"
@@ -216,7 +216,7 @@
           "nodeIds": [
             "stack-item-b"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-stack-item-b"
@@ -247,7 +247,7 @@
           "nodeIds": [
             "stack-item-c"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-stack-item-c"
@@ -282,7 +282,7 @@
           "nodeIds": [
             "inline-container"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-container"
@@ -315,7 +315,7 @@
           "nodeIds": [
             "inline-item-a"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-item-a"
@@ -346,7 +346,7 @@
           "nodeIds": [
             "inline-nested-a"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-nested-a"
@@ -379,7 +379,7 @@
           "nodeIds": [
             "inline-item-b"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-item-b"
@@ -410,7 +410,7 @@
           "nodeIds": [
             "inline-nested-b"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-nested-b"
@@ -443,7 +443,7 @@
           "nodeIds": [
             "inline-item-c"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-item-c"
@@ -474,7 +474,7 @@
           "nodeIds": [
             "inline-nested-c"
           ],
-          "provider": "test"
+          "提供方": "test"
         },
         "visualNodeIds": [
           "node-inline-nested-c"
@@ -535,13 +535,13 @@
     ]
   },
   "generatedFrom": {
-    "designIrHash": "c579f34ee8650c6e060126acf71f572189c288e048a827640219d8b814fb63ac",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "designIrHash": "73aff5d2e51c73729f069f107cb5bf1b7fe036108cd7ae3775f42a9fca9bafdc",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
     "sourceRef": {
       "documentId": "layout-doc",
       "fileName": "layout-fixture.sketch"
     },
-    "visualViewHash": "e547b2a06655a1ceed0e9f31f6ab1120a73cc8e08972a4d57e2714fa436feb1c"
+    "visualViewHash": "b64c6464de1076686ed468dd5653d8e8fd7fae1ad735cb74b6901917afd60426"
   },
   "kind": "semantic-view"
 }

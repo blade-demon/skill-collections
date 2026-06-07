@@ -74,7 +74,7 @@ export function approvedMixedTextMediaInput(): CodegenInput {
 }
 
 function source(nodeId: string, originalType = 'frame'): VisualNode['source'] {
-  return { nodeId, name: nodeId, originalType, provider: 'test' };
+  return { nodeId, name: nodeId, originalType, 提供方: 'test' };
 }
 
 function frame(
@@ -205,9 +205,9 @@ export function styledCardDesignIr(): DesignIR {
   );
 
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName: 'Launch Panel',
     },
@@ -260,9 +260,9 @@ export function nestedRebasingDesignIr(): DesignIR {
   ]);
 
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName: 'Screen',
     },
@@ -314,9 +314,9 @@ export function stackInlineLayoutDesignIr(): DesignIR {
   ]);
 
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'layout-fixture.sketch', documentId: 'layout-doc' },
       rootName: 'Layout Screen',
     },
