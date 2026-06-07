@@ -14,6 +14,12 @@ npm run contract  -- (--file <app.sketch> [--artboard <id|name>] | --design-ir <
                      --approval-reason <str> --approved-by <str> --approved-at <iso>
 ```
 
+## `--out` 约束（限制在当前文件夹内）
+
+所有写盘命令（`extract` / `normalize` / `preview` / `contract` / `codegen`）的 `--out` 必须解析到**调用 CLI 时所在的当前文件夹之内**：相对路径以 cwd 为基准解析，任何逃逸路径（`..` 回溯或指向他处的绝对路径）都会被拒绝并以退出码 2 报 `[bad-out-dir]`，在落盘前即返回。这样生成产物不会漂移到当前文件夹之外。`--out .` 写入当前文件夹本身是允许的。
+
+`--file` / `--design-ir` / `--spec` / `--assets` 等**输入**路径不受此约束——它们只读，可指向文件夹外。
+
 ## `contract`（Stage 5D）
 
 运行 `runContract`（链接 visual-view → semantic-view → interaction-spec → component-plan），并将结果写入 `<out>/`。

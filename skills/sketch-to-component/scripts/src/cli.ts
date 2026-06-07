@@ -1,6 +1,6 @@
 import { access, copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   runPreview as runCorePreview,
@@ -58,6 +58,42 @@ function argValue(argv: string[], name: string): string | undefined {
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) return undefined;
   return value;
+}
+
+/**
+ * Confine a pipeline `--out` directory to the folder the CLI runs in. Output
+ * must land inside `cwd`: a relative path resolves against it, and any path that
+ * escapes — `..` traversal or an absolute path elsewhere — is rejected so
+ * generated artifacts never drift outside the current folder. Returns the
+ * resolved absolute path. Pure: pass `cwd` explicitly in tests.
+ */
+export function confineOutDir(outDir: string, cwd: string = process.cwd()): string {
+  const root = resolve(cwd);
+  const resolved = resolve(root, outDir);
+  const rel = relative(root, resolved);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+    throw new Error(
+      `[bad-out-dir] --out must stay inside the current folder (${root}); ` +
+        `'${outDir}' resolves to ${resolved}, outside it`,
+    );
+  }
+  return resolved;
+}
+
+/**
+ * Apply {@link confineOutDir} to `args.outDir` in place. On violation, print the
+ * message and set exit code 2 (a usage error, like a failed parse), returning
+ * false so the caller bails before any disk write.
+ */
+function confineOutDirArg(args: { outDir: string }): boolean {
+  try {
+    args.outDir = confineOutDir(args.outDir);
+    return true;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 2;
+    return false;
+  }
 }
 
 export function parseExtractArgs(argv: string[]): ExtractCliArgs | undefined {
@@ -196,6 +232,7 @@ async function runExtract(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (!confineOutDirArg(args)) return;
 
   const raw = await extractRaw({ source: 'file', filePath: args.filePath });
   const rawJson = `${JSON.stringify(raw, null, 2)}\n`;
@@ -232,6 +269,7 @@ async function runNormalize(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (!confineOutDirArg(args)) return;
 
   const raw = JSON.parse(await readFile(args.rawPath, 'utf8')) as unknown;
   const ir = await normalizeSketchRaw(raw, { artboard: args.artboard });
@@ -255,6 +293,7 @@ async function runPreview(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (!confineOutDirArg(args)) return;
 
   const designIr = JSON.parse(await readFile(args.designIrPath, 'utf8')) as DesignIR;
   const realAssets = args.assetsDir
@@ -400,6 +439,7 @@ async function runContractCommand(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (!confineOutDirArg(args)) return;
 
   const designIr = await loadContractDesignIr(args);
   const input: RunContractInput = {
@@ -585,6 +625,7 @@ async function runCodegenCommand(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  if (!confineOutDirArg(args)) return;
 
   const readJson = async (path: string): Promise<unknown> =>
     JSON.parse(await readFile(path, 'utf8')) as unknown;
