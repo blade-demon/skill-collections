@@ -7,7 +7,7 @@ function makeVectorView(vector: VectorPath, style?: Style): VisualView {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'vec.sketch', documentId: 'doc-vec' },
       designIrHash: 'sha256-placeholder',
     },
@@ -18,14 +18,14 @@ function makeVectorView(vector: VectorPath, style?: Style): VisualView {
         id: 'node-root',
         kind: 'frame',
         name: 'Root',
-        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', provider: 'test' },
+        source: { nodeId: 'root', name: 'Root', originalType: 'artboard', 提供方: 'test' },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         children: [
           {
             id: 'node-vec',
             kind: 'shape',
             name: 'Icon',
-            source: { nodeId: 'vec', name: 'Icon', originalType: 'shapePath', provider: 'test' },
+            source: { nodeId: 'vec', name: 'Icon', originalType: 'shapePath', 提供方: 'test' },
             layout: { x: 0, y: 0, width: 10, height: 10 },
             ...(style ? { style } : {}),
             vector,

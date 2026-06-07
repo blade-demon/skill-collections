@@ -9,7 +9,7 @@ import type { DesignIR, Warning } from '../ir/schema';
  */
 export const RawArtifactSchema = z
   .object({
-    provider: z.string().min(1),
+    提供方: z.string().min(1),
     /** Tracing anchor — same shape as `DesignIR.source.ref`, non-empty. */
     ref: TraceRefSchema,
     /** Provider-specific raw DSL. Any value is allowed, but the key must be

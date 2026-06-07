@@ -113,4 +113,8 @@ describe('confineOutDir', () => {
   it('rejects an absolute path outside the current folder', () => {
     expect(() => confineOutDir('/tmp/elsewhere', cwd)).toThrow(/\[bad-out-dir\]/);
   });
+
+  it('names the offending flag in the rejection message (e.g. approve --spec)', () => {
+    expect(() => confineOutDir('../escape', cwd, '--spec')).toThrow(/--spec must stay inside/);
+  });
 });

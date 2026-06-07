@@ -41,14 +41,14 @@
     "warnings": []
   },
   "generatedFrom": {
-    "designIrHash": "c579f34ee8650c6e060126acf71f572189c288e048a827640219d8b814fb63ac",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
-    "semanticViewHash": "09c604663bd5401194d9faadf54ebdb80da903d32deb5e5d0622ceaf25214cc0",
+    "designIrHash": "73aff5d2e51c73729f069f107cb5bf1b7fe036108cd7ae3775f42a9fca9bafdc",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
+    "semanticViewHash": "27da92800b99b7dcf23ce61e575166fb226a8f2a80f1f6f950a05034625a0b4c",
     "sourceRef": {
       "documentId": "layout-doc",
       "fileName": "layout-fixture.sketch"
     },
-    "visualViewHash": "e547b2a06655a1ceed0e9f31f6ab1120a73cc8e08972a4d57e2714fa436feb1c"
+    "visualViewHash": "b64c6464de1076686ed468dd5653d8e8fd7fae1ad735cb74b6901917afd60426"
   },
   "kind": "interaction-spec",
   "reason": "layout golden presentational approval",

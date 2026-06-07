@@ -39,7 +39,7 @@ function makeDesignIr(): DesignIR {
     id: `node-${id}`,
     kind: 'text',
     name: `Text-${id}`,
-    source: { nodeId: id, name: id, originalType: 'text', provider: 'test' },
+    source: { nodeId: id, name: id, originalType: 'text', 提供方: 'test' },
     layout,
     text: { content, style: { fontFamily: 'Inter', fontSize: 14, color: '#111111FF' } },
     children: [],
@@ -48,7 +48,7 @@ function makeDesignIr(): DesignIR {
     id: 'node-root',
     kind: 'frame',
     name: 'Root',
-    source: { nodeId: 'root', name: 'root', originalType: 'frame', provider: 'test' },
+    source: { nodeId: 'root', name: 'root', originalType: 'frame', 提供方: 'test' },
     layout: { x: 0, y: 0, width: 320, height: 200 },
     children: [
       text('title', 'Title', { x: 0, y: 0, width: 320, height: 30 }),
@@ -56,9 +56,9 @@ function makeDesignIr(): DesignIR {
     ],
   };
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName: 'Root',
     },

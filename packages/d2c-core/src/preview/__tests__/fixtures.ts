@@ -9,7 +9,7 @@ export function makeTextNode(id: string, content: string): VisualNode {
       nodeId: id,
       name: `Text ${id}`,
       originalType: 'text',
-      provider: 'test',
+      提供方: 'test',
     },
     layout: { x: 10, y: 12, width: 120, height: 24 },
     text: {
@@ -37,7 +37,7 @@ export function makeVisualBlock(): VisualBlock {
         nodeId: 'root',
         name: 'Root',
         originalType: 'artboard',
-        provider: 'test',
+        提供方: 'test',
       },
       layout: { x: 0, y: 0, width: 320, height: 240 },
       style: {
@@ -52,7 +52,7 @@ export function makeVisualBlock(): VisualBlock {
             nodeId: 'symbol-instance',
             name: 'Symbol Instance',
             originalType: 'symbolInstance',
-            provider: 'test',
+            提供方: 'test',
           },
           layout: { x: 20, y: 20, width: 200, height: 100 },
           symbol: {
@@ -74,7 +74,7 @@ export function makeVisualBlock(): VisualBlock {
                 nodeId: 'shape-target',
                 name: 'Shape',
                 originalType: 'rectangle',
-                provider: 'test',
+                提供方: 'test',
               },
               layout: { x: 0, y: 50, width: 80, height: 30 },
               style: {
@@ -93,7 +93,7 @@ export function makeVisualBlock(): VisualBlock {
             nodeId: 'image-node',
             name: 'Hero Image',
             originalType: 'bitmap',
-            provider: 'test',
+            提供方: 'test',
           },
           layout: { x: 20, y: 140, width: 96, height: 48 },
           assetRef: 'asset-hero',
@@ -106,9 +106,9 @@ export function makeVisualBlock(): VisualBlock {
 
 export function makeDesignIR(): DesignIR {
   return {
-    schemaVersion: 'd2c.design-ir/v0.2.0',
+    schemaVersion: 'd2c.design-ir/v0.3.0',
     source: {
-      provider: 'test',
+      提供方: 'test',
       ref: { fileName: 'fixture.sketch', documentId: 'doc-1' },
       rootName: 'Preview Fixture',
     },

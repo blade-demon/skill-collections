@@ -10,7 +10,7 @@ describe('preview chain', () => {
     const result = runPreview(designIr);
 
     expect(result.requiresApproval).toBe('gate-1');
-    expect(result.visualView.generatedFrom?.schemaVersion).toBe('d2c.design-ir/v0.2.0');
+    expect(result.visualView.generatedFrom?.schemaVersion).toBe('d2c.design-ir/v0.3.0');
     expect(result.visualViewJson).toContain('"kind": "visual-view"');
     expect(result.html).toContain('<link rel="stylesheet" href="./preview.css">');
     expect(result.css).toContain('background-image: url("./assets/');

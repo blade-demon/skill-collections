@@ -66,7 +66,7 @@ export type Bounds = z.infer<typeof BoundsSchema>;
 const SemanticSourceSchema = z
   .object({
     nodeIds: z.array(z.string().min(1)).min(1),
-    provider: z.string().min(1).optional(),
+    提供方: z.string().min(1).optional(),
   })
   .strict();
 export type SemanticSource = z.infer<typeof SemanticSourceSchema>;

@@ -1,390 +1,390 @@
 {
-  "schemaVersion": "d2c.design-ir/v0.2.0",
-  "source": {
-    "provider": "test",
-    "ref": {
-      "fileName": "layout-fixture.sketch",
-      "documentId": "layout-doc"
-    },
-    "rootName": "Layout Screen"
+  "interaction": {
+    "status": "draft"
   },
-  "visual": {
-    "artboard": {
-      "width": 320,
-      "height": 260
-    },
-    "root": {
-      "id": "node-layout-screen",
-      "kind": "frame",
-      "name": "LayoutScreen",
-      "source": {
-        "nodeId": "layout-screen",
-        "name": "layout-screen",
-        "originalType": "frame",
-        "provider": "test"
-      },
-      "layout": {
-        "x": 0,
-        "y": 0,
-        "width": 320,
-        "height": 260
-      },
-      "style": {
-        "fills": [
-          {
-            "type": "color",
-            "color": "#F8FAFCFF"
-          }
-        ],
-        "borders": [
-          {
-            "type": "color",
-            "color": "#CBD5E1FF",
-            "thickness": 1
-          }
-        ],
-        "radius": 16
-      },
-      "children": [
-        {
-          "id": "node-stack-component",
-          "kind": "frame",
-          "name": "StackCard",
-          "source": {
-            "nodeId": "stack-component",
-            "name": "stack-component",
-            "originalType": "frame",
-            "provider": "test"
-          },
-          "layout": {
-            "x": 20,
-            "y": 20,
-            "width": 260,
-            "height": 100
-          },
-          "style": {
-            "fills": [
-              {
-                "type": "color",
-                "color": "#DBEAFEFF"
-              }
-            ],
-            "radius": 12
-          },
-          "children": [
-            {
-              "id": "node-stack-item-a",
-              "kind": "shape",
-              "name": "Shape-stack-item-a",
-              "source": {
-                "nodeId": "stack-item-a",
-                "name": "stack-item-a",
-                "originalType": "shape",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 12,
-                "y": 8,
-                "width": 80,
-                "height": 20
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#2563EBFF"
-                  }
-                ],
-                "radius": 6
-              },
-              "children": []
-            },
-            {
-              "id": "node-stack-item-b",
-              "kind": "shape",
-              "name": "Shape-stack-item-b",
-              "source": {
-                "nodeId": "stack-item-b",
-                "name": "stack-item-b",
-                "originalType": "shape",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 12,
-                "y": 38,
-                "width": 80,
-                "height": 20
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#2563EBFF"
-                  }
-                ],
-                "radius": 6
-              },
-              "children": []
-            },
-            {
-              "id": "node-stack-item-c",
-              "kind": "shape",
-              "name": "Shape-stack-item-c",
-              "source": {
-                "nodeId": "stack-item-c",
-                "name": "stack-item-c",
-                "originalType": "shape",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 12,
-                "y": 68,
-                "width": 80,
-                "height": 20
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#2563EBFF"
-                  }
-                ],
-                "radius": 6
-              },
-              "children": []
-            }
-          ]
-        },
-        {
-          "id": "node-inline-container",
-          "kind": "frame",
-          "name": "InlineContainer",
-          "source": {
-            "nodeId": "inline-container",
-            "name": "inline-container",
-            "originalType": "frame",
-            "provider": "test"
-          },
-          "layout": {
-            "x": 20,
-            "y": 140,
-            "width": 260,
-            "height": 80
-          },
-          "style": {
-            "fills": [
-              {
-                "type": "color",
-                "color": "#ECFDF5FF"
-              }
-            ],
-            "radius": 12
-          },
-          "children": [
-            {
-              "id": "node-inline-item-a",
-              "kind": "frame",
-              "name": "InlineItemA",
-              "source": {
-                "nodeId": "inline-item-a",
-                "name": "inline-item-a",
-                "originalType": "frame",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 10,
-                "y": 10,
-                "width": 60,
-                "height": 50
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#A7F3D0FF"
-                  }
-                ],
-                "borders": [
-                  {
-                    "type": "color",
-                    "color": "#10B981FF",
-                    "thickness": 1
-                  }
-                ],
-                "radius": 8
-              },
-              "children": [
-                {
-                  "id": "node-inline-nested-a",
-                  "kind": "shape",
-                  "name": "Shape-inline-nested-a",
-                  "source": {
-                    "nodeId": "inline-nested-a",
-                    "name": "inline-nested-a",
-                    "originalType": "shape",
-                    "provider": "test"
-                  },
-                  "layout": {
-                    "x": 4,
-                    "y": 5,
-                    "width": 20,
-                    "height": 10
-                  },
-                  "style": {
-                    "fills": [
-                      {
-                        "type": "color",
-                        "color": "#047857FF"
-                      }
-                    ],
-                    "radius": 3
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "id": "node-inline-item-b",
-              "kind": "frame",
-              "name": "InlineItemB",
-              "source": {
-                "nodeId": "inline-item-b",
-                "name": "inline-item-b",
-                "originalType": "frame",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 80,
-                "y": 10,
-                "width": 60,
-                "height": 50
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#A7F3D0FF"
-                  }
-                ],
-                "borders": [
-                  {
-                    "type": "color",
-                    "color": "#10B981FF",
-                    "thickness": 1
-                  }
-                ],
-                "radius": 8
-              },
-              "children": [
-                {
-                  "id": "node-inline-nested-b",
-                  "kind": "shape",
-                  "name": "Shape-inline-nested-b",
-                  "source": {
-                    "nodeId": "inline-nested-b",
-                    "name": "inline-nested-b",
-                    "originalType": "shape",
-                    "provider": "test"
-                  },
-                  "layout": {
-                    "x": 4,
-                    "y": 5,
-                    "width": 20,
-                    "height": 10
-                  },
-                  "style": {
-                    "fills": [
-                      {
-                        "type": "color",
-                        "color": "#047857FF"
-                      }
-                    ],
-                    "radius": 3
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "id": "node-inline-item-c",
-              "kind": "frame",
-              "name": "InlineItemC",
-              "source": {
-                "nodeId": "inline-item-c",
-                "name": "inline-item-c",
-                "originalType": "frame",
-                "provider": "test"
-              },
-              "layout": {
-                "x": 150,
-                "y": 10,
-                "width": 60,
-                "height": 50
-              },
-              "style": {
-                "fills": [
-                  {
-                    "type": "color",
-                    "color": "#A7F3D0FF"
-                  }
-                ],
-                "borders": [
-                  {
-                    "type": "color",
-                    "color": "#10B981FF",
-                    "thickness": 1
-                  }
-                ],
-                "radius": 8
-              },
-              "children": [
-                {
-                  "id": "node-inline-nested-c",
-                  "kind": "shape",
-                  "name": "Shape-inline-nested-c",
-                  "source": {
-                    "nodeId": "inline-nested-c",
-                    "name": "inline-nested-c",
-                    "originalType": "shape",
-                    "provider": "test"
-                  },
-                  "layout": {
-                    "x": 4,
-                    "y": 5,
-                    "width": 20,
-                    "height": 10
-                  },
-                  "style": {
-                    "fills": [
-                      {
-                        "type": "color",
-                        "color": "#047857FF"
-                      }
-                    ],
-                    "radius": 3
-                  },
-                  "children": []
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    "assets": []
-  },
+  "schemaVersion": "d2c.design-ir/v0.3.0",
   "semantic": {
     "candidates": [
       {
-        "nodeId": "node-stack-component",
         "candidateName": "StackCard",
         "confidence": "high",
+        "nodeId": "node-stack-component",
         "reason": "layout projection fixture component boundary"
       }
     ]
   },
-  "interaction": {
-    "status": "draft"
+  "source": {
+    "ref": {
+      "documentId": "layout-doc",
+      "fileName": "layout-fixture.sketch"
+    },
+    "rootName": "Layout Screen",
+    "提供方": "test"
+  },
+  "visual": {
+    "artboard": {
+      "height": 260,
+      "width": 320
+    },
+    "assets": [],
+    "root": {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [],
+              "id": "node-stack-item-a",
+              "kind": "shape",
+              "layout": {
+                "height": 20,
+                "width": 80,
+                "x": 12,
+                "y": 8
+              },
+              "name": "Shape-stack-item-a",
+              "source": {
+                "name": "stack-item-a",
+                "nodeId": "stack-item-a",
+                "originalType": "shape",
+                "提供方": "test"
+              },
+              "style": {
+                "fills": [
+                  {
+                    "color": "#2563EBFF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 6
+              }
+            },
+            {
+              "children": [],
+              "id": "node-stack-item-b",
+              "kind": "shape",
+              "layout": {
+                "height": 20,
+                "width": 80,
+                "x": 12,
+                "y": 38
+              },
+              "name": "Shape-stack-item-b",
+              "source": {
+                "name": "stack-item-b",
+                "nodeId": "stack-item-b",
+                "originalType": "shape",
+                "提供方": "test"
+              },
+              "style": {
+                "fills": [
+                  {
+                    "color": "#2563EBFF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 6
+              }
+            },
+            {
+              "children": [],
+              "id": "node-stack-item-c",
+              "kind": "shape",
+              "layout": {
+                "height": 20,
+                "width": 80,
+                "x": 12,
+                "y": 68
+              },
+              "name": "Shape-stack-item-c",
+              "source": {
+                "name": "stack-item-c",
+                "nodeId": "stack-item-c",
+                "originalType": "shape",
+                "提供方": "test"
+              },
+              "style": {
+                "fills": [
+                  {
+                    "color": "#2563EBFF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 6
+              }
+            }
+          ],
+          "id": "node-stack-component",
+          "kind": "frame",
+          "layout": {
+            "height": 100,
+            "width": 260,
+            "x": 20,
+            "y": 20
+          },
+          "name": "StackCard",
+          "source": {
+            "name": "stack-component",
+            "nodeId": "stack-component",
+            "originalType": "frame",
+            "提供方": "test"
+          },
+          "style": {
+            "fills": [
+              {
+                "color": "#DBEAFEFF",
+                "type": "color"
+              }
+            ],
+            "radius": 12
+          }
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [],
+                  "id": "node-inline-nested-a",
+                  "kind": "shape",
+                  "layout": {
+                    "height": 10,
+                    "width": 20,
+                    "x": 4,
+                    "y": 5
+                  },
+                  "name": "Shape-inline-nested-a",
+                  "source": {
+                    "name": "inline-nested-a",
+                    "nodeId": "inline-nested-a",
+                    "originalType": "shape",
+                    "提供方": "test"
+                  },
+                  "style": {
+                    "fills": [
+                      {
+                        "color": "#047857FF",
+                        "type": "color"
+                      }
+                    ],
+                    "radius": 3
+                  }
+                }
+              ],
+              "id": "node-inline-item-a",
+              "kind": "frame",
+              "layout": {
+                "height": 50,
+                "width": 60,
+                "x": 10,
+                "y": 10
+              },
+              "name": "InlineItemA",
+              "source": {
+                "name": "inline-item-a",
+                "nodeId": "inline-item-a",
+                "originalType": "frame",
+                "提供方": "test"
+              },
+              "style": {
+                "borders": [
+                  {
+                    "color": "#10B981FF",
+                    "thickness": 1,
+                    "type": "color"
+                  }
+                ],
+                "fills": [
+                  {
+                    "color": "#A7F3D0FF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 8
+              }
+            },
+            {
+              "children": [
+                {
+                  "children": [],
+                  "id": "node-inline-nested-b",
+                  "kind": "shape",
+                  "layout": {
+                    "height": 10,
+                    "width": 20,
+                    "x": 4,
+                    "y": 5
+                  },
+                  "name": "Shape-inline-nested-b",
+                  "source": {
+                    "name": "inline-nested-b",
+                    "nodeId": "inline-nested-b",
+                    "originalType": "shape",
+                    "提供方": "test"
+                  },
+                  "style": {
+                    "fills": [
+                      {
+                        "color": "#047857FF",
+                        "type": "color"
+                      }
+                    ],
+                    "radius": 3
+                  }
+                }
+              ],
+              "id": "node-inline-item-b",
+              "kind": "frame",
+              "layout": {
+                "height": 50,
+                "width": 60,
+                "x": 80,
+                "y": 10
+              },
+              "name": "InlineItemB",
+              "source": {
+                "name": "inline-item-b",
+                "nodeId": "inline-item-b",
+                "originalType": "frame",
+                "提供方": "test"
+              },
+              "style": {
+                "borders": [
+                  {
+                    "color": "#10B981FF",
+                    "thickness": 1,
+                    "type": "color"
+                  }
+                ],
+                "fills": [
+                  {
+                    "color": "#A7F3D0FF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 8
+              }
+            },
+            {
+              "children": [
+                {
+                  "children": [],
+                  "id": "node-inline-nested-c",
+                  "kind": "shape",
+                  "layout": {
+                    "height": 10,
+                    "width": 20,
+                    "x": 4,
+                    "y": 5
+                  },
+                  "name": "Shape-inline-nested-c",
+                  "source": {
+                    "name": "inline-nested-c",
+                    "nodeId": "inline-nested-c",
+                    "originalType": "shape",
+                    "提供方": "test"
+                  },
+                  "style": {
+                    "fills": [
+                      {
+                        "color": "#047857FF",
+                        "type": "color"
+                      }
+                    ],
+                    "radius": 3
+                  }
+                }
+              ],
+              "id": "node-inline-item-c",
+              "kind": "frame",
+              "layout": {
+                "height": 50,
+                "width": 60,
+                "x": 150,
+                "y": 10
+              },
+              "name": "InlineItemC",
+              "source": {
+                "name": "inline-item-c",
+                "nodeId": "inline-item-c",
+                "originalType": "frame",
+                "提供方": "test"
+              },
+              "style": {
+                "borders": [
+                  {
+                    "color": "#10B981FF",
+                    "thickness": 1,
+                    "type": "color"
+                  }
+                ],
+                "fills": [
+                  {
+                    "color": "#A7F3D0FF",
+                    "type": "color"
+                  }
+                ],
+                "radius": 8
+              }
+            }
+          ],
+          "id": "node-inline-container",
+          "kind": "frame",
+          "layout": {
+            "height": 80,
+            "width": 260,
+            "x": 20,
+            "y": 140
+          },
+          "name": "InlineContainer",
+          "source": {
+            "name": "inline-container",
+            "nodeId": "inline-container",
+            "originalType": "frame",
+            "提供方": "test"
+          },
+          "style": {
+            "fills": [
+              {
+                "color": "#ECFDF5FF",
+                "type": "color"
+              }
+            ],
+            "radius": 12
+          }
+        }
+      ],
+      "id": "node-layout-screen",
+      "kind": "frame",
+      "layout": {
+        "height": 260,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      },
+      "name": "LayoutScreen",
+      "source": {
+        "name": "layout-screen",
+        "nodeId": "layout-screen",
+        "originalType": "frame",
+        "提供方": "test"
+      },
+      "style": {
+        "borders": [
+          {
+            "color": "#CBD5E1FF",
+            "thickness": 1,
+            "type": "color"
+          }
+        ],
+        "fills": [
+          {
+            "color": "#F8FAFCFF",
+            "type": "color"
+          }
+        ],
+        "radius": 16
+      }
+    }
   },
   "warnings": []
 }

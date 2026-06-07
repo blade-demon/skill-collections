@@ -3,59 +3,59 @@
     {
       "filename": "visual-view.json",
       "generatedFrom": {
-        "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "designIrHash": "7e742a1d1b74cd608e6c55bc9ff402fb0547d0f06c037a063a6091cc9d649d23",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
         "sourceRef": {
           "documentId": "doc-1",
           "fileName": "fixture.sketch"
         }
       },
-      "hash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc",
+      "hash": "8e6a7a02ffdaec00f6e097dc803e0107b0e0fd4ff114e390b071f528f215406e",
       "origin": "derived"
     },
     {
       "filename": "semantic-view.json",
       "generatedFrom": {
-        "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
+        "designIrHash": "7e742a1d1b74cd608e6c55bc9ff402fb0547d0f06c037a063a6091cc9d649d23",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
         "sourceRef": {
           "documentId": "doc-1",
           "fileName": "fixture.sketch"
         },
-        "visualViewHash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc"
+        "visualViewHash": "8e6a7a02ffdaec00f6e097dc803e0107b0e0fd4ff114e390b071f528f215406e"
       },
-      "hash": "412717bab595587825bd259c9bf484a1e8bed58831f21f6a3ffbbc22a8b54ad8",
+      "hash": "068d15f0e005a9deef35d5cb1eca9bebaadda05e6f0a91f672d3b2553179434a",
       "origin": "derived"
     },
     {
       "filename": "interaction-spec.json",
       "generatedFrom": {
-        "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
-        "semanticViewHash": "412717bab595587825bd259c9bf484a1e8bed58831f21f6a3ffbbc22a8b54ad8",
+        "designIrHash": "7e742a1d1b74cd608e6c55bc9ff402fb0547d0f06c037a063a6091cc9d649d23",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
+        "semanticViewHash": "068d15f0e005a9deef35d5cb1eca9bebaadda05e6f0a91f672d3b2553179434a",
         "sourceRef": {
           "documentId": "doc-1",
           "fileName": "fixture.sketch"
         },
-        "visualViewHash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc"
+        "visualViewHash": "8e6a7a02ffdaec00f6e097dc803e0107b0e0fd4ff114e390b071f528f215406e"
       },
-      "hash": "b27ec0a3f9294f8b57cff5cc679f6afabb1a3488b611be05561983acc8ea2bf9",
+      "hash": "2e3f63c260a3e5fd1f2fdf832ea38391014966af4861c511282d773773eb5496",
       "origin": "derived"
     },
     {
       "filename": "component-plan.json",
       "generatedFrom": {
-        "designIrHash": "7f1199ec0831853e5d603a6b4bee97771a4ff871fcc2abcfd40459659a57977c",
-        "interactionSpecHash": "b27ec0a3f9294f8b57cff5cc679f6afabb1a3488b611be05561983acc8ea2bf9",
-        "schemaVersion": "d2c.design-ir/v0.2.0",
-        "semanticViewHash": "412717bab595587825bd259c9bf484a1e8bed58831f21f6a3ffbbc22a8b54ad8",
+        "designIrHash": "7e742a1d1b74cd608e6c55bc9ff402fb0547d0f06c037a063a6091cc9d649d23",
+        "interactionSpecHash": "2e3f63c260a3e5fd1f2fdf832ea38391014966af4861c511282d773773eb5496",
+        "schemaVersion": "d2c.design-ir/v0.3.0",
+        "semanticViewHash": "068d15f0e005a9deef35d5cb1eca9bebaadda05e6f0a91f672d3b2553179434a",
         "sourceRef": {
           "documentId": "doc-1",
           "fileName": "fixture.sketch"
         },
-        "visualViewHash": "c86316caadba6b2af0532ac008fae7e30510b1511cc0f2b699f65fd7d0b514dc"
+        "visualViewHash": "8e6a7a02ffdaec00f6e097dc803e0107b0e0fd4ff114e390b071f528f215406e"
       },
-      "hash": "26d8fc2c6688df2e4ebfce8c5a78eb7d3d58407b512cd6e870764ed0660f2fac",
+      "hash": "60473e0d8a1fc7fc5ec2771ec00028ced6dace1c75127f59063c2864b17f5745",
       "origin": "derived"
     }
   ]

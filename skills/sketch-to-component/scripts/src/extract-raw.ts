@@ -95,7 +95,7 @@ export async function extractRaw(
   }
 
   const raw: RawArtifact = {
-    provider: 'sketch',
+    提供方: 'sketch',
     ref: {
       ...acquired.ref,
       documentId: getDocumentId(parsedModel.data.document),

@@ -138,7 +138,7 @@ export const SourceTraceSchema = z
     nodeId: z.string().min(1),
     name: z.string().optional(),
     originalType: z.string().optional(),
-    provider: z.string().optional(),
+    提供方: z.string().optional(),
   })
   .strict();
 export type SourceTrace = z.infer<typeof SourceTraceSchema>;

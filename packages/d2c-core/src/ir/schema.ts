@@ -68,8 +68,8 @@ export type TraceRef = z.infer<typeof TraceRefSchema>;
 
 export const SourceSchema = z
   .object({
-    /** Provider id, e.g. `mastergo`. Not enumerated — core stays provider-neutral. */
-    provider: z.string().min(1),
+    /** 提供方 id，例如 `mastergo`。不枚举——内核保持设计源中立（provider-neutral）。 */
+    提供方: z.string().min(1),
     /** Tracing anchor back to the design file/node. */
     ref: TraceRefSchema,
     rootName: z.string().optional(),

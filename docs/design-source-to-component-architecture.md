@@ -74,9 +74,9 @@ ir/
 
 ```json
 {
-  "schemaVersion": "d2c.design-ir/v0.2.0",
+  "schemaVersion": "d2c.design-ir/v0.3.0",
   "source": {
-    "provider": "sketch",
+    "提供方": "sketch",
     "ref": { "fileName": "example.sketch", "documentId": "doc-1" },
     "rootName": "Example Screen"
   },
@@ -90,7 +90,7 @@ ir/
       "source": {
         "nodeId": "root-1",
         "originalType": "artboard",
-        "provider": "sketch"
+        "提供方": "sketch"
       },
       "layout": { "x": 0, "y": 0, "width": 375, "height": 812 },
       "children": []

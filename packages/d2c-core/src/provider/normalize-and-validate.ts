@@ -6,9 +6,9 @@ import { RawArtifactSchema, type Provider, type RawArtifact } from './port';
  * Run a provider's `normalize` and validate the whole hand-off:
  *
  *  1. the raw artifact is structurally valid (`RawArtifactSchema`);
- *  2. the raw artifact was produced by this provider (`raw.provider === provider.id`);
+ *  2. the raw artifact was produced by this provider (`raw.提供方 === provider.id`);
  *  3. `normalize` output is a valid canonical Design IR (`validateDesignIR`);
- *  4. the IR attributes itself to this provider (`source.provider === provider.id`).
+ *  4. the IR attributes itself to this provider (`source.提供方 === provider.id`).
  *
  * Steps 2 and 4 guard against trace-anchor drift — e.g. a Figma raw artifact
  * fed to the MasterGo provider, or a `normalize` that mislabels `source`.
@@ -21,11 +21,11 @@ export async function normalizeAndValidate(
   if (!rawParsed.success) {
     return { ok: false, errors: formatZodIssues(rawParsed.error) };
   }
-  if (rawParsed.data.provider !== provider.id) {
+  if (rawParsed.data.提供方 !== provider.id) {
     return {
       ok: false,
       errors: [
-        `raw artifact provider "${rawParsed.data.provider}" does not match provider id "${provider.id}"`,
+        `raw artifact provider "${rawParsed.data.提供方}" does not match provider id "${provider.id}"`,
       ],
     };
   }
@@ -34,11 +34,11 @@ export async function normalizeAndValidate(
   const result = validateDesignIR(ir);
   if (!result.ok) return result;
 
-  if (result.value.source.provider !== provider.id) {
+  if (result.value.source.提供方 !== provider.id) {
     return {
       ok: false,
       errors: [
-        `design IR source.provider "${result.value.source.provider}" does not match provider id "${provider.id}"`,
+        `design IR source.提供方 "${result.value.source.提供方}" does not match provider id "${provider.id}"`,
       ],
     };
   }

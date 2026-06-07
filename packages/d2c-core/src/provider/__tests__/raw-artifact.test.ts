@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RawArtifactSchema } from '../port';
 
 const validRaw = {
-  provider: 'mastergo',
+  提供方: 'mastergo',
   ref: { fileId: 'f1', nodeId: 'n1' },
   payload: { nodes: [] },
   capturedAt: '2026-05-20T00:00:00.000Z',

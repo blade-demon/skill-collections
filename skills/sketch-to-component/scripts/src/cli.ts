@@ -61,19 +61,21 @@ function argValue(argv: string[], name: string): string | undefined {
 }
 
 /**
- * Confine a pipeline `--out` directory to the folder the CLI runs in. Output
- * must land inside `cwd`: a relative path resolves against it, and any path that
+ * Confine a pipeline write directory to the folder the CLI runs in. Output must
+ * land inside `cwd`: a relative path resolves against it, and any path that
  * escapes — `..` traversal or an absolute path elsewhere — is rejected so
- * generated artifacts never drift outside the current folder. Returns the
- * resolved absolute path. Pure: pass `cwd` explicitly in tests.
+ * written artifacts never drift outside the current folder. Returns the resolved
+ * absolute path. `flag` names the offending option in the message (`--out` for
+ * the pipeline output dir, `--spec` for `approve`'s in-place rewrite target).
+ * Pure: pass `cwd` explicitly in tests.
  */
-export function confineOutDir(outDir: string, cwd: string = process.cwd()): string {
+export function confineOutDir(outDir: string, cwd: string = process.cwd(), flag = '--out'): string {
   const root = resolve(cwd);
   const resolved = resolve(root, outDir);
   const rel = relative(root, resolved);
   if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(
-      `[bad-out-dir] --out must stay inside the current folder (${root}); ` +
+      `[bad-out-dir] ${flag} must stay inside the current folder (${root}); ` +
         `'${outDir}' resolves to ${resolved}, outside it`,
     );
   }
@@ -81,13 +83,13 @@ export function confineOutDir(outDir: string, cwd: string = process.cwd()): stri
 }
 
 /**
- * Apply {@link confineOutDir} to `args.outDir` in place. On violation, print the
- * message and set exit code 2 (a usage error, like a failed parse), returning
- * false so the caller bails before any disk write.
+ * Apply {@link confineOutDir} to the write-target path at `args[key]` in place.
+ * On violation, print the message and set exit code 2 (a usage error, like a
+ * failed parse), returning false so the caller bails before any disk write.
  */
-function confineOutDirArg(args: { outDir: string }): boolean {
+function confineDirArg<K extends string>(args: Record<K, string>, key: K, flag: string): boolean {
   try {
-    args.outDir = confineOutDir(args.outDir);
+    args[key] = confineOutDir(args[key], process.cwd(), flag);
     return true;
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
@@ -232,7 +234,7 @@ async function runExtract(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  if (!confineOutDirArg(args)) return;
+  if (!confineDirArg(args, 'outDir', '--out')) return;
 
   const raw = await extractRaw({ source: 'file', filePath: args.filePath });
   const rawJson = `${JSON.stringify(raw, null, 2)}\n`;
@@ -254,7 +256,7 @@ async function runExtract(): Promise<void> {
   }
 
   const payload = raw.payload as SketchRawModel;
-  console.log(`provider: ${raw.provider}`);
+  console.log(`提供方: ${raw.提供方}`);
   console.log(`documentId: ${raw.ref.documentId}`);
   console.log(`pages: ${payload.pages.length}`);
   console.log(`assets: ${payload.assets.length}`);
@@ -269,7 +271,7 @@ async function runNormalize(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  if (!confineOutDirArg(args)) return;
+  if (!confineDirArg(args, 'outDir', '--out')) return;
 
   const raw = JSON.parse(await readFile(args.rawPath, 'utf8')) as unknown;
   const ir = await normalizeSketchRaw(raw, { artboard: args.artboard });
@@ -293,7 +295,7 @@ async function runPreview(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  if (!confineOutDirArg(args)) return;
+  if (!confineDirArg(args, 'outDir', '--out')) return;
 
   const designIr = JSON.parse(await readFile(args.designIrPath, 'utf8')) as DesignIR;
   const realAssets = args.assetsDir
@@ -439,7 +441,7 @@ async function runContractCommand(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  if (!confineOutDirArg(args)) return;
+  if (!confineDirArg(args, 'outDir', '--out')) return;
 
   const designIr = await loadContractDesignIr(args);
   const input: RunContractInput = {
@@ -625,7 +627,7 @@ async function runCodegenCommand(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  if (!confineOutDirArg(args)) return;
+  if (!confineDirArg(args, 'outDir', '--out')) return;
 
   const readJson = async (path: string): Promise<unknown> =>
     JSON.parse(await readFile(path, 'utf8')) as unknown;
@@ -655,6 +657,9 @@ async function runApproveCommand(): Promise<void> {
     process.exitCode = 2;
     return;
   }
+  /* approve rewrites component-plan.json + manifest.json in place, so --spec is
+   * a write target here (unlike codegen, where --spec is a read-only input). */
+  if (!confineDirArg(args, 'specDir', '--spec')) return;
 
   const planPath = join(args.specDir, ARTIFACT_FILENAMES.componentPlan);
   const manifestPath = join(args.specDir, MANIFEST_FILENAME);

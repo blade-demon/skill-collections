@@ -15,7 +15,7 @@ import {
 import { makeVisualBlock } from '../../preview/__tests__/fixtures';
 import type { SemanticViewBody } from '../../semantic/schema';
 
-const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.2.0' };
+const generatedFrom = { schemaVersion: 'd2c.design-ir/v0.3.0' };
 const interactionGeneratedFrom = {
   ...generatedFrom,
   designIrHash: 'a'.repeat(64),

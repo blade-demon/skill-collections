@@ -13,7 +13,7 @@ function makeGradientView(overrides: {
   return {
     kind: 'visual-view',
     generatedFrom: {
-      schemaVersion: 'd2c.design-ir/v0.2.0',
+      schemaVersion: 'd2c.design-ir/v0.3.0',
       sourceRef: { fileName: 'gradient.sketch', documentId: 'doc-gradient' },
       designIrHash: 'sha256-placeholder',
     },
@@ -28,7 +28,7 @@ function makeGradientView(overrides: {
           nodeId: 'root',
           name: 'Root',
           originalType: 'artboard',
-          provider: 'test',
+          提供方: 'test',
         },
         layout: { x: 0, y: 0, width: 100, height: 100 },
         style: {
@@ -162,7 +162,7 @@ describe('generatePreview gradient fills', () => {
         nodeId: 'text-1',
         name: 'Title',
         originalType: 'text',
-        provider: 'test',
+        提供方: 'test',
       },
       layout: { x: 0, y: 0, width: 100, height: 32 },
       text: {
@@ -201,7 +201,7 @@ describe('generatePreview gradient fills', () => {
         nodeId: 'text-fallback',
         name: 'Title',
         originalType: 'text',
-        provider: 'test',
+        提供方: 'test',
       },
       layout: { x: 0, y: 0, width: 100, height: 32 },
       text: { content: 'fallback', style: { color: '#123456FF' } },

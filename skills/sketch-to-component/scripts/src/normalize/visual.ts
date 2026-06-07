@@ -263,7 +263,7 @@ function normalizeNode(
       nodeId: getNodeId(node),
       name: getNodeName(node),
       originalType: nodeClass,
-      provider: 'sketch',
+      提供方: 'sketch',
     },
     // 根节点坐标强制设为 (0,0)；其他节点保留相对位置
     layout: options.isRoot
@@ -706,7 +706,7 @@ function normalizeSymbolInstance(
       nodeId: getNodeId(node),
       name: getNodeName(node),
       originalType: 'symbolInstance',
-      provider: 'sketch',
+      提供方: 'sketch',
     },
     layout: newFrame,
     // 保留符号实例的元数据，包括主控 ID、实例 ID 和覆盖项

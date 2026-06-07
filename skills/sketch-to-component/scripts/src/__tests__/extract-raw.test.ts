@@ -38,7 +38,7 @@ describe('extractRaw', () => {
     );
 
     expect(RawArtifactSchema.safeParse(raw).success).toBe(true);
-    expect(raw.provider).toBe('sketch');
+    expect(raw.提供方).toBe('sketch');
     expect(raw.ref.fileName).toBe('mock.sketch');
     expect(raw.ref.documentId).toBe('doc-1');
     expect(typeof raw.ref.filePath).toBe('string');

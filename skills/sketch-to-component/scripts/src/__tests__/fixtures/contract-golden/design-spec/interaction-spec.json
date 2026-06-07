@@ -41,14 +41,14 @@
     "warnings": []
   },
   "generatedFrom": {
-    "designIrHash": "25e8d7bf490ebc7232e79085cb175d8c36cf040cc7eff629396eba6db78494eb",
-    "schemaVersion": "d2c.design-ir/v0.2.0",
-    "semanticViewHash": "3adfc0f2c35069dd08da2826eadfc53a9217396c47324db0a04ed8c9dd26f036",
+    "designIrHash": "879c09d8d4720da4b73943d3d240b9dba9c2b1b42a7679ed3ec6e54091e6fdce",
+    "schemaVersion": "d2c.design-ir/v0.3.0",
+    "semanticViewHash": "6f2287418b6665a61e9347785fbb4ef96af71eed8c27563ad51302c6ad7192d9",
     "sourceRef": {
       "documentId": "golden-doc-1",
       "fileName": "contract-golden.sketch"
     },
-    "visualViewHash": "9e2e993936cad5bc7d6f7a349ac1fd766c24390b0f9bd2305a10ec7fa078d623"
+    "visualViewHash": "c5a2a556e41ad611bd1da28854447fc06bb804e9d19ceea48461f6fb28b95ce0"
   },
   "kind": "interaction-spec",
   "reason": "golden: visual delivery first",

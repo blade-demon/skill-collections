@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "d2c.design-ir/v0.2.0",
+  "schemaVersion": "d2c.design-ir/v0.3.0",
   "source": {
-    "provider": "sketch",
+    "提供方": "sketch",
     "ref": {
       "fileName": "contract-golden.sketch",
       "documentId": "golden-doc-1"
@@ -22,7 +22,7 @@
         "nodeId": "root-1",
         "name": "Golden Screen",
         "originalType": "artboard",
-        "provider": "sketch"
+        "提供方": "sketch"
       },
       "layout": {
         "x": 0,
@@ -39,7 +39,7 @@
             "nodeId": "header-1",
             "name": "Component/Header",
             "originalType": "group",
-            "provider": "sketch"
+            "提供方": "sketch"
           },
           "layout": {
             "x": 0,
@@ -57,7 +57,7 @@
             "nodeId": "card-1",
             "name": "Component/Card",
             "originalType": "group",
-            "provider": "sketch"
+            "提供方": "sketch"
           },
           "layout": {
             "x": 0,
@@ -75,7 +75,7 @@
             "nodeId": "hero-1",
             "name": "Hero",
             "originalType": "bitmap",
-            "provider": "sketch"
+            "提供方": "sketch"
           },
           "layout": {
             "x": 0,
