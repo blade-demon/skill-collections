@@ -280,6 +280,14 @@ component-plan → `approveComponentPlan` → 重写 `component-plan.json` + `ma
 来源(§3.5);③ 第二个 target(如 Vue,验证 `TargetGenerator` 抽象);④ Option B contract
 identity hash(§3.4)。
 
+**Layout 现状(PR-3 已投影 stack/inline → flex):** React generator 已消费 approved 的
+`stack` / `inline` `layoutPlan`,将命中容器投影为 flex(`stack` → `flex-direction: column`、
+`inline` → `row`,含 mean-gap + 首项 padding),直接子项改为 flow(`position: relative` +
+`flex: 0 0 auto` + 显式宽高)。**仅当均值 gap 在 0.5px 内复刻原绝对几何时才发 flex**,否则
+确定性回退 absolute 子项定位并追加精确 warning(永不抛错)。`absolute` strategy 仍走 absolute
+子项定位;grid / overlay 与上游 layout inference 扩展仍不在范围。详见
+[`docs/superpowers/plans/2026-06-07-react-codegen-layout-plan.md`](./superpowers/plans/2026-06-07-react-codegen-layout-plan.md)。
+
 ## 7. 验证命令
 
 每个实现 PR 至少跑:
