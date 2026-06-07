@@ -13,6 +13,8 @@ export default function LaunchPanel() {
       <div className={styles['node_31e5d24ffb91']} data-d2c-node-id="node-cta">
         <div className={styles['node_402ce4969633']} data-d2c-node-id="node-cta-label">{'Start'}</div>
       </div>
+      <div className={styles['node_e641a79e1cd0']} data-d2c-node-id="node-logo" role="img" aria-label='Logo' />
+      <div className={styles['node_dd14b663bc97']} data-d2c-node-id="node-badge" role="img" aria-label='Badge' />
     </div>
   );
 }

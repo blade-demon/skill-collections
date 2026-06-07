@@ -1,5 +1,6 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { access, copyFile, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   runPreview as runCorePreview,
@@ -22,9 +23,9 @@ import {
   type ContractManifest,
   type CodegenFilePlan,
   type DesignSpecInput,
-  type RealImageAsset,
 } from '@skill-collections/d2c-core';
 
+import { loadRealImageAssets } from './assets/load-real-image-assets.js';
 import { ExtractError } from './errors.js';
 import { extractImageAssets, extractRaw } from './extract-raw.js';
 import { normalizeSketchRaw } from './normalize.js';
@@ -181,7 +182,7 @@ function printUsage(): void {
     '   or: npm run contract -- (--file <path> [--artboard <id|name>] | --design-ir <path>) --out <dir> --mode presentational --interaction-mode <omitted|deferred> --approval-reason <str> --approved-by <str> --approved-at <iso>',
   );
   console.error(
-    '   or: npm run codegen -- --spec <design-spec dir> --design-ir <path> --out <pkg dir>',
+    '   or: npm run codegen -- --spec <design-spec dir> --design-ir <path> [--assets <dir>] --out <pkg dir>',
   );
   console.error(
     '   or: npm run approve -- --spec <design-spec dir> --approved-by <str> --approved-at <iso> [--acknowledge-behavior-stubbed]',
@@ -294,34 +295,6 @@ async function runPreview(): Promise<void> {
   console.log(
     `visual-review-report.md: ${reportPath} (${Buffer.byteLength(preview.report, 'utf8')} bytes)`,
   );
-}
-
-/**
- * Resolve real image bytes for preview from an extract assets dir.
- *
- * Maps each `design-ir` image asset to `<assetsDir>/<basename(originalPath)>`
- * (the file names extract mirrors). Missing files are skipped so preview falls
- * back to a placeholder for them. Keyed by `AssetEntry.id`, which equals the
- * image node's `assetRef`.
- */
-async function loadRealImageAssets(
-  designIr: DesignIR,
-  assetsDir: string,
-): Promise<Map<string, RealImageAsset>> {
-  const realAssets = new Map<string, RealImageAsset>();
-  for (const asset of designIr.visual.assets) {
-    if (asset.kind !== 'image') continue;
-    const source = asset.originalPath ?? asset.ref;
-    const fileName = basename(source);
-    if (!fileName) continue;
-    try {
-      const bytes = await readFile(join(assetsDir, fileName));
-      realAssets.set(asset.id, { fileName, bytes });
-    } catch {
-      // Missing/unreadable → leave it to the placeholder path.
-    }
-  }
-  return realAssets;
 }
 
 /* ── contract (Stage 5D) ─────────────────────────────────────────────────── */
@@ -466,6 +439,8 @@ export interface CodegenCliArgs {
   specDir: string;
   designIrPath: string;
   outDir: string;
+  /** Extract assets dir (`<out>/ir/assets`); required when the plan emits assets. */
+  assetsDir?: string;
 }
 
 export interface ApproveCliArgs {
@@ -487,7 +462,10 @@ export function parseCodegenArgs(argv: string[]): CodegenCliArgs | undefined {
   const designIrPath = argValue(argv, '--design-ir');
   const outDir = argValue(argv, '--out');
   if (!specDir || !designIrPath || !outDir) return undefined;
-  return { command: 'codegen', specDir, designIrPath, outDir };
+  const args: CodegenCliArgs = { command: 'codegen', specDir, designIrPath, outDir };
+  const assetsDir = argValue(argv, '--assets');
+  if (assetsDir !== undefined) args.assetsDir = assetsDir;
+  return args;
 }
 
 export function parseApproveArgs(argv: string[]): ApproveCliArgs | undefined {
@@ -558,12 +536,45 @@ export function planApproval(
  * Managed root files (package.json / README.md / interaction-coverage.md) are
  * overwritten by the plan. Unmanaged sibling files are left untouched.
  */
-export async function writeCodegenPackage(outDir: string, plan: CodegenFilePlan): Promise<void> {
+export async function writeCodegenPackage(
+  outDir: string,
+  plan: CodegenFilePlan,
+  options: { assetsDir?: string } = {},
+): Promise<void> {
+  // Preflight every referenced asset source BEFORE mutating outDir, so a missing
+  // or unreadable asset fails the run without leaving a half-written package.
+  if (plan.assets.length > 0 && options.assetsDir === undefined) {
+    throw new Error('codegen: --assets <dir> is required for generated asset references');
+  }
+  const assetCopies: { source: string; outputPath: string }[] = [];
+  for (const asset of plan.assets) {
+    const source = join(options.assetsDir!, asset.sourceFileName);
+    try {
+      await access(source, constants.R_OK);
+    } catch {
+      throw new Error(
+        `codegen: asset source missing or unreadable for ${asset.assetRef}: ${source}`,
+      );
+    }
+    const stats = await lstat(source);
+    if (!stats.isFile()) {
+      throw new Error(`codegen: asset source is not a file for ${asset.assetRef}: ${source}`);
+    }
+    assetCopies.push({ source, outputPath: asset.outputPath });
+  }
+
+  // Mutations only after preflight passes. `rm(src)` also clears stale assets,
+  // since copied bytes live under `src/assets/`.
   await rm(join(outDir, 'src'), { recursive: true, force: true });
   for (const file of plan.files) {
     const dest = join(outDir, file.path);
     await mkdir(dirname(dest), { recursive: true });
     await writeFile(dest, file.content, 'utf8');
+  }
+  for (const { source, outputPath } of assetCopies) {
+    const dest = join(outDir, outputPath);
+    await mkdir(dirname(dest), { recursive: true });
+    await copyFile(source, dest);
   }
 }
 
@@ -588,10 +599,11 @@ async function runCodegenCommand(): Promise<void> {
     manifest: await readJson(specFile(MANIFEST_FILENAME)),
   });
 
-  await writeCodegenPackage(args.outDir, plan);
+  await writeCodegenPackage(args.outDir, plan, { assetsDir: args.assetsDir });
 
   console.log(`out: ${args.outDir}`);
   console.log(`files: ${plan.files.length}`);
+  console.log(`assets: ${plan.assets.length}`);
   for (const warning of plan.warnings) console.log(`warning: ${warning}`);
 }
 

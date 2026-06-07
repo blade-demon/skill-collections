@@ -1,22 +1,27 @@
+import { mkdtemp, rm } from 'node:fs/promises';
 import { readdirSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { planCodegenFiles } from '../cli.js';
+import { planCodegenFiles, writeCodegenPackage } from '../cli.js';
 
 /**
- * Stage 6-PR-4 golden. Drives a committed APPROVED, no-asset `design-spec/`
- * (produced by the real `contract` → `approve` CLIs) through `planCodegenFiles`
- * and asserts the generated React package reproduces the committed expected
- * bytes exactly, and is byte-stable across runs.
+ * Stage 6-PR-4 golden. Drives a committed APPROVED, asset-bearing `design-spec/`
+ * (produced by the real `contract` → `approve` CLIs) through `planCodegenFiles`,
+ * materializes the package with `writeCodegenPackage` (which copies real bytes
+ * from the committed `--assets` dir), and asserts it reproduces every committed
+ * file — text byte-for-byte and binary buffer-for-buffer — and is stable.
  *
  * The expected package lives under `fixtures/apps/react-vite/src/golden` (NOT
  * beside this test): it is the single committed copy, also compiled by
  * `build:fixtures` (`tsc -b && vite build`) so the golden is proven
- * tsc/build-clean, not just unit-tested. Keeping one copy means the
- * byte-compare here and the build proof cannot drift apart.
+ * tsc/build-clean, not just unit-tested. The two media nodes reuse one assetRef,
+ * so the deduped copy plan emits exactly one PNG under `src/assets/`.
  */
 const inputDir = fileURLToPath(new URL('./fixtures/codegen-golden', import.meta.url));
+const assetsDir = join(inputDir, 'assets');
 const expectedDir = fileURLToPath(
   new URL('../../../../../fixtures/apps/react-vite/src/golden', import.meta.url),
 );
@@ -47,22 +52,40 @@ function committedPaths(dir: string, prefix = ''): string[] {
   return out.sort();
 }
 
-describe('codegen golden — approved no-asset design-spec/ → React package', () => {
-  it('reproduces every committed package file byte-for-byte', () => {
-    const { files } = planCodegenFiles(goldenInput());
+const isBinaryPath = (rel: string): boolean => rel.startsWith('src/assets/');
 
-    // The generated set and the committed set must match exactly (no stale or
-    // missing committed files).
-    expect(files.map((f) => f.path).sort()).toEqual(committedPaths(expectedDir));
+describe('codegen golden — approved asset-bearing design-spec/ → React package', () => {
+  it('materializes a package matching every committed file (text + binary)', async () => {
+    const plan = planCodegenFiles(goldenInput());
+    // Two media nodes, one shared assetRef → one required copy-plan entry.
+    expect(plan.assets).toHaveLength(1);
+    expect(plan.assets[0]?.required).toBe(true);
 
-    for (const file of files) {
-      expect(file.content, `content drift in ${file.path}`).toBe(
-        readFileSync(`${expectedDir}/${file.path}`, 'utf8'),
-      );
+    const tempDir = await mkdtemp(join(tmpdir(), 'codegen-golden-'));
+    try {
+      await writeCodegenPackage(tempDir, plan, { assetsDir });
+
+      const committed = committedPaths(expectedDir);
+      expect(committedPaths(tempDir)).toEqual(committed);
+
+      for (const rel of committed) {
+        if (isBinaryPath(rel)) {
+          expect(
+            readFileSync(join(tempDir, rel)).equals(readFileSync(join(expectedDir, rel))),
+            `binary drift in ${rel}`,
+          ).toBe(true);
+        } else {
+          expect(readFileSync(join(tempDir, rel), 'utf8'), `content drift in ${rel}`).toBe(
+            readFileSync(join(expectedDir, rel), 'utf8'),
+          );
+        }
+      }
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
     }
   });
 
-  it('is byte-identical across runs and emits no warnings (no-asset)', () => {
+  it('is byte-identical across runs and emits no warnings', () => {
     const a = planCodegenFiles(goldenInput());
     const b = planCodegenFiles(goldenInput());
     expect(a).toEqual(b);

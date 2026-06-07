@@ -25,6 +25,7 @@ import {
   makeListView,
   makeMultiKindRepeatParentView,
   makeSymbolHeavyView,
+  collectImageAssets,
   type Stage5aFixture,
 } from '../../semantic/__tests__/fixtures';
 
@@ -99,7 +100,7 @@ function wrapDesignIR(root: VisualNode, rootName: string): DesignIR {
     visual: {
       artboard: { width: root.layout.width, height: root.layout.height },
       root,
-      assets: [],
+      assets: collectImageAssets(root),
     },
     semantic: { candidates: [] },
     interaction: { status: 'draft' },

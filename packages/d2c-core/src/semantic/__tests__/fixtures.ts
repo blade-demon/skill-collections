@@ -7,7 +7,7 @@
  * `visualView.generatedFrom.designIrHash` already matches the IR —
  * so callers can pass the pair straight to `deriveSemanticView`.
  */
-import type { DesignIR, VisualNode, VisualView } from '../../ir';
+import type { AssetEntry, DesignIR, VisualNode, VisualView } from '../../ir';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 
 function source(nodeId: string, originalType = 'group'): VisualNode['source'] {
@@ -118,6 +118,28 @@ function symbolInstance(
   };
 }
 
+/**
+ * Collect one AssetEntry per distinct image-node assetRef so the design-ir's
+ * asset catalog matches the nodes that reference it (a real design-ir is never
+ * inconsistent this way). Codegen needs these to resolve media to package files.
+ */
+export function collectImageAssets(root: VisualNode): AssetEntry[] {
+  const byId = new Map<string, AssetEntry>();
+  const visit = (node: VisualNode): void => {
+    if (node.kind === 'image' && node.assetRef !== undefined && !byId.has(node.assetRef)) {
+      byId.set(node.assetRef, {
+        id: node.assetRef,
+        kind: 'image',
+        ref: `${node.assetRef}.png`,
+        originalPath: `${node.assetRef}.png`,
+      });
+    }
+    for (const child of node.children) visit(child);
+  };
+  visit(root);
+  return [...byId.values()];
+}
+
 function wrapDesignIR(
   root: VisualNode,
   rootName: string,
@@ -133,7 +155,7 @@ function wrapDesignIR(
     visual: {
       artboard: { width: root.layout.width, height: root.layout.height },
       root,
-      assets: [],
+      assets: collectImageAssets(root),
     },
     semantic: { candidates },
     interaction: { status: 'draft' },

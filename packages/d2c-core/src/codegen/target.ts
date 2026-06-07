@@ -16,9 +16,28 @@ export interface CodegenFile {
   content: string;
 }
 
+/**
+ * One binary asset to copy into the generated package. The pure generator emits
+ * these as data only (no bytes, no IO); the CLI resolves `sourceFileName` inside
+ * its `--assets` dir and copies bytes to `outputPath`. See
+ * docs/superpowers/plans/2026-06-06-react-codegen-asset-pipeline.md.
+ */
+export interface CodegenAssetFile {
+  /** Stable id of the visual asset (equals the media node's `assetRef`). */
+  assetRef: string;
+  /** Source file name inside the extract `--assets` dir (basename, case kept). */
+  sourceFileName: string;
+  /** Package-relative destination, e.g. `src/assets/asset-<hash>.png`. */
+  outputPath: string;
+  /** OR of `required` across every planned node that reuses this asset. */
+  required: boolean;
+}
+
 export interface CodegenFilePlan {
   /** Sorted by `path`, with unique paths. */
   files: CodegenFile[];
+  /** Sorted by `outputPath`, with one entry per unique `assetRef`. */
+  assets: CodegenAssetFile[];
   warnings: string[];
 }
 

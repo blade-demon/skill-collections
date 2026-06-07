@@ -119,6 +119,40 @@ describe('generateComponentPackage — React content', () => {
     expect(tsx).toContain("textCaption ?? 'Caption'");
   });
 
+  it('emits real media references and a deterministic copy plan', () => {
+    const input = approvedMixedTextMediaInput();
+    const plan = generateComponentPackage(input);
+    const css = plan.files
+      .filter((file) => file.path.endsWith('.module.css'))
+      .map((file) => file.content)
+      .join('\n');
+
+    // Two distinct assetRefs (hero, avatar) → two required copy-plan entries.
+    expect(plan.assets).toHaveLength(2);
+    expect(plan.assets.every((asset) => asset.required)).toBe(true);
+    expect(plan.assets.map((asset) => asset.outputPath)).toEqual(
+      [...plan.assets.map((asset) => asset.outputPath)].sort(),
+    );
+
+    // Media CSS references the CLI-copied file with preview-equivalent `contain`,
+    // and the gray/dashed placeholder is gone.
+    expect(css).toMatch(/background-image: url\("\.\.\/assets\/asset-[0-9a-f]{12}\.png"\);/);
+    expect(css).toContain('background-size: contain;');
+    expect(css).not.toContain('border: 1px dashed rgba(0, 0, 0, 0.2);');
+
+    // The post-v1 "not emitted yet" warning is removed.
+    expect(plan.warnings.some((w) => /planned asset.*not emitted/i.test(w))).toBe(false);
+  });
+
+  it('throws when a required media asset is missing its visual-view entry', () => {
+    const input = approvedMixedTextMediaInput();
+    const stripped: CodegenInput = {
+      ...input,
+      visualView: { ...input.visualView, body: { ...input.visualView.body, assets: [] } },
+    };
+    expect(() => generateComponentPackage(stripped)).toThrow(/required asset.*asset-/i);
+  });
+
   it('preserves core visual styling for a styled no-asset card', () => {
     const input = approvedStyledCardInput();
     const name = exportNameFor(input, input.componentPlan.body.rootComponent.id);

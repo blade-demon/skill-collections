@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   stableJson,
   stableSha256,
+  type CodegenFilePlan,
   type DesignIR,
   type RunContractInput,
   type VisualNode,
@@ -136,6 +137,29 @@ describe('parseCodegenArgs', () => {
       command: 'codegen',
       specDir: '/tmp/out/design-spec',
       designIrPath: '/tmp/out/ir/design-ir.json',
+      outDir: '/tmp/pkg',
+    });
+  });
+
+  it('parses --assets into assetsDir', () => {
+    expect(
+      parseCodegenArgs(
+        codegenArgv([
+          '--spec',
+          '/tmp/out/design-spec',
+          '--design-ir',
+          '/tmp/out/ir/design-ir.json',
+          '--assets',
+          '/tmp/out/ir/assets',
+          '--out',
+          '/tmp/pkg',
+        ]),
+      ),
+    ).toEqual({
+      command: 'codegen',
+      specDir: '/tmp/out/design-spec',
+      designIrPath: '/tmp/out/ir/design-ir.json',
+      assetsDir: '/tmp/out/ir/assets',
       outDir: '/tmp/pkg',
     });
   });
@@ -318,6 +342,86 @@ describe('codegen writes to disk (writer boundary)', () => {
       await expect(readFile(join(dir, 'package.json'), 'utf8')).resolves.toContain('"d2c"');
     } finally {
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('codegen asset copying (writer boundary)', () => {
+  const OUTPUT_PATH = 'src/assets/asset-abc123def456.png';
+  const planWithAsset = (): CodegenFilePlan => ({
+    files: [{ path: 'src/index.ts', content: 'export {};\n' }],
+    assets: [
+      { assetRef: 'asset-x', sourceFileName: 'x.png', outputPath: OUTPUT_PATH, required: true },
+    ],
+    warnings: [],
+  });
+
+  it('requires --assets when the plan carries asset references', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'codegen-'));
+    try {
+      await expect(writeCodegenPackage(dir, planWithAsset())).rejects.toThrow(/--assets/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('copies exact source bytes into the package and is byte-stable on re-run', async () => {
+    const assetsDir = await mkdtemp(join(tmpdir(), 'src-'));
+    const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+    await writeFile(join(assetsDir, 'x.png'), bytes);
+
+    const writeOnce = async (): Promise<Buffer> => {
+      const dir = await mkdtemp(join(tmpdir(), 'codegen-'));
+      await writeCodegenPackage(dir, planWithAsset(), { assetsDir });
+      const out = await readFile(join(dir, OUTPUT_PATH));
+      await rm(dir, { recursive: true, force: true });
+      return out;
+    };
+
+    try {
+      const a = await writeOnce();
+      const b = await writeOnce();
+      expect(a.equals(bytes)).toBe(true);
+      expect(a.equals(b)).toBe(true);
+    } finally {
+      await rm(assetsDir, { recursive: true, force: true });
+    }
+  });
+
+  it('preflights sources before touching outDir (no half-written package)', async () => {
+    const assetsDir = await mkdtemp(join(tmpdir(), 'src-')); // source x.png intentionally absent
+    const dir = await mkdtemp(join(tmpdir(), 'codegen-'));
+    try {
+      await mkdir(join(dir, 'src'), { recursive: true });
+      await writeFile(join(dir, 'src', 'sentinel.txt'), 'keep', 'utf8');
+
+      await expect(writeCodegenPackage(dir, planWithAsset(), { assetsDir })).rejects.toThrow(
+        /asset source missing/i,
+      );
+
+      // Preflight failed before rm(src): the prior tree is untouched.
+      await expect(readFile(join(dir, 'src', 'sentinel.txt'), 'utf8')).resolves.toBe('keep');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+      await rm(assetsDir, { recursive: true, force: true });
+    }
+  });
+
+  it('removes stale src/assets from a previous run', async () => {
+    const assetsDir = await mkdtemp(join(tmpdir(), 'src-'));
+    await writeFile(join(assetsDir, 'x.png'), Buffer.from([1, 2, 3]));
+    const dir = await mkdtemp(join(tmpdir(), 'codegen-'));
+    try {
+      await mkdir(join(dir, 'src', 'assets'), { recursive: true });
+      await writeFile(join(dir, 'src', 'assets', 'old.png'), Buffer.from([9, 9, 9]));
+
+      await writeCodegenPackage(dir, planWithAsset(), { assetsDir });
+
+      await expect(readFile(join(dir, 'src', 'assets', 'old.png'))).rejects.toThrow();
+      await expect(readFile(join(dir, OUTPUT_PATH))).resolves.toHaveLength(3);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+      await rm(assetsDir, { recursive: true, force: true });
     }
   });
 });
