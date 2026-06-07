@@ -1,0 +1,547 @@
+{
+  "body": {
+    "componentCandidates": [
+      {
+        "boundary": "visual-region",
+        "confidence": "high",
+        "evidence": [
+          {
+            "candidateName": "StackCard",
+            "kind": "design-ir-candidate",
+            "nodeId": "node-stack-component",
+            "reason": "design-ir.semantic.candidates: layout projection fixture component boundary"
+          }
+        ],
+        "id": "cc_be4214f9166a",
+        "rootSemanticNodeId": "s_1dafd30d1c4f",
+        "suggestedName": "StackCard"
+      },
+      {
+        "boundary": "repeat-pattern",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-container",
+            "reason": "repeat-pattern boundary, 3 'region' items"
+          }
+        ],
+        "id": "cc_d00cc055762c",
+        "rootSemanticNodeId": "s_71dc448f7c85",
+        "suggestedName": "InlineContainerItem"
+      }
+    ],
+    "layoutCandidates": [
+      {
+        "caveats": [
+          "spacing similarity 1.00"
+        ],
+        "confidence": "medium",
+        "constraints": [],
+        "id": "lc_21b098c8e79c",
+        "kind": "stack",
+        "semanticNodeId": "s_1dafd30d1c4f"
+      },
+      {
+        "caveats": [
+          "spacing similarity 1.00"
+        ],
+        "confidence": "medium",
+        "constraints": [],
+        "id": "lc_7361b7857f1d",
+        "kind": "inline",
+        "semanticNodeId": "s_71dc448f7c85"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "lc_3f866fddc701",
+        "kind": "absolute",
+        "semanticNodeId": "s_53b0608f21b3"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "lc_14c28fd41528",
+        "kind": "absolute",
+        "semanticNodeId": "s_7f5f148175a7"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "lc_00abc6832775",
+        "kind": "absolute",
+        "semanticNodeId": "s_223624e3b53d"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "lc_3efe9dfb15f8",
+        "kind": "absolute",
+        "semanticNodeId": "s_e0a46c68cb69"
+      }
+    ],
+    "nodes": [
+      {
+        "bounds": {
+          "height": 260,
+          "width": 320,
+          "x": 0,
+          "y": 0
+        },
+        "childIds": [
+          "s_1dafd30d1c4f",
+          "s_71dc448f7c85"
+        ],
+        "confidence": "high",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-layout-screen",
+            "reason": "visual-view root"
+          }
+        ],
+        "id": "s_53b0608f21b3",
+        "kind": "screen",
+        "name": "LayoutScreen",
+        "primaryVisualNodeId": "node-layout-screen",
+        "source": {
+          "nodeIds": [
+            "layout-screen"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-layout-screen"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 100,
+          "width": 260,
+          "x": 20,
+          "y": 20
+        },
+        "childIds": [
+          "s_1210cf518bd4",
+          "s_43708d961d08",
+          "s_ba99d38878f4"
+        ],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-stack-component",
+            "reason": "frame grouping"
+          },
+          {
+            "candidateName": "StackCard",
+            "kind": "design-ir-candidate",
+            "nodeId": "node-stack-component",
+            "reason": "design-ir.semantic.candidates: layout projection fixture component boundary"
+          }
+        ],
+        "id": "s_1dafd30d1c4f",
+        "kind": "region",
+        "name": "StackCard",
+        "parentId": "s_53b0608f21b3",
+        "primaryVisualNodeId": "node-stack-component",
+        "source": {
+          "nodeIds": [
+            "stack-component"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-stack-component"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 20,
+          "width": 80,
+          "x": 12,
+          "y": 8
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-stack-item-a",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_1210cf518bd4",
+        "kind": "decorative",
+        "name": "Shape-stack-item-a",
+        "parentId": "s_1dafd30d1c4f",
+        "primaryVisualNodeId": "node-stack-item-a",
+        "source": {
+          "nodeIds": [
+            "stack-item-a"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-stack-item-a"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 20,
+          "width": 80,
+          "x": 12,
+          "y": 38
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-stack-item-b",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_43708d961d08",
+        "kind": "decorative",
+        "name": "Shape-stack-item-b",
+        "parentId": "s_1dafd30d1c4f",
+        "primaryVisualNodeId": "node-stack-item-b",
+        "source": {
+          "nodeIds": [
+            "stack-item-b"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-stack-item-b"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 20,
+          "width": 80,
+          "x": 12,
+          "y": 68
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-stack-item-c",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_ba99d38878f4",
+        "kind": "decorative",
+        "name": "Shape-stack-item-c",
+        "parentId": "s_1dafd30d1c4f",
+        "primaryVisualNodeId": "node-stack-item-c",
+        "source": {
+          "nodeIds": [
+            "stack-item-c"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-stack-item-c"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 80,
+          "width": 260,
+          "x": 20,
+          "y": 140
+        },
+        "childIds": [
+          "s_7f5f148175a7",
+          "s_223624e3b53d",
+          "s_e0a46c68cb69"
+        ],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-container",
+            "reason": "frame grouping"
+          }
+        ],
+        "id": "s_71dc448f7c85",
+        "kind": "region",
+        "name": "InlineContainer",
+        "parentId": "s_53b0608f21b3",
+        "primaryVisualNodeId": "node-inline-container",
+        "source": {
+          "nodeIds": [
+            "inline-container"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-container"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 50,
+          "width": 60,
+          "x": 10,
+          "y": 10
+        },
+        "childIds": [
+          "s_6810421fe742"
+        ],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-item-a",
+            "reason": "frame grouping"
+          }
+        ],
+        "id": "s_7f5f148175a7",
+        "kind": "region",
+        "name": "InlineItemA",
+        "parentId": "s_71dc448f7c85",
+        "primaryVisualNodeId": "node-inline-item-a",
+        "source": {
+          "nodeIds": [
+            "inline-item-a"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-item-a"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 10,
+          "width": 20,
+          "x": 4,
+          "y": 5
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-nested-a",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_6810421fe742",
+        "kind": "decorative",
+        "name": "Shape-inline-nested-a",
+        "parentId": "s_7f5f148175a7",
+        "primaryVisualNodeId": "node-inline-nested-a",
+        "source": {
+          "nodeIds": [
+            "inline-nested-a"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-nested-a"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 50,
+          "width": 60,
+          "x": 80,
+          "y": 10
+        },
+        "childIds": [
+          "s_013c478e1c63"
+        ],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-item-b",
+            "reason": "frame grouping"
+          }
+        ],
+        "id": "s_223624e3b53d",
+        "kind": "region",
+        "name": "InlineItemB",
+        "parentId": "s_71dc448f7c85",
+        "primaryVisualNodeId": "node-inline-item-b",
+        "source": {
+          "nodeIds": [
+            "inline-item-b"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-item-b"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 10,
+          "width": 20,
+          "x": 4,
+          "y": 5
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-nested-b",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_013c478e1c63",
+        "kind": "decorative",
+        "name": "Shape-inline-nested-b",
+        "parentId": "s_223624e3b53d",
+        "primaryVisualNodeId": "node-inline-nested-b",
+        "source": {
+          "nodeIds": [
+            "inline-nested-b"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-nested-b"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 50,
+          "width": 60,
+          "x": 150,
+          "y": 10
+        },
+        "childIds": [
+          "s_66436278690d"
+        ],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-item-c",
+            "reason": "frame grouping"
+          }
+        ],
+        "id": "s_e0a46c68cb69",
+        "kind": "region",
+        "name": "InlineItemC",
+        "parentId": "s_71dc448f7c85",
+        "primaryVisualNodeId": "node-inline-item-c",
+        "source": {
+          "nodeIds": [
+            "inline-item-c"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-item-c"
+        ]
+      },
+      {
+        "bounds": {
+          "height": 10,
+          "width": 20,
+          "x": 4,
+          "y": 5
+        },
+        "childIds": [],
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-nested-c",
+            "reason": "leaf vector/shape with no text or asset"
+          }
+        ],
+        "id": "s_66436278690d",
+        "kind": "decorative",
+        "name": "Shape-inline-nested-c",
+        "parentId": "s_e0a46c68cb69",
+        "primaryVisualNodeId": "node-inline-nested-c",
+        "source": {
+          "nodeIds": [
+            "inline-nested-c"
+          ],
+          "provider": "test"
+        },
+        "visualNodeIds": [
+          "node-inline-nested-c"
+        ]
+      }
+    ],
+    "repeatedPatterns": [
+      {
+        "axis": "y",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-stack-component",
+            "reason": "3 same-kind 'decorative' siblings on y axis"
+          }
+        ],
+        "id": "rp_cd529ccdde7b",
+        "itemCount": 3,
+        "itemSemanticNodeIds": [
+          "s_1210cf518bd4",
+          "s_43708d961d08",
+          "s_ba99d38878f4"
+        ],
+        "similarity": 1
+      },
+      {
+        "axis": "x",
+        "confidence": "medium",
+        "evidence": [
+          {
+            "kind": "visual-node",
+            "nodeId": "node-inline-container",
+            "reason": "3 same-kind 'region' siblings on x axis"
+          }
+        ],
+        "id": "rp_7145a5132adb",
+        "itemCount": 3,
+        "itemSemanticNodeIds": [
+          "s_7f5f148175a7",
+          "s_223624e3b53d",
+          "s_e0a46c68cb69"
+        ],
+        "similarity": 1
+      }
+    ],
+    "screen": {
+      "name": "LayoutScreen",
+      "semanticNodeId": "s_53b0608f21b3"
+    },
+    "warnings": [
+      {
+        "code": "repeated-pattern-not-promoted",
+        "message": "parent s_1dafd30d1c4f: repeat-pattern of 3 'decorative' items not promoted to ComponentCandidate (kind not in {region, component, repeated-item})",
+        "severity": "info",
+        "sourceNodeId": "s_1dafd30d1c4f"
+      }
+    ]
+  },
+  "generatedFrom": {
+    "designIrHash": "c579f34ee8650c6e060126acf71f572189c288e048a827640219d8b814fb63ac",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "sourceRef": {
+      "documentId": "layout-doc",
+      "fileName": "layout-fixture.sketch"
+    },
+    "visualViewHash": "e547b2a06655a1ceed0e9f31f6ab1120a73cc8e08972a4d57e2714fa436feb1c"
+  },
+  "kind": "semantic-view"
+}
