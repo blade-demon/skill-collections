@@ -1,0 +1,153 @@
+name: Nightly Doc Mission
+
+on:
+  schedule:
+    - cron: '0 22 * * *' # UTC 22:00 = 北京时间 06:00，按需调整
+  workflow_dispatch: # 保留手动触发，方便首次测试
+
+jobs:
+  doc-mission:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Run Claude Code Doc Mission
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: 'Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(node:*),Bash(npx:*),View,GlobTool,GrepTool,BatchTool,Edit,Write'
+          claude_args: '--max-turns 80'
+          prompt: |
+            # Autonomous Documentation & Annotation Mission
+
+            ## 角色与授权
+            你是该项目的长期维护者 / Tech Lead。本次为无人值守的夜间自治任务。
+            - 持续执行直到创建 PR，或遇到硬阻塞。
+            - 不中途提问、不停下汇报进度。
+            - 遇到歧义时：按「决策原则」选默认方案，把该假设记入 DECISIONS.md，继续执行。
+            - 即使未 100% 完成，也必须产出一个标注了完成度的 PR（部分成果 > 空手而归）。
+
+            ## 全局约束（硬性，优先于一切）
+            1. 只解释系统，不重写系统：不重构、不改行为、不改公共 API、不引入新依赖。
+            2. 源码改动仅限注释：每个被改文件的 diff 只能包含注释行的增删，非注释行改动数 = 0。
+            3. 跳过文件：node_modules、dist/build/out/coverage、*.min.*、生成代码、被 .gitignore 命中的文件、lockfile。
+            4. 只修本次 PR 引入的问题：预先存在的 lint/type/test 失败 → 记入 PR 的 Risks，不修。
+            5. 语言：文档与注释一律简体中文；代码标识符保持原文。
+
+            ## 决策原则（多方案时）
+            优先级：可读性 > 文档完整性 > 注释质量 > 最小改动。
+            所有猜测性判断写入 DECISIONS.md，格式：决策 / 备选 / 依据。
+
+            ---
+
+            ## Phase 0：环境探测与基线（必须最先执行）
+            1. 探测包管理器：pnpm-lock.yaml→pnpm；yarn.lock→yarn；bun.lockb→bun；否则 npm。后续所有命令使用探测到的 PM。
+            2. 探测 monorepo 工具：检查 pnpm-workspace.yaml / turbo.json / nx.json / lerna.json / rush.json / package.json 的 workspaces 字段。
+            3. 读取真实脚本名：从 root package.json 的 scripts 中提取真实的 lint / typecheck / test / build 命令（不要假设它叫 lint，可能是 check:types、test:ci 等）。
+            4. 建立基线：在任何改动前运行一次 install + lint + typecheck + test，记录哪些已经是失败状态（用于区分「我引入的」与「原有的」）。若 install 失败且无法解决 → 进入「硬阻塞兜底」。
+            5. 确认产出通道：检查 git 远程是否可写、gh CLI 是否可用（决定 Phase 6 走主路径还是兜底）。
+
+            ---
+
+            ## Phase 1：仓库探索（带上下文预算）
+            策略：先广后深，禁止全量精读。
+            1. 先建地图：限定深度的目录树、所有 package.json、workspace glob、tsconfig references。
+            2. 用工具推依赖图（而非肉眼）：优先 npx madge 或 dependency-cruiser（若可用），生成 package/模块依赖并存为证据文件。
+            3. 按信息密度排序，只深读高价值文件：CLI 入口（bin 字段指向）、command 注册表、核心 service、Workspace/PackageGraph/TaskRunner/Plugin/ConfigLoader/Logger/ErrorHandler。
+            4. 大包/重复模式只抽样代表性文件，不逐一精读。
+
+            扫描清单（存在才读）：package.json / pnpm-workspace / turbo / nx / lerna / rush / tsconfig* / README / docs / packages|apps|tools|scripts/*
+
+            需建立的认知模型：monorepo 结构、依赖图、command 注册、service/task 调用链、workspace 发现机制、package graph 构建、plugin 机制、配置加载、错误处理、日志机制。
+
+            ---
+
+            ## Phase 2：架构分析
+            推导以下维度，每个结论标注证据（文件路径:行号 或 工具输出）；无证据的推断显式标记为「假设」。
+
+            - 系统目标：解决什么问题？
+            - 架构分层：CLI → Command → Action → Service → Core → Infrastructure
+            - 核心领域模型：Workspace / Project / Package / Task / Runner / Plugin / Config / Context 等
+            - 设计思想：为什么这样设计？解决什么问题？与哪些开源项目理念相似（Turbo / Nx / Rush / Angular CLI / NestJS / VSCode）？
+            - 技术债：重复代码、不合理抽象、循环依赖、扩展瓶颈。必须以工具输出或具体文件引用为依据，禁止凭空断言。
+
+            ---
+
+            ## Phase 3：文档生成（写入 docs/）
+            architecture.md / domain-model.md / package-dependency.md / command-flow.md / onboarding.md / design-philosophy.md / review-report.md
+
+            要求：
+            - 图文并茂，优先 Mermaid；图必须语法可渲染、保持简单（以 flowchart/graph/sequence 为主），生成后自查语法。
+            - onboarding.md 必须可落地执行：如何起项目、如何跑测试、新增一个 command 的最短路径。
+            - 所有架构断言引用真实路径。
+
+            ---
+
+            ## Phase 4：源码注释增强
+            范围：仅 CLI 入口 / Command / Action / Service / Core / Workspace / PackageGraph / Plugin / TaskRunner / ConfigLoader / Logger / ErrorHandler 中的高价值节点。
+
+            规范：全部中文；解释 WHY 而非 WHAT。
+
+            优秀示例：
+            ```ts
+            /**
+             * 构建 Package 依赖图。
+             *
+             * 该依赖图是整个 Task 调度系统的基础。
+             * build、test、lint 命令均依赖该图确定执行顺序。
+             *
+             * 设计目标：通过拓扑排序避免依赖包尚未构建时提前执行。
+             */
+            ```
+            禁止：// 获取配置  // 遍历数组  // 调用函数  这类无价值注释。
+
+            安全：遵守全局约束 2/3。每完成一个 package 的注释，立即对该范围跑 typecheck，确认 0 回归再继续。
+
+            ---
+
+            ## Phase 5：质量检查（增量 + 终检）
+            1. 增量：每批注释后跑 typecheck。
+            2. 终检：用 Phase 0 探到的真实命令跑 install / lint / typecheck / test。
+            3. 对比基线：只修复「相对 Phase 0 新增的失败」；原有失败记入 PR 的 Risks。
+            4. 若新增失败无法修复 → 回退该处注释，而非修改逻辑。
+
+            ---
+
+            ## Phase 6：变更控制与 PR
+            - 分支：docs/architecture-analysis-and-annotations（已存在则复用/续作）。禁止提交到 main / master / develop。
+            - Commit（允许多个）：
+              - docs: add architecture documentation
+              - docs: add onboarding guide
+              - docs: add design philosophy analysis
+              - docs: enhance source code annotations
+            - PR：
+              - Title：docs: architecture analysis and source code annotation enhancement
+              - Body 必含：Summary / Architecture Findings / Design Philosophy / Documentation Added / Source Annotation Coverage / Risks（含原有失败、未完成项、DECISIONS.md 假设清单引用）/ Future Improvements / Completion Status（完成度 % 与未完成原因）
+            - 兜底：
+              - gh 不可用或无远程写权限 → push 分支 + 把 PR body 写入 PR.md。
+              - 无法 push → 生成 changes.patch + PR.md 留在工作区，并在最终输出中说明。
+
+            ## 硬阻塞兜底
+            若 install 始终失败 / 仓库为空 / 非 TS-Node 项目：停止深入，产出 BLOCKERS.md 说明阻塞点与已完成的探索，提交到分支后结束。
+
+            ---
+
+            任务结束条件：PR 创建成功（或兜底产物就绪）后停止执行。
+
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
