@@ -14,6 +14,19 @@ test('visual harness page mounts the generated golden package in a controlled sc
   assert.match(css, /text-align: center/)
 })
 
+test('layout visual harness page mounts the flex golden package in the same controlled scope', async () => {
+  const html = await readFile(new URL('../visual-harness-layout.html', import.meta.url), 'utf8')
+  const source = await readFile(
+    new URL('../src/visual-harness/main-layout.tsx', import.meta.url),
+    'utf8',
+  )
+
+  assert.match(html, /src="\/src\/visual-harness\/main-layout\.tsx"/)
+  assert.match(source, /from ['"]\.\.\/golden-layout\/src['"]/)
+  assert.match(source, /data-d2c-harness="candidate"/)
+  assert.match(source, /visual-harness__hostile-scope/)
+})
+
 test('the committed golden package references exactly one copied asset', async () => {
   const css = await readFile(
     new URL('../src/golden/src/LaunchPanel/LaunchPanel.module.css', import.meta.url),

@@ -1,6 +1,7 @@
 import type { PreviewAsset } from '@skill-collections/d2c-core';
 import { describe, expect, it } from 'vitest';
 
+import * as harnessModule from '../visual-harness/codegen-golden.js';
 import {
   assertComparableMetrics,
   deriveHarnessNodesFromSemanticView,
@@ -157,6 +158,26 @@ const harnessNodes = {
   textNodeIds: new Set(['node-title']),
   mediaNodeIds: new Set(['node-logo']),
 };
+
+function layoutMetric(nodeId: string, rect: NodeMetrics['rect']): NodeMetrics {
+  return {
+    nodeId,
+    present: true,
+    rect,
+    styles: {
+      textAlign: 'left',
+      fontSize: '16px',
+      color: 'rgb(17, 24, 39)',
+      backgroundColor: 'rgba(0, 0, 0, 0)',
+      borderColor: 'rgb(17, 24, 39)',
+      borderWidth: '0px',
+      borderRadius: '0px',
+      boxShadow: 'none',
+    },
+    backgroundImage: 'none',
+    backgroundImageLoaded: false,
+  };
+}
 
 function missingMetric(nodeId: string): NodeMetrics {
   return {
@@ -345,5 +366,106 @@ describe('codegen visual harness helpers', () => {
     expect(result).not.toContain('url("./assets/launch-panel.png")');
     expect(result).toContain('background-size: contain;');
     expect(result).toContain('color: #0f172a;');
+  });
+
+  it('compares flex containers, flow children and nested descendants within 0.5px', () => {
+    const layoutNodes = {
+      nodeIds: [
+        'node-layout-screen',
+        'node-inline-container',
+        'node-inline-item-a',
+        'node-inline-nested-a',
+        'node-inline-item-b',
+        'node-inline-nested-b',
+      ],
+      rootNodeId: 'node-layout-screen',
+      textNodeIds: new Set<string>(),
+      mediaNodeIds: new Set<string>(),
+    };
+    const metrics = [
+      layoutMetric('node-layout-screen', { x: 24, y: 24, width: 320, height: 260 }),
+      layoutMetric('node-inline-container', { x: 44, y: 164, width: 260, height: 80 }),
+      layoutMetric('node-inline-item-a', { x: 54, y: 174, width: 60, height: 50 }),
+      layoutMetric('node-inline-nested-a', { x: 58, y: 179, width: 20, height: 10 }),
+      layoutMetric('node-inline-item-b', { x: 124, y: 174, width: 60, height: 50 }),
+      layoutMetric('node-inline-nested-b', { x: 128, y: 179, width: 20, height: 10 }),
+    ];
+
+    expect(assertComparableMetrics(metrics, structuredClone(metrics), layoutNodes)).toEqual([]);
+
+    const drifted = structuredClone(metrics);
+    drifted[4]!.rect.x += 6;
+    drifted[5]!.rect.x += 6;
+    const failures = assertComparableMetrics(metrics, drifted, layoutNodes);
+    expect(failures).toContain('node-inline-item-b rect relativeX mismatch: expected 100, got 106');
+    expect(failures).toContain(
+      'node-inline-nested-b rect relativeX mismatch: expected 104, got 110',
+    );
+  });
+
+  it('parses default and custom visual harness CLI arguments', () => {
+    const exports = harnessModule as unknown as Record<string, unknown>;
+    expect(typeof exports.parseVisualHarnessArgs).toBe('function');
+    if (typeof exports.parseVisualHarnessArgs !== 'function') return;
+    const parse = exports.parseVisualHarnessArgs as (
+      argv: string[],
+    ) => { fixtureDir: string; candidateUrl: string; outDir: string } | undefined;
+
+    const defaults = parse([
+      'node',
+      'codegen-golden.ts',
+      '--candidate-url',
+      'http://127.0.0.1:5179/visual-harness.html',
+    ]);
+    expect(defaults?.candidateUrl).toBe('http://127.0.0.1:5179/visual-harness.html');
+    expect(defaults?.fixtureDir).toMatch(/fixtures\/codegen-golden$/);
+    expect(defaults?.outDir).toBe('/private/tmp/skill-collections-visual-harness/codegen-golden');
+
+    expect(
+      parse([
+        'node',
+        'codegen-golden.ts',
+        '--fixture',
+        'skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-layout-golden',
+        '--candidate-url',
+        'http://127.0.0.1:5179/visual-harness-layout.html',
+        '--out',
+        '.scratch/layout-harness',
+      ]),
+    ).toMatchObject({
+      fixtureDir: expect.stringMatching(
+        /skill-collections\/skills\/sketch-to-component\/scripts\/src\/__tests__\/fixtures\/codegen-layout-golden$/,
+      ),
+      candidateUrl: 'http://127.0.0.1:5179/visual-harness-layout.html',
+      outDir: expect.stringMatching(/skill-collections\/\.scratch\/layout-harness$/),
+    });
+  });
+
+  it('rejects missing candidate URLs and missing flag values', () => {
+    const exports = harnessModule as unknown as Record<string, unknown>;
+    expect(typeof exports.parseVisualHarnessArgs).toBe('function');
+    if (typeof exports.parseVisualHarnessArgs !== 'function') return;
+    const parse = exports.parseVisualHarnessArgs as (argv: string[]) => unknown;
+
+    expect(parse(['node', 'codegen-golden.ts'])).toBeUndefined();
+    expect(parse(['node', 'codegen-golden.ts', '--candidate-url'])).toBeUndefined();
+    expect(
+      parse([
+        'node',
+        'codegen-golden.ts',
+        '--candidate-url',
+        'http://127.0.0.1:5179/visual-harness.html',
+        '--fixture',
+      ]),
+    ).toBeUndefined();
+    expect(
+      parse([
+        'node',
+        'codegen-golden.ts',
+        '--candidate-url',
+        'http://127.0.0.1:5179/visual-harness.html',
+        '--out',
+      ]),
+    ).toBeUndefined();
   });
 });

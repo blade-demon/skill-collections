@@ -90,7 +90,9 @@ jobs:
           echo $! > "$RUNNER_TEMP/visual-harness-vite.pid"
           for attempt in {1..30}; do
             if curl --fail --silent \
-              http://127.0.0.1:5179/visual-harness.html > /dev/null; then
+              http://127.0.0.1:5179/visual-harness.html > /dev/null &&
+              curl --fail --silent \
+              http://127.0.0.1:5179/visual-harness-layout.html > /dev/null; then
               exit 0
             fi
             sleep 1
@@ -104,7 +106,12 @@ jobs:
           npm run visual-harness:codegen \
             --workspace @skill-collections/sketch-to-component-scripts -- \
             --candidate-url http://127.0.0.1:5179/visual-harness.html \
-            --out "$RUNNER_TEMP/codegen-visual-regression"
+            --out "$RUNNER_TEMP/codegen-visual-regression/asset"
+          npm run visual-harness:codegen \
+            --workspace @skill-collections/sketch-to-component-scripts -- \
+            --fixture skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-layout-golden \
+            --candidate-url http://127.0.0.1:5179/visual-harness-layout.html \
+            --out "$RUNNER_TEMP/codegen-visual-regression/layout"
 
       - name: Upload visual regression artifacts
         if: always() && steps.changes.outputs.relevant == 'true'
