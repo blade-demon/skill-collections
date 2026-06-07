@@ -1,6 +1,7 @@
+import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { parseExtractArgs, parseNormalizeArgs, parsePreviewArgs } from '../cli.js';
+import { confineOutDir, parseExtractArgs, parseNormalizeArgs, parsePreviewArgs } from '../cli.js';
 
 describe('parseExtractArgs', () => {
   it('parses valid extract arguments', () => {
@@ -80,5 +81,36 @@ describe('parsePreviewArgs', () => {
     expect(
       parsePreviewArgs(['node', 'cli.ts', 'preview', '--design-ir', '--out', '/tmp/out']),
     ).toBeUndefined();
+  });
+});
+
+describe('confineOutDir', () => {
+  const cwd = '/work/project';
+
+  it('resolves a relative subdir under the current folder', () => {
+    expect(confineOutDir('out', cwd)).toBe(join(cwd, 'out'));
+    expect(confineOutDir('build/d2c', cwd)).toBe(join(cwd, 'build', 'd2c'));
+  });
+
+  it('allows the current folder itself', () => {
+    expect(confineOutDir('.', cwd)).toBe(resolve(cwd));
+  });
+
+  it('normalizes interior traversal that stays inside', () => {
+    expect(confineOutDir('out/../dist', cwd)).toBe(join(cwd, 'dist'));
+  });
+
+  it('accepts an absolute path that lives inside the current folder', () => {
+    expect(confineOutDir(join(cwd, 'nested', 'out'), cwd)).toBe(join(cwd, 'nested', 'out'));
+  });
+
+  it('rejects a parent-relative path that escapes the current folder', () => {
+    expect(() => confineOutDir('..', cwd)).toThrow(/\[bad-out-dir\]/);
+    expect(() => confineOutDir('../sibling', cwd)).toThrow(/\[bad-out-dir\]/);
+    expect(() => confineOutDir('out/../../escape', cwd)).toThrow(/\[bad-out-dir\]/);
+  });
+
+  it('rejects an absolute path outside the current folder', () => {
+    expect(() => confineOutDir('/tmp/elsewhere', cwd)).toThrow(/\[bad-out-dir\]/);
   });
 });
