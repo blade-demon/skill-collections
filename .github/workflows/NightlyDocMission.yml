@@ -31,7 +31,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: 'Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(node:*),Bash(npx:*),View,GlobTool,GrepTool,BatchTool,Edit,Write'
-          claude_args: '--max-turns 80'
+          max_turns: 80
           prompt: |
             # Autonomous Documentation & Annotation Mission
 
