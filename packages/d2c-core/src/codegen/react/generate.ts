@@ -9,6 +9,7 @@
 import type {
   ComponentPlan,
   PlannedComponent,
+  PlannedLayout,
   PlannedProp,
 } from '../../contract/component-plan-schema';
 import type { VisualNode } from '../../ir/visual';
@@ -16,6 +17,7 @@ import type { SemanticNode } from '../../semantic/schema';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { resolveCodegenAssets } from '../assets';
 import type { CodegenFile, CodegenFilePlan, CodegenInput, TargetGenerator } from '../target';
+import { projectStackInlineLayout, type FlexProjection, type Rect } from './layout';
 
 interface ExportInfo {
   exportName: string;
@@ -26,6 +28,7 @@ interface ReactCodegenContext {
   semanticById: Map<string, SemanticNode>;
   visualById: Map<string, VisualNode>;
   componentBySemanticId: Map<string, PlannedComponent>;
+  layoutPlanBySemanticId: Map<string, PlannedLayout>;
   exportByComponentId: Map<string, ExportInfo>;
   propByComponentAndSemanticId: Map<string, Map<string, PlannedProp>>;
   /** Resolved package asset path per media semantic node (see ../assets). */
@@ -76,6 +79,13 @@ function buildContext(
     componentBySemanticId.set(component.semanticNodeId, component);
   }
 
+  const layoutPlanBySemanticId = new Map<string, PlannedLayout>();
+  for (const layout of input.componentPlan.body.layoutPlan) {
+    if (!layoutPlanBySemanticId.has(layout.semanticNodeId)) {
+      layoutPlanBySemanticId.set(layout.semanticNodeId, layout);
+    }
+  }
+
   const dataModelSourceById = new Map<string, string>();
   for (const dataModel of input.interactionSpec.body.dataModels) {
     dataModelSourceById.set(dataModel.id, dataModel.source);
@@ -96,6 +106,7 @@ function buildContext(
     semanticById,
     visualById,
     componentBySemanticId,
+    layoutPlanBySemanticId,
     exportByComponentId: exportsByComponentId(input.componentPlan),
     propByComponentAndSemanticId,
     assetOutputPathBySemanticId,
@@ -408,7 +419,7 @@ function componentCss(
   component: PlannedComponent,
   context: ReactCodegenContext,
   renderedSemanticNodeIds: Set<string>,
-): string {
+): { content: string; warnings: string[] } {
   const rootSemanticNode = context.semanticById.get(component.semanticNodeId);
   const rootVisualNode =
     rootSemanticNode === undefined
@@ -416,15 +427,81 @@ function componentCss(
       : context.visualById.get(rootSemanticNode.primaryVisualNodeId);
   const rootWidth = rootVisualNode?.layout.width ?? rootSemanticNode?.bounds.width ?? 0;
   const rootHeight = rootVisualNode?.layout.height ?? rootSemanticNode?.bounds.height ?? 0;
+  const rectForSemanticNode = (semanticNodeId: string): Rect | undefined => {
+    if (!renderedSemanticNodeIds.has(semanticNodeId)) return undefined;
+    const semanticNode = context.semanticById.get(semanticNodeId);
+    if (semanticNode === undefined) return undefined;
+    return context.visualById.get(semanticNode.primaryVisualNodeId)?.layout ?? semanticNode.bounds;
+  };
+  const projectLayout = (
+    semanticNodeId: string,
+    childSemanticNodeIds: string[],
+  ): FlexProjection | undefined => {
+    const layout = context.layoutPlanBySemanticId.get(semanticNodeId);
+    if (layout?.strategy !== 'stack' && layout?.strategy !== 'inline') return undefined;
+    return projectStackInlineLayout({
+      containerNodeId: semanticNodeId,
+      strategy: layout.strategy,
+      children: childSemanticNodeIds.map(rectForSemanticNode),
+    });
+  };
+
+  const projectionBySemanticId = new Map<string, FlexProjection>();
+  const rootProjection = projectLayout(component.semanticNodeId, component.childSemanticNodeIds);
+  if (rootProjection !== undefined) {
+    projectionBySemanticId.set(component.semanticNodeId, rootProjection);
+  }
+  for (const semanticNodeId of [...renderedSemanticNodeIds].sort()) {
+    const plannedChild = context.componentBySemanticId.get(semanticNodeId);
+    // The parent renders a component boundary as a wrapper; that child's
+    // layout plan belongs to its own `.root`, not to the wrapper class here.
+    if (plannedChild !== undefined && plannedChild.id !== component.id) continue;
+    const semanticNode = context.semanticById.get(semanticNodeId);
+    if (semanticNode === undefined) continue;
+    const projection = projectLayout(semanticNodeId, semanticNode.childIds);
+    if (projection !== undefined) projectionBySemanticId.set(semanticNodeId, projection);
+  }
+
+  const warnings: string[] = [];
+  const warnedSemanticNodeIds = new Set<string>();
+  for (const semanticNodeId of [component.semanticNodeId, ...[...renderedSemanticNodeIds].sort()]) {
+    const projection = projectionBySemanticId.get(semanticNodeId);
+    if (projection?.kind === 'absolute' && !warnedSemanticNodeIds.has(semanticNodeId)) {
+      warnings.push(projection.warning);
+      warnedSemanticNodeIds.add(semanticNodeId);
+    }
+  }
+
+  const flexDeclarations = (projection: Extract<FlexProjection, { kind: 'flex' }>): string[] => [
+    'display: flex;',
+    `flex-direction: ${projection.direction};`,
+    'align-items: flex-start;',
+    `gap: ${px(projection.gapPx)};`,
+    `padding: ${px(projection.paddingTopPx)} 0px 0px ${px(projection.paddingLeftPx)};`,
+  ];
+  const rootFlexProjection =
+    projectionBySemanticId.get(component.semanticNodeId)?.kind === 'flex'
+      ? (projectionBySemanticId.get(component.semanticNodeId) as Extract<
+          FlexProjection,
+          { kind: 'flex' }
+        >)
+      : undefined;
   const lines = [
     '.root {',
-    '  display: block;',
+    `  display: ${rootFlexProjection === undefined ? 'block' : 'flex'};`,
     '  position: relative;',
     '  box-sizing: border-box;',
     `  width: ${px(Math.max(rootWidth, 1))};`,
     `  height: ${px(Math.max(rootHeight, 1))};`,
     '  overflow: hidden;',
   ];
+  if (rootFlexProjection !== undefined) {
+    lines.push(
+      ...flexDeclarations(rootFlexProjection)
+        .filter((declaration) => declaration !== 'display: flex;')
+        .map((declaration) => `  ${declaration}`),
+    );
+  }
   if (rootVisualNode !== undefined)
     lines.push(...visualStyleDeclarations(rootVisualNode).map((d) => `  ${d}`));
   lines.push('}');
@@ -440,16 +517,30 @@ function componentCss(
     // left/top with no rebasing. Mirrors the preview renderer and avoids
     // double-subtracting the parent origin for symbol-instance-local children.
     const rect = visualNode?.layout ?? semanticNode.bounds;
+    const parentProjection =
+      semanticNode.parentId === undefined
+        ? undefined
+        : projectionBySemanticId.get(semanticNode.parentId);
+    const isFlowChild = parentProjection?.kind === 'flex';
+    const ownProjection = projectionBySemanticId.get(semanticNode.id);
+    const ownFlexProjection =
+      ownProjection?.kind === 'flex'
+        ? (ownProjection as Extract<FlexProjection, { kind: 'flex' }>)
+        : undefined;
     lines.push(
       '',
       `.${classNameForSemanticId(semanticNode.id)} {`,
-      '  position: absolute;',
+      `  position: ${isFlowChild ? 'relative' : 'absolute'};`,
       '  box-sizing: border-box;',
-      `  left: ${px(rect.x)};`,
-      `  top: ${px(rect.y)};`,
+      ...(isFlowChild
+        ? ['  flex: 0 0 auto;']
+        : [`  left: ${px(rect.x)};`, `  top: ${px(rect.y)};`]),
       `  width: ${px(rect.width)};`,
       `  height: ${px(Math.max(rect.height, 1))};`,
     );
+    if (ownFlexProjection !== undefined) {
+      lines.push(...flexDeclarations(ownFlexProjection).map((declaration) => `  ${declaration}`));
+    }
     if (visualNode !== undefined) {
       lines.push(...visualStyleDeclarations(visualNode).map((d) => `  ${d}`));
     }
@@ -477,13 +568,13 @@ function componentCss(
           '  border: 1px dashed rgba(0, 0, 0, 0.2);',
         );
       }
-    } else {
+    } else if (ownFlexProjection === undefined) {
       lines.push('  display: block;');
     }
     lines.push('}');
   }
 
-  return lines.join('\n') + '\n';
+  return { content: lines.join('\n') + '\n', warnings };
 }
 
 function componentIndex(name: string, kind: 'default' | 'named'): string {
@@ -596,10 +687,12 @@ export const reactGenerator: TargetGenerator = {
         path: `src/${exportName}/${exportName}.tsx`,
         content: tsx.content,
       });
+      const css = componentCss(component, context, tsx.renderedSemanticNodeIds);
       files.push({
         path: `src/${exportName}/${exportName}.module.css`,
-        content: componentCss(component, context, tsx.renderedSemanticNodeIds),
+        content: css.content,
       });
+      warnings.push(...css.warnings);
       files.push({ path: `src/${exportName}/index.ts`, content: componentIndex(exportName, kind) });
     }
 

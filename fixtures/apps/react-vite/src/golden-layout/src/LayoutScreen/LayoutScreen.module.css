@@ -1,0 +1,111 @@
+.root {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 320px;
+  height: 260px;
+  overflow: hidden;
+  background-color: #F8FAFCFF;
+  border: 1px solid #CBD5E1FF;
+  border-radius: 16px;
+}
+
+.node_3ca331434852 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 4px;
+  top: 5px;
+  width: 20px;
+  height: 10px;
+  background-color: #047857FF;
+  border-radius: 3px;
+  display: block;
+}
+
+.node_81ef317a990b {
+  position: absolute;
+  box-sizing: border-box;
+  left: 20px;
+  top: 20px;
+  width: 260px;
+  height: 100px;
+  background-color: #DBEAFEFF;
+  border-radius: 12px;
+  display: block;
+}
+
+.node_9565efef5c1a {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 60px;
+  height: 50px;
+  background-color: #A7F3D0FF;
+  border: 1px solid #10B981FF;
+  border-radius: 8px;
+  display: block;
+}
+
+.node_380b3cd46841 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 4px;
+  top: 5px;
+  width: 20px;
+  height: 10px;
+  background-color: #047857FF;
+  border-radius: 3px;
+  display: block;
+}
+
+.node_570b5e008596 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 4px;
+  top: 5px;
+  width: 20px;
+  height: 10px;
+  background-color: #047857FF;
+  border-radius: 3px;
+  display: block;
+}
+
+.node_34d7e4c9bb55 {
+  position: absolute;
+  box-sizing: border-box;
+  left: 20px;
+  top: 140px;
+  width: 260px;
+  height: 80px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0px 0px 10px;
+  background-color: #ECFDF5FF;
+  border-radius: 12px;
+}
+
+.node_a6392833be42 {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 60px;
+  height: 50px;
+  background-color: #A7F3D0FF;
+  border: 1px solid #10B981FF;
+  border-radius: 8px;
+  display: block;
+}
+
+.node_da7404b49e5b {
+  position: relative;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 60px;
+  height: 50px;
+  background-color: #A7F3D0FF;
+  border: 1px solid #10B981FF;
+  border-radius: 8px;
+  display: block;
+}

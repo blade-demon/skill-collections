@@ -4,6 +4,7 @@ import { generateComponentPackage } from '../generate';
 import {
   approvedCodegenInput as codegenInput,
   approvedMixedTextMediaInput,
+  approvedNestedFlexContainersInput,
   approvedStyledCardInput,
 } from './codegen-fixtures';
 
@@ -54,5 +55,10 @@ describe('generateComponentPackage — presentational React', () => {
 
   it('emits no asset copy plan when the plan has no media assets', () => {
     expect(generateComponentPackage(approvedStyledCardInput()).assets).toEqual([]);
+  });
+
+  it('emits deterministic flex layout files and warnings', () => {
+    const input = approvedNestedFlexContainersInput();
+    expect(generateComponentPackage(input)).toEqual(generateComponentPackage(input));
   });
 });

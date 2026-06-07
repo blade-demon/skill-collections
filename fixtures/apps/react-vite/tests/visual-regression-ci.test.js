@@ -24,6 +24,7 @@ test('CI exposes a path-aware codegen visual regression gate', async () => {
   assert.match(workflow, /detect-visual-regression-changes\.sh/)
   assert.match(workflow, /npx playwright install --with-deps chromium/)
   assert.match(workflow, /visual-harness\.html/)
+  assert.match(workflow, /visual-harness-layout\.html/)
   assert.match(workflow, /Prepare visual regression artifacts/)
   assert.match(workflow, /codegen-visual-regression\/changed-files\.txt/)
   assert.match(
@@ -31,6 +32,18 @@ test('CI exposes a path-aware codegen visual regression gate', async () => {
     /> "\$RUNNER_TEMP\/codegen-visual-regression\/vite\.log" 2>&1 &/,
   )
   assert.match(workflow, /visual-harness:codegen/)
+  assert.match(
+    workflow,
+    /--candidate-url http:\/\/127\.0\.0\.1:5179\/visual-harness\.html[\s\S]*--out "\$RUNNER_TEMP\/codegen-visual-regression\/asset"/,
+  )
+  assert.match(
+    workflow,
+    /--fixture skills\/sketch-to-component\/scripts\/src\/__tests__\/fixtures\/codegen-layout-golden/,
+  )
+  assert.match(
+    workflow,
+    /--candidate-url http:\/\/127\.0\.0\.1:5179\/visual-harness-layout\.html[\s\S]*--out "\$RUNNER_TEMP\/codegen-visual-regression\/layout"/,
+  )
   assert.match(workflow, /actions\/upload-artifact@v4/)
   assert.match(
     workflow,
@@ -43,7 +56,11 @@ test('visual regression path detector matches representative inputs', () => {
     'packages/d2c-core/src/codegen/react/generate.ts',
     'packages/d2c-core/src/preview/generate-preview.ts',
     'fixtures/apps/react-vite/src/golden/src/LaunchPanel/LaunchPanel.tsx',
+    'fixtures/apps/react-vite/src/golden-layout/src/LayoutScreen/LayoutScreen.tsx',
+    'fixtures/apps/react-vite/src/visual-harness/main-layout.tsx',
+    'fixtures/apps/react-vite/visual-harness-layout.html',
     'skills/sketch-to-component/scripts/src/visual-harness/codegen-golden.ts',
+    'skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-layout-golden/design-ir.json',
     '.github/workflows/check.yml',
   ]
 

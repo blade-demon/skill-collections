@@ -1,0 +1,148 @@
+{
+  "approval": {
+    "acknowledgedBehaviorStubbed": true,
+    "approvedAt": "2026-06-07T00:00:00.000Z",
+    "approvedBy": "codegen-layout-golden",
+    "gate": "gate-2",
+    "level": "presentational"
+  },
+  "body": {
+    "assetPlan": [],
+    "components": [
+      {
+        "childSemanticNodeIds": [
+          "s_1dafd30d1c4f",
+          "s_71dc448f7c85"
+        ],
+        "confidence": "high",
+        "dataBindings": [],
+        "eventBindings": [],
+        "id": "pc_0023e14b17fc",
+        "name": "LayoutScreen",
+        "props": [],
+        "renderAs": "component",
+        "role": "root",
+        "semanticNodeId": "s_53b0608f21b3",
+        "warnings": []
+      },
+      {
+        "childSemanticNodeIds": [
+          "s_1210cf518bd4",
+          "s_43708d961d08",
+          "s_ba99d38878f4"
+        ],
+        "confidence": "high",
+        "dataBindings": [],
+        "eventBindings": [],
+        "id": "pc_cf274c723b8e",
+        "name": "StackCard",
+        "props": [],
+        "renderAs": "component",
+        "role": "region",
+        "semanticNodeId": "s_1dafd30d1c4f",
+        "warnings": []
+      }
+    ],
+    "exports": [
+      {
+        "exportName": "LayoutScreen",
+        "id": "pe_672fe9fd5fa7",
+        "kind": "default",
+        "plannedComponentId": "pc_0023e14b17fc"
+      },
+      {
+        "exportName": "StackCard",
+        "id": "pe_6fb69f438236",
+        "kind": "named",
+        "plannedComponentId": "pc_cf274c723b8e"
+      }
+    ],
+    "interactionCoverage": {
+      "dataBinding": {
+        "notes": "layout golden presentational approval",
+        "status": "omitted"
+      },
+      "events": {
+        "notes": "layout golden presentational approval",
+        "status": "omitted"
+      },
+      "stateTransitions": {
+        "notes": "layout golden presentational approval",
+        "status": "omitted"
+      },
+      "states": {
+        "notes": "layout golden presentational approval",
+        "status": "omitted"
+      }
+    },
+    "layoutPlan": [
+      {
+        "caveats": [
+          "spacing similarity 1.00"
+        ],
+        "confidence": "medium",
+        "constraints": [],
+        "id": "pl_cfb19daa3b22",
+        "layoutCandidateId": "lc_21b098c8e79c",
+        "semanticNodeId": "s_1dafd30d1c4f",
+        "strategy": "stack"
+      },
+      {
+        "caveats": [
+          "spacing similarity 1.00"
+        ],
+        "confidence": "medium",
+        "constraints": [],
+        "id": "pl_7b90a9a80225",
+        "layoutCandidateId": "lc_7361b7857f1d",
+        "semanticNodeId": "s_71dc448f7c85",
+        "strategy": "inline"
+      },
+      {
+        "caveats": [],
+        "confidence": "high",
+        "constraints": [],
+        "id": "pl_5624114208b4",
+        "layoutCandidateId": "lc_3f866fddc701",
+        "semanticNodeId": "s_53b0608f21b3",
+        "strategy": "absolute"
+      }
+    ],
+    "rootComponent": {
+      "childSemanticNodeIds": [
+        "s_1dafd30d1c4f",
+        "s_71dc448f7c85"
+      ],
+      "confidence": "high",
+      "dataBindings": [],
+      "eventBindings": [],
+      "id": "pc_0023e14b17fc",
+      "name": "LayoutScreen",
+      "props": [],
+      "renderAs": "component",
+      "role": "root",
+      "semanticNodeId": "s_53b0608f21b3",
+      "warnings": []
+    },
+    "target": {
+      "framework": "react",
+      "language": "ts",
+      "styling": "bem-css"
+    },
+    "warnings": []
+  },
+  "generatedFrom": {
+    "designIrHash": "c579f34ee8650c6e060126acf71f572189c288e048a827640219d8b814fb63ac",
+    "interactionSpecHash": "d4482d1057e40f5eb65d2ca18976eaba6fe1986cb9e2aa01695ff5128d47a1a9",
+    "schemaVersion": "d2c.design-ir/v0.2.0",
+    "semanticViewHash": "09c604663bd5401194d9faadf54ebdb80da903d32deb5e5d0622ceaf25214cc0",
+    "sourceRef": {
+      "documentId": "layout-doc",
+      "fileName": "layout-fixture.sketch"
+    },
+    "visualViewHash": "e547b2a06655a1ceed0e9f31f6ab1120a73cc8e08972a4d57e2714fa436feb1c"
+  },
+  "kind": "component-plan",
+  "mode": "presentational",
+  "status": "approved"
+}

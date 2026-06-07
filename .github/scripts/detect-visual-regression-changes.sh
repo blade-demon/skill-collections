@@ -10,14 +10,17 @@ while IFS= read -r path || [ -n "$path" ]; do
       packages/d2c-core/src/codegen/* | \
       packages/d2c-core/src/preview/* | \
       fixtures/apps/react-vite/src/golden/* | \
+      fixtures/apps/react-vite/src/golden-layout/* | \
       fixtures/apps/react-vite/src/visual-harness/* | \
       fixtures/apps/react-vite/tests/golden-visual-harness-page.test.js | \
       fixtures/apps/react-vite/tests/visual-regression-ci.test.js | \
       fixtures/apps/react-vite/visual-harness.html | \
+      fixtures/apps/react-vite/visual-harness-layout.html | \
       skills/sketch-to-component/scripts/package.json | \
       skills/sketch-to-component/scripts/src/visual-harness/* | \
       skills/sketch-to-component/scripts/src/__tests__/visual-harness.test.ts | \
-      skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-golden/*)
+      skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-golden/* | \
+      skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-layout-golden/*)
       echo true
       exit 0
       ;;

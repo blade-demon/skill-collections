@@ -35,7 +35,7 @@ Provider 特定的提取与规范化代码留在 `skills/<provider>-to-component
 然后将校验后的 IR 交给本包。
 
 尚未纳入范围：截图 diff 自动化，以及完全可恢复的管线 runner —— 下方 Stage 5D contract runner
-在一次纯 pass 中链接 derive 步骤，但持久化与恢复部分运行是后续切片。Codegen（Stage 6）当前生成展示型 React 包（含 bitmap 资源，经 CLI 复制进 `src/assets/`）；交互式生成与 vector 资源是后续切片。
+在一次纯 pass 中链接 derive 步骤，但持久化与恢复部分运行是后续切片。Codegen（Stage 6）当前生成展示型 React 包（含 bitmap 资源，经 CLI 复制进 `src/assets/`；`stack` / `inline` 容器投影为 flex，0.5px 内保真否则回退 absolute）；交互式生成、vector 资源、grid / overlay 布局是后续切片。
 
 ## Semantic View（Stage 5A）
 
@@ -198,6 +198,7 @@ buildContractManifest(input, result); // 纯；每个 contract artifact 一条�
 - `approveComponentPlan(plan, signOff)` —— 签收：将 draft plan 翻转为 `approved`（仅 status + approval 块；body 不动）。
 - `generateComponentPackage(input)` —— 按 plan 自身 `body.target.framework` 分发；拒绝任何非 approved plan。React target 为每个组件发出 `.tsx`/`.module.css`/`index.ts`、包 barrel、`package.json`、presentational README banner 及 `interaction-coverage.md`（从 plan 的 coverage 快照格式化 —— 永不重新分类）。
 - **bitmap 资源（reference + CLI copy）**：media 节点发出 `background-image: url("../assets/asset-<hash>.png")`，`CodegenFilePlan.assets` 给出纯文本复制计划（`assetRef`/`sourceFileName`/`outputPath`/`required`，按 `assetRef` 去重、`outputPath` 排序）。core 不碰字节；`required` asset 解析不到即抛错。字节由 Sketch CLI 从 `--assets` 目录复制（见下）。
+- **stack / inline layout → flex**：`projectStackInlineLayout`（`src/codegen/react/layout.ts`，纯函数）消费 approved 的 `stack` / `inline` `layoutPlan`，把命中容器投影为 flex（`stack` → `flex-direction: column`，`inline` → `row`，`align-items: flex-start` + mean-gap + 首项 padding），直接子项改为 flow（`position: relative` + `flex: 0 0 auto` + 显式宽高，无 `left/top`）。**保真即投影前提**：仅当均值 gap 能在 0.5px 内复刻原绝对几何时才发 flex；`<2` 子项 / 缺几何 / DOM 顺序≠主轴序 / 负 gap / 负 padding / 主轴漂移 >0.5px / 跨轴方差 >0.5px 任一命中即**确定性回退**到 absolute 子项定位，并向 `CodegenFilePlan.warnings` 追加精确 warning（永不抛错）。容器自身定位与 `display:flex` 正交（定位看父布局，flex 看自身计划）。`componentCss()` 因此返回 `{ content, warnings }`。`absolute` strategy 仍走 absolute；grid / overlay 不在范围。
 
 生成的 `package.json` 携带 `d2c` 来源块：
 
@@ -235,7 +236,7 @@ npm run codegen  -- --spec <tmp>/design-spec --design-ir <ir> \
 
 ### 不在范围内（Stage 6 v1）
 
-交互式生成、vector / 复杂资源、第二 target 及 reuse-input CLI 路径为后续切片（bitmap 资源已经过 reference + CLI copy 落地）。
+交互式生成、vector / 复杂资源、第二 target、grid / overlay 布局及上游 layout inference 扩展、reuse-input CLI 路径为后续切片（bitmap 资源已经过 reference + CLI copy 落地；`stack` / `inline` 布局已投影为 flex）。
 
 ## Verification
 

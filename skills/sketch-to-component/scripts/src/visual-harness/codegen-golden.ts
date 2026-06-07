@@ -44,7 +44,10 @@ interface ReviewHtmlInput {
 
 type PresentNodeMetrics = NodeMetrics & { present: true };
 
-const fixtureDir = fileURLToPath(new URL('../__tests__/fixtures/codegen-golden', import.meta.url));
+const repositoryRoot = fileURLToPath(new URL('../../../../..', import.meta.url));
+const defaultFixtureDir = fileURLToPath(
+  new URL('../__tests__/fixtures/codegen-golden', import.meta.url),
+);
 const defaultOutDir = '/private/tmp/skill-collections-visual-harness/codegen-golden';
 const visualStyleKeys = ['backgroundColor', 'borderWidth', 'borderRadius', 'boxShadow'] as const;
 const textStyleKeys = ['textAlign', 'fontSize', 'color'] as const;
@@ -64,6 +67,36 @@ function normalizeStyleValue(key: keyof NodeMetrics['styles'], value: string): s
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+export interface VisualHarnessCliArgs {
+  fixtureDir: string;
+  candidateUrl: string;
+  outDir: string;
+}
+
+function cliArgValue(argv: string[], name: string): string | undefined {
+  const index = argv.indexOf(name);
+  if (index === -1) return undefined;
+  const value = argv[index + 1];
+  if (!value || value.startsWith('--')) return undefined;
+  return value;
+}
+
+export function parseVisualHarnessArgs(argv: string[]): VisualHarnessCliArgs | undefined {
+  const candidateUrl = cliArgValue(argv, '--candidate-url');
+  if (candidateUrl === undefined) return undefined;
+
+  const fixtureArg = cliArgValue(argv, '--fixture');
+  if (argv.includes('--fixture') && fixtureArg === undefined) return undefined;
+  const outArg = cliArgValue(argv, '--out');
+  if (argv.includes('--out') && outArg === undefined) return undefined;
+
+  return {
+    fixtureDir: fixtureArg === undefined ? defaultFixtureDir : resolve(repositoryRoot, fixtureArg),
+    candidateUrl,
+    outDir: outArg === undefined ? defaultOutDir : resolve(repositoryRoot, outArg),
+  };
 }
 
 export function deriveHarnessNodesFromSemanticView(value: unknown): HarnessNodes {
@@ -395,13 +428,13 @@ async function captureMetrics(
 }
 
 async function main(): Promise<void> {
-  const outArg = process.argv.indexOf('--out');
-  const candidateArg = process.argv.indexOf('--candidate-url');
-  const outDir = outArg === -1 ? defaultOutDir : resolve(process.argv[outArg + 1] ?? defaultOutDir);
-  const candidateUrl = process.argv[candidateArg + 1];
-  if (candidateArg === -1 || candidateUrl === undefined || candidateUrl.startsWith('--')) {
-    throw new Error('Usage: visual-harness:codegen --candidate-url <url> [--out <dir>]');
+  const args = parseVisualHarnessArgs(process.argv);
+  if (args === undefined) {
+    throw new Error(
+      'Usage: visual-harness:codegen --candidate-url <url> [--fixture <dir>] [--out <dir>]',
+    );
   }
+  const { candidateUrl, fixtureDir, outDir } = args;
 
   await mkdir(outDir, { recursive: true });
   const designIr = (await readJson(join(fixtureDir, 'design-ir.json'))) as DesignIR;
