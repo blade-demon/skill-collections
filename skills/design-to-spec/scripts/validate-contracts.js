@@ -135,6 +135,20 @@ function validateUniqueness(ui, api, mapping) {
   return errors;
 }
 
+/**
+ * design-to-spec契约的跨文件一致性验证器。
+ *
+ * 该函数是整个设计规格生成流程的质量保证核心。解决了"如何确保
+ * UI定义、API定义、映射逻辑三者之间引用关系正确"的问题。
+ *
+ * 验证策略：
+ * - 引用完整性：确保所有ID引用都指向存在的实体
+ * - 唯一性约束：防止重复ID导致的歧义
+ * - 状态一致性：确保状态机转换目标存在且有断言
+ * - 组件层次：验证parent_id形成有效的树结构
+ *
+ * 这种验证避免了运行时才发现契约错误，提高了开发效率。
+ */
 function validate(uiDoc, apiDoc, mappingDoc) {
   const errors = [];
   let ui = uiDoc.ui ?? {};
