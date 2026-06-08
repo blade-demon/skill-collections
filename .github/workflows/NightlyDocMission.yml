@@ -30,7 +30,7 @@ jobs:
         uses: anthropics/claude-code-base-action@beta
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          allowed_tools: 'Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(node:*),Bash(npx:*),View,GlobTool,GrepTool,BatchTool,Edit,Write'
+          allowed_tools: 'Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(node:*),Bash(npx:*),Bash(mkdir:*),View,GlobTool,GrepTool,BatchTool,Edit,Write'
           max_turns: 80
           prompt: |
             # Autonomous Documentation & Annotation Mission
@@ -138,9 +138,10 @@ jobs:
             - PR：
               - Title：docs: architecture analysis and source code annotation enhancement
               - Body 必含：Summary / Architecture Findings / Design Philosophy / Documentation Added / Source Annotation Coverage / Risks（含原有失败、未完成项、DECISIONS.md 假设清单引用）/ Future Improvements / Completion Status（完成度 % 与未完成原因）
-            - 兜底：
-              - gh 不可用或无远程写权限 → push 分支 + 把 PR body 写入 PR.md。
-              - 无法 push → 生成 changes.patch + PR.md 留在工作区，并在最终输出中说明。
+            - 兜底（任一情形触发都必须执行，禁止只在最终汇报里口头声称已生成）：
+              - gh 不可用 / 无远程写权限 / gh pr create 失败（含 "GitHub Actions is not permitted to create or approve pull requests"）→ push 分支 + 用 Write 工具把完整 PR body 写入仓库根目录 PR.md 并一并提交。
+              - 无法 push → 用 Write 工具生成 PR.md，并用 git 生成 changes.patch，二者都留在工作区，最终输出中说明。
+              - 注意：PR body 必须经 Write 工具落盘成文件，不要依赖 shell 重定向（heredoc/`>`），以免 allowlist 拦截导致兜底产物丢失。
 
             ## 硬阻塞兜底
             若 install 始终失败 / 仓库为空 / 非 TS-Node 项目：停止深入，产出 BLOCKERS.md 说明阻塞点与已完成的探索，提交到分支后结束。
