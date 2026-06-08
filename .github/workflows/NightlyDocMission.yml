@@ -123,8 +123,9 @@ jobs:
             ## Phase 5：质量检查（增量 + 终检）
             1. 增量：每批注释后跑 typecheck。
             2. 终检：用 Phase 0 探到的真实命令跑 install / lint / typecheck / test。
-            3. 对比基线：只修复「相对 Phase 0 新增的失败」；原有失败记入 PR 的 Risks。
-            4. 若新增失败无法修复 → 回退该处注释，而非修改逻辑。
+            3. 格式化（提交前必做）：对所有新增/修改的文件跑一次 `npx prettier --write`（尤其 docs/ 下生成的 Markdown 与 DECISIONS.md），再用 `npx prettier --check .` 自查，确保 CI 的 format:check 不会失败。
+            4. 对比基线：只修复「相对 Phase 0 新增的失败」；原有失败记入 PR 的 Risks。
+            5. 若新增失败无法修复 → 回退该处注释，而非修改逻辑。
 
             ---
 
