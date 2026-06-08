@@ -28,6 +28,20 @@ function formatImageFailures(failures: ReturnType<DefaultImageResolver['failures
     .join('\n');
 }
 
+/**
+ * HTML文章到Markdown的核心转换流程。
+ *
+ * 该函数解决了"如何将微信公众号等富文本HTML清洁地转换为Markdown"的问题。
+ * 特别针对中文内容和图片处理进行了优化。
+ *
+ * 转换策略：
+ * - 元数据提取：从HTML中提取标题、作者、发布时间等元信息
+ * - 图片本地化：将远程图片下载到本地，支持多种fallback策略
+ * - 内容清理：移除公众号推广等垃圾内容
+ * - 格式规范：生成符合Markdown标准的输出
+ *
+ * 设计目标是确保转换结果可以直接用于技术博客、文档等场景。
+ */
 export async function buildMarkdown(options: ConvertOptions): Promise<string> {
   const bodyId = options.bodyId ?? 'js_content';
   const html = await readFile(options.htmlPath, 'utf8');
