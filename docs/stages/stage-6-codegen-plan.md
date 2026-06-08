@@ -10,7 +10,7 @@
 >
 > **Stage 6 不重判契约。** 不重新判断 component boundary / mode / interaction coverage,
 > 不接收外部 `--mode`。这些都是 Stage 5 已经定好、并经 Gate 2 签字的事实;Stage 6 只读、只生成。
-> 权威约束见架构总纲 [`design-source-to-component-architecture.md`](./design-source-to-component-architecture.md)
+> 权威约束见架构总纲 [`architecture.md`](../design-source-to-component/architecture.md)
 > 的 "Interaction status and codegen mode" 与 "Presentational package metadata" 两节。
 
 ---

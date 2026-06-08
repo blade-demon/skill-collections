@@ -11,7 +11,7 @@
  * Math.random — same input ⇒ byte-identical output. All disk / path / clock
  * concerns live in the CLI layer (5D-PR-3).
  *
- * Input contract (plan docs/stage-5d-contract-runner-plan.md §2.1 — flexible,
+ * Input contract (plan docs/stages/stage-5d-contract-runner-plan.md §2.1 — flexible,
  * constraints hard):
  *
  *   1. `designIr` required — the root anchor of the whole hash chain.

@@ -1,7 +1,7 @@
 # 设计源到组件 — 实施计划
 
-> 本文件是 [`design-source-to-component-architecture.md`](./design-source-to-component-architecture.md)
-> （中文版 [`-zh`](./design-source-to-component-architecture-zh.md)）的**落地执行计划与进度追踪**。
+> 本文件是 [`architecture.md`](./architecture.md)
+> （中文版 [`-zh`](./architecture-zh.md)）的**落地执行计划与进度追踪**。
 > 架构总纲是权威契约；本文件只负责"怎么做、做到哪了"。
 >
 > 状态图例：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始
@@ -148,7 +148,7 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ### 阶段 4 — 共享：Visual View + HTML 预览 → 门禁 1 ✅
 
-已完成（提交 `556220b`，蓝图 [`stage-4-preview-outline.md`](./stage-4-preview-outline.md)）：
+已完成（提交 `556220b`，蓝图 [`stage-4-preview-outline.md`](../stages/stage-4-preview-outline.md)）：
 
 - `d2c-core/src/preview/`：`derive-visual-view`（应用 symbol 文本 override）、`generate-preview`
   （`index.html` / `preview.css` / 占位 `assets/`）、`visual-review-report`、`run-preview`
@@ -161,7 +161,7 @@ MasterGo provider(`parse-url` / `fetch-dsl` / `MASTERGO_TOKEN`)后置,待其服�
 
 ### 阶段 5 — 共享：语义 / 交互 / 方案 → 门禁 2 ⬜
 
-- 蓝图:[`stage-5-component-contract-outline.md`](./stage-5-component-contract-outline.md)。
+- 蓝图:[`stage-5-component-contract-outline.md`](../stages/stage-5-component-contract-outline.md)。
 - `d2c-core`：标注提取器 + 启发式语义推断 + `derive-semantic-view` + 交互建模器
   （草稿 + `confidence`，引擎只起草、开发者补全）+ `component-plan` 生成。
 - **产出顺序固定为：** `semantic-view.json` → `interaction-spec.json`（带显式

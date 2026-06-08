@@ -1,7 +1,7 @@
 /**
  * Stage 6 — codegen entry point. Dispatches to a target generator by the
  * approved plan's own `body.target.framework`; there is no external target /
- * mode parameter (plan docs/stage-6-codegen-plan.md §3.2).
+ * mode parameter (plan docs/stages/stage-6-codegen-plan.md §3.2).
  *
  * Gate 2 is enforced here, not just at the CLI: any plan whose status is not
  * 'approved' is rejected before a target generator runs, so the public core

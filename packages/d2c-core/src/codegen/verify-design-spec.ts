@@ -3,7 +3,7 @@
  *
  * Pure: turns the on-disk (JSON-parsed) design-spec artifacts into a trusted,
  * typed bundle, or throws. Codegen (Stage 6-PR-2) consumes only what this gate
- * returns. Checks run in order (plan docs/stage-6-codegen-plan.md §3.3):
+ * returns. Checks run in order (plan docs/stages/stage-6-codegen-plan.md §3.3):
  *   1. each contract artifact parses against its canonical schema;
  *   2. each artifact's hash reconciles with its manifest entry;
  *   3. the `generatedFrom` hash chain is self-consistent, anchored at design-ir;

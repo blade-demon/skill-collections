@@ -5,7 +5,7 @@
  * (`approveComponentPlan`) and design-spec input validation
  * (`verifyDesignSpec`). 6-PR-2 adds the `TargetGenerator` abstraction and the
  * React + TS + BEM generator behind `generateComponentPackage`
- * (plan docs/stage-6-codegen-plan.md §3.1).
+ * (plan docs/stages/stage-6-codegen-plan.md §3.1).
  */
 export * from './sign-off';
 export * from './verify-design-spec';

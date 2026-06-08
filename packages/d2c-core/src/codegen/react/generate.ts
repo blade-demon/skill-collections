@@ -4,7 +4,7 @@
  * Pure: a component-plan (+ upstream views) in, an in-memory file plan out. No
  * IO, no clock, no randomness; output is deterministic and the file list is
  * sorted by path. v1 covers presentational delivery only — event handlers and
- * data bindings are behavior-stubbed (plan docs/stage-6-codegen-plan.md §3.7).
+ * data bindings are behavior-stubbed (plan docs/stages/stage-6-codegen-plan.md §3.7).
  */
 import type {
   ComponentPlan,

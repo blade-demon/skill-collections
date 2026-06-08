@@ -1,6 +1,6 @@
 # Stage 3 蓝图 — Sketch Normalize(`raw-dsl.json` → `design-ir.json`)
 
-> 本文是 [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md)
+> 本文是 [`../../../docs/design-source-to-component/implementation-plan.md`](../../../docs/design-source-to-component/implementation-plan.md)
 > Stage 3 的详细蓝图。状态:**已并入一轮 review(2026-05-21),可作实现依据**。
 >
 > Stage 3 是整条管线最难的一环。本蓝图把**范围、精确契约、执行顺序、关键决策**钉死;

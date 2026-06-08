@@ -183,6 +183,6 @@ npm ci
 ## 进阶学习资源
 
 - **设计到规格流程**：`skills/design-to-spec/ONBOARDING.md`
-- **架构设计理念**：`docs/design-source-to-component-architecture.md`
-- **实施计划追踪**：`docs/design-source-to-component-implementation-plan.md`
+- **架构设计理念**：`docs/design-source-to-component/architecture.md`
+- **实施计划追踪**：`docs/design-source-to-component/implementation-plan.md`
 - **贡献指南**：`CONTRIBUTING.md`

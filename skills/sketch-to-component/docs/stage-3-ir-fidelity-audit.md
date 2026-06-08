@@ -124,7 +124,7 @@ grid)的能力与边界。建议在 Stage 5 蓝图开一节"布局推断能力�
 ## 5. 查过没问题的项(clean bill)
 
 - **D1 / D2 已修**:41 个文字节点 0 个携带 `style.fills`(见 `stage-3-normalize-outline.md`
-  §18 / `stage-4-preview-outline.md` §15)。
+  §18 / `docs/stages/stage-4-preview-outline.md` §15)。
 - **图片 ↔ asset 映射一致**:4 个 image 节点 / 3 个 distinct `assetRef` / 3 条 `visual.assets`。
 - **文字内容无 fallback 误用**:raw 中 0 个文字图层缺 `attributedString.string`;
   `content === 图层名`(41 中 34 例)是 Sketch 把文字图层按内容自动命名的习惯,非

@@ -5,7 +5,7 @@
  * → `{ interactionSpec, warnings }`. No file IO, no network, no clock.
  * Same input ⇒ byte-identical output (plan §2 determinism contract).
  *
- * Behavior matrix (per docs/stage-5b-interaction-spec-plan.md):
+ * Behavior matrix (per docs/stages/stage-5b-interaction-spec-plan.md):
  *
  *   §3.3 / §6.2 — hash chain: visual.designIrHash, semantic.designIrHash,
  *                 semantic.visualViewHash must all line up with the inputs;

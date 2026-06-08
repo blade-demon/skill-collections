@@ -6,7 +6,7 @@
  * status and writes the approval block. Approval lives inside the artifact, so
  * the approved plan hashes differently from the draft; the CLI sign-off step
  * (Stage 6-PR-3) rewrites `manifest.json` accordingly
- * (plan docs/stage-6-codegen-plan.md §3.4, Option A).
+ * (plan docs/stages/stage-6-codegen-plan.md §3.4, Option A).
  *
  * This is the shared prerequisite for Stage 6 (which only consumes an approved
  * component-plan) and, by the same shape, the interactive interaction-spec path.

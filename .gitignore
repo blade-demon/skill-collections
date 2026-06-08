@@ -26,5 +26,8 @@ coverage/
 *.log
 .claude/worktrees/
 
+# Agent scratch
+.superpowers/
+
 # sketch-to-component CLI scratch output
 **/.d2c-run-*/

@@ -4,7 +4,7 @@
  * A `TargetGenerator` turns a (presentational, v1) component-plan plus its
  * upstream semantic-view / interaction-spec into an in-memory file plan. Pure:
  * no IO, no clock, no randomness. The CLI (6-PR-3) owns writing files to disk
- * (plan docs/stage-6-codegen-plan.md §3.1).
+ * (plan docs/stages/stage-6-codegen-plan.md §3.1).
  */
 import type { ComponentPlan } from '../contract/component-plan-schema';
 import type { InteractionSpec } from '../contract/interaction-schema';
