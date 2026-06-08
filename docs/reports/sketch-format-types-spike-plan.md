@@ -129,7 +129,7 @@ export function isText(layer: SketchLayerLike): layer is FileFormat.Text;
 
 ### Step 5 — 产出 spike 报告
 
-`docs/sketch-format-types-spike-report.md`，至少包含：
+`docs/reports/sketch-format-types-spike-report.md`，至少包含：
 
 | 列   | 含义                                             |
 | ---- | ------------------------------------------------ |

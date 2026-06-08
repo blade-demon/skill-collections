@@ -1,6 +1,6 @@
 # Stage 2 蓝图 — Sketch Provider Raw Extractor
 
-> 本文是 [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md)
+> 本文是 [`../../../docs/design-source-to-component/implementation-plan.md`](../../../docs/design-source-to-component/implementation-plan.md)
 > 中本轮工作的详细蓝图。已通过 review(2026-05-21),9 点评审意见已并入(见第 13 节)。
 
 ---

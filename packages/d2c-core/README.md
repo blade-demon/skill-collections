@@ -2,8 +2,8 @@
 
 设计源到组件（D2C）管线的共享核心：规范 IR schema、派生视图 schema、校验器与 `Provider` 端口。
 
-权威架构见 [`docs/design-source-to-component-architecture.md`](../../docs/design-source-to-component-architecture.md)，
-构建阶段见 [`docs/design-source-to-component-implementation-plan.md`](../../docs/design-source-to-component-implementation-plan.md)。
+权威架构见 [`docs/design-source-to-component/architecture.md`](../../docs/design-source-to-component/architecture.md)，
+构建阶段见 [`docs/design-source-to-component/implementation-plan.md`](../../docs/design-source-to-component/implementation-plan.md)。
 
 ## 仅源码的内部包
 

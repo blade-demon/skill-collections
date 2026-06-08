@@ -5,7 +5,7 @@
  * No file IO, no network, no clock. Same input ⇒ byte-identical output
  * (per plan §2 determinism contract).
  *
- * Behavior matrix (per docs/stage-5a-derive-semantic-view-plan.md):
+ * Behavior matrix (per docs/stages/stage-5a-derive-semantic-view-plan.md):
  *
  *   §6.1  reject hash mismatch at input
  *   §6.2  write designIrHash + visualViewHash onto output

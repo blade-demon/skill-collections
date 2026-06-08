@@ -5,7 +5,7 @@
  * owns `mkdir` / `writeFile` and the `<out>/design-spec/` directory layout;
  * this module only owns the stable names and the manifest shape so Stage 6
  * and any reuse path read the same constants instead of re-deriving paths
- * (plan docs/stage-5d-contract-runner-plan.md §3.2 / §3.3).
+ * (plan docs/stages/stage-5d-contract-runner-plan.md §3.2 / §3.3).
  */
 import type { GeneratedFrom } from '../ir';
 import { stableJson, stableSha256 } from '../utils/stable-json';

@@ -1,6 +1,6 @@
 # Stage 4 蓝图 — Visual View 派生 + HTML 预览(门禁 1)
 
-> 本文是 [`design-source-to-component-implementation-plan.md`](./design-source-to-component-implementation-plan.md)
+> 本文是 [`implementation-plan.md`](../design-source-to-component/implementation-plan.md)
 > Stage 4 的详细蓝图。状态:**已定稿,可实现**(review 通过,2026-05-21)。
 >
 > Stage 4 是**共享管线**的第一阶段——代码在 `packages/d2c-core/`,provider 中立(吃 canonical

@@ -61,8 +61,9 @@ skill-collections/
     ├── repo-workflow.md
     ├── sample-authoring.md
     ├── commenting-guide.md
-    ├── design-source-to-component-architecture.md        # D2C 架构总纲（含 -zh 中文版）
-    ├── design-source-to-component-implementation-plan.md # D2C 实施计划与进度
+    ├── design-source-to-component/  # D2C 架构总纲、实施计划与概览（含 architecture-zh 中文版）
+    ├── stages/                      # 各 Stage 计划与蓝图
+    ├── reports/                     # 调研 spike 与审计报告
     └── superpowers/
 ```
 

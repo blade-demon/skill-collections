@@ -4,7 +4,7 @@
 
 `sketch-to-component` 是共享设计源管线的 Sketch provider 适配器。
 
-权威 D2C 契约见 [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md)。本 provider 文档不得重新定义：
+权威 D2C 契约见 [`../../../docs/design-source-to-component/architecture.md`](../../../docs/design-source-to-component/architecture.md)。本 provider 文档不得重新定义：
 
 - 规范 IR 命名或 schema 位置；
 - preview、IR 或 package 输出目录；

@@ -8,7 +8,7 @@
  * No file IO, no network, no clock, no Math.random. Same input ⇒ byte-
  * identical output (plan §2 determinism contract).
  *
- * Plan refs (docs/stage-5c-component-plan-plan.md):
+ * Plan refs (docs/stages/stage-5c-component-plan-plan.md):
  *
  *   §3.2 / §7.2 step 2 — mode × interaction-spec.status compatibility.
  *                        Illegal combos throw immediately, before any work.

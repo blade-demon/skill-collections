@@ -4,7 +4,7 @@
 
 `mastergo-to-component` 是共享设计源管线的 MasterGo provider 适配器。
 
-权威 D2C 契约见 [`../../../docs/design-source-to-component-architecture.md`](../../../docs/design-source-to-component-architecture.md)。本 provider 文档不得重新定义：
+权威 D2C 契约见 [`../../../docs/design-source-to-component/architecture.md`](../../../docs/design-source-to-component/architecture.md)。本 provider 文档不得重新定义：
 
 - 规范 IR 身份或 schema 位置；
 - preview、IR 或 package 输出目录；
@@ -15,7 +15,7 @@
 > **状态（2026-05-21）：** MasterGo provider 实现延后。Sketch provider 的 raw-extraction 阶段
 > 先行作为离线去风险探针（`.sketch` 为本地可检视格式）；MasterGo extractor 在其服务端 DSL 契约
 > 可可靠获取后再跟进。见
-> [`../../../docs/design-source-to-component-implementation-plan.md`](../../../docs/design-source-to-component-implementation-plan.md)。
+> [`../../../docs/design-source-to-component/implementation-plan.md`](../../../docs/design-source-to-component/implementation-plan.md)。
 
 Provider 实现必须接入全局契约：
 

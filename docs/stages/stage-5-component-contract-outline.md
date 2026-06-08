@@ -1,6 +1,6 @@
 # Stage 5 蓝图 — Semantic View + Interaction Spec + Component Plan(门禁 2)
 
-> 本文是 [`design-source-to-component-implementation-plan.md`](./design-source-to-component-implementation-plan.md)
+> 本文是 [`implementation-plan.md`](../design-source-to-component/implementation-plan.md)
 > Stage 5 的详细蓝图。状态:**review draft,按反馈修订**(2026-05-25)。
 >
 > A5 symbol instance scale transform 已在 Batch 2 修复,Stage 5 的组件边界与列表识别不再建立在错位

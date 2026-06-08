@@ -1,8 +1,8 @@
 # 设计源到组件(D2C)— 项目概览
 
 > 面向非技术读者的一页纸说明。技术细节见
-> [架构总纲](./design-source-to-component-architecture.md) 与
-> [实施计划](./design-source-to-component-implementation-plan.md)。
+> [架构总纲](./architecture.md) 与
+> [实施计划](./implementation-plan.md)。
 > 更新:2026-05-22
 
 ## 一句话
