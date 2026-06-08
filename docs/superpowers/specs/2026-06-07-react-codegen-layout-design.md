@@ -2,7 +2,7 @@
 
 日期：2026-06-07
 PR：PR-3（React codegen fidelity 系列；PR-1 坐标基准 / PR-2 资产 已合入 master）
-关联：`docs/codegen-react-bottleneck-audit-2026-06-06.md` 问题 3（`layoutPlan` 未进入 React CSS）
+关联：`docs/reports/codegen-react-bottleneck-audit-2026-06-06.md` 问题 3（`layoutPlan` 未进入 React CSS）
 
 ## Context
 

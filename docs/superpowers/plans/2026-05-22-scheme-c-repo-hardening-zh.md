@@ -1031,7 +1031,7 @@ Commit succeeds with comment-only public API changes
 
 - Modify: `packages/d2c-core/README.md`
 - Modify: `skills/sketch-to-component/docs/architecture-design.md`
-- Modify: `docs/design-source-to-component-implementation-plan.md`
+- Modify: `docs/design-source-to-component/implementation-plan.md`
 
 - [ ] **Step 1: 更新 d2c-core README**
 
@@ -1074,7 +1074,7 @@ The provider should keep Sketch-specific parsing inside `skills/sketch-to-compon
 
 - [ ] **Step 3: 更新 implementation plan 状态**
 
-在 `docs/design-source-to-component-implementation-plan.md` 中，将旧的 Stage 7 “D2C 之后会纳入 `check`”说明替换为：
+在 `docs/design-source-to-component/implementation-plan.md` 中，将旧的 Stage 7 “D2C 之后会纳入 `check`”说明替换为：
 
 ```markdown
 Repository hardening folds `d2c-core` and `sketch-to-component` into the root quality gate through `npm run check:full`. Stage-specific work may still run narrower commands such as `npm run test:d2c` and `npm run test:sketch` during development, but pre-merge verification should use the full gate.
@@ -1099,7 +1099,7 @@ Command exits 0
 Run:
 
 ```bash
-git add packages/d2c-core/README.md skills/sketch-to-component/docs/architecture-design.md docs/design-source-to-component-implementation-plan.md
+git add packages/d2c-core/README.md skills/sketch-to-component/docs/architecture-design.md docs/design-source-to-component/implementation-plan.md
 git commit -m "docs: document package quality boundaries"
 ```
 

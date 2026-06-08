@@ -311,7 +311,7 @@ function projectStackInlineLayout(input: {
 
 ## Task 5：文档 + 全量 gate
 
-**Files:** `docs/stage-6-codegen-plan.md`、`docs/codegen-react-bottleneck-audit-2026-06-06.md`、
+**Files:** `docs/stages/stage-6-codegen-plan.md`、`docs/reports/codegen-react-bottleneck-audit-2026-06-06.md`、
 `packages/d2c-core/README.md`，并把本次 **spec + plan** 一并纳入本 commit。
 
 - [ ] **Step 1**：文档更新 —— layout 现状：stack/inline 已投影为 flex（column/row，含 0.5px

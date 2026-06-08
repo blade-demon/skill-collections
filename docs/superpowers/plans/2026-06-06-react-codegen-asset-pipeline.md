@@ -943,8 +943,8 @@ git commit -m "test(codegen): gate generated image loading"
 
 **Files:**
 
-- Modify: `docs/stage-6-codegen-plan.md`
-- Modify: `docs/codegen-react-bottleneck-audit-2026-06-06.md`
+- Modify: `docs/stages/stage-6-codegen-plan.md`
+- Modify: `docs/reports/codegen-react-bottleneck-audit-2026-06-06.md`
 - Modify: `packages/d2c-core/README.md`
 
 - [ ] **Step 1: Update Stage 6 asset status**
@@ -989,8 +989,8 @@ npm run codegen --workspace @skill-collections/sketch-to-component-scripts -- \
   skills/sketch-to-component/scripts/src/visual-harness/codegen-golden.ts \
   skills/sketch-to-component/scripts/src/__tests__/visual-harness.test.ts \
   fixtures/apps/react-vite/tests/golden-visual-harness-page.test.js \
-  docs/stage-6-codegen-plan.md \
-  docs/codegen-react-bottleneck-audit-2026-06-06.md \
+  docs/stages/stage-6-codegen-plan.md \
+  docs/reports/codegen-react-bottleneck-audit-2026-06-06.md \
   packages/d2c-core/README.md
 
 npm run typecheck:d2c
@@ -1074,8 +1074,8 @@ Expected:
 
 ```bash
 git add \
-  docs/stage-6-codegen-plan.md \
-  docs/codegen-react-bottleneck-audit-2026-06-06.md \
+  docs/stages/stage-6-codegen-plan.md \
+  docs/reports/codegen-react-bottleneck-audit-2026-06-06.md \
   packages/d2c-core/README.md
 git commit -m "docs: describe React codegen asset delivery"
 ```
