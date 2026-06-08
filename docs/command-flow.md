@@ -7,6 +7,7 @@
 ### design-to-spec命令组
 
 #### d2s-validate-contracts
+
 验证设计规格契约的有效性
 
 ```mermaid
@@ -16,7 +17,7 @@ sequenceDiagram
     participant Validator as validate-contracts.js
     participant Schema as json-schema.js
     participant YAML as yaml.js
-    
+
     User->>CLI: d2s-validate-contracts --input contracts/
     CLI->>CLI: parseArgs(argv, spec)
     CLI->>Validator: main(args)
@@ -28,20 +29,22 @@ sequenceDiagram
 ```
 
 **关键路径**：
+
 1. `skills/design-to-spec/scripts/lib/cli.js:1` - 参数解析
 2. `skills/design-to-spec/scripts/validate-contracts.js` - 主验证逻辑
 3. JSON Schema验证和YAML文件加载
 
-#### d2s-generate-output  
+#### d2s-generate-output
+
 生成设计规格输出文件
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant CLI as cli.js  
+    participant CLI as cli.js
     participant Generator as generate-output.js
     participant YAML as yaml.js
-    
+
     User->>CLI: d2s-generate-output --template spec.md
     CLI->>CLI: parseArgs() + requireOpts()
     CLI->>Generator: main(args)
@@ -53,7 +56,7 @@ sequenceDiagram
 
 ### html-article-to-markdown命令
 
-```mermaid  
+```mermaid
 sequenceDiagram
     participant User
     participant CLI as cli.js
@@ -61,7 +64,7 @@ sequenceDiagram
     participant Processor as index.js
     participant Converter as htmlToMarkdown.js
     participant Verifier as verifyMarkdown.js
-    
+
     User->>CLI: html-article-to-markdown --url https://...
     CLI->>Fetcher: fetchUrl(url)
     Fetcher-->>CLI: htmlContent

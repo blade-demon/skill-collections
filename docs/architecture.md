@@ -10,23 +10,23 @@ skill-collections是一个设计源到组件转换的AI工具集monorepo，实�
 graph TB
     subgraph "CLI层"
         A1[d2s-validate-contracts]
-        A2[d2s-generate-output] 
+        A2[d2s-generate-output]
         A3[html-article-to-markdown]
     end
-    
+
     subgraph "Command层"
         B1[参数解析 cli.js]
         B2[输入验证]
         B3[错误处理]
     end
-    
+
     subgraph "Service层"
         C1[设计解析服务]
         C2[规格生成服务]
         C3[组件合成服务]
         C4[预览服务]
     end
-    
+
     subgraph "Core层 d2c-core"
         D1[Design IR]
         D2[Provider接口]
@@ -34,14 +34,14 @@ graph TB
         D4[Preview管线]
         D5[Codegen核心]
     end
-    
+
     subgraph "Infrastructure层"
         E1[YAML处理]
         E2[JSON Schema验证]
         E3[文件系统操作]
         E4[工具库]
     end
-    
+
     A1 --> B1
     A2 --> B1
     A3 --> B1
@@ -60,12 +60,15 @@ graph TB
 ## 关键路径分析
 
 ### 设计到规格转换路径
+
 `packages/d2c-core/src/index.ts:6` → IR模块 → Provider接口 → Contract生成
 
-### 命令行处理路径  
+### 命令行处理路径
+
 `skills/design-to-spec/scripts/lib/cli.js:1` → parseArgs → Service调用
 
 ### 预览生成路径
+
 Preview模块 → HTML渲染 → 保真度验证
 
 ## 设计原则
