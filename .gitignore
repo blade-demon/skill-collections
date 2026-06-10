@@ -29,6 +29,7 @@ coverage/
 # Agent scratch
 .superpowers/
 .codegraph/
+.understand-anything/
 
 # sketch-to-component CLI scratch output
 **/.d2c-run-*/
