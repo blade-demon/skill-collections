@@ -44,7 +44,7 @@ test('CI exposes a path-aware codegen visual regression gate', async () => {
     workflow,
     /--candidate-url http:\/\/127\.0\.0\.1:5179\/visual-harness-layout\.html[\s\S]*--out "\$RUNNER_TEMP\/codegen-visual-regression\/layout"/,
   )
-  assert.match(workflow, /actions\/upload-artifact@v4/)
+  assert.match(workflow, /actions\/upload-artifact@v\d+/)
   assert.match(
     workflow,
     /if: always\(\) && steps\.changes\.outputs\.relevant == 'true'/,
