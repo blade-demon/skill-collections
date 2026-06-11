@@ -21,6 +21,7 @@ export default defineConfig([
     '**/build/**',
     '**/.vite/**',
     '**/coverage/**',
+    '**/.d2c-run-*/**',
     '.claude/**',
     'fixtures/**',
     'docs/superpowers/plans/**',
