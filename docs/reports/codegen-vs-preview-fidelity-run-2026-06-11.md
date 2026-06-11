@@ -47,7 +47,7 @@ IR 里渐变填充形如 `{ color: '#FA5900FF', type: 'gradient', raw.gradient: 
 `node-79d2ea…`（180deg）、`node-3d37110c…`/`node-f42c8770…`（白色渐变遮罩）、
 `node-58aaa0e0…`（92.31deg）、`node-2e8552af…`（渐变文字）。
 
-### B. 字体解析依赖宿主文档 lang —— 9 条 rect width 失败（P0，影响所有文本测量）
+### B. 字体解析依赖宿主文档 lang —— 10 条 rect width 失败（P0，影响所有文本测量）
 
 两端输出的 CSS **逐字节一致**（`font-family: "PingFangSC"`，裸族名、无 fallback），文本内容
 也一致，但 CDP `CSS.getPlatformFontsForNode` 显示实际命中字体不同：
@@ -57,7 +57,9 @@ IR 里渐变填充形如 `{ color: '#FA5900FF', type: 'gradient', raw.gradient: 
 | baseline preview | `en`（index.html 写死） | Times + Songti SC（族名解析失败回退） | 223.98   |
 | candidate viewer | `zh`                    | **PingFang SC**（命中）               | 237.94   |
 
-把 baseline 的 lang 翻成 `zh` 后宽度精确变为 237.94 —— 9 条宽度失败 100% 由此解释。
+把 baseline 的 lang 翻成 `zh` 后宽度精确变为 237.94 —— **10 条宽度失败 100% 由此解释**
+（lang=zh baseline 探针逐节点复测，10/10 与 candidate 宽度精确一致，含两条 6→7.2 的
+小图形节点——其宽度由内嵌文本字形撑开，同属字体根因）。
 Chromium 仅在中文文档语境下把 `"PingFangSC"` 别名解析到 PingFang SC。
 
 两层含义：① **candidate 反而更接近设计意图**（Sketch 字体就是 PingFangSC-Regular），
@@ -124,7 +126,7 @@ codegen 坐标永远 parent-relative 直接定位（勿回退 PR-1）。
   （`PingFangSC` → `"PingFang SC", "PingFangSC"`），尾部统一追加 `sans-serif`。
 - preview `index.html` 的 lang 不再写死 `en`（取设计源语言或可配，默认 zh 数据集应为 zh）。
 - harness：baseline 与 candidate 页面 lang 钉死一致，消除测量噪声。
-- 验收：9 条宽度失败清零；且把 candidate viewer 改成 `lang="en"` 复测仍零宽度失败
+- 验收：10 条宽度失败清零；且把 candidate viewer 改成 `lang="en"` 复测仍零宽度失败
   （证明不再依赖宿主 lang）。
 
 ### PR-G3（P1）：矢量节点 inline SVG 输出
