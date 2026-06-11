@@ -81,9 +81,27 @@ baseline 才是错的；② 生成的组件包嵌入任意宿主页面，**lang 
 - baseline 与 candidate 文档 lang 不一致，字体噪声会掩盖真正的布局回归（见 B）；
 - 无像素级 diff 兜底。
 
+### E. 工程语义缺失 ——「形似而无魂」（独立轴线，P0 级长期债）
+
+A–D 全是「形」（像素保真）的问题。即使 G1–G4 全部完成，生成包仍然不是
+工程师会写、能维护、能接数据的 React 代码。本次真实产物的量化证据：
+
+| 维度     | 现状                                                          | 工程师手写的形态                           |
+| -------- | ------------------------------------------------------------- | ------------------------------------------ |
+| 标签语义 | **290/290 个元素是 `<div>`**（按钮/输入框/图片/列表全是 div） | `button`、`img`、`input`、`ul/li`          |
+| 数据流   | **0 个 props 接口，41 条文案写死**（deferred 模式不产 props） | props + 类型 + 默认值，文案/图片可注入     |
+| 重复结构 | 4 张酒店卡片 = `Recommendation`→`2`→…→`6` 嵌套快照            | `hotels.map(h => <HotelCard hotel={h}/>)`  |
+| 布局意图 | **101 个布局 99 个 absolute**（stack/inline 仅推断出 2）      | flex/grid 表达意图，改文案不破版           |
+| 命名     | `Nodea973bae5`、`Ai2`、`Icon10`（图层哈希/序号）              | `ChatScreen`、`MessageBubble`、`HotelCard` |
+
+根因不在 codegen 单点：semantic view 没有重复结构/列表检测（本稿 0 个 list 语义），
+component plan 把每个图层实例都规划成独立组件，codegen 忠实输出了这个无语义的 plan。
+「魂」必须从语义层开始注入，贯穿 semantic view → component plan → codegen 三段。
+
 ## 优化计划（分 PR，范围严格不混）
 
-延续 fidelity 分 PR 惯例；所有 PR 保留 #77 import guard 及其回归测试，
+两条轴线并行：**G 系列修「形」**（像素保真，小而确定，先行），**S 系列注「魂」**
+（工程语义，跨链路，跟进）。所有 PR 保留 #77 import guard 及其回归测试，
 codegen 坐标永远 parent-relative 直接定位（勿回退 PR-1）。
 
 ### PR-G1（P0）：codegen 渐变填充对齐 preview
@@ -119,11 +137,36 @@ codegen 坐标永远 parent-relative 直接定位（勿回退 PR-1）。
 - 把真实 `design-ir.json`（可提交，`.sketch` 不可）纳入 fixture，CI visual gate 从
   synthetic golden 升级为真实输入回归基线（呼应 2026-06-06 审计 P0-2）。
 
+### S 系列：注入工程语义（对应根因 E，跨 semantic view → plan → codegen）
+
+按依赖序排列；每刀仍保持小 PR、确定性优先的惯例。
+
+- **PR-S1 重复结构识别与折叠**：semantic view 增加同构子树聚类（结构指纹：
+  kind/层级/样式形状一致、仅文本与资产不同），产出 `list` / `listItem` 语义；
+  component plan 把 `Recommendation`–`Recommendation6` 这类实例折叠为
+  **1 个参数化组件 + N 条实例数据**；codegen 输出 `items.map(...)`。
+  验收：真实稿酒店卡片折叠为单组件，candidate 渲染与折叠前逐像素一致。
+- **PR-S2 数据建模（props 化）**：把折叠后的可变内容（文本、图片、数字）提升为
+  props + TS 类型 + 默认值，实例数据落 `*.data.ts`（mock 与视图分离）；
+  deferred 模式也要产 presentational props（当前 0 props、41 条文案写死）。
+  验收：根组件可用外部数据完整替换文案/图片而不改组件源码。
+- **PR-S3 语义化标签映射**：semantic kind → HTML 元素映射表
+  （media→`img`、可点击 region→`button`、list→`ul/li`、text 段落→`p`），
+  附基础 a11y（`alt`/`aria-label`）。当前 290/290 全 div。
+  验收：映射表覆盖率指标 + 渲染不回退（harness 全绿）。
+- **PR-S4 领域命名**：结合节点文本、symbol 名与上下文起草组件名
+  （`Nodea973bae5`→`ChatScreen`）。命名属判断性环节：可引入 LLM 起草，
+  但严格遵循架构原则——只做起草建议，落盘前过 schema 校验 + 人工门禁。
+  验收：plan 中组件名可由人工确认/覆写，确定性输出不受影响。
+- **PR-S5 布局意图覆盖率**：PR-3 的 stack/inline 推断在真实稿只命中 2/101，
+  扩展推断规则（等距子项、单轴排列容差、padding 推导），目标把 absolute
+  占比从 98% 降到可量化的阈值以下，并在 harness 加覆盖率回归指标。
+
 ### 后置（不进本轮）
 
 - radial/angular 渐变（CSS conic-gradient 可覆盖 angular，preview 同步提升）；
 - border position（inside/center/outside → box-shadow/outline 映射）；
-- 组件语义化命名（审计 P1-5）；layoutPlan 更多 strategy 投影。
+- 交互行为接线（interactive mode 全链）。
 
 ## 复现
 
