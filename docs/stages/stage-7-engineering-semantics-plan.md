@@ -49,21 +49,23 @@
 **标准**：S 系列完成后，对真实 `d2c.sketch` 重跑全管线，生成包满足：
 同 master 实例共享一份组件定义（`Icon`–`Icon10` 式重复源文件消失）；同父重复
 结构以 `items.map(...)` 渲染；可变文本/图片全部可经 props 注入（写死文案数
-41 → 0）；媒体节点是 `<img>`；渲染结果与改造前**逐节点指标一致**（harness
-全绿，含 G4 新增的可见内容 metric）。
+41 → 0）；媒体节点是 `<img>`；**248 个语义节点在 DOM 全部可定位**（节点追踪
+经 invocation `nodeMap` 保持，harness 全 present）且渲染结果与改造前
+**逐节点指标一致**（harness 全绿，含 G4 新增的可见内容 metric）。
 
 ## 2. 现状实证（2026-06-11 真实运行，全部已核实）
 
 「魂」的原料**已经在数据里**，断点在 5C 规划与 codegen 消费：
 
-| 机制        | 现状（真实 d2c.sketch）                                                                                                                                                                            | 断点                                                                |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| symbol 身份 | **master id 已保留**：`visualNode.symbol.masterId`（IR `SymbolTraceSchema`，36 个实例全带）+ `semantic.candidates[].symbolMasterId`；6 个 master 多实例，4 张酒店卡 = 同 master `24E4F568` ×4      | 5C 不按 master 分组：43 个候选 1:1 变 43 个独立组件                 |
-| 重复检测    | 5A `repeatedPatterns` 已检出 2 组（axis y×3、x×5，similarity 1.0）+ 1 个 `repeat-pattern` 候选（`semantic/derive.ts` 的 repeated-pattern 推导）                                                    | 5C **不消费**：无折叠、无集合                                       |
-| props 通道  | 5C 有 `props`/`dataBindings` 字段与 deferred 注释挂点（`derive-component-plan.ts:384`）；codegen `textExpression` 已支持 `prop.name ?? fallback`（`react/generate.ts:247`）                        | deferred 模式 interaction body 为空 → **0 props**，41 条文案写死    |
-| 元素语义    | plan 有组件级 `renderAs` 字段，但 5C **拒绝**把 text/media/icon 等 primitive 提升为组件（`derive-component-plan.ts:315` 显式 throw）；codegen 遍历 primitive 一律输出 `<div>`（`generate.ts:297`） | 组件级字段够不到 primitive；**缺按节点索引的 element 维度**（§3.4） |
-| 布局意图    | 5A 产 101 个 layoutCandidates（stack 1 / inline 1 / absolute 99）；plan `layoutPlan` 47 条（45 absolute）；codegen flex 投影已有（fidelity PR-3）                                                  | **检测覆盖率**低：等距规则太窄                                      |
-| 命名        | `source.name` 即领域名（`组件/导航栏`、`icon/首页/星星备份`）；`normalize/names.ts` 已做部分转换                                                                                                   | 不同 master 撞通用名（星星/声音关都叫 `Icon`）→ 数字后缀            |
+| 机制        | 现状（真实 d2c.sketch）                                                                                                                                                                                                                                      | 断点                                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| symbol 身份 | **master id 已保留**：`visualNode.symbol.masterId`（IR `SymbolTraceSchema`，36 个实例全带）+ `semantic.candidates[].symbolMasterId`；6 个 master 多实例，4 张酒店卡 = 同 master `24E4F568` ×4                                                                | 5C 不按 master 分组：43 个候选 1:1 变 43 个独立组件                                                                                      |
+| 重复检测    | 5A `repeatedPatterns` 已检出 2 组（axis y×3、x×5，similarity 1.0）+ 1 个 `repeat-pattern` 候选（`semantic/derive.ts` 的 repeated-pattern 推导）。**成员构成（已实测）**：y×3 是 decorative Rectangle、x×5 是普通 region group，成员均无 symbol、非 candidate | 5C **不消费**：无折叠、无集合；且 pattern 成员走不了 symbol 分组（§3.2、S-PR-3）                                                         |
+| props 通道  | 5C 有 `props`/`dataBindings` 字段与 deferred 注释挂点（`derive-component-plan.ts:384`）；codegen `textExpression` 已支持 `prop.name ?? fallback`（`react/generate.ts:247`）                                                                                  | deferred 模式 interaction body 为空 → **0 props**，41 条文案写死                                                                         |
+| 元素语义    | plan 有组件级 `renderAs` 字段，但 5C **拒绝**把 text/media/icon 等 primitive 提升为组件（`derive-component-plan.ts:315` 显式 throw）；codegen 遍历 primitive 一律输出 `<div>`（`generate.ts:297`）                                                           | 组件级字段够不到 primitive；**缺按节点索引的 element 维度**（§3.4）                                                                      |
+| 节点追踪    | 同 master 实例的子树 semantic/visual ID **刻意隔离**（normalize `visual.ts` 以 instancePath 加作用域，注释明言避免实例间子节点 ID 碰撞）；codegen 从 semantic id 生成 class 与 `data-d2c-node-id`（`generate.ts:271`）                                       | 共享 definition 文件若硬编码代表实例的子树 ID，其余 invocation 的节点 ID 将从 DOM 消失 → harness「248 节点全 present」破（§3.3 nodeMap） |
+| 布局意图    | 5A 产 101 个 layoutCandidates（stack 1 / inline 1 / absolute 99）；plan `layoutPlan` 47 条（45 absolute）；codegen flex 投影已有（fidelity PR-3）                                                                                                            | **检测覆盖率**低：等距规则太窄                                                                                                           |
+| 命名        | `source.name` 即领域名（`组件/导航栏`、`icon/首页/星星备份`）；`normalize/names.ts` 已做部分转换                                                                                                                                                             | 不同 master 撞通用名（星星/声音关都叫 `Icon`）→ 数字后缀                                                                                 |
 
 ## 3. 核心决策
 
@@ -76,8 +78,11 @@
 ### 3.2 分组键：既有 `visualNode.symbol.masterId`，零 schema 变更
 
 5C 内通过 `semanticNode.primaryVisualNodeId → visualNode.symbol.masterId` 分组
-同 master 实例；结构指纹折叠（非 symbol 的同构子树）作为第二信号后置到
-collections 刀之后。**不用 `source.name` 当分组键**（可被设计师重命名）。
+同 master 实例。**结构指纹**（非 symbol 的同构子树）的适用范围分两档：
+被 5A `repeatedPattern` 覆盖的成员在 **S-PR-3 内派生**——实测两组真实 pattern
+的成员均无 symbol、非 candidate（y×3 decorative、x×5 region），symbol 分组
+覆盖不到它们，没有这一步 collections 验收不可达；pattern 之外的通用结构指纹
+折叠仍后置。**不用 `source.name` 当分组键**（可被设计师重命名）。
 本决策替代早先草案的「normalize 补 `source.symbolId`」——该信息已以
 `symbol.masterId` 形式存在，重复新增是冗余契约。
 
@@ -91,19 +96,21 @@ footer 各一个图标），共享定义但不构成列表。模型上分开（p
 componentDefinitions?: Array<{
   id: string;                        // 确定性:master id 或结构指纹派生
   source:
-    | { kind: 'symbol-master'; masterId: string }
-    | { kind: 'structural'; fingerprint: string };   // structural 为后置刀
+    | { kind: 'symbol-master'; masterId: string }    // S-PR-1
+    | { kind: 'structural'; fingerprint: string };   // S-PR-3,仅 repeatedPattern 成员
   componentId: string;               // components[] 中保留的代表组件
   propSchema: Array<{ name: string; type: 'text' | 'assetRef'; defaultValue: string }>;
 }>;
 componentInvocations?: Array<{
   id: string;
   definitionId: string;
-  semanticNodeId: string;            // 原实例节点,保留可追溯
+  semanticNodeId: string;            // 原实例根节点,保留可追溯
   callerComponentId: string;         // 渲染它的父 planned component
   order: number;                     // caller 内稳定顺序
   placement: { x: number; y: number; width: number; height: number }; // parent-relative
   bindings: Record<string, string>;  // propName → 实例值(文本/assetRef)
+  nodeMap: Record<string, string>;   // 模板(代表实例)子树 semanticNodeId → 本实例 semanticNodeId
+                                     // 同构校验的副产物;双射,覆盖 definition 子树全部节点
 }>;
 collections?: Array<{
   id: string;
@@ -114,16 +121,30 @@ collections?: Array<{
 }>;
 ```
 
-- **definition**：同 master（或后置的结构指纹）同构实例 → 一份实现；
-  `propSchema` 由实例间 diff（文本、assetRef）确定性派生。
-  非同构 → 不产 definition，保持逐实例生成 + warning（确定性回退，永不猜测）。
+- **definition**：同 master（S-PR-1）或 repeatedPattern 成员的结构指纹
+  （S-PR-3）同构实例 → 一份实现；`propSchema` 由实例间 diff（文本、assetRef）
+  确定性派生。非同构 → 不产 definition，保持逐实例生成 + warning
+  （确定性回退，永不猜测）。
 - **invocation**：每个原实例一条，保留 caller、顺序与 parent-relative placement，
   渲染语义与今日逐像素一致；只是实现共享了。
+- **节点追踪（nodeMap）**：实例子树 ID 在 normalize 已刻意隔离（§2「节点追踪」行），
+  共享 definition 文件不能硬编码代表实例的子树 ID。codegen 的 CSS class 以模板
+  id 生成（样式共享），但 `data-d2c-node-id` 按 invocation 的 `nodeMap` 注入
+  （实现取向：definition 组件接受内部节点 id 映射、缺省为模板自身，S-PR-2 锁定），
+  保证每个原实例节点在 DOM 仍可定位——harness「248 节点全 present」是硬验收。
+- **export 所有权（definition 级唯一 export）**：非代表实例不再进入
+  `components[]` / `exports[]`；`exports` 收敛为 definitions 代表 ∪ 未折叠组件 ∪
+  root。**不为旧名提供 re-export alias**——生成包公共 API 由 plan 派生，
+  presentational 阶段无跨重生成的兼容承诺。barrel 由 `exports[]` 遍历生成
+  （`generate.ts` `packageBarrel`），S-PR-2 测试钉死「每个 export 都有对应
+  生成文件、无悬挂引用」。
 - **collection**：**仅**同一 `callerComponentId` 下、被 5A `repeatedPattern`
   覆盖的 invocations 才聚合；codegen 对它输出 `items.map(...)` + `*.data.ts`。
   跨父的同 definition invocations 永不进同一 collection。
 - integrity 校验扩展：definition/invocation/collection 的 id 引用闭合、
-  collection 的 invocations 同 caller、bindings 键 ⊆ propSchema。
+  collection 的 invocations 同 caller、bindings 键 ⊆ propSchema、
+  `nodeMap` 双射且键集 = definition 代表子树的全部 semanticNodeId、
+  exports 无悬挂（每个 export 对应存活组件）。
 
 ### 3.4 元素语义：按 `semanticNodeId` 索引的 element plan，不复用组件级 `renderAs`
 
@@ -169,27 +190,37 @@ hash 变 ⇒ **contract golden 与 codegen golden 按刀重生成**（每个 PR 
 
 文件：`packages/d2c-core/src/contract/component-plan-schema.ts`（三个可选字段 +
 integrity 扩展）、`derive-component-plan.ts`（按 `symbol.masterId` 分组、同构
-校验、propSchema/bindings 派生）与测试。要点：§3.3 sketch 在本刀以真实 schema
-锁定（spike 落地）；同 master 非同构 → 不折叠 + warning；本刀**不产 collections**
-（字段进 schema、derive 留空）。验收：真实稿产出 definitions（≥6 个多实例
-master 折叠）+ 全量 invocations；两跑字节稳定；contract golden 重生成且 diff
-仅新增字段。
+校验、propSchema/bindings/**nodeMap** 派生、**exports 收敛**）与测试。要点：
+§3.3 sketch 在本刀以真实 schema 锁定（spike 落地）；同 master 非同构 → 不折叠 +
+warning；nodeMap 是同构校验的副产物（双射、覆盖代表子树全部节点，integrity
+强制）；**export 所有权**在本刀拍板并测试——非代表实例移出 `components[]` /
+`exports[]`，无旧名 alias；本刀**不产 collections**（字段进 schema、derive 留空）。
+验收：真实稿产出 definitions（≥6 个多实例 master 折叠）+ 全量 invocations（含
+nodeMap）；exports 收敛且无悬挂；两跑字节稳定；contract golden 重生成且 diff
+可解释。
 
 ### S-PR-2 — codegen 消费 definition/invocation
 
 文件：`packages/d2c-core/src/codegen/react/generate.ts` + 测试。要点：同
 definition 单组件文件 + props 接口（由 propSchema 生成）；各 invocation 按
-placement/order 渲染并传 bindings；#77 import guard 测试扩展到 definition
-路径。验收：真实稿 `Icon2`–`Icon10` 式重复源文件消失；harness 逐节点指标
-与改造前一致；codegen golden 重生成。
+placement/order 渲染并传 bindings；**`data-d2c-node-id` 按 invocation 的
+nodeMap 注入**（CSS class 仍用模板 id，样式共享；映射实现取向见 §3.3）；
+barrel 按收敛后的 `exports[]` 生成，测试钉死每个 export 都有对应文件、无
+悬挂引用；#77 import guard 测试扩展到 definition 路径。验收：真实稿
+`Icon2`–`Icon10` 式重复源文件消失；**248 语义节点在 DOM 全部可定位
+（harness 全 present）**且逐节点指标与改造前一致；codegen golden 重生成。
 
 ### S-PR-3 — collections（同父 repeatedPattern → map + data.ts）
 
-文件：`derive-component-plan.ts`（消费 5A `repeatedPatterns`，仅同
-caller 聚合）、`react/generate.ts`（`items.map(...)` + `*.data.ts`）+ 测试。
-要点：跨父 invocations 永不聚合（回归测试钉死）；data 与视图分离。
-验收：真实稿 2 组 repeatedPattern 至少一组成为 collection 并 map 渲染；
-harness 指标不回退。
+文件：`derive-component-plan.ts`（**为 repeatedPattern 成员派生结构指纹
+definition/invocation**，再消费 `repeatedPatterns` 仅同 caller 聚合）、
+`react/generate.ts`（`items.map(...)` + `*.data.ts`）+ 测试。要点：实测两组
+真实 pattern 的成员均无 symbol、非 candidate（§2），S-PR-1 的 symbol 分组
+覆盖不到——结构指纹派生（范围**仅限 pattern 成员**，含 nodeMap 与 export
+收敛同规则）必须在本刀内，否则验收不可达；跨父 invocations 永不聚合
+（回归测试钉死）；data 与视图分离。验收：真实稿 x×5 region 组成为
+collection 并 map 渲染（y×3 decorative 组依同构判定，不强求）；
+pattern 成员子树节点仍全 present；harness 指标不回退。
 
 ### S-PR-4 — content props 补全（未折叠部分归零写死文案）
 
@@ -224,15 +255,15 @@ harness 覆盖率指标。要点：放宽等距容差、单轴有序非等距识
 
 ## 5. 测试矩阵
 
-| 范围           | 测试点                                                                                                                                                                         |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 5C 三分模型    | 同 master 同构 → definition + invocations（数量、propSchema、bindings）；非同构拒折叠 + warning；integrity：id 引用闭合、bindings ⊆ propSchema、collection 同 caller；两跑一致 |
-| 5C collections | 仅同父 repeatedPattern 聚合；**跨父同 definition 永不聚合**（回归钉死）；evidence 与 5A pattern 对账                                                                           |
-| codegen        | definition 单文件 + invocation 传值字节稳定；map + data.ts 分离；#77 guard 含 definition 路径；elementPlan 元素选择；`<img>` 资产引用                                          |
-| props          | 实例 diff → propSchema/bindings/默认值；deferred 模式产 content props；无差异字段不产 prop                                                                                     |
-| 命名           | definition 级命名确定性；覆写文件生效 + manifest 同步；撞名仍报错不静默                                                                                                        |
-| 布局           | 新规则单测（容差、非等距、padding）；「逐像素复刻才发 flex」护栏回归                                                                                                           |
-| 端到端         | 真实稿全管线重跑：harness 全绿；写死文案归零；重复源文件消失可解释；golden 按刀重生成且 diff 可 review                                                                         |
+| 范围           | 测试点                                                                                                                                                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5C 三分模型    | 同 master 同构 → definition + invocations（数量、propSchema、bindings、**nodeMap 双射且覆盖代表子树**）；非同构拒折叠 + warning；**exports 收敛**（非代表实例无 export、无悬挂引用）；integrity：id 引用闭合、bindings ⊆ propSchema、collection 同 caller；两跑一致 |
+| 5C collections | 仅同父 repeatedPattern 聚合；**跨父同 definition 永不聚合**（回归钉死）；**pattern 成员结构指纹派生**（无 symbol 成员产 definition/invocation/nodeMap）；evidence 与 5A pattern 对账                                                                                |
+| codegen        | definition 单文件 + invocation 传值字节稳定；**`data-d2c-node-id` 按 nodeMap 注入，真实稿 248 节点全 present**；barrel 与文件系统一致（每 export 有对应文件）；map + data.ts 分离；#77 guard 含 definition 路径；elementPlan 元素选择；`<img>` 资产引用             |
+| props          | 实例 diff → propSchema/bindings/默认值；deferred 模式产 content props；无差异字段不产 prop                                                                                                                                                                          |
+| 命名           | definition 级命名确定性；覆写文件生效 + manifest 同步；撞名仍报错不静默                                                                                                                                                                                             |
+| 布局           | 新规则单测（容差、非等距、padding）；「逐像素复刻才发 flex」护栏回归                                                                                                                                                                                                |
+| 端到端         | 真实稿全管线重跑：harness 全绿；写死文案归零；重复源文件消失可解释；golden 按刀重生成且 diff 可 review                                                                                                                                                              |
 
 ## 6. 边界与依赖
 
