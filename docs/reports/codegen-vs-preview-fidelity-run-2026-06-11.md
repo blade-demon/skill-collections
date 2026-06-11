@@ -94,9 +94,13 @@ A–D 全是「形」（像素保真）的问题。即使 G1–G4 全部完成�
 | 布局意图 | **101 个布局 99 个 absolute**（stack/inline 仅推断出 2）      | flex/grid 表达意图，改文案不破版           |
 | 命名     | `Nodea973bae5`、`Ai2`、`Icon10`（图层哈希/序号）              | `ChatScreen`、`MessageBubble`、`HotelCard` |
 
-根因不在 codegen 单点：semantic view 没有重复结构/列表检测（本稿 0 个 list 语义），
-component plan 把每个图层实例都规划成独立组件，codegen 忠实输出了这个无语义的 plan。
-「魂」必须从语义层开始注入，贯穿 semantic view → component plan → codegen 三段。
+根因不在 codegen 单点，**也不在检测缺失**：5A 其实已经检测到重复结构
+（本稿 `repeatedPatterns` 检出 2 组，另有 1 个 `repeat-pattern` 组件候选，见
+`packages/d2c-core/src/semantic/derive.ts` 的 repeated-pattern 推导），且 IR 已保留
+symbol master 身份（`visualNode.symbol.masterId`，本稿 36 个实例、6 个 master 多实例，
+4 张酒店卡片即同一 master 的 4 个实例）。**断点在 5C 不消费这些信号**——component
+plan 把每个实例都规划成独立组件，codegen 忠实输出了这个无语义的 plan。
+修复主战场在 component plan（5C）与 codegen 的消费端。
 
 ## 优化计划（分 PR，范围严格不混）
 
@@ -137,30 +141,15 @@ codegen 坐标永远 parent-relative 直接定位（勿回退 PR-1）。
 - 把真实 `design-ir.json`（可提交，`.sketch` 不可）纳入 fixture，CI visual gate 从
   synthetic golden 升级为真实输入回归基线（呼应 2026-06-06 审计 P0-2）。
 
-### S 系列：注入工程语义（对应根因 E，跨 semantic view → plan → codegen）
+### S 系列：注入工程语义（对应根因 E）
 
-按依赖序排列；每刀仍保持小 PR、确定性优先的惯例。
-
-- **PR-S1 重复结构识别与折叠**：semantic view 增加同构子树聚类（结构指纹：
-  kind/层级/样式形状一致、仅文本与资产不同），产出 `list` / `listItem` 语义；
-  component plan 把 `Recommendation`–`Recommendation6` 这类实例折叠为
-  **1 个参数化组件 + N 条实例数据**；codegen 输出 `items.map(...)`。
-  验收：真实稿酒店卡片折叠为单组件，candidate 渲染与折叠前逐像素一致。
-- **PR-S2 数据建模（props 化）**：把折叠后的可变内容（文本、图片、数字）提升为
-  props + TS 类型 + 默认值，实例数据落 `*.data.ts`（mock 与视图分离）；
-  deferred 模式也要产 presentational props（当前 0 props、41 条文案写死）。
-  验收：根组件可用外部数据完整替换文案/图片而不改组件源码。
-- **PR-S3 语义化标签映射**：semantic kind → HTML 元素映射表
-  （media→`img`、可点击 region→`button`、list→`ul/li`、text 段落→`p`），
-  附基础 a11y（`alt`/`aria-label`）。当前 290/290 全 div。
-  验收：映射表覆盖率指标 + 渲染不回退（harness 全绿）。
-- **PR-S4 领域命名**：结合节点文本、symbol 名与上下文起草组件名
-  （`Nodea973bae5`→`ChatScreen`）。命名属判断性环节：可引入 LLM 起草，
-  但严格遵循架构原则——只做起草建议，落盘前过 schema 校验 + 人工门禁。
-  验收：plan 中组件名可由人工确认/覆写，确定性输出不受影响。
-- **PR-S5 布局意图覆盖率**：PR-3 的 stack/inline 推断在真实稿只命中 2/101，
-  扩展推断规则（等距子项、单轴排列容差、padding 推导），目标把 absolute
-  占比从 98% 降到可量化的阈值以下，并在 harness 加覆盖率回归指标。
+详细实施计划独立成文，见
+[Stage 7 实施计划 — 工程语义注入（S 系列）](../stages/stage-7-engineering-semantics-plan.md)。
+要点：5A 信号（`repeatedPatterns`、`symbol.masterId`）**已存在**，折叠与消费落在
+5C 与 codegen；组件复用（definition/invocation）与列表渲染（collection，仅同父
+repeat-pattern 才 `map(...)`）分开建模；primitive 元素语义用按 `semanticNodeId`
+索引的 element plan，不复用组件级 `renderAs`。本报告不再维护 S 系列细节，
+以 Stage 7 计划为准。
 
 ### 后置（不进本轮）
 
@@ -180,9 +169,59 @@ $TSX $CLI preview  --design-ir .d2c-run-compare/ir/design-ir.json --out .d2c-run
 $TSX $CLI approve  --spec .d2c-run-compare/design-spec --approved-by blade --approved-at 2026-06-11T00:00:00Z --acknowledge-behavior-stubbed
 $TSX $CLI codegen  --spec .d2c-run-compare/design-spec --design-ir .d2c-run-compare/ir/design-ir.json --assets .d2c-run-compare/ir/assets --out .d2c-run-compare/generated
 cp .d2c-run-compare/ir/design-ir.json .d2c-run-compare/design-ir.json && ln -sfn ir/assets .d2c-run-compare/assets
-# 起 candidate viewer（一个只渲染生成包根组件的 vite 页面，复用 fixtures 已装的 react/vite）：
+# 起 candidate viewer（scaffold 见下，三个小文件，复用 fixtures 已装的 react/vite）：
 fixtures/apps/react-vite/node_modules/.bin/vite --config .d2c-run-compare/viewer/vite.config.mjs  # :5181
 # 然后跑 harness：
 $TSX skills/sketch-to-component/scripts/src/visual-harness/codegen-golden.ts \
   --candidate-url http://127.0.0.1:5181/ --fixture .d2c-run-compare --out .d2c-run-compare/harness
 ```
+
+### candidate viewer scaffold
+
+viewer 在 gitignored 的 scratch 目录里，新 checkout 需手工建以下三个文件
+（只渲染生成包根组件、不缩放、贴页面原点，保证 harness 指标可比）。
+
+`.d2c-run-compare/viewer/vite.config.mjs`：
+
+```js
+import { fileURLToPath } from 'node:url';
+
+const REPO = fileURLToPath(new URL('../..', import.meta.url));
+const RV = `${REPO}fixtures/apps/react-vite/node_modules`;
+
+export default {
+  root: fileURLToPath(new URL('.', import.meta.url)),
+  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+  server: { port: 5181, host: '127.0.0.1', fs: { allow: [REPO] } },
+  resolve: { alias: { react: `${RV}/react`, 'react-dom': `${RV}/react-dom` } },
+};
+```
+
+`.d2c-run-compare/viewer/index.html`：
+
+```html
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>D2C codegen candidate</title>
+  </head>
+  <body style="margin: 0">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+`.d2c-run-compare/viewer/src/main.tsx`：
+
+```tsx
+import { createRoot } from 'react-dom/client';
+import GeneratedRoot from '../../generated/src';
+
+createRoot(document.getElementById('root')!).render(<GeneratedRoot />);
+```
+
+> 注意 `index.html` 的 `lang="zh"` 会影响字体解析（见根因 B）；改 lang 复测是
+> B 的验证手段之一。
