@@ -9,6 +9,9 @@
         "usage": "image"
       }
     ],
+    "collections": [],
+    "componentDefinitions": [],
+    "componentInvocations": [],
     "components": [
       {
         "childSemanticNodeIds": [
@@ -92,6 +95,7 @@
         "status": "deferred"
       }
     },
+    "invocationEdges": [],
     "layoutPlan": [
       {
         "caveats": [],
