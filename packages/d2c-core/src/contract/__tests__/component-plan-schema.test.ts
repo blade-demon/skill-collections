@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CollectionSchema,
+  ComponentCallerSchema,
+  ComponentDefinitionSchema,
+  ComponentInvocationSchema,
   ComponentPlanApprovalSchema,
   ComponentPlanBodySchema,
   ComponentPlanModeSchema,
   ComponentPlanSchema,
+  InvocationEdgeSchema,
   PlannedAssetSchema,
   PlannedComponentSchema,
   PlannedExportSchema,
@@ -353,9 +358,115 @@ describe('ComponentPlanBodySchema (§4)', () => {
     delete (broken.interactionCoverage as Record<string, unknown>).dataBinding;
     expect(ComponentPlanBodySchema.safeParse(broken).success).toBe(false);
   });
+
+  it('accepts the optional definition/invocation/edge/collection arrays', () => {
+    const body = {
+      ...emptyBody(),
+      componentDefinitions: [],
+      componentInvocations: [],
+      invocationEdges: [],
+      collections: [],
+    };
+    expect(ComponentPlanBodySchema.safeParse(body).success).toBe(true);
+  });
 });
 
 /* ── body element schemas ────────────────────────────────────────────────── */
+
+describe('component reuse schemas', () => {
+  const componentCaller = { kind: 'component', componentId: 'pc_parent' } as const;
+
+  it('accepts a symbol-master definition and a traced invocation', () => {
+    expect(
+      ComponentDefinitionSchema.safeParse({
+        id: 'cd_status',
+        source: { kind: 'symbol-master', masterId: 'master-status' },
+        componentId: 'pc_status_a',
+        propSchema: [{ name: 'title', type: 'text', defaultValue: 'A' }],
+      }).success,
+    ).toBe(true);
+
+    expect(
+      ComponentInvocationSchema.safeParse({
+        id: 'ci_status_a',
+        definitionId: 'cd_status',
+        semanticNodeId: 's_status_a',
+        caller: componentCaller,
+        order: 0,
+        placement: { x: 0, y: 0, width: 320, height: 44 },
+        bindings: { title: 'A' },
+        nodeMap: { s_status_template: 's_status_a' },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts both caller kinds and a matching invocation edge', () => {
+    expect(ComponentCallerSchema.safeParse(componentCaller).success).toBe(true);
+    expect(
+      ComponentCallerSchema.safeParse({
+        kind: 'invocation',
+        invocationId: 'ci_parent',
+      }).success,
+    ).toBe(true);
+    expect(
+      InvocationEdgeSchema.safeParse({
+        caller: componentCaller,
+        boundarySemanticNodeId: 's_status_a',
+        invocationId: 'ci_status_a',
+      }).success,
+    ).toBe(true);
+  });
+
+  it('accepts a future collection shape without requiring derive to emit one', () => {
+    expect(
+      CollectionSchema.safeParse({
+        id: 'cl_cards',
+        caller: componentCaller,
+        definitionId: 'cd_card',
+        invocationIds: ['ci_card_a', 'ci_card_b', 'ci_card_c'],
+        evidence: {
+          axis: 'x',
+          itemSemanticNodeIds: ['s_card_a', 's_card_b', 's_card_c'],
+        },
+      }).success,
+    ).toBe(true);
+  });
+
+  it('rejects malformed callers, order, placement, bindings, and strict extras', () => {
+    expect(
+      ComponentCallerSchema.safeParse({ kind: 'definition', definitionId: 'cd_x' }).success,
+    ).toBe(false);
+    const invocation = {
+      id: 'ci_status_a',
+      definitionId: 'cd_status',
+      semanticNodeId: 's_status_a',
+      caller: componentCaller,
+      order: 0,
+      placement: { x: 0, y: 0, width: 320, height: 44 },
+      bindings: { title: 'A' },
+      nodeMap: { s_status_template: 's_status_a' },
+    };
+    expect(ComponentInvocationSchema.safeParse({ ...invocation, order: -1 }).success).toBe(false);
+    expect(
+      ComponentInvocationSchema.safeParse({
+        ...invocation,
+        placement: { x: 0, y: 0, width: -1, height: 44 },
+      }).success,
+    ).toBe(false);
+    expect(
+      ComponentInvocationSchema.safeParse({
+        ...invocation,
+        bindings: { title: 42 },
+      }).success,
+    ).toBe(false);
+    expect(
+      ComponentInvocationSchema.safeParse({
+        ...invocation,
+        extra: true,
+      }).success,
+    ).toBe(false);
+  });
+});
 
 describe('PlannedPropSchema', () => {
   it('accepts a data-model prop with required = true', () => {

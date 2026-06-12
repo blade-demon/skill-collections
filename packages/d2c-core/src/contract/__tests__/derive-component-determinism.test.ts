@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { deriveComponentPlan } from '../derive-component-plan';
-import { interactiveInput, presentationalInput, rechainHashes } from './component-plan-fixtures';
+import {
+  interactiveInput,
+  makeNestedFoldableSymbolInstancesView,
+  presentationalInput,
+  rechainHashes,
+} from './component-plan-fixtures';
 import { bridgedFullChat } from './fixtures';
 
 describe('deriveComponentPlan — determinism', () => {
@@ -71,5 +76,20 @@ describe('deriveComponentPlan — determinism', () => {
       ),
     );
     expect(shuffledIds).toEqual(originalIds);
+  });
+
+  it('component reuse artifacts are stable and use deterministic id prefixes', () => {
+    const input = presentationalInput(makeNestedFoldableSymbolInstancesView);
+    const first = deriveComponentPlan(input).componentPlan.body;
+    const second = deriveComponentPlan(input).componentPlan.body;
+
+    expect(stableJson(first.componentDefinitions)).toBe(stableJson(second.componentDefinitions));
+    expect(stableJson(first.componentInvocations)).toBe(stableJson(second.componentInvocations));
+    expect(
+      first.componentDefinitions?.every((definition) => /^cd_[0-9a-f]{12}$/.test(definition.id)),
+    ).toBe(true);
+    expect(
+      first.componentInvocations?.every((invocation) => /^ci_[0-9a-f]{12}$/.test(invocation.id)),
+    ).toBe(true);
   });
 });

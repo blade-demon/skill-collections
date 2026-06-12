@@ -89,6 +89,26 @@ function image(
   };
 }
 
+function symbolInstance(
+  id: string,
+  name: string,
+  layout: VisualNode['layout'],
+  masterId: string,
+  children: VisualNode[] = [],
+  extras: Partial<VisualNode> = {},
+): VisualNode {
+  return {
+    id: `node-${id}`,
+    kind: 'frame',
+    name,
+    source: source(id, 'symbolInstance'),
+    layout,
+    symbol: { instanceId: id, masterId, overrides: [] },
+    children,
+    ...extras,
+  };
+}
+
 function wrapDesignIR(root: VisualNode, rootName: string): DesignIR {
   return {
     schemaVersion: 'd2c.design-ir/v0.3.0',
@@ -166,4 +186,172 @@ export function makeMixedTextMediaView(): DeriveInteractionSpecInput {
     image('avatar-image', 'AvatarImage', { x: 0, y: 240, width: 80, height: 80 }, 'asset-avatar'),
   ]);
   return fixtureFromRoot(root, 'MixedTextMedia');
+}
+
+/* ── Stage 7 component-reuse fixtures ───────────────────────────────────── */
+
+export function makeFoldableSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'ReusableRoot', { x: 0, y: 0, width: 720, height: 120 }, [
+    symbolInstance(
+      'status-a',
+      'StatusBar',
+      { x: 0, y: 0, width: 320, height: 40 },
+      'master-status',
+      [text('status-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 })],
+      {
+        style: {
+          fills: [{ type: 'color', color: '#FFFFFFFF' }],
+          raw: { sketchStyleId: 'instance-style-a' },
+        },
+      },
+    ),
+    symbolInstance(
+      'status-b',
+      'StatusBar',
+      { x: 400, y: 60, width: 320, height: 40 },
+      'master-status',
+      [text('status-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 })],
+      {
+        style: {
+          fills: [{ type: 'color', color: '#FFFFFFFF' }],
+          raw: { sketchStyleId: 'instance-style-b' },
+        },
+      },
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Foldable Symbols');
+}
+
+export function makeFoldableBoundSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'BoundRoot', { x: 0, y: 0, width: 720, height: 120 }, [
+    symbolInstance('send-a', 'SendButton', { x: 0, y: 0, width: 320, height: 40 }, 'master-send', [
+      text('send-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 }),
+    ]),
+    symbolInstance(
+      'send-b',
+      'SendButton',
+      { x: 400, y: 60, width: 320, height: 40 },
+      'master-send',
+      [text('send-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 })],
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Bound Symbols');
+}
+
+export function makeMismatchedSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'MismatchRoot', { x: 0, y: 0, width: 720, height: 120 }, [
+    symbolInstance('card-a', 'Card', { x: 0, y: 0, width: 320, height: 80 }, 'master-card', [
+      text('card-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 }),
+    ]),
+    symbolInstance('card-b', 'Card', { x: 400, y: 0, width: 300, height: 80 }, 'master-card', [
+      text('card-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 }),
+    ]),
+  ]);
+  return fixtureFromRoot(root, 'Mismatched Symbols');
+}
+
+export function makeFoldedChildUnfoldedParentView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'CallerRoot', { x: 0, y: 0, width: 720, height: 180 }, [
+    symbolInstance(
+      'panel-a',
+      'Panel',
+      { x: 0, y: 0, width: 320, height: 120 },
+      'master-panel',
+      [
+        symbolInstance(
+          'panel-a-icon',
+          'Icon',
+          { x: 20, y: 20, width: 24, height: 24 },
+          'master-icon',
+        ),
+      ],
+      { style: { opacity: 1 } },
+    ),
+    symbolInstance(
+      'panel-b',
+      'Panel',
+      { x: 400, y: 0, width: 300, height: 120 },
+      'master-panel',
+      [
+        symbolInstance(
+          'panel-b-icon',
+          'Icon',
+          { x: 20, y: 20, width: 24, height: 24 },
+          'master-icon',
+        ),
+      ],
+      { style: { opacity: 1 } },
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Folded Child Unfolded Parent');
+}
+
+export function makeNestedFoldableSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'NestedRoot', { x: 0, y: 0, width: 720, height: 180 }, [
+    symbolInstance(
+      'prompt-a',
+      'SuggestedPrompt',
+      { x: 0, y: 0, width: 320, height: 120 },
+      'master-prompt',
+      [
+        text('prompt-a-label', 'First', { x: 60, y: 20, width: 120, height: 20 }),
+        symbolInstance(
+          'prompt-a-icon',
+          'Icon',
+          { x: 20, y: 20, width: 24, height: 24 },
+          'master-icon',
+        ),
+      ],
+    ),
+    symbolInstance(
+      'prompt-b',
+      'SuggestedPrompt',
+      { x: 400, y: 0, width: 320, height: 120 },
+      'master-prompt',
+      [
+        text('prompt-b-label', 'Second', { x: 60, y: 20, width: 120, height: 20 }),
+        symbolInstance(
+          'prompt-b-icon',
+          'Icon',
+          { x: 20, y: 20, width: 24, height: 24 },
+          'master-icon',
+        ),
+      ],
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Nested Foldable Symbols');
+}
+
+export function makeUnresolvedChildBoundaryView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'UnresolvedRoot', { x: 0, y: 0, width: 720, height: 180 }, [
+    symbolInstance(
+      'prompt-a',
+      'SuggestedPrompt',
+      { x: 0, y: 0, width: 320, height: 120 },
+      'master-prompt',
+      [
+        symbolInstance(
+          'prompt-a-icon',
+          'Icon',
+          { x: 20, y: 20, width: 24, height: 24 },
+          'master-icon',
+        ),
+      ],
+    ),
+    symbolInstance(
+      'prompt-b',
+      'SuggestedPrompt',
+      { x: 400, y: 0, width: 320, height: 120 },
+      'master-prompt',
+      [
+        symbolInstance(
+          'prompt-b-icon',
+          'Icon',
+          { x: 20, y: 20, width: 20, height: 20 },
+          'master-icon',
+        ),
+      ],
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Unresolved Child Boundary');
 }

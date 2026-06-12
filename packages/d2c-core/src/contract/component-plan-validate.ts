@@ -6,7 +6,9 @@
  * deliberately does not repeat that approval logic; it only checks references
  * Zod cannot resolve inside the graph or across upstream artifacts.
  */
-import type { ComponentPlan } from './component-plan-schema';
+import type { SemanticView } from '../ir';
+
+import type { ComponentCaller, ComponentPlan, ComponentInvocation } from './component-plan-schema';
 import type { InteractionSpec } from './interaction-schema';
 
 export class ComponentPlanIntegrityError extends Error {
@@ -19,11 +21,20 @@ export class ComponentPlanIntegrityError extends Error {
 export interface ComponentPlanIntegrityContext {
   /** Upstream semantic-view node ids. When provided, enables chain checks. */
   semanticNodeIds?: ReadonlySet<string>;
+  /** Full upstream semantic view. Enables render-domain ownership checks. */
+  semanticView?: SemanticView;
   /** Upstream interaction-spec artifact. When provided, enables ref checks. */
   interactionSpec?: InteractionSpec;
 }
 
-type IdKind = 'PlannedComponent' | 'PlannedExport' | 'PlannedLayout' | 'PlannedAsset';
+type IdKind =
+  | 'PlannedComponent'
+  | 'PlannedExport'
+  | 'PlannedLayout'
+  | 'PlannedAsset'
+  | 'ComponentDefinition'
+  | 'ComponentInvocation'
+  | 'Collection';
 
 export function assertComponentPlanIntegrity(
   plan: ComponentPlan,
@@ -51,6 +62,13 @@ export function assertComponentPlanIntegrity(
   for (const plannedExport of body.exports) register(plannedExport.id, 'PlannedExport');
   for (const layout of body.layoutPlan) register(layout.id, 'PlannedLayout');
   for (const asset of body.assetPlan) register(asset.id, 'PlannedAsset');
+  for (const definition of body.componentDefinitions ?? []) {
+    register(definition.id, 'ComponentDefinition');
+  }
+  for (const invocation of body.componentInvocations ?? []) {
+    register(invocation.id, 'ComponentInvocation');
+  }
+  for (const collection of body.collections ?? []) register(collection.id, 'Collection');
 
   /* §6.1.2 — root component must be represented as a root planned component. */
   const componentById = new Map(body.components.map((component) => [component.id, component]));
@@ -79,6 +97,8 @@ export function assertComponentPlanIntegrity(
       );
     }
   }
+
+  validateComponentReuseGraph(plan, componentById, context.semanticView);
 
   /* §6.1.4 — components cannot list themselves as semantic children. */
   for (const component of body.components) {
@@ -151,6 +171,27 @@ export function assertComponentPlanIntegrity(
         );
       }
     }
+    for (const invocation of body.componentInvocations ?? []) {
+      if (!semanticNodeIds.has(invocation.semanticNodeId)) {
+        throw new ComponentPlanIntegrityError(
+          `invocation ${invocation.id}: semanticNodeId ${invocation.semanticNodeId} does not exist in upstream semantic-view`,
+        );
+      }
+      for (const templateSemanticNodeId of Object.keys(invocation.nodeMap)) {
+        if (!semanticNodeIds.has(templateSemanticNodeId)) {
+          throw new ComponentPlanIntegrityError(
+            `invocation ${invocation.id}: nodeMap template semanticNodeId ${templateSemanticNodeId} does not exist in upstream semantic-view`,
+          );
+        }
+      }
+      for (const instanceSemanticNodeId of Object.values(invocation.nodeMap)) {
+        if (!semanticNodeIds.has(instanceSemanticNodeId)) {
+          throw new ComponentPlanIntegrityError(
+            `invocation ${invocation.id}: nodeMap instance semanticNodeId ${instanceSemanticNodeId} does not exist in upstream semantic-view`,
+          );
+        }
+      }
+    }
   }
 
   if (context.interactionSpec !== undefined) {
@@ -190,4 +231,343 @@ export function assertComponentPlanIntegrity(
       }
     }
   }
+}
+
+function validateComponentReuseGraph(
+  plan: ComponentPlan,
+  componentById: ReadonlyMap<string, ComponentPlan['body']['components'][number]>,
+  semanticView: SemanticView | undefined,
+): void {
+  const definitions = plan.body.componentDefinitions ?? [];
+  const invocations = plan.body.componentInvocations ?? [];
+  const edges = plan.body.invocationEdges ?? [];
+  const collections = plan.body.collections ?? [];
+  const definitionById = new Map(definitions.map((definition) => [definition.id, definition]));
+  const invocationById = new Map(invocations.map((invocation) => [invocation.id, invocation]));
+
+  const definitionSourceOwners = new Set<string>();
+  for (const definition of definitions) {
+    if (!componentById.has(definition.componentId)) {
+      throw new ComponentPlanIntegrityError(
+        `definition ${definition.id}: componentId ${definition.componentId} does not match any body.components id`,
+      );
+    }
+    const sourceKey =
+      definition.source.kind === 'symbol-master'
+        ? `symbol-master:${definition.source.masterId}`
+        : `structural:${definition.source.fingerprint}`;
+    if (definitionSourceOwners.has(sourceKey)) {
+      throw new ComponentPlanIntegrityError(`duplicate component definition source: ${sourceKey}`);
+    }
+    definitionSourceOwners.add(sourceKey);
+    assertUniqueStrings(
+      definition.propSchema.map((prop) => prop.name),
+      `definition ${definition.id}: propSchema names must be unique`,
+    );
+  }
+
+  const invocationSemanticOwners = new Set<string>();
+  for (const invocation of invocations) {
+    const definition = definitionById.get(invocation.definitionId);
+    if (definition === undefined) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: definitionId ${invocation.definitionId} does not resolve`,
+      );
+    }
+    if (invocationSemanticOwners.has(invocation.semanticNodeId)) {
+      throw new ComponentPlanIntegrityError(
+        `duplicate component invocation semanticNodeId: ${invocation.semanticNodeId}`,
+      );
+    }
+    invocationSemanticOwners.add(invocation.semanticNodeId);
+    assertCallerResolves(invocation, componentById, invocationById);
+
+    const declaredProps = new Set(definition.propSchema.map((prop) => prop.name));
+    for (const bindingName of Object.keys(invocation.bindings)) {
+      if (!declaredProps.has(bindingName)) {
+        throw new ComponentPlanIntegrityError(
+          `invocation ${invocation.id}: binding ${bindingName} is not declared by definition ${definition.id}`,
+        );
+      }
+    }
+    if (Object.keys(invocation.nodeMap).length === 0) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: nodeMap must not be empty`,
+      );
+    }
+    assertUniqueStrings(
+      Object.values(invocation.nodeMap),
+      `invocation ${invocation.id}: nodeMap values must be unique`,
+    );
+  }
+
+  const edgeBoundaryOwners = new Set<string>();
+  const edgeCountByInvocation = new Map<string, number>();
+  for (const edge of edges) {
+    const invocation = invocationById.get(edge.invocationId);
+    if (invocation === undefined) {
+      throw new ComponentPlanIntegrityError(
+        `invocation edge: invocationId ${edge.invocationId} does not resolve`,
+      );
+    }
+    if (!callersEqual(edge.caller, invocation.caller)) {
+      throw new ComponentPlanIntegrityError(
+        `edge for invocation ${invocation.id}: caller does not match invocation caller`,
+      );
+    }
+    if (edge.boundarySemanticNodeId !== invocation.semanticNodeId) {
+      throw new ComponentPlanIntegrityError(
+        `edge for invocation ${invocation.id}: boundarySemanticNodeId ${edge.boundarySemanticNodeId} must equal invocation semanticNodeId ${invocation.semanticNodeId}`,
+      );
+    }
+    const boundaryKey = `${callerKey(edge.caller)}:${edge.boundarySemanticNodeId}`;
+    if (edgeBoundaryOwners.has(boundaryKey)) {
+      throw new ComponentPlanIntegrityError(`duplicate invocation edge boundary: ${boundaryKey}`);
+    }
+    edgeBoundaryOwners.add(boundaryKey);
+    edgeCountByInvocation.set(invocation.id, (edgeCountByInvocation.get(invocation.id) ?? 0) + 1);
+  }
+  for (const invocation of invocations) {
+    const edgeCount = edgeCountByInvocation.get(invocation.id) ?? 0;
+    if (edgeCount !== 1) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: expected exactly one invocation edge, got ${edgeCount}`,
+      );
+    }
+  }
+
+  assertInvocationGraphAcyclic(invocations, invocationById);
+
+  for (const collection of collections) {
+    const definition = definitionById.get(collection.definitionId);
+    if (definition === undefined) {
+      throw new ComponentPlanIntegrityError(
+        `collection ${collection.id}: definitionId ${collection.definitionId} does not resolve`,
+      );
+    }
+    assertUniqueStrings(
+      collection.invocationIds,
+      `collection ${collection.id}: invocationIds must be unique`,
+    );
+    for (const invocationId of collection.invocationIds) {
+      const invocation = invocationById.get(invocationId);
+      if (invocation === undefined) {
+        throw new ComponentPlanIntegrityError(
+          `collection ${collection.id}: invocationId ${invocationId} does not resolve`,
+        );
+      }
+      if (invocation.definitionId !== definition.id) {
+        throw new ComponentPlanIntegrityError(
+          `collection ${collection.id}: invocation ${invocation.id} uses definition ${invocation.definitionId}, expected ${definition.id}`,
+        );
+      }
+      if (!callersEqual(invocation.caller, collection.caller)) {
+        throw new ComponentPlanIntegrityError(
+          `collection ${collection.id}: invocation ${invocation.id} caller does not match collection caller`,
+        );
+      }
+    }
+  }
+
+  if (semanticView !== undefined) {
+    validateInvocationRenderDomains({
+      semanticView,
+      definitions,
+      invocations,
+      edges,
+      componentById,
+    });
+  }
+}
+
+function assertCallerResolves(
+  invocation: ComponentInvocation,
+  componentById: ReadonlyMap<string, ComponentPlan['body']['components'][number]>,
+  invocationById: ReadonlyMap<string, ComponentInvocation>,
+): void {
+  if (invocation.caller.kind === 'component') {
+    if (!componentById.has(invocation.caller.componentId)) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: caller componentId ${invocation.caller.componentId} does not resolve`,
+      );
+    }
+    return;
+  }
+  if (!invocationById.has(invocation.caller.invocationId)) {
+    throw new ComponentPlanIntegrityError(
+      `invocation ${invocation.id}: caller invocationId ${invocation.caller.invocationId} does not resolve`,
+    );
+  }
+}
+
+function assertInvocationGraphAcyclic(
+  invocations: readonly ComponentInvocation[],
+  invocationById: ReadonlyMap<string, ComponentInvocation>,
+): void {
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (invocation: ComponentInvocation): void => {
+    if (visited.has(invocation.id)) return;
+    if (visiting.has(invocation.id)) {
+      throw new ComponentPlanIntegrityError(`invocation graph cycle detected at ${invocation.id}`);
+    }
+    visiting.add(invocation.id);
+    if (invocation.caller.kind === 'invocation') {
+      const parent = invocationById.get(invocation.caller.invocationId);
+      if (parent !== undefined) visit(parent);
+    }
+    visiting.delete(invocation.id);
+    visited.add(invocation.id);
+  };
+  for (const invocation of invocations) visit(invocation);
+}
+
+function validateInvocationRenderDomains(args: {
+  semanticView: SemanticView;
+  definitions: NonNullable<ComponentPlan['body']['componentDefinitions']>;
+  invocations: NonNullable<ComponentPlan['body']['componentInvocations']>;
+  edges: NonNullable<ComponentPlan['body']['invocationEdges']>;
+  componentById: ReadonlyMap<string, ComponentPlan['body']['components'][number]>;
+}): void {
+  const { semanticView, definitions, invocations, edges, componentById } = args;
+  const semanticNodeById = new Map(semanticView.body.nodes.map((node) => [node.id, node]));
+  const boundarySemanticNodeIds = new Set([
+    ...[...componentById.values()].map((component) => component.semanticNodeId),
+    ...invocations.map((invocation) => invocation.semanticNodeId),
+  ]);
+  const definitionById = new Map(definitions.map((definition) => [definition.id, definition]));
+  const invocationBySemanticId = new Map(
+    invocations.map((invocation) => [invocation.semanticNodeId, invocation]),
+  );
+  const componentBySemanticId = new Map(
+    [...componentById.values()].map((component) => [component.semanticNodeId, component]),
+  );
+  const globallyOwnedInstanceNodes = new Map<string, string>();
+
+  for (const invocation of invocations) {
+    const definition = definitionById.get(invocation.definitionId);
+    if (definition === undefined) continue;
+    const representative = componentById.get(definition.componentId);
+    if (representative === undefined) continue;
+    const templateDomain = collectRenderDomain(
+      representative.semanticNodeId,
+      semanticNodeById,
+      boundarySemanticNodeIds,
+    );
+    const instanceDomain = collectRenderDomain(
+      invocation.semanticNodeId,
+      semanticNodeById,
+      boundarySemanticNodeIds,
+    );
+    const nodeMapKeys = new Set(Object.keys(invocation.nodeMap));
+    const nodeMapValues = new Set(Object.values(invocation.nodeMap));
+    if (!setsEqual(nodeMapKeys, templateDomain)) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: nodeMap keys must equal definition render domain`,
+      );
+    }
+    if (!setsEqual(nodeMapValues, instanceDomain)) {
+      throw new ComponentPlanIntegrityError(
+        `invocation ${invocation.id}: nodeMap values must equal instance render domain`,
+      );
+    }
+    for (const semanticNodeId of nodeMapValues) {
+      const existingOwner = globallyOwnedInstanceNodes.get(semanticNodeId);
+      if (existingOwner !== undefined && existingOwner !== invocation.id) {
+        throw new ComponentPlanIntegrityError(
+          `semantic node ${semanticNodeId} is owned by both invocations ${existingOwner} and ${invocation.id}`,
+        );
+      }
+      globallyOwnedInstanceNodes.set(semanticNodeId, invocation.id);
+    }
+  }
+
+  const expectedEdgeBoundaries = new Set<string>();
+  const collectCallerBoundaries = (rootSemanticNodeId: string, caller: ComponentCaller): void => {
+    const walk = (semanticNodeId: string): void => {
+      const node = semanticNodeById.get(semanticNodeId);
+      if (node === undefined) {
+        throw new ComponentPlanIntegrityError(
+          `render-domain semanticNodeId ${semanticNodeId} does not exist in upstream semantic-view`,
+        );
+      }
+      for (const childId of node.childIds) {
+        if (invocationBySemanticId.has(childId)) {
+          expectedEdgeBoundaries.add(`${callerKey(caller)}:${childId}`);
+          continue;
+        }
+        if (componentBySemanticId.has(childId)) continue;
+        walk(childId);
+      }
+    };
+    walk(rootSemanticNodeId);
+  };
+
+  for (const component of componentById.values()) {
+    if (invocationBySemanticId.has(component.semanticNodeId)) continue;
+    collectCallerBoundaries(component.semanticNodeId, {
+      kind: 'component',
+      componentId: component.id,
+    });
+  }
+  for (const invocation of invocations) {
+    collectCallerBoundaries(invocation.semanticNodeId, {
+      kind: 'invocation',
+      invocationId: invocation.id,
+    });
+  }
+
+  const actualEdgeBoundaries = new Set(
+    edges.map((edge) => `${callerKey(edge.caller)}:${edge.boundarySemanticNodeId}`),
+  );
+  if (!setsEqual(actualEdgeBoundaries, expectedEdgeBoundaries)) {
+    throw new ComponentPlanIntegrityError(
+      'invocationEdges boundary set does not match semantic caller boundaries',
+    );
+  }
+}
+
+function collectRenderDomain(
+  rootSemanticNodeId: string,
+  semanticNodeById: ReadonlyMap<string, SemanticView['body']['nodes'][number]>,
+  boundarySemanticNodeIds: ReadonlySet<string>,
+): Set<string> {
+  const domain = new Set<string>();
+  const walk = (semanticNodeId: string, isRoot: boolean): void => {
+    if (!isRoot && boundarySemanticNodeIds.has(semanticNodeId)) return;
+    const node = semanticNodeById.get(semanticNodeId);
+    if (node === undefined) {
+      throw new ComponentPlanIntegrityError(
+        `render-domain semanticNodeId ${semanticNodeId} does not exist in upstream semantic-view`,
+      );
+    }
+    domain.add(semanticNodeId);
+    for (const childId of node.childIds) walk(childId, false);
+  };
+  walk(rootSemanticNodeId, true);
+  return domain;
+}
+
+function assertUniqueStrings(values: readonly string[], message: string): void {
+  if (new Set(values).size !== values.length) {
+    throw new ComponentPlanIntegrityError(message);
+  }
+}
+
+function callersEqual(left: ComponentCaller, right: ComponentCaller): boolean {
+  return callerKey(left) === callerKey(right);
+}
+
+function callerKey(caller: ComponentCaller): string {
+  return caller.kind === 'component'
+    ? `component:${caller.componentId}`
+    : `invocation:${caller.invocationId}`;
+}
+
+function setsEqual(left: ReadonlySet<string>, right: ReadonlySet<string>): boolean {
+  if (left.size !== right.size) return false;
+  for (const value of left) {
+    if (!right.has(value)) return false;
+  }
+  return true;
 }
