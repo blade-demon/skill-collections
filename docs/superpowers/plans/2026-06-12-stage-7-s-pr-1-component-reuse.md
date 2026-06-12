@@ -282,7 +282,8 @@ In `derive-component-reuse.ts`:
 For successful groups:
 
 - choose the representative by lexical `semanticNodeId`;
-- generate `cd_`, `ci_`, and `ce_` ids from stable records;
+- generate `cd_` and `ci_` ids from stable records; identify edges by
+  `caller + boundarySemanticNodeId` as defined by the approved schema;
 - derive text/asset prop slots only where instance values differ;
 - include one invocation per original instance;
 - build a bijective template-to-instance node map for the definition render domain;
@@ -332,7 +333,7 @@ expect(body.components.filter((c) => c.name.startsWith('StatusBar'))).toHaveLeng
 expect(body.exports.filter((e) => e.exportName.startsWith('StatusBar'))).toHaveLength(1);
 ```
 
-Assert fallback groups retain every component/export and add warnings. Add stable-json equality and stable prefix checks for `cd_`, `ci_`, and `ce_`.
+Assert fallback groups retain every component/export and add warnings. Add stable-json equality and stable prefix checks for `cd_` and `ci_`.
 
 - [ ] **Step 2: Run integration tests and verify RED**
 

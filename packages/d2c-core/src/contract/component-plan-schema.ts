@@ -173,6 +173,108 @@ export const PlannedAssetSchema = z
   .strict();
 export type PlannedAsset = z.infer<typeof PlannedAssetSchema>;
 
+/* ── Stage 7 component reuse schemas ────────────────────────────────────── */
+
+export const ComponentDefinitionSourceSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('symbol-master'),
+      masterId: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('structural'),
+      fingerprint: z.string().min(1),
+    })
+    .strict(),
+]);
+export type ComponentDefinitionSource = z.infer<typeof ComponentDefinitionSourceSchema>;
+
+export const ComponentDefinitionPropSchema = z
+  .object({
+    name: z.string().min(1),
+    type: z.enum(['text', 'assetRef']),
+    defaultValue: z.string(),
+  })
+  .strict();
+export type ComponentDefinitionProp = z.infer<typeof ComponentDefinitionPropSchema>;
+
+export const ComponentDefinitionSchema = z
+  .object({
+    id: z.string().min(1),
+    source: ComponentDefinitionSourceSchema,
+    componentId: z.string().min(1),
+    propSchema: z.array(ComponentDefinitionPropSchema),
+  })
+  .strict();
+export type ComponentDefinition = z.infer<typeof ComponentDefinitionSchema>;
+
+export const ComponentCallerSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('component'),
+      componentId: z.string().min(1),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal('invocation'),
+      invocationId: z.string().min(1),
+    })
+    .strict(),
+]);
+export type ComponentCaller = z.infer<typeof ComponentCallerSchema>;
+
+export const ComponentInvocationPlacementSchema = z
+  .object({
+    x: z.number(),
+    y: z.number(),
+    width: z.number().nonnegative(),
+    height: z.number().nonnegative(),
+  })
+  .strict();
+export type ComponentInvocationPlacement = z.infer<typeof ComponentInvocationPlacementSchema>;
+
+export const ComponentInvocationSchema = z
+  .object({
+    id: z.string().min(1),
+    definitionId: z.string().min(1),
+    semanticNodeId: z.string().min(1),
+    caller: ComponentCallerSchema,
+    order: z.number().int().nonnegative(),
+    placement: ComponentInvocationPlacementSchema,
+    bindings: z.record(z.string()),
+    nodeMap: z.record(z.string().min(1)),
+  })
+  .strict();
+export type ComponentInvocation = z.infer<typeof ComponentInvocationSchema>;
+
+export const InvocationEdgeSchema = z
+  .object({
+    caller: ComponentCallerSchema,
+    boundarySemanticNodeId: z.string().min(1),
+    invocationId: z.string().min(1),
+  })
+  .strict();
+export type InvocationEdge = z.infer<typeof InvocationEdgeSchema>;
+
+export const CollectionSchema = z
+  .object({
+    id: z.string().min(1),
+    caller: ComponentCallerSchema,
+    definitionId: z.string().min(1),
+    invocationIds: z.array(z.string().min(1)).min(3),
+    evidence: z
+      .object({
+        axis: z.enum(['x', 'y']),
+        itemSemanticNodeIds: z.array(z.string().min(1)).min(3),
+      })
+      .strict(),
+  })
+  .strict();
+export type Collection = z.infer<typeof CollectionSchema>;
+
 /* ── body envelope ───────────────────────────────────────────────────────── */
 
 /**
@@ -197,6 +299,10 @@ export const ComponentPlanBodySchema = z
     exports: z.array(PlannedExportSchema),
     layoutPlan: z.array(PlannedLayoutSchema),
     assetPlan: z.array(PlannedAssetSchema),
+    componentDefinitions: z.array(ComponentDefinitionSchema).optional(),
+    componentInvocations: z.array(ComponentInvocationSchema).optional(),
+    invocationEdges: z.array(InvocationEdgeSchema).optional(),
+    collections: z.array(CollectionSchema).optional(),
     /**
      * Snapshot of `interactionSpec.body.coverage` (§3.5). Stage 6's
      * `interaction-coverage.md` reads from here OR from the upstream
