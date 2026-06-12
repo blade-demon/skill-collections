@@ -28,6 +28,7 @@ import {
   makeMixedTextMediaView,
   makeMismatchedSymbolInstancesView,
   makeNestedFoldableSymbolInstancesView,
+  makeStructureMismatchedSymbolInstancesView,
   makeUnresolvedChildBoundaryView,
 } from './fixtures';
 import { deriveInteractionSpec, type DeriveInteractionSpecInput } from '../derive-interaction';
@@ -47,6 +48,7 @@ export {
   makeMixedTextMediaView,
   makeMismatchedSymbolInstancesView,
   makeNestedFoldableSymbolInstancesView,
+  makeStructureMismatchedSymbolInstancesView,
   makeUnresolvedChildBoundaryView,
 };
 

@@ -250,6 +250,19 @@ export function makeMismatchedSymbolInstancesView(): DeriveInteractionSpecInput 
   return fixtureFromRoot(root, 'Mismatched Symbols');
 }
 
+export function makeStructureMismatchedSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'StructureMismatchRoot', { x: 0, y: 0, width: 720, height: 120 }, [
+    symbolInstance('badge-a', 'Badge', { x: 0, y: 0, width: 320, height: 80 }, 'master-badge', [
+      text('badge-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 }),
+    ]),
+    symbolInstance('badge-b', 'Badge', { x: 400, y: 0, width: 320, height: 80 }, 'master-badge', [
+      text('badge-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 }),
+      text('badge-b-extra', 'Extra', { x: 16, y: 40, width: 100, height: 20 }),
+    ]),
+  ]);
+  return fixtureFromRoot(root, 'Structure Mismatched Symbols');
+}
+
 export function makeFoldedChildUnfoldedParentView(): DeriveInteractionSpecInput {
   const root = frame('root', 'CallerRoot', { x: 0, y: 0, width: 720, height: 180 }, [
     symbolInstance(

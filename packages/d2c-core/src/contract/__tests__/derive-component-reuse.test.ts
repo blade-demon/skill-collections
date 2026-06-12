@@ -7,6 +7,7 @@ import {
   makeFoldedChildUnfoldedParentView,
   makeMismatchedSymbolInstancesView,
   makeNestedFoldableSymbolInstancesView,
+  makeStructureMismatchedSymbolInstancesView,
   makeUnresolvedChildBoundaryView,
   presentationalInput,
 } from './component-plan-fixtures';
@@ -92,7 +93,7 @@ describe('deriveComponentReuse', () => {
     expect(reuse.warnings).toEqual([]);
   });
 
-  it('falls back when root geometry differs', () => {
+  it('falls back when root geometry differs and names the differing facet and nodes', () => {
     const reuse = deriveComponentReuse(reuseInput(makeMismatchedSymbolInstancesView));
 
     expect(reuse.componentDefinitions).toEqual([]);
@@ -101,7 +102,23 @@ describe('deriveComponentReuse', () => {
     expect(reuse.warnings).toEqual([
       expect.objectContaining({
         code: 'component-reuse-fallback',
-        message: expect.stringMatching(/master-card.*geometry/i),
+        message: expect.stringMatching(
+          /master-card was not folded: geometry differs at template node \S+ vs instance node \S+/,
+        ),
+      }),
+    ]);
+  });
+
+  it('falls back when instance structure differs and reports the parent child-slot mismatch', () => {
+    const reuse = deriveComponentReuse(reuseInput(makeStructureMismatchedSymbolInstancesView));
+
+    expect(reuse.componentDefinitions).toEqual([]);
+    expect(reuse.warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(
+          /master-badge was not folded: child structure or nested boundary identity differs at template node \S+ vs instance node \S+/,
+        ),
       }),
     ]);
   });
@@ -181,7 +198,79 @@ describe('deriveComponentReuse', () => {
     expect(reuse.warnings).toEqual([
       expect.objectContaining({
         code: 'component-reuse-fallback',
-        message: expect.stringMatching(/style/i),
+        message: expect.stringMatching(
+          /master-status was not folded: style differs at template node \S+ vs instance node \S+/,
+        ),
+      }),
+    ]);
+  });
+
+  it('reports symbol identity (not node kind) when only a walked nested masterId differs', () => {
+    const input = reuseInput(makeFoldableSymbolInstancesView);
+    const changedVisualRoot = {
+      ...input.visualView.body.root,
+      children: input.visualView.body.root.children.map((node, index) => ({
+        ...node,
+        children: node.children.map((child) => ({
+          ...child,
+          symbol: {
+            instanceId: child.id,
+            masterId: index === 0 ? 'master-label-a' : 'master-label-b',
+            overrides: [],
+          },
+        })),
+      })),
+    };
+    const reuse = deriveComponentReuse({
+      ...input,
+      visualView: {
+        ...input.visualView,
+        body: { ...input.visualView.body, root: changedVisualRoot },
+      },
+    });
+
+    expect(reuse.componentDefinitions).toEqual([]);
+    expect(reuse.warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(
+          /master-status was not folded: symbol identity differs at template node \S+ vs instance node \S+/,
+        ),
+      }),
+    ]);
+  });
+
+  it('reports nested boundary geometry when only a folded child placement differs', () => {
+    const input = reuseInput(makeNestedFoldableSymbolInstancesView);
+    const changedVisualRoot = {
+      ...input.visualView.body.root,
+      children: input.visualView.body.root.children.map((node, index) => ({
+        ...node,
+        children: node.children.map((child) =>
+          index === 1 && child.symbol !== undefined
+            ? { ...child, layout: { ...child.layout, x: child.layout.x + 4 } }
+            : child,
+        ),
+      })),
+    };
+    const reuse = deriveComponentReuse({
+      ...input,
+      visualView: {
+        ...input.visualView,
+        body: { ...input.visualView.body, root: changedVisualRoot },
+      },
+    });
+
+    /* The icon children still fold — root x/y is excluded from their own
+     * identity — so only the parent prompt group falls back. */
+    expect(reuse.componentDefinitions).toHaveLength(1);
+    expect(reuse.componentInvocations).toHaveLength(2);
+    expect(reuse.warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(
+          /master-prompt was not folded: nested boundary geometry differs at template node \S+ vs instance node \S+/,
+        ),
       }),
     ]);
   });
@@ -233,9 +322,25 @@ describe('deriveComponentReuse', () => {
 
     expect(reuse.componentDefinitions).toEqual([]);
     expect(reuse.warnings).toHaveLength(2);
-    expect(reuse.warnings.map((warning) => warning.message).join('\n')).toMatch(
-      /master-icon[\s\S]*master-prompt|master-prompt[\s\S]*master-icon/,
+    const joined = reuse.warnings.map((warning) => warning.message).join('\n');
+    expect(joined).toMatch(/master-icon was not folded: geometry differs at/);
+    expect(joined).toMatch(
+      /master-prompt was not folded: child structure or nested boundary identity differs at/,
     );
+  });
+
+  it('throws a clear error when an instance has no planned ancestor caller', () => {
+    const input = reuseInput(makeFoldableSymbolInstancesView);
+    const instanceSemanticIds = new Set(
+      input.candidates.map((candidate) => candidate.plannedComponent.semanticNodeId),
+    );
+    for (const node of input.semanticView.body.nodes) {
+      if (instanceSemanticIds.has(node.id)) {
+        (node as { parentId?: string }).parentId = 's_ghost';
+      }
+    }
+
+    expect(() => deriveComponentReuse(input)).toThrowError(/no planned ancestor above semantic/);
   });
 
   it('is stable when candidate input order is reversed', () => {

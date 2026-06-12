@@ -466,6 +466,33 @@ describe('component reuse schemas', () => {
       }).success,
     ).toBe(false);
   });
+
+  it('rejects empty binding and nodeMap keys and empty nodeMap values', () => {
+    const invocation = {
+      id: 'ci_status_a',
+      definitionId: 'cd_status',
+      semanticNodeId: 's_status_a',
+      caller: componentCaller,
+      order: 0,
+      placement: { x: 0, y: 0, width: 320, height: 44 },
+      bindings: { title: 'A' },
+      nodeMap: { s_status_template: 's_status_a' },
+    };
+    expect(
+      ComponentInvocationSchema.safeParse({ ...invocation, bindings: { '': 'A' } }).success,
+    ).toBe(false);
+    /* empty binding VALUES stay legal — empty text content is real. */
+    expect(
+      ComponentInvocationSchema.safeParse({ ...invocation, bindings: { title: '' } }).success,
+    ).toBe(true);
+    expect(
+      ComponentInvocationSchema.safeParse({ ...invocation, nodeMap: { '': 's_status_a' } }).success,
+    ).toBe(false);
+    expect(
+      ComponentInvocationSchema.safeParse({ ...invocation, nodeMap: { s_status_template: '' } })
+        .success,
+    ).toBe(false);
+  });
 });
 
 describe('PlannedPropSchema', () => {
