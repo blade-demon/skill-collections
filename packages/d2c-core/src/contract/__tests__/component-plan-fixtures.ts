@@ -21,8 +21,13 @@ import {
   bridgedFullChat,
   bridgedList,
   makeButtonyView,
+  makeFoldableSymbolInstancesView,
+  makeFoldedChildUnfoldedParentView,
   makeInputComposerView,
   makeMixedTextMediaView,
+  makeMismatchedSymbolInstancesView,
+  makeNestedFoldableSymbolInstancesView,
+  makeUnresolvedChildBoundaryView,
 } from './fixtures';
 import { deriveInteractionSpec, type DeriveInteractionSpecInput } from '../derive-interaction';
 import type { InteractionCoverage, InteractionSpec } from '../interaction-schema';
@@ -34,8 +39,13 @@ export {
   bridgedFullChat,
   bridgedList,
   makeButtonyView,
+  makeFoldableSymbolInstancesView,
+  makeFoldedChildUnfoldedParentView,
   makeInputComposerView,
   makeMixedTextMediaView,
+  makeMismatchedSymbolInstancesView,
+  makeNestedFoldableSymbolInstancesView,
+  makeUnresolvedChildBoundaryView,
 };
 
 /* ── presentational input bridge ─────────────────────────────────────────── */
