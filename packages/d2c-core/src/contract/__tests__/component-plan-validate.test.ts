@@ -484,6 +484,16 @@ describe('assertComponentPlanIntegrity — intra-plan', () => {
     ).toThrowError(/invocation ci_status_a: nodeMap values must be unique/);
   });
 
+  it('rejects an empty nodeMap without requiring semantic-view context', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) =>
+      index === 0 ? { ...invocation, nodeMap: {} } : invocation,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentInvocations: broken })),
+    ).toThrowError(/invocation ci_status_a: nodeMap must not be empty/);
+  });
+
   it('rejects an edge whose caller disagrees with the child invocation', () => {
     const edges = reuseBody().invocationEdges!;
     const broken = edges.map((edge, index) =>
@@ -541,6 +551,26 @@ describe('assertComponentPlanIntegrity — intra-plan', () => {
         semanticView: reuseSemanticView(),
       }),
     ).toThrowError(/invocation ci_status_b: nodeMap keys must equal definition render domain/);
+  });
+
+  it('rejects a caller that resolves but is not the invocation boundary semantic owner', () => {
+    const invocations = reuseBody().componentInvocations!.map((invocation, index) =>
+      index === 1
+        ? {
+            ...invocation,
+            caller: { kind: 'component' as const, componentId: 'pc_status_a' },
+          }
+        : invocation,
+    );
+    const edges = reuseBody().invocationEdges!.map((edge, index) =>
+      index === 1 ? { ...edge, caller: invocations[index]!.caller } : edge,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(
+        reusePlan({ componentInvocations: invocations, invocationEdges: edges }),
+        { semanticView: reuseSemanticView() },
+      ),
+    ).toThrowError(/invocationEdges boundary set does not match semantic caller boundaries/);
   });
 });
 
@@ -615,6 +645,45 @@ describe('assertComponentPlanIntegrity — artifact-chain context', () => {
       }),
     ).toThrowError(
       /component pc_root: childSemanticNodeId s_title does not exist in upstream semantic-view/,
+    );
+  });
+
+  it('throws when invocation semantic ids or nodeMap ids are missing upstream', () => {
+    const invocations = reuseBody().componentInvocations!.map((invocation, index) =>
+      index === 1
+        ? {
+            ...invocation,
+            semanticNodeId: 's_missing_invocation',
+            nodeMap: {
+              s_status_a: 's_missing_invocation',
+              s_label_a: 's_missing_label',
+            },
+          }
+        : invocation,
+    );
+    const edges = reuseBody().invocationEdges!.map((edge, index) =>
+      index === 1
+        ? {
+            ...edge,
+            boundarySemanticNodeId: 's_missing_invocation',
+          }
+        : edge,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(
+        reusePlan({ componentInvocations: invocations, invocationEdges: edges }),
+        {
+          semanticNodeIds: new Set([
+            's_screen',
+            's_status_a',
+            's_label_a',
+            's_status_b',
+            's_label_b',
+          ]),
+        },
+      ),
+    ).toThrowError(
+      /invocation ci_status_b: semanticNodeId s_missing_invocation does not exist in upstream semantic-view/,
     );
   });
 
