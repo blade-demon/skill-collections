@@ -106,6 +106,45 @@ describe('deriveComponentReuse', () => {
     ]);
   });
 
+  it('keeps meaningful provider style payloads in the fingerprint', () => {
+    const input = reuseInput(makeFoldableSymbolInstancesView);
+    const changedVisualRoot = {
+      ...input.visualView.body.root,
+      children: input.visualView.body.root.children.map((node, index) => ({
+        ...node,
+        style: {
+          ...node.style,
+          fills: node.style?.fills?.map((fill) => ({
+            ...fill,
+            raw: {
+              gradient: {
+                stops: [
+                  { position: 0, color: index === 0 ? '#FFFFFFFF' : '#000000FF' },
+                  { position: 1, color: '#111111FF' },
+                ],
+              },
+            },
+          })),
+        },
+      })),
+    };
+    const reuse = deriveComponentReuse({
+      ...input,
+      visualView: {
+        ...input.visualView,
+        body: { ...input.visualView.body, root: changedVisualRoot },
+      },
+    });
+
+    expect(reuse.componentDefinitions).toEqual([]);
+    expect(reuse.warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(/style/i),
+      }),
+    ]);
+  });
+
   it('uses component callers when folded children live under unfolded parents', () => {
     const reuse = deriveComponentReuse(reuseInput(makeFoldedChildUnfoldedParentView));
 

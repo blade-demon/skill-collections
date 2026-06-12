@@ -375,16 +375,21 @@ function buildComponentSnapshot(
 function canonicalStyle(style: VisualNode['style']): unknown {
   if (style === undefined) return null;
   return {
-    fills: style.fills?.map(withoutRaw) ?? null,
-    borders: style.borders?.map(withoutRaw) ?? null,
-    effects: style.effects?.map(withoutRaw) ?? null,
+    fills: style.fills ?? null,
+    borders: style.borders ?? null,
+    effects: style.effects ?? null,
     opacity: style.opacity ?? null,
     radius: style.radius ?? null,
+    raw: canonicalStyleRaw(style.raw),
   };
 }
 
-function withoutRaw(value: object): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'raw'));
+function canonicalStyleRaw(
+  raw: Record<string, unknown> | undefined,
+): Record<string, unknown> | null {
+  if (raw === undefined) return null;
+  const entries = Object.entries(raw).filter(([key]) => key !== 'sketchStyleId');
+  return entries.length === 0 ? null : Object.fromEntries(entries);
 }
 
 function derivePropSchema(
