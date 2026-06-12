@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveComponentPlan } from '../derive-component-plan';
-import { presentationalInput } from './component-plan-fixtures';
+import {
+  makeFoldableSymbolInstancesView,
+  makeMismatchedSymbolInstancesView,
+  presentationalInput,
+} from './component-plan-fixtures';
 import { bridgedList, makeMixedTextMediaView } from './fixtures';
 
 describe('deriveComponentPlan — presentational (deferred interaction)', () => {
@@ -82,6 +86,52 @@ describe('deriveComponentPlan — presentational (deferred interaction)', () => 
     }
     const hasImage = componentPlan.body.assetPlan.some((a) => a.usage === 'image');
     expect(hasImage).toBe(true);
+  });
+
+  it('emits empty reuse arrays for plans without repeated symbol masters', () => {
+    const { componentPlan } = deriveComponentPlan(presentationalInput());
+
+    expect(componentPlan.body.componentDefinitions).toEqual([]);
+    expect(componentPlan.body.componentInvocations).toEqual([]);
+    expect(componentPlan.body.invocationEdges).toEqual([]);
+    expect(componentPlan.body.collections).toEqual([]);
+  });
+
+  it('folds identical symbol-master components to one definition and one export', () => {
+    const { componentPlan, warnings } = deriveComponentPlan(
+      presentationalInput(makeFoldableSymbolInstancesView),
+    );
+    const body = componentPlan.body;
+
+    expect(body.componentDefinitions).toHaveLength(1);
+    expect(body.componentInvocations).toHaveLength(2);
+    expect(body.invocationEdges).toHaveLength(2);
+    expect(body.collections).toEqual([]);
+    expect(
+      body.components.filter((component) => component.name.startsWith('StatusBar')),
+    ).toHaveLength(1);
+    expect(body.exports.filter((entry) => entry.exportName.startsWith('StatusBar'))).toHaveLength(
+      1,
+    );
+    expect(warnings).toEqual([]);
+  });
+
+  it('keeps non-identical instances separate and emits fallback warnings', () => {
+    const input = presentationalInput(makeMismatchedSymbolInstancesView);
+    const candidateCount = input.semanticView.body.componentCandidates.length;
+    const { componentPlan, warnings } = deriveComponentPlan(input);
+
+    expect(componentPlan.body.componentDefinitions).toEqual([]);
+    expect(componentPlan.body.componentInvocations).toEqual([]);
+    expect(componentPlan.body.components).toHaveLength(candidateCount + 1);
+    expect(componentPlan.body.exports).toHaveLength(candidateCount + 1);
+    expect(warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(/master-card.*geometry/i),
+      }),
+    ]);
+    expect(componentPlan.body.warnings).toEqual(warnings);
   });
 });
 

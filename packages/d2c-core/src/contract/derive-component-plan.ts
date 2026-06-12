@@ -60,6 +60,7 @@ import {
   ComponentPlanSchema,
 } from './component-plan-schema';
 import { assertComponentPlanIntegrity } from './component-plan-validate';
+import { deriveComponentReuse } from './derive-component-reuse';
 import type { InteractionDataModel, InteractionEvent, InteractionSpec } from './interaction-schema';
 import { pascalCase } from './derive-interaction';
 
@@ -195,11 +196,11 @@ export function deriveComponentPlan(input: DeriveComponentPlanInput): DeriveComp
   /* The validator requires `body.rootComponent.id` to appear in
    * `body.components`. Keep rootComponent at the head so the components
    * array reads top-down. */
-  const components: PlannedComponent[] = [rootComponent, ...candidateComponents];
+  const initialComponents: PlannedComponent[] = [rootComponent, ...candidateComponents];
 
   /* §7.2 step 5/6 — mode-specific bindings. */
   attachBindings({
-    components,
+    components: initialComponents,
     rootComponent,
     mode,
     interactionSpec,
@@ -207,11 +208,26 @@ export function deriveComponentPlan(input: DeriveComponentPlanInput): DeriveComp
     warnings,
   });
 
+  const reuse = deriveComponentReuse({
+    semanticView,
+    visualView,
+    rootComponent,
+    candidates: derivedCandidates,
+  });
+  warnings.push(...reuse.warnings);
+  const removedComponentIds = new Set(reuse.removedComponentIds);
+  const components = initialComponents.filter(
+    (component) => !removedComponentIds.has(component.id),
+  );
+  const survivingCandidates = derivedCandidates.filter(
+    (candidate) => !removedComponentIds.has(candidate.plannedComponent.id),
+  );
+
   /* §7.2 step 9 — exports. */
   const exports = buildExports({
     rootComponent,
     rootSemanticName: screenNode.name,
-    derivedCandidates,
+    derivedCandidates: survivingCandidates,
   });
 
   /* §7.2 step 7 — layouts. */
@@ -227,6 +243,10 @@ export function deriveComponentPlan(input: DeriveComponentPlanInput): DeriveComp
     exports,
     layoutPlan,
     assetPlan,
+    componentDefinitions: reuse.componentDefinitions,
+    componentInvocations: reuse.componentInvocations,
+    invocationEdges: reuse.invocationEdges,
+    collections: [],
     /* §3.5 — coverage is a snapshot, never re-computed. */
     interactionCoverage: interactionSpec.body.coverage,
     warnings,
@@ -261,7 +281,11 @@ export function deriveComponentPlan(input: DeriveComponentPlanInput): DeriveComp
 
   /* §6.2 — artifact-chain self-check. */
   const semanticNodeIds = new Set(semanticView.body.nodes.map((n) => n.id));
-  assertComponentPlanIntegrity(componentPlan, { semanticNodeIds, interactionSpec });
+  assertComponentPlanIntegrity(componentPlan, {
+    semanticNodeIds,
+    semanticView,
+    interactionSpec,
+  });
 
   return { componentPlan, warnings };
 }
