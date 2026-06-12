@@ -198,7 +198,12 @@ export function makeFoldableSymbolInstancesView(): DeriveInteractionSpecInput {
       { x: 0, y: 0, width: 320, height: 40 },
       'master-status',
       [text('status-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 })],
-      { style: { fills: [{ type: 'color', color: '#FFFFFFFF' }] } },
+      {
+        style: {
+          fills: [{ type: 'color', color: '#FFFFFFFF' }],
+          raw: { sketchStyleId: 'instance-style-a' },
+        },
+      },
     ),
     symbolInstance(
       'status-b',
@@ -206,7 +211,12 @@ export function makeFoldableSymbolInstancesView(): DeriveInteractionSpecInput {
       { x: 400, y: 60, width: 320, height: 40 },
       'master-status',
       [text('status-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 })],
-      { style: { fills: [{ type: 'color', color: '#FFFFFFFF' }] } },
+      {
+        style: {
+          fills: [{ type: 'color', color: '#FFFFFFFF' }],
+          raw: { sketchStyleId: 'instance-style-b' },
+        },
+      },
     ),
   ]);
   return fixtureFromRoot(root, 'Foldable Symbols');

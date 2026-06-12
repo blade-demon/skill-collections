@@ -357,7 +357,7 @@ function buildComponentSnapshot(
       geometry: isRoot
         ? { width: visualNode.layout.width, height: visualNode.layout.height }
         : visualNode.layout,
-      style: visualNode.style ?? null,
+      style: canonicalStyle(visualNode.style),
       textStyle: visualNode.text?.style ?? null,
       bindableType: bindable?.type ?? null,
       symbolMasterId: isRoot ? null : (visualNode.symbol?.masterId ?? null),
@@ -370,6 +370,21 @@ function buildComponentSnapshot(
     fingerprint: stableJson(walk(component.semanticNodeId, true)),
     entries,
   };
+}
+
+function canonicalStyle(style: VisualNode['style']): unknown {
+  if (style === undefined) return null;
+  return {
+    fills: style.fills?.map(withoutRaw) ?? null,
+    borders: style.borders?.map(withoutRaw) ?? null,
+    effects: style.effects?.map(withoutRaw) ?? null,
+    opacity: style.opacity ?? null,
+    radius: style.radius ?? null,
+  };
+}
+
+function withoutRaw(value: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'raw'));
 }
 
 function derivePropSchema(
