@@ -106,6 +106,47 @@ describe('deriveComponentReuse', () => {
     ]);
   });
 
+  it('falls back when any instance carries interaction bindings folding would drop', () => {
+    const input = reuseInput(makeFoldableSymbolInstancesView);
+    const bound = input.candidates[0]!.plannedComponent;
+    bound.eventBindings.push({
+      eventId: 'ie_status_click',
+      sourceSemanticNodeId: bound.semanticNodeId,
+      handlerProp: 'onStatusClick',
+      payload: {},
+    });
+
+    const reuse = deriveComponentReuse(input);
+
+    expect(reuse.componentDefinitions).toEqual([]);
+    expect(reuse.componentInvocations).toEqual([]);
+    expect(reuse.removedComponentIds).toEqual([]);
+    expect(reuse.warnings).toEqual([
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(/master-status.*interaction bindings/i),
+      }),
+    ]);
+  });
+
+  it('still folds when instances carry only presentational-stub props', () => {
+    const input = reuseInput(makeFoldableSymbolInstancesView);
+    for (const candidate of input.candidates) {
+      candidate.plannedComponent.props.push({
+        name: `text${candidate.plannedComponent.semanticNodeId}`,
+        type: 'string',
+        source: 'presentational-stub',
+        required: false,
+      });
+    }
+
+    const reuse = deriveComponentReuse(input);
+
+    expect(reuse.componentDefinitions).toHaveLength(1);
+    expect(reuse.componentInvocations).toHaveLength(2);
+    expect(reuse.warnings).toEqual([]);
+  });
+
   it('keeps meaningful provider style payloads in the fingerprint', () => {
     const input = reuseInput(makeFoldableSymbolInstancesView);
     const changedVisualRoot = {

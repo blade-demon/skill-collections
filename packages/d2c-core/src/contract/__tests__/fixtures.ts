@@ -222,6 +222,22 @@ export function makeFoldableSymbolInstancesView(): DeriveInteractionSpecInput {
   return fixtureFromRoot(root, 'Foldable Symbols');
 }
 
+export function makeFoldableBoundSymbolInstancesView(): DeriveInteractionSpecInput {
+  const root = frame('root', 'BoundRoot', { x: 0, y: 0, width: 720, height: 120 }, [
+    symbolInstance('send-a', 'SendButton', { x: 0, y: 0, width: 320, height: 40 }, 'master-send', [
+      text('send-a-label', 'First', { x: 16, y: 10, width: 100, height: 20 }),
+    ]),
+    symbolInstance(
+      'send-b',
+      'SendButton',
+      { x: 400, y: 60, width: 320, height: 40 },
+      'master-send',
+      [text('send-b-label', 'Second', { x: 16, y: 10, width: 100, height: 20 })],
+    ),
+  ]);
+  return fixtureFromRoot(root, 'Bound Symbols');
+}
+
 export function makeMismatchedSymbolInstancesView(): DeriveInteractionSpecInput {
   const root = frame('root', 'MismatchRoot', { x: 0, y: 0, width: 720, height: 120 }, [
     symbolInstance('card-a', 'Card', { x: 0, y: 0, width: 320, height: 80 }, 'master-card', [

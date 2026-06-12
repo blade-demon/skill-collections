@@ -80,6 +80,31 @@ export function deriveComponentReuse(input: DeriveComponentReuseInput): DeriveCo
 
   for (const group of groups) {
     const components = [...group.components].sort(compareComponentSemanticId);
+
+    /* Folding removes every non-representative instance from
+     * body.components, and S-PR-1 invocations carry only text/assetRef
+     * bindings — an event/data binding attached to a removed instance
+     * would silently vanish from the plan. Interactive artifacts therefore
+     * block folding until S-PR-2 re-homes them onto invocations.
+     * `presentational-stub` props do NOT block: their text slots survive as
+     * definition propSchema + invocation bindings, traceable via nodeMap. */
+    const interactionBound = components.find(
+      (component) =>
+        component.eventBindings.length > 0 ||
+        component.dataBindings.length > 0 ||
+        component.props.some((prop) => prop.source !== 'presentational-stub'),
+    );
+    if (interactionBound !== undefined) {
+      warnings.push({
+        code: 'component-reuse-fallback',
+        message: `symbol master ${group.masterId} was not folded: component ${interactionBound.id} carries interaction bindings that folding would drop`,
+        severity: 'warning',
+        sourceNodeId: components[0]!.semanticNodeId,
+        stage: '5C',
+      });
+      continue;
+    }
+
     const snapshots = new Map<string, ComponentSnapshot>();
     let snapshotFailure: string | undefined;
 
@@ -161,7 +186,7 @@ export function deriveComponentReuse(input: DeriveComponentReuseInput): DeriveCo
       componentId: group.representative.id,
       propSchema: group.propSchema,
     }))
-    .sort((left, right) => left.id.localeCompare(right.id));
+    .sort((left, right) => compareStrings(left.id, right.id));
 
   const invocationDrafts: ComponentInvocation[] = [];
   for (const group of foldedGroups) {
@@ -206,7 +231,7 @@ export function deriveComponentReuse(input: DeriveComponentReuseInput): DeriveCo
       indexes.preOrderBySemanticId.get(left.semanticNodeId) ?? Number.MAX_SAFE_INTEGER;
     const rightOrder =
       indexes.preOrderBySemanticId.get(right.semanticNodeId) ?? Number.MAX_SAFE_INTEGER;
-    return leftOrder - rightOrder || left.id.localeCompare(right.id);
+    return leftOrder - rightOrder || compareStrings(left.id, right.id);
   });
 
   const invocationEdges: InvocationEdge[] = invocationDrafts.map((invocation) => ({
@@ -229,7 +254,7 @@ export function deriveComponentReuse(input: DeriveComponentReuseInput): DeriveCo
     foldedComponentIds,
     representativeComponentIds,
     removedComponentIds,
-    warnings: warnings.sort((left, right) => left.message.localeCompare(right.message)),
+    warnings: warnings.sort((left, right) => compareStrings(left.message, right.message)),
   };
 }
 
@@ -302,7 +327,7 @@ function groupCandidatesByMaster(
     .sort(
       (left, right) =>
         right.depth - left.depth ||
-        left.masterId.localeCompare(right.masterId) ||
+        compareStrings(left.masterId, right.masterId) ||
         compareComponentSemanticId(left.components[0]!, right.components[0]!),
     );
 }
@@ -464,7 +489,7 @@ function assignInvocationOrder(
     siblings.sort((left, right) => {
       const leftOrder = preOrderBySemanticId.get(left.semanticNodeId) ?? Number.MAX_SAFE_INTEGER;
       const rightOrder = preOrderBySemanticId.get(right.semanticNodeId) ?? Number.MAX_SAFE_INTEGER;
-      return leftOrder - rightOrder || left.id.localeCompare(right.id);
+      return leftOrder - rightOrder || compareStrings(left.id, right.id);
     });
     siblings.forEach((invocation, index) => {
       invocation.order = index;
@@ -504,7 +529,16 @@ function semanticDepth(
 }
 
 function compareComponentSemanticId(left: PlannedComponent, right: PlannedComponent): number {
-  return left.semanticNodeId.localeCompare(right.semanticNodeId);
+  return compareStrings(left.semanticNodeId, right.semanticNodeId);
+}
+
+/* `localeCompare` consults runtime locale / ICU data, which the §2
+ * byte-identical determinism contract cannot depend on. Compare code units,
+ * matching the `Object.keys().sort()` ordering used by stable-json. */
+function compareStrings(left: string, right: string): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
 }
 
 function callerKey(caller: ComponentCaller): string {

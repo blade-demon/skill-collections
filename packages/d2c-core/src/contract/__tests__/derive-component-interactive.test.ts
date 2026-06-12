@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { deriveComponentPlan } from '../derive-component-plan';
 import { interactiveInput, withMode } from './component-plan-fixtures';
-import { makeButtonyView, makeInputComposerView } from './fixtures';
+import {
+  makeButtonyView,
+  makeFoldableBoundSymbolInstancesView,
+  makeInputComposerView,
+} from './fixtures';
 
 describe('deriveComponentPlan — interactive', () => {
   it('produces status=draft, mode=interactive, kind=component-plan from an approved interaction spec', () => {
@@ -54,6 +58,31 @@ describe('deriveComponentPlan — interactive', () => {
       c.props.filter((p) => p.source === 'presentational-stub'),
     );
     expect(stubProps).toHaveLength(0);
+  });
+
+  it('does not fold symbol instances whose bindings folding would drop', () => {
+    const input = interactiveInput(makeFoldableBoundSymbolInstancesView);
+    const { componentPlan, warnings } = deriveComponentPlan(input);
+    const body = componentPlan.body;
+
+    expect(body.componentDefinitions).toEqual([]);
+    expect(body.componentInvocations).toEqual([]);
+    expect(body.invocationEdges).toEqual([]);
+
+    /* Both instances survive with their click bindings intact. */
+    const boundComponents = body.components.filter((c) => c.eventBindings.length > 0);
+    expect(boundComponents).toHaveLength(2);
+    const allEventBindings = body.components.flatMap((c) => c.eventBindings);
+    expect(allEventBindings.map((binding) => binding.eventId).sort()).toEqual(
+      input.interactionSpec.body.events.map((event) => event.id).sort(),
+    );
+    expect(body.exports).toHaveLength(3);
+    expect(warnings).toContainEqual(
+      expect.objectContaining({
+        code: 'component-reuse-fallback',
+        message: expect.stringMatching(/master-send.*interaction bindings/i),
+      }),
+    );
   });
 
   it('throws when mode=interactive is paired with a non-approved interaction spec', () => {
