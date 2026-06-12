@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import type { SemanticView } from '../../ir';
 import type { ComponentPlan, ComponentPlanBody, PlannedComponent } from '../component-plan-schema';
 import type {
   InteractionCoverageStatus,
@@ -100,6 +101,158 @@ function plan(overrides: Partial<ComponentPlan> = {}): ComponentPlan {
     mode: 'presentational',
     body: body(),
     ...overrides,
+  };
+}
+
+function reuseBody(overrides: Partial<ComponentPlanBody> = {}): ComponentPlanBody {
+  const root = rootComponent({
+    childSemanticNodeIds: ['s_status_a', 's_status_b'],
+  });
+  const representative = rootComponent({
+    id: 'pc_status_a',
+    semanticNodeId: 's_status_a',
+    name: 'StatusBar',
+    role: 'component',
+    childSemanticNodeIds: ['s_label_a'],
+  });
+  return body({
+    rootComponent: root,
+    components: [root, representative],
+    exports: [
+      { id: 'pe_root', plannedComponentId: 'pc_root', exportName: 'Screen', kind: 'default' },
+      {
+        id: 'pe_status',
+        plannedComponentId: 'pc_status_a',
+        exportName: 'StatusBar',
+        kind: 'named',
+      },
+    ],
+    layoutPlan: [
+      {
+        id: 'pl_root',
+        semanticNodeId: 's_screen',
+        strategy: 'absolute',
+        confidence: 'medium',
+        constraints: [],
+        caveats: [],
+      },
+      {
+        id: 'pl_status_a',
+        semanticNodeId: 's_status_a',
+        strategy: 'absolute',
+        confidence: 'medium',
+        constraints: [],
+        caveats: [],
+      },
+      {
+        id: 'pl_status_b',
+        semanticNodeId: 's_status_b',
+        strategy: 'absolute',
+        confidence: 'medium',
+        constraints: [],
+        caveats: [],
+      },
+    ],
+    componentDefinitions: [
+      {
+        id: 'cd_status',
+        source: { kind: 'symbol-master', masterId: 'master-status' },
+        componentId: 'pc_status_a',
+        propSchema: [{ name: 'title', type: 'text', defaultValue: 'A' }],
+      },
+    ],
+    componentInvocations: [
+      {
+        id: 'ci_status_a',
+        definitionId: 'cd_status',
+        semanticNodeId: 's_status_a',
+        caller: { kind: 'component', componentId: 'pc_root' },
+        order: 0,
+        placement: { x: 0, y: 0, width: 320, height: 44 },
+        bindings: { title: 'A' },
+        nodeMap: {
+          s_status_a: 's_status_a',
+          s_label_a: 's_label_a',
+        },
+      },
+      {
+        id: 'ci_status_b',
+        definitionId: 'cd_status',
+        semanticNodeId: 's_status_b',
+        caller: { kind: 'component', componentId: 'pc_root' },
+        order: 1,
+        placement: { x: 0, y: 100, width: 320, height: 44 },
+        bindings: { title: 'B' },
+        nodeMap: {
+          s_status_a: 's_status_b',
+          s_label_a: 's_label_b',
+        },
+      },
+    ],
+    invocationEdges: [
+      {
+        caller: { kind: 'component', componentId: 'pc_root' },
+        boundarySemanticNodeId: 's_status_a',
+        invocationId: 'ci_status_a',
+      },
+      {
+        caller: { kind: 'component', componentId: 'pc_root' },
+        boundarySemanticNodeId: 's_status_b',
+        invocationId: 'ci_status_b',
+      },
+    ],
+    collections: [],
+    ...overrides,
+  });
+}
+
+function reusePlan(bodyOverrides: Partial<ComponentPlanBody> = {}): ComponentPlan {
+  return plan({ body: reuseBody(bodyOverrides) });
+}
+
+function semanticNode(
+  id: string,
+  parentId: string | undefined,
+  childIds: string[],
+  kind: 'screen' | 'component' | 'text',
+) {
+  return {
+    kind,
+    id,
+    name: id,
+    primaryVisualNodeId: `v_${id}`,
+    visualNodeIds: [`v_${id}`],
+    ...(parentId === undefined ? {} : { parentId }),
+    childIds,
+    bounds: { x: 0, y: 0, width: 100, height: 20 },
+    confidence: 'high' as const,
+    evidence: [{ kind: 'visual-node' as const, nodeId: `v_${id}`, reason: 'fixture' }],
+    source: { nodeIds: [`src_${id}`] },
+  };
+}
+
+function reuseSemanticView(): SemanticView {
+  return {
+    kind: 'semantic-view',
+    generatedFrom: {
+      schemaVersion: 'd2c.design-ir/v0.3.0',
+      designIrHash: 'a'.repeat(64),
+      visualViewHash: 'b'.repeat(64),
+    },
+    body: {
+      screen: { semanticNodeId: 's_screen', name: 'Screen' },
+      nodes: [
+        semanticNode('s_screen', undefined, ['s_status_a', 's_status_b'], 'screen'),
+        semanticNode('s_status_a', 's_screen', ['s_label_a'], 'component'),
+        semanticNode('s_label_a', 's_status_a', [], 'text'),
+        semanticNode('s_status_b', 's_screen', ['s_label_b'], 'component'),
+        semanticNode('s_label_b', 's_status_b', [], 'text'),
+      ],
+      componentCandidates: [],
+      repeatedPatterns: [],
+      layoutCandidates: [],
+      warnings: [],
+    },
   };
 }
 
@@ -277,6 +430,117 @@ describe('assertComponentPlanIntegrity — intra-plan', () => {
         }),
       ),
     ).not.toThrow();
+  });
+
+  it('accepts a valid definition/invocation graph', () => {
+    expect(() => assertComponentPlanIntegrity(reusePlan())).not.toThrow();
+  });
+
+  it('rejects an invocation whose definition is missing', () => {
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentDefinitions: [] })),
+    ).toThrowError(/invocation ci_status_a: definitionId cd_status does not resolve/);
+  });
+
+  it('rejects a dangling component caller', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) =>
+      index === 0
+        ? {
+            ...invocation,
+            caller: { kind: 'component' as const, componentId: 'pc_missing' },
+          }
+        : invocation,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentInvocations: broken })),
+    ).toThrowError(/invocation ci_status_a: caller componentId pc_missing does not resolve/);
+  });
+
+  it('rejects a binding not declared by the definition propSchema', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) =>
+      index === 0
+        ? { ...invocation, bindings: { ...invocation.bindings, unknown: 'value' } }
+        : invocation,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentInvocations: broken })),
+    ).toThrowError(/invocation ci_status_a: binding unknown is not declared/);
+  });
+
+  it('rejects a non-bijective nodeMap', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) =>
+      index === 0
+        ? {
+            ...invocation,
+            nodeMap: { s_status_a: 's_status_a', s_label_a: 's_status_a' },
+          }
+        : invocation,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentInvocations: broken })),
+    ).toThrowError(/invocation ci_status_a: nodeMap values must be unique/);
+  });
+
+  it('rejects an edge whose caller disagrees with the child invocation', () => {
+    const edges = reuseBody().invocationEdges!;
+    const broken = edges.map((edge, index) =>
+      index === 0
+        ? {
+            ...edge,
+            caller: { kind: 'component' as const, componentId: 'pc_status_a' },
+          }
+        : edge,
+    );
+    expect(() => assertComponentPlanIntegrity(reusePlan({ invocationEdges: broken }))).toThrowError(
+      /edge for invocation ci_status_a: caller does not match invocation caller/,
+    );
+  });
+
+  it('rejects duplicate edges for the same caller boundary', () => {
+    const edges = reuseBody().invocationEdges!;
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ invocationEdges: [...edges, edges[0]!] })),
+    ).toThrowError(/duplicate invocation edge boundary/);
+  });
+
+  it('rejects an invocation caller cycle', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) => ({
+      ...invocation,
+      caller:
+        index === 0
+          ? { kind: 'invocation' as const, invocationId: 'ci_status_b' }
+          : { kind: 'invocation' as const, invocationId: 'ci_status_a' },
+    }));
+    const edges = reuseBody().invocationEdges!.map((edge, index) => ({
+      ...edge,
+      caller: broken[index]!.caller,
+    }));
+    expect(() =>
+      assertComponentPlanIntegrity(
+        reusePlan({ componentInvocations: broken, invocationEdges: edges }),
+      ),
+    ).toThrowError(/invocation graph cycle/);
+  });
+
+  it('requires nodeMap keys and values to cover representative and instance render domains', () => {
+    const invocations = reuseBody().componentInvocations!;
+    const broken = invocations.map((invocation, index) =>
+      index === 1
+        ? {
+            ...invocation,
+            nodeMap: { s_status_a: 's_status_b' },
+          }
+        : invocation,
+    );
+    expect(() =>
+      assertComponentPlanIntegrity(reusePlan({ componentInvocations: broken }), {
+        semanticView: reuseSemanticView(),
+      }),
+    ).toThrowError(/invocation ci_status_b: nodeMap keys must equal definition render domain/);
   });
 });
 
