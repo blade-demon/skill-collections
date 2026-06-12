@@ -443,17 +443,24 @@ function validateInvocationRenderDomains(args: {
     [...componentById.values()].map((component) => [component.semanticNodeId, component]),
   );
   const globallyOwnedInstanceNodes = new Map<string, string>();
+  /* The template domain depends only on the definition's representative, so
+   * compute it once per definition instead of once per invocation. */
+  const templateDomainByDefinitionId = new Map<string, Set<string>>();
 
   for (const invocation of invocations) {
     const definition = definitionById.get(invocation.definitionId);
     if (definition === undefined) continue;
     const representative = componentById.get(definition.componentId);
     if (representative === undefined) continue;
-    const templateDomain = collectRenderDomain(
-      representative.semanticNodeId,
-      semanticNodeById,
-      boundarySemanticNodeIds,
-    );
+    let templateDomain = templateDomainByDefinitionId.get(definition.id);
+    if (templateDomain === undefined) {
+      templateDomain = collectRenderDomain(
+        representative.semanticNodeId,
+        semanticNodeById,
+        boundarySemanticNodeIds,
+      );
+      templateDomainByDefinitionId.set(definition.id, templateDomain);
+    }
     const instanceDomain = collectRenderDomain(
       invocation.semanticNodeId,
       semanticNodeById,

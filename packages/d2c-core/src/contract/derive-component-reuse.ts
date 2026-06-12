@@ -40,8 +40,34 @@ interface ReuseIndexes {
   preOrderBySemanticId: Map<string, number>;
 }
 
+/**
+ * Per-node identity facets, each a canonical `stableJson` string. Two
+ * snapshots fold together exactly when every entry pair agrees on every
+ * facet — splitting the old single fingerprint lets a mismatch report the
+ * first differing facet and node instead of a catch-all reason. The
+ * `children` facet records each child slot as either a walked node marker
+ * or an inline nested-boundary record, so pre-order entry equality still
+ * implies full tree equality.
+ */
+interface SnapshotFacets {
+  kind: string;
+  geometry: string;
+  style: string;
+  vector: string;
+  children: string;
+}
+
+const FACET_LABELS: Record<keyof SnapshotFacets, string> = {
+  kind: 'node kind',
+  geometry: 'geometry',
+  style: 'style',
+  vector: 'vector outline',
+  children: 'child structure or nested boundary identity',
+};
+
 interface SnapshotEntry {
   semanticNodeId: string;
+  facets: SnapshotFacets;
   bindable?: {
     type: ComponentDefinitionProp['type'];
     value: string;
@@ -49,7 +75,6 @@ interface SnapshotEntry {
 }
 
 interface ComponentSnapshot {
-  fingerprint: string;
   entries: SnapshotEntry[];
 }
 
@@ -122,20 +147,21 @@ export function deriveComponentReuse(input: DeriveComponentReuseInput): DeriveCo
 
     const representative = components[0]!;
     const representativeSnapshot = snapshots.get(representative.id);
-    const mismatch =
-      snapshotFailure ??
-      (representativeSnapshot === undefined
-        ? 'representative snapshot is missing'
-        : components
-              .slice(1)
-              .map((component) => snapshots.get(component.id))
-              .some(
-                (snapshot) =>
-                  snapshot === undefined ||
-                  snapshot.fingerprint !== representativeSnapshot.fingerprint,
-              )
-          ? 'geometry, style, structure, or nested boundary identity differs'
-          : undefined);
+    let mismatch = snapshotFailure;
+    if (mismatch === undefined) {
+      if (representativeSnapshot === undefined) {
+        mismatch = 'representative snapshot is missing';
+      } else {
+        for (const component of components.slice(1)) {
+          const snapshot = snapshots.get(component.id);
+          mismatch =
+            snapshot === undefined
+              ? `instance ${component.id} snapshot is missing`
+              : diagnoseSnapshotMismatch(representativeSnapshot, snapshot);
+          if (mismatch !== undefined) break;
+        }
+      }
+    }
 
     if (mismatch !== undefined) {
       warnings.push({
@@ -313,23 +339,24 @@ function groupCandidatesByMaster(
     componentsByMaster.set(masterId, existing);
   }
 
-  return [...componentsByMaster.entries()]
-    .filter(([, components]) => components.length >= 2)
-    .map(([masterId, components]) => ({
-      masterId,
-      components,
-      depth: Math.max(
-        ...components.map((component) =>
-          semanticDepth(component.semanticNodeId, indexes.semanticNodeById),
+  return (
+    [...componentsByMaster.entries()]
+      .filter(([, components]) => components.length >= 2)
+      .map(([masterId, components]) => ({
+        masterId,
+        components,
+        depth: Math.max(
+          ...components.map((component) =>
+            semanticDepth(component.semanticNodeId, indexes.semanticNodeById),
+          ),
         ),
-      ),
-    }))
-    .sort(
-      (left, right) =>
-        right.depth - left.depth ||
-        compareStrings(left.masterId, right.masterId) ||
-        compareComponentSemanticId(left.components[0]!, right.components[0]!),
-    );
+      }))
+      /* masterId is the map key, so it never ties — depth + masterId is
+       * already a total order. */
+      .sort(
+        (left, right) => right.depth - left.depth || compareStrings(left.masterId, right.masterId),
+      )
+  );
 }
 
 function buildComponentSnapshot(
@@ -339,7 +366,7 @@ function buildComponentSnapshot(
 ): ComponentSnapshot {
   const entries: SnapshotEntry[] = [];
 
-  const walk = (semanticNodeId: string, isRoot: boolean): unknown => {
+  const walk = (semanticNodeId: string, isRoot: boolean): void => {
     const semanticNode = indexes.semanticNodeById.get(semanticNodeId);
     if (semanticNode === undefined) {
       throw new Error(`semantic node ${semanticNodeId} is missing`);
@@ -357,44 +384,82 @@ function buildComponentSnapshot(
         : visualNode.assetRef !== undefined
           ? { type: 'assetRef' as const, value: visualNode.assetRef }
           : undefined;
-    entries.push({
-      semanticNodeId,
-      ...(bindable === undefined ? {} : { bindable }),
-    });
 
-    const children = semanticNode.childIds.map((childId) => {
+    type ChildSlot = 'node' | { boundary: { identity: string; geometry: VisualNode['layout'] } };
+    const childSlots: ChildSlot[] = [];
+    const walkableChildIds: string[] = [];
+    for (const childId of semanticNode.childIds) {
       const childComponent = indexes.componentBySemanticId.get(childId);
       if (childComponent !== undefined && childComponent.id !== component.id) {
         const childVisualNode = getComponentVisualNode(childComponent, indexes);
-        return {
+        childSlots.push({
           boundary: {
             identity: definitionIdByComponentId.get(childComponent.id) ?? childComponent.id,
             geometry: childVisualNode.layout,
           },
-        };
+        });
+        continue;
       }
-      return walk(childId, false);
+      childSlots.push('node');
+      walkableChildIds.push(childId);
+    }
+
+    entries.push({
+      semanticNodeId,
+      facets: {
+        kind: stableJson({
+          semanticKind: semanticNode.kind,
+          visualKind: visualNode.kind,
+          bindableType: bindable?.type ?? null,
+          symbolMasterId: isRoot ? null : (visualNode.symbol?.masterId ?? null),
+        }),
+        geometry: stableJson(
+          isRoot
+            ? { width: visualNode.layout.width, height: visualNode.layout.height }
+            : visualNode.layout,
+        ),
+        style: stableJson({
+          style: canonicalStyle(visualNode.style),
+          textStyle: visualNode.text?.style ?? null,
+        }),
+        vector: stableJson(visualNode.vector ?? null),
+        children: stableJson(childSlots),
+      },
+      ...(bindable === undefined ? {} : { bindable }),
     });
 
-    return {
-      semanticKind: semanticNode.kind,
-      visualKind: visualNode.kind,
-      geometry: isRoot
-        ? { width: visualNode.layout.width, height: visualNode.layout.height }
-        : visualNode.layout,
-      style: canonicalStyle(visualNode.style),
-      textStyle: visualNode.text?.style ?? null,
-      bindableType: bindable?.type ?? null,
-      symbolMasterId: isRoot ? null : (visualNode.symbol?.masterId ?? null),
-      vector: visualNode.vector ?? null,
-      children,
-    };
+    for (const childId of walkableChildIds) walk(childId, false);
   };
 
-  return {
-    fingerprint: stableJson(walk(component.semanticNodeId, true)),
-    entries,
-  };
+  walk(component.semanticNodeId, true);
+  return { entries };
+}
+
+/**
+ * Return the first facet difference between two snapshots in deterministic
+ * order (pre-order entry, then FACET_LABELS key order), or undefined when
+ * the snapshots fold together. A child-count difference always surfaces as
+ * a `children` facet mismatch on the nearest common ancestor before the
+ * entry sequences can misalign, so the trailing length check is defensive.
+ */
+function diagnoseSnapshotMismatch(
+  representative: ComponentSnapshot,
+  instance: ComponentSnapshot,
+): string | undefined {
+  const shared = Math.min(representative.entries.length, instance.entries.length);
+  for (let index = 0; index < shared; index += 1) {
+    const representativeEntry = representative.entries[index]!;
+    const instanceEntry = instance.entries[index]!;
+    for (const facet of Object.keys(FACET_LABELS) as Array<keyof SnapshotFacets>) {
+      if (representativeEntry.facets[facet] !== instanceEntry.facets[facet]) {
+        return `${FACET_LABELS[facet]} differs at template node ${representativeEntry.semanticNodeId} vs instance node ${instanceEntry.semanticNodeId}`;
+      }
+    }
+  }
+  if (representative.entries.length !== instance.entries.length) {
+    return `structure differs: template walks ${representative.entries.length} nodes, instance walks ${instance.entries.length}`;
+  }
+  return undefined;
 }
 
 function canonicalStyle(style: VisualNode['style']): unknown {
@@ -471,7 +536,13 @@ function findCaller(
     }
     cursor = indexes.semanticNodeById.get(cursor)?.parentId;
   }
-  return { kind: 'component', componentId: component.id };
+  /* The root component is always planned, so a candidate inside a valid
+   * semantic tree must find an ancestor. Emitting a self-caller here would
+   * only fail later in the render-domain integrity check with a far less
+   * actionable message. */
+  throw new Error(
+    `component ${component.id}: no planned ancestor above semantic node ${component.semanticNodeId} to act as invocation caller`,
+  );
 }
 
 function assignInvocationOrder(

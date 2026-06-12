@@ -242,10 +242,18 @@ export const ComponentInvocationSchema = z
     definitionId: z.string().min(1),
     semanticNodeId: z.string().min(1),
     caller: ComponentCallerSchema,
+    /**
+     * Sibling index among the folded invocations sharing this caller, in
+     * semantic pre-order. Unfolded sibling components and plain nodes do
+     * not participate in the numbering — interleave against them via
+     * `placement`, not `order`.
+     */
     order: z.number().int().nonnegative(),
     placement: ComponentInvocationPlacementSchema,
-    bindings: z.record(z.string()),
-    nodeMap: z.record(z.string().min(1)),
+    /** Definition propSchema name → instance value. */
+    bindings: z.record(z.string().min(1), z.string()),
+    /** Template (definition render-domain) semantic id → instance id. */
+    nodeMap: z.record(z.string().min(1), z.string().min(1)),
   })
   .strict();
 export type ComponentInvocation = z.infer<typeof ComponentInvocationSchema>;

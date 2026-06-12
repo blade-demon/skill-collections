@@ -128,7 +128,7 @@ describe('deriveComponentPlan — presentational (deferred interaction)', () => 
     expect(warnings).toEqual([
       expect.objectContaining({
         code: 'component-reuse-fallback',
-        message: expect.stringMatching(/master-card.*geometry/i),
+        message: expect.stringMatching(/master-card was not folded: geometry differs at/),
       }),
     ]);
     expect(componentPlan.body.warnings).toEqual(warnings);
