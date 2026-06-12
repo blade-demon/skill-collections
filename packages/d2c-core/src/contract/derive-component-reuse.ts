@@ -51,18 +51,26 @@ interface ReuseIndexes {
  */
 interface SnapshotFacets {
   kind: string;
+  symbol: string;
   geometry: string;
   style: string;
   vector: string;
   children: string;
+  boundaryGeometry: string;
 }
 
+/* Key order is the diagnosis priority when several facets differ at the
+ * same node. `children` (slot pattern + boundary identity) outranks
+ * `boundaryGeometry` because an identity difference makes the geometry
+ * comparison moot. */
 const FACET_LABELS: Record<keyof SnapshotFacets, string> = {
   kind: 'node kind',
+  symbol: 'symbol identity',
   geometry: 'geometry',
   style: 'style',
   vector: 'vector outline',
   children: 'child structure or nested boundary identity',
+  boundaryGeometry: 'nested boundary geometry',
 };
 
 interface SnapshotEntry {
@@ -385,8 +393,9 @@ function buildComponentSnapshot(
           ? { type: 'assetRef' as const, value: visualNode.assetRef }
           : undefined;
 
-    type ChildSlot = 'node' | { boundary: { identity: string; geometry: VisualNode['layout'] } };
+    type ChildSlot = 'node' | { boundary: { identity: string } };
     const childSlots: ChildSlot[] = [];
+    const boundaryGeometries: Array<VisualNode['layout']> = [];
     const walkableChildIds: string[] = [];
     for (const childId of semanticNode.childIds) {
       const childComponent = indexes.componentBySemanticId.get(childId);
@@ -395,9 +404,9 @@ function buildComponentSnapshot(
         childSlots.push({
           boundary: {
             identity: definitionIdByComponentId.get(childComponent.id) ?? childComponent.id,
-            geometry: childVisualNode.layout,
           },
         });
+        boundaryGeometries.push(childVisualNode.layout);
         continue;
       }
       childSlots.push('node');
@@ -411,8 +420,8 @@ function buildComponentSnapshot(
           semanticKind: semanticNode.kind,
           visualKind: visualNode.kind,
           bindableType: bindable?.type ?? null,
-          symbolMasterId: isRoot ? null : (visualNode.symbol?.masterId ?? null),
         }),
+        symbol: stableJson(isRoot ? null : (visualNode.symbol?.masterId ?? null)),
         geometry: stableJson(
           isRoot
             ? { width: visualNode.layout.width, height: visualNode.layout.height }
@@ -424,6 +433,8 @@ function buildComponentSnapshot(
         }),
         vector: stableJson(visualNode.vector ?? null),
         children: stableJson(childSlots),
+        /* Geometries align with the boundary slots in `children` by order. */
+        boundaryGeometry: stableJson(boundaryGeometries),
       },
       ...(bindable === undefined ? {} : { bindable }),
     });
