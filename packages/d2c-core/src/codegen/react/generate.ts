@@ -244,7 +244,16 @@ function textStyleDeclarations(node: VisualNode): string[] {
     declarations.push(`font-weight: ${textStyle.fontWeight};`);
   if (textStyle?.lineHeight !== undefined)
     declarations.push(`line-height: ${px(textStyle.lineHeight)};`);
-  if (textStyle?.color !== undefined) declarations.push(`color: ${textStyle.color};`);
+  const textFill = node.style?.fills?.[0];
+  const textGradientCss = textFill?.type === 'gradient' ? linearGradientCss(textFill) : undefined;
+  if (textGradientCss !== undefined) {
+    declarations.push(`background-image: ${textGradientCss};`);
+    declarations.push('-webkit-background-clip: text;');
+    declarations.push('background-clip: text;');
+    declarations.push('color: transparent;');
+  } else if (textStyle?.color !== undefined) {
+    declarations.push(`color: ${textStyle.color};`);
+  }
   declarations.push(`text-align: ${textStyle?.textAlign ?? 'left'};`);
 
   return declarations;
