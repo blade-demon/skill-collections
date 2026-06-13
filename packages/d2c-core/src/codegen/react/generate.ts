@@ -14,6 +14,7 @@ import type {
 } from '../../contract/component-plan-schema';
 import type { VisualNode } from '../../ir/visual';
 import type { SemanticNode } from '../../semantic/schema';
+import { linearGradientCss } from '../../style/gradient';
 import { stableJson, stableSha256 } from '../../utils/stable-json';
 import { resolveCodegenAssets } from '../assets';
 import type { CodegenFile, CodegenFilePlan, CodegenInput, TargetGenerator } from '../target';
@@ -195,7 +196,12 @@ function visualStyleDeclarations(node: VisualNode): string[] {
   const style = node.style;
   const fill = style?.fills?.[0];
   if (fill && shouldRenderBoxFill(node)) {
-    if (fill.color !== undefined) declarations.push(`background-color: ${fill.color};`);
+    const gradientCss = fill.type === 'gradient' ? linearGradientCss(fill) : undefined;
+    if (gradientCss !== undefined) {
+      declarations.push(`background-image: ${gradientCss};`);
+    } else if (fill.color !== undefined) {
+      declarations.push(`background-color: ${fill.color};`);
+    }
   }
 
   const border = style?.borders?.[0];

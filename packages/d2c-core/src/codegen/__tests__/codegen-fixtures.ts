@@ -100,6 +100,7 @@ function text(
   content: string,
   layout: VisualNode['layout'],
   style: NonNullable<VisualNode['text']>['style'],
+  extras: Partial<VisualNode> = {},
 ): VisualNode {
   return {
     id: `node-${id}`,
@@ -109,6 +110,7 @@ function text(
     layout,
     text: { content, style },
     children: [],
+    ...extras,
   };
 }
 
@@ -226,6 +228,109 @@ export function styledCardDesignIr(): DesignIR {
 export function approvedStyledCardInput(): CodegenInput {
   const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
     designIr: styledCardDesignIr(),
+    mode: 'presentational',
+    interactionMode: 'deferred',
+    approval: APPROVAL,
+  });
+  return {
+    componentPlan: approveComponentPlan(componentPlan, SIGN_OFF),
+    visualView,
+    semanticView,
+    interactionSpec,
+  };
+}
+
+export function gradientShowcaseDesignIr(): DesignIR {
+  const root = frame('grad-root', 'Gradient Showcase', { x: 0, y: 0, width: 320, height: 160 }, [
+    frame('grad-bubble', 'Gradient Bubble', { x: 16, y: 16, width: 200, height: 60 }, [], {
+      style: {
+        fills: [
+          {
+            type: 'gradient',
+            color: '#FA5900FF',
+            raw: {
+              gradient: {
+                gradientType: 0,
+                from: '{0.5, 0}',
+                to: '{0.5, 1}',
+                stops: [
+                  {
+                    position: 0,
+                    color: { red: 0.4078, green: 0.6157, blue: 1, alpha: 1 },
+                  },
+                  {
+                    position: 1,
+                    color: { red: 0.1529, green: 0.4902, blue: 1, alpha: 1 },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        radius: 12,
+      },
+    }),
+    text(
+      'grad-title',
+      '推荐理由：',
+      { x: 16, y: 96, width: 120, height: 24 },
+      {
+        fontFamily: 'PingFangSC',
+        fontSize: 16,
+        fontWeight: 600,
+        lineHeight: 24,
+        color: '#102A43FF',
+      },
+      {
+        style: {
+          fills: [
+            {
+              type: 'gradient',
+              raw: {
+                gradient: {
+                  gradientType: 0,
+                  from: '{0, 0.5}',
+                  to: '{1, 0.5}',
+                  stops: [
+                    {
+                      position: 0,
+                      color: { red: 1, green: 0, blue: 0, alpha: 1 },
+                    },
+                    {
+                      position: 1,
+                      color: { red: 0, green: 0, blue: 1, alpha: 1 },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+    ),
+  ]);
+
+  return {
+    schemaVersion: 'd2c.design-ir/v0.3.0',
+    source: {
+      提供方: 'test',
+      ref: { fileName: 'fixture.sketch', documentId: 'doc-grad' },
+      rootName: 'Gradient Showcase',
+    },
+    visual: {
+      artboard: { width: root.layout.width, height: root.layout.height },
+      root,
+      assets: [],
+    },
+    semantic: { candidates: [] },
+    interaction: { status: 'draft' },
+    warnings: [],
+  };
+}
+
+export function approvedGradientShowcaseInput(): CodegenInput {
+  const { componentPlan, visualView, semanticView, interactionSpec } = runContract({
+    designIr: gradientShowcaseDesignIr(),
     mode: 'presentational',
     interactionMode: 'deferred',
     approval: APPROVAL,
