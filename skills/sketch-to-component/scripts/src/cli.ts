@@ -69,6 +69,17 @@ function argValue(argv: string[], name: string): string | undefined {
  * the pipeline output dir, `--spec` for `approve`'s in-place rewrite target).
  * Pure: pass `cwd` explicitly in tests.
  */
+/**
+ * 输出目录约束器：确保所有写入操作限制在当前工作目录内。
+ *
+ * 该函数解决了"如何防止CLI工具意外写入系统敏感目录"的安全问题。
+ * 通过路径解析和相对路径检查，拒绝任何试图逃逸到上级目录的写入操作。
+ *
+ * 安全边界：
+ * - 拒绝绝对路径（除非在cwd内）
+ * - 拒绝../ 路径遍历
+ * - 所有输出必须在当前工作目录的子树内
+ */
 export function confineOutDir(outDir: string, cwd: string = process.cwd(), flag = '--out'): string {
   const root = resolve(cwd);
   const resolved = resolve(root, outDir);
@@ -372,6 +383,21 @@ function sortDeep(value: unknown): unknown {
  * four `design-spec/` artifacts + `manifest.json`. NO disk IO — the caller
  * writes the returned files. This is the seam that keeps writes strictly in
  * the CLI layer.
+ */
+/**
+ * 组件契约文件计划器：纯函数式地规划Stage 5D输出的所有文件。
+ *
+ * 该函数是整个D2C管线的关键节点，将设计IR转换为完整的组件契约集。
+ * 通过确定性的纯函数设计，确保相同输入始终产生字节级相同的输出文件。
+ *
+ * 契约文件组成：
+ * - visual-view.json：视觉层表示（Stage 4输出）
+ * - semantic-view.json：语义层表示（Stage 5A输出）
+ * - interaction-spec.json：交互规格（Stage 5B输出）
+ * - component-plan.json：组件计划（Stage 5C输出）
+ * - manifest.json：文件清单与hash校验链
+ *
+ * 设计原则：IO分离，该函数只规划内容，由调用方负责实际写入
  */
 export function planContractFiles(input: RunContractInput): ContractArtifactFile[] {
   const result = runCoreContract(input);
