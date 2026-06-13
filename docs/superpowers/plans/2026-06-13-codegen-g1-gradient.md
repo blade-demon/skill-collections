@@ -10,6 +10,9 @@
 
 **依据:** [路线图 PR-G1](2026-06-13-codegen-fidelity-and-reuse-roadmap.md)、[2026-06-13 对比报告](../reports/codegen-vs-preview-fidelity-run-2026-06-13.md)。
 
+**执行结果:** 已完成。详见
+[G1 端到端验证报告](../../reports/codegen-g1-gradient-verification-2026-06-13.md)。
+
 ---
 
 ## File Map
@@ -33,7 +36,7 @@
 - Create: `packages/d2c-core/src/style/__tests__/gradient.test.ts`
 - Modify: `packages/d2c-core/src/preview/generate-preview.ts:1-8`（import）、删除 `linearGradientCss`(525-561)、`parseGradientPoint`(646-657)、`gradientStopColor`(659-667)、`colorChannel`(669-672)、`toHexByte`(674-676)
 
-- [ ] **Step 1: 写共享模块单测(RED)**
+- [x] **Step 1: 写共享模块单测(RED)**
 
 `packages/d2c-core/src/style/__tests__/gradient.test.ts`：
 
@@ -91,12 +94,12 @@ describe('linearGradientCss', () => {
 });
 ```
 
-- [ ] **Step 2: 跑单测验证 RED**
+- [x] **Step 2: 跑单测验证 RED**
 
 Run: `npm test --workspace @skill-collections/d2c-core -- src/style/__tests__/gradient.test.ts`
 Expected: FAIL —— `Cannot find module '../gradient'`。
 
-- [ ] **Step 3: 创建共享模块(逐字移植 preview 现有逻辑)**
+- [x] **Step 3: 创建共享模块(逐字移植 preview 现有逻辑)**
 
 `packages/d2c-core/src/style/gradient.ts`：
 
@@ -189,12 +192,12 @@ function formatNumber(value: number): string {
 }
 ```
 
-- [ ] **Step 4: 跑单测验证 GREEN**
+- [x] **Step 4: 跑单测验证 GREEN**
 
 Run: `npm test --workspace @skill-collections/d2c-core -- src/style/__tests__/gradient.test.ts`
 Expected: PASS（4 个 it 全绿）。
 
-- [ ] **Step 5: preview 改为同源消费(删除被移动定义)**
+- [x] **Step 5: preview 改为同源消费(删除被移动定义)**
 
 在 `generate-preview.ts` 顶部 import 区(当前 1-8 行从 `../ir` 引入)新增一行:
 
@@ -212,7 +215,7 @@ import {
 保留 `formatNumber`、`roundTo`(preview 其余处仍在用,grep 确认 formatNumber 18 处、roundTo 6 处)。
 `svgGradientFill` / `svgGradientStopMarkup` 现引用的 `parseGradientPoint`/`colorChannel`/`toHexByte` 改由 import 提供,无需改调用处。
 
-- [ ] **Step 6: 跑 preview 既有测试确认行为不变(GREEN)**
+- [x] **Step 6: 跑 preview 既有测试确认行为不变(GREEN)**
 
 Run:
 ```bash
@@ -225,7 +228,7 @@ npm run typecheck:d2c
 Expected: PASS —— preview 渐变/矢量输出逐字节不变(同源移植),typecheck 干净。
 （若 `gradient-text` 文件名不存在则忽略该项;关键是 gradient-preview 与 vector-svg-preview 绿。)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/d2c-core/src/style/gradient.ts \
@@ -243,7 +246,7 @@ git commit -m "refactor(d2c): extract shared linearGradientCss into src/style/gr
 - Modify: `packages/d2c-core/src/codegen/__tests__/generate-content.test.ts`
 - Modify: `packages/d2c-core/src/codegen/react/generate.ts:9-20`（import）、`visualStyleDeclarations:193-223`
 
-- [ ] **Step 1: 新增渐变 fixture**
+- [x] **Step 1: 新增渐变 fixture**
 
 在 `codegen-fixtures.ts` 末尾追加(沿用文件已有的 `frame`/`text`/`source` helper 与 `approvedStyledCardInput` 的封装方式):
 
@@ -349,7 +352,7 @@ export function approvedGradientShowcaseInput(): CodegenInput {
 > 1. `text()` helper 当前签名是 `text(id, content, layout, style)`(4 参,codegen-fixtures.ts:98-114),**没有** `extras` 参。先把它扩展出可选 `extras: Partial<VisualNode> = {}` 并在返回对象末尾 `...extras` 展开(与 `frame()` 一致),才能给文字节点注入 `style.fills`。
 > 2. **不存在** `approvedInputFromDesignIr` 封装。上面 `approvedGradientShowcaseInput` 直接复刻 `approvedStyledCardInput`(codegen-fixtures.ts:226-239)的 `runContract(...) + approveComponentPlan(componentPlan, SIGN_OFF)` 链路,复用文件顶部既有的 `APPROVAL` / `SIGN_OFF` / `runContract` / `approveComponentPlan` 导入,勿新造封装。
 
-- [ ] **Step 2: 写盒子渐变失败测试(RED)**
+- [x] **Step 2: 写盒子渐变失败测试(RED)**
 
 在 `generate-content.test.ts` 增加(import 处加 `approvedGradientShowcaseInput`):
 
@@ -367,12 +370,12 @@ it('emits background-image gradient for a gradient box fill, not the legacy soli
 });
 ```
 
-- [ ] **Step 3: 跑测试验证 RED**
+- [x] **Step 3: 跑测试验证 RED**
 
 Run: `npm test --workspace @skill-collections/d2c-core -- src/codegen/__tests__/generate-content.test.ts -t "gradient box fill"`
 Expected: FAIL —— 当前输出 `background-color: #FA5900FF;`,无 `background-image`。
 
-- [ ] **Step 4: 实现盒子渐变分支**
+- [x] **Step 4: 实现盒子渐变分支**
 
 `generate.ts` import 区加：
 
@@ -394,7 +397,7 @@ import { linearGradientCss } from '../../style/gradient';
   }
 ```
 
-- [ ] **Step 5: 跑测试验证 GREEN**
+- [x] **Step 5: 跑测试验证 GREEN**
 
 Run:
 ```bash
@@ -403,7 +406,7 @@ npm run typecheck:d2c
 ```
 Expected: PASS（新测试绿,既有内容测试不回归)。
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/d2c-core/src/codegen/react/generate.ts \
@@ -420,7 +423,7 @@ git commit -m "feat(codegen): render gradient box fills as background-image"
 - Modify: `packages/d2c-core/src/codegen/__tests__/generate-content.test.ts`
 - Modify: `packages/d2c-core/src/codegen/react/generate.ts:225-245`（`textStyleDeclarations`）
 
-- [ ] **Step 1: 写文字渐变失败测试(RED)**
+- [x] **Step 1: 写文字渐变失败测试(RED)**
 
 ```ts
 it('renders gradient text via background-clip:text + transparent color', () => {
@@ -441,12 +444,12 @@ it('renders gradient text via background-clip:text + transparent color', () => {
 
 > 说明:文字渐变 from `{0,0.5}`→`{1,0.5}` 为水平,dx=1,dy=0 → 角度 `atan2(1,0)=90°` → `90deg`。
 
-- [ ] **Step 2: 跑测试验证 RED**
+- [x] **Step 2: 跑测试验证 RED**
 
 Run: `npm test --workspace @skill-collections/d2c-core -- src/codegen/__tests__/generate-content.test.ts -t "gradient text"`
 Expected: FAIL —— 当前文字节点只输出 `color: #102A43FF;`,无渐变。
 
-- [ ] **Step 3: 实现文字渐变分支**
+- [x] **Step 3: 实现文字渐变分支**
 
 把 `textStyleDeclarations` 中输出 `color` 的那行(当前 241)替换为渐变优先、实色回退的块(放在 `line-height` 之后、`text-align` 之前):
 
@@ -466,7 +469,7 @@ Expected: FAIL —— 当前文字节点只输出 `color: #102A43FF;`,无渐变�
 
 （`text-align` 那行原本已存在于 242,替换时合并进来,勿重复输出。）
 
-- [ ] **Step 4: 跑测试验证 GREEN**
+- [x] **Step 4: 跑测试验证 GREEN**
 
 Run:
 ```bash
@@ -475,7 +478,7 @@ npm run typecheck:d2c
 ```
 Expected: PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/d2c-core/src/codegen/react/generate.ts \
@@ -490,21 +493,22 @@ git commit -m "feat(codegen): render gradient text via background-clip:text"
 **Files:**
 - 视情况 Modify: `skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-golden/**`（真实稿含 13 渐变节点,生成字节会变）
 
-- [ ] **Step 1: 跑 codegen golden,确认预期 RED**
+- [x] **Step 1: 跑 codegen golden,确认是否需要重生**
 
 Run: `npm test --workspace @skill-collections/sketch-to-component-scripts -- src/__tests__/codegen-golden.test.ts`
-Expected: 若 golden fixture 含渐变节点 → FAIL(背景从实色变 background-image)。这是预期变更,不是回归。
+Actual: PASS(3/3)。现有 golden fixture 不含本次受影响的真实渐变节点。
 
-- [ ] **Step 2: 重生 golden(仅当 Step 1 失败)**
+- [x] **Step 2: 确认无需重生 golden**
 
-用该测试声明的同一套审批参数,通过既有 CLI/生成入口重生 `codegen-golden` 受影响文件;确认 diff 仅集中在渐变节点的 `background-image`/`background-clip`。不要手改字节。
+`codegen-golden` 与 `fixtures/apps/react-vite/src/golden` 相对 HEAD 均为零 diff,
+因此未制造无内容的 golden 更新。
 
-- [ ] **Step 3: 跑 golden 验证 GREEN**
+- [x] **Step 3: 跑 golden 验证 GREEN**
 
 Run: `npm test --workspace @skill-collections/sketch-to-component-scripts -- src/__tests__/codegen-golden.test.ts`
 Expected: PASS。
 
-- [ ] **Step 4: 真实稿全管线 + harness 实测(消除 7 条渐变失败)**
+- [x] **Step 4: 真实稿全管线 + harness 实测(消除 7 条渐变失败)**
 
 ```bash
 rm -rf .d2c-run-compare && git checkout .d2c-run-compare 2>/dev/null; mkdir -p .d2c-run-compare
@@ -519,15 +523,19 @@ cp .d2c-run-compare/ir/design-ir.json .d2c-run-compare/design-ir.json && cp -r .
 # harness:
 ( cd skills/sketch-to-component/scripts && npm run visual-harness:codegen -- --candidate-url http://127.0.0.1:5181/ --fixture ../../../.d2c-run-compare --out ../../../.d2c-run-compare/harness )
 ```
-Expected: harness 失败数从 17 → **10**;7 条 `backgroundColor`/`color` 失败(`node-e42a1d89…`、`node-79d2ea…`、`node-3d37110c…`、`node-f42c8770…`、`node-0a87bce9…`、`node-58aaa0e0…`、渐变文字 `node-2e8552af…`)全部清零;剩余 10 条均为 G2 字体宽度,不在本 PR 范围。候选页气泡恢复蓝色(`.d2c-run-compare/harness/candidate.png` 目检)。
+Actual: harness 失败数从 17 → **10**;`backgroundColor`/`color` 失败为 0;
+剩余 10 条全部为 G2 字体宽度。候选页气泡恢复蓝色,
+渐变标题可见(`.d2c-run-compare/harness/candidate.png` 已目检)。
 完成后 `kill %1` 停掉 viewer。
 
-- [ ] **Step 5: Commit(仅当 golden 有变)**
+- [x] **Step 5: Commit 判定(仅当 golden 有变)**
 
 ```bash
 git add skills/sketch-to-component/scripts/src/__tests__/fixtures/codegen-golden
 git commit -m "test(d2c): refresh codegen golden for gradient fills"
 ```
+
+Actual: golden 无变化,故不创建空提交;验证证据由本计划更新及独立验证报告提交。
 
 ---
 
@@ -535,7 +543,7 @@ git commit -m "test(d2c): refresh codegen golden for gradient fills"
 
 **Files:** 验证全部改动。
 
-- [ ] **Step 1: 定向全绿 + 类型 + lint/format**
+- [x] **Step 1: 定向全绿 + 类型 + lint/format**
 
 ```bash
 npm test --workspace @skill-collections/d2c-core -- src/style src/codegen src/preview
@@ -544,14 +552,18 @@ npm run lint && npm run format:check
 ```
 Expected: PASS。
 
-- [ ] **Step 2: 完整门禁(注意 worktree 已知失败)**
+- [x] **Step 2: 完整门禁(注意 worktree 已知失败)**
 
 ```bash
 npm run check:full
 ```
 Expected: 仅 `visual-harness.test.ts` 的路径名断言(`:437`/`:440`)因 worktree 目录名非 `skill-collections` 而失败——这是 memory 记录的已知坑,**由 CI 终判**;其余全部 PASS。若出现任何其它失败,即为真实回归,必须修复。
 
-- [ ] **Step 3: 范围自检**
+Actual: 仅 `visual-harness.test.ts:435` 的路径正则失败;Sketch suite 为
+154 PASS / 1 expected FAIL。因 `check:full` 的 `&&` 在此提前退出,已单独补跑
+`npm run check:fixtures`、`npm run test:samples`、`npm run build:samples`,全部通过。
+
+- [x] **Step 3: 范围自检**
 
 ```bash
 git diff --stat master...HEAD
