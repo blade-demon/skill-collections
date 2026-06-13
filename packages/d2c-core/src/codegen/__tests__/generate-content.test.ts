@@ -5,6 +5,7 @@ import { generateComponentPackage } from '../generate';
 import type { CodegenFilePlan, CodegenInput } from '../target';
 import {
   approvedCodegenInput,
+  approvedGradientShowcaseInput,
   approvedMixedTextMediaInput,
   approvedNestedFlexContainersInput,
   approvedNestedRebasingInput,
@@ -219,6 +220,39 @@ describe('generateComponentPackage — React content', () => {
     expect(css).toContain('text-align: center;');
     expect(css).toContain('left: 14px;');
     expect(css).toContain('top: 12px;');
+  });
+
+  it('renders a linear gradient box fill as background-image instead of its legacy color', () => {
+    const input = approvedGradientShowcaseInput();
+    const filePlan = generateComponentPackage(input);
+    const css = filePlan.files
+      .filter((file) => file.path.endsWith('.module.css'))
+      .map((file) => file.content)
+      .join('\n');
+    const bubbleRule = cssRule(css, `.${classNameFor(input, 'node-grad-bubble')}`);
+
+    expect(bubbleRule).toContain(
+      'background-image: linear-gradient(180deg, #689DFFFF 0%, #277DFFFF 100%);',
+    );
+    expect(bubbleRule).not.toContain('background-color: #FA5900FF;');
+  });
+
+  it('renders gradient text via background-clip:text and a transparent foreground', () => {
+    const input = approvedGradientShowcaseInput();
+    const filePlan = generateComponentPackage(input);
+    const css = filePlan.files
+      .filter((file) => file.path.endsWith('.module.css'))
+      .map((file) => file.content)
+      .join('\n');
+    const titleRule = cssRule(css, `.${classNameFor(input, 'node-grad-title')}`);
+
+    expect(titleRule).toContain(
+      'background-image: linear-gradient(90deg, #FF0000FF 0%, #0000FFFF 100%);',
+    );
+    expect(titleRule).toContain('-webkit-background-clip: text;');
+    expect(titleRule).toContain('background-clip: text;');
+    expect(titleRule).toContain('color: transparent;');
+    expect(titleRule).not.toContain('color: #102A43FF;');
   });
 
   it('rebases nested children to their frame-local origin, not the absolute canvas position (real KeyboardInput3 repro)', () => {
