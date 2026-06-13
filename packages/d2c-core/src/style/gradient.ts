@@ -55,10 +55,22 @@ export function parseGradientPoint(value: unknown): { x: number; y: number } | u
 export function gradientStopColor(value: unknown): string | undefined {
   if (!value || typeof value !== 'object') return undefined;
   const c = value as Record<string, unknown>;
+  if (
+    typeof c.red !== 'number' ||
+    !Number.isFinite(c.red) ||
+    typeof c.green !== 'number' ||
+    !Number.isFinite(c.green) ||
+    typeof c.blue !== 'number' ||
+    !Number.isFinite(c.blue)
+  ) {
+    return undefined;
+  }
+  const alpha = c.alpha === undefined ? 1 : c.alpha;
+  if (typeof alpha !== 'number' || !Number.isFinite(alpha)) return undefined;
   const r = colorChannel(c.red);
   const g = colorChannel(c.green);
   const b = colorChannel(c.blue);
-  const a = colorChannel(c.alpha ?? 1);
+  const a = colorChannel(alpha);
   return `#${toHexByte(r)}${toHexByte(g)}${toHexByte(b)}${toHexByte(a)}`;
 }
 

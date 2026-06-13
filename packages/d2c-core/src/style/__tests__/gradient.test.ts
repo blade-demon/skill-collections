@@ -74,6 +74,34 @@ describe('linearGradientCss', () => {
   );
 
   it.each([
+    ['missing red', { green: 0, blue: 0, alpha: 1 }],
+    ['missing green', { red: 1, blue: 0, alpha: 1 }],
+    ['missing blue', { red: 1, green: 0, alpha: 1 }],
+    ['non-finite red', { red: Number.NaN, green: 0, blue: 0, alpha: 1 }],
+    ['non-finite green', { red: 1, green: Number.POSITIVE_INFINITY, blue: 0, alpha: 1 }],
+    ['non-finite blue', { red: 1, green: 0, blue: Number.NEGATIVE_INFINITY, alpha: 1 }],
+    ['non-finite alpha', { red: 1, green: 0, blue: 0, alpha: Number.NaN }],
+  ])('returns undefined for %s stop color', (_name, color) => {
+    expect(
+      linearGradientCss(
+        makeGradientFill({
+          stops: [{ position: 0, color }],
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it('defaults missing stop alpha to one', () => {
+    expect(
+      linearGradientCss(
+        makeGradientFill({
+          stops: [{ position: 0, color: { red: 1, green: 0, blue: 0 } }],
+        }),
+      ),
+    ).toBe('linear-gradient(180deg, #FF0000FF 0%)');
+  });
+
+  it.each([
     ['missing raw data', { type: 'gradient' } satisfies Fill],
     ['malformed raw data', { type: 'gradient', raw: { gradient: 'invalid' } } satisfies Fill],
     ['empty stops', makeGradientFill({ stops: [] })],
