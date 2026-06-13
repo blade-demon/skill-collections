@@ -20,7 +20,8 @@ export function linearGradientCss(fill: Fill): string | undefined {
   for (const stop of stops) {
     if (!stop || typeof stop !== 'object') return undefined;
     const s = stop as Record<string, unknown>;
-    const position = typeof s.position === 'number' ? s.position : undefined;
+    const position =
+      typeof s.position === 'number' && Number.isFinite(s.position) ? s.position : undefined;
     const hex = gradientStopColor(s.color);
     if (position === undefined || !hex) return undefined;
     ordered.push({ position, hex });

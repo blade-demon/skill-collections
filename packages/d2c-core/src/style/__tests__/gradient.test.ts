@@ -55,6 +55,24 @@ describe('linearGradientCss', () => {
     expect(linearGradientCss(makeGradientFill({ gradientType: 1 }))).toBeUndefined();
   });
 
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    'returns undefined for non-finite stop position %s',
+    (position) => {
+      expect(
+        linearGradientCss(
+          makeGradientFill({
+            stops: [
+              {
+                position,
+                color: { alpha: 1, red: 1, green: 0, blue: 0 },
+              },
+            ],
+          }),
+        ),
+      ).toBeUndefined();
+    },
+  );
+
   it.each([
     ['missing raw data', { type: 'gradient' } satisfies Fill],
     ['malformed raw data', { type: 'gradient', raw: { gradient: 'invalid' } } satisfies Fill],
