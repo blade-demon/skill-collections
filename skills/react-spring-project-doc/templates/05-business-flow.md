@@ -1,0 +1,49 @@
+# Phase 5 — Business Flow Trace 模板
+
+> 落盘到 `docs/.analysis/05-business-flows-draft.md`。
+> 输入：`02`/`03`/`04` 产物。把**核心**业务从用户操作一路串到后端数据访问。
+> 不必穷尽所有链路；先覆盖 3~6 条核心链路（登录、主列表、核心写操作等）。每条链路按 `schemas/business-flow-record.md` 记录，样例见 `examples/business-flow-example.md`。
+> 每条链路追加一条证据账本（类型：业务链路），并给出完整性判断。
+
+## 链路选取原则
+
+- 优先：登录/鉴权、最高频的查询列表、最核心的写操作（下单/提交/审批）。
+- 跳过：废弃页面、纯静态展示、脚手架示例。存疑是否核心的，标「待确认」而不是硬塞。
+
+---
+
+## 链路 F-1：<链路名称，如「用户下单」>
+
+| 环节                 | 内容                                       | 证据文件:行   |
+| -------------------- | ------------------------------------------ | ------------- |
+| 用户入口             | <用户从哪进入，如「订单页点击『提交』」>   | `<path>`      |
+| 前端路由             | `</orders/new>`                            | `<path>`      |
+| 前端页面组件         | `<OrderCreatePage>`                        | `<path>`      |
+| 触发事件             | `<onSubmit / handleClick>`                 | `<path:line>` |
+| 前端 API 方法        | `<createOrder(payload)>`                   | `<path:line>` |
+| HTTP 方法 + URL      | `<POST /api/orders>`                       | `<path>`      |
+| 请求参数             | `<字段名:类型，关键字段>`                  | `<path>`      |
+| 后端 Controller 方法 | `<OrderController.create>`                 | `<path:line>` |
+| 后端 Service 方法    | `<OrderService.create>`                    | `<path:line>` |
+| 数据访问方法         | `<OrderMapper.insert>`                     | `<path:line>` |
+| 涉及数据模型         | `<Order / OrderRequest>`                   | `<path>`      |
+| 返回数据             | `<Result<OrderVO>，关键字段>`              | `<path>`      |
+| 前端如何渲染返回     | <跳转详情 / toast 成功 / 刷新列表>         | `<path:line>` |
+| 异常路径             | <校验失败 / 库存不足 / 网络错误时各自表现> | `<path>`      |
+
+**完整性判断**：<完整 / 部分完整 / 不完整 / 需人工确认>
+**判断理由**：<哪一环有证据、哪一环是推断或断点>
+**待确认项**：<本链路里没串起来的环节>
+
+---
+
+## 链路 F-2：<…>
+
+> 复制上方表格结构。
+
+---
+
+## 全局待确认项
+
+1. <如：F-1 的库存校验在 Service 里未找到，可能在数据库触发器，待确认>
+2. <…>
