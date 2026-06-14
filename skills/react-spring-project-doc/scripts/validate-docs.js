@@ -21,13 +21,36 @@ const path = require('path');
 
 // 代码文件扩展名白名单。用集合判断，规避「js|json」这类正则交替顺序坑。
 const CODE_EXT = new Set([
-  'java', 'kt', 'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'vue',
-  'json', 'yml', 'yaml', 'xml', 'properties', 'gradle',
+  'java',
+  'kt',
+  'ts',
+  'tsx',
+  'js',
+  'jsx',
+  'mjs',
+  'cjs',
+  'vue',
+  'json',
+  'yml',
+  'yaml',
+  'xml',
+  'properties',
+  'gradle',
 ]);
 
 const IGNORE_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', 'target', '.next', '.vite',
-  'coverage', 'out', '.idea', '.gradle', '.analysis',
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'target',
+  '.next',
+  '.vite',
+  'coverage',
+  'out',
+  '.idea',
+  '.gradle',
+  '.analysis',
 ]);
 
 /** 递归索引项目下所有文件，返回 { relPaths:Set, byBasename:Map<name,relPath[]> }。 */
@@ -166,20 +189,33 @@ function validate({ project, docs, symbols }) {
     }
   }
 
-  return { root, docsDir, mdCount: mdFiles.length, hardMiss, softMiss, symbolMiss, checkedPaths, checkedSymbols };
+  return {
+    root,
+    docsDir,
+    mdCount: mdFiles.length,
+    hardMiss,
+    softMiss,
+    symbolMiss,
+    checkedPaths,
+    checkedSymbols,
+  };
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.project) {
-    console.error('用法: node validate-docs.js --project <目标项目根> [--docs <docs目录>] [--symbols] [--strict]');
+    console.error(
+      '用法: node validate-docs.js --project <目标项目根> [--docs <docs目录>] [--symbols] [--strict]',
+    );
     process.exit(2);
   }
   const r = validate(args);
 
   console.log(`项目: ${r.root}`);
   console.log(`文档目录: ${r.docsDir}（${r.mdCount} 份 .md）`);
-  console.log(`核对路径引用: ${r.checkedPaths}${args.symbols ? `，符号引用: ${r.checkedSymbols}` : ''}`);
+  console.log(
+    `核对路径引用: ${r.checkedPaths}${args.symbols ? `，符号引用: ${r.checkedSymbols}` : ''}`,
+  );
 
   const print = (title, list) => {
     if (!list.length) return;
@@ -191,13 +227,16 @@ function main() {
   print('⚠️ 裸文件名未定位（需人工确认）', r.softMiss);
   if (args.symbols) print('⚠️ 符号未找到（需人工确认，可能为泛型/工具误差）', r.symbolMiss);
 
-  const hardFail = r.hardMiss.length > 0 || (args.strict && (r.softMiss.length > 0 || r.symbolMiss.length > 0));
+  const hardFail =
+    r.hardMiss.length > 0 || (args.strict && (r.softMiss.length > 0 || r.symbolMiss.length > 0));
   if (!hardFail && !r.softMiss.length && !r.symbolMiss.length) {
     console.log('\n✅ 全部通过：文档引用的路径均可定位。');
   } else if (!hardFail) {
     console.log('\n✅ 无硬失败（仅告警，见上；如需将告警视为失败请加 --strict）。');
   } else {
-    console.log('\n❌ 校验未通过。按 templates/08-validation.md 的失败处理规则修正文档或移入待确认。');
+    console.log(
+      '\n❌ 校验未通过。按 templates/08-validation.md 的失败处理规则修正文档或移入待确认。',
+    );
   }
   process.exit(hardFail ? 1 : 0);
 }

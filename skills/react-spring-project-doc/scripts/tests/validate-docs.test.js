@@ -36,7 +36,7 @@ try {
       '后缀匹配 `user/User.java`。',
       '裸文件名 `User.java`。',
       '缺失路径 `frontend/src/pages/Ghost.tsx`。',
-    ].join('\n')
+    ].join('\n'),
   );
 
   const r = validate({ project: tmp });
