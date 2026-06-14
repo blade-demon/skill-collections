@@ -294,6 +294,17 @@ try {
         evidence: 'E-002',
       },
     ],
+    channels: [
+      {
+        id: 'CH-1',
+        type: 'kafka-consumer',
+        name: 'order.created',
+        handler: 'OrderService.onMsg',
+        file: svc,
+        line: 2,
+        evidence: 'E-001',
+      },
+    ],
     evidence: [
       { id: 'E-001', file: svc, line: 2, confidence: 'high', claim: 'x' },
       { id: 'E-002', file: 'frontend/src/api/http.ts', line: 1, confidence: 'high', claim: 'y' },

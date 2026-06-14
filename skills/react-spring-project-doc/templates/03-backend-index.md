@@ -63,10 +63,17 @@
 - 放行/白名单：`<permitAll / 匿名路径配置，path>`
 - 待确认：`<AOP/反射织入、动态权限、外部鉴权服务等静态无法确认的点>`
 
-## 7. 定时任务与异步
+## 7. 消息、异步与非 REST 通道（按存在情况记录，无则「未发现」，不强行套进 REST 表）
 
-- `@Scheduled` 定时任务：`<path + 触发频率 + 作用，或「未发现」>`
-- `@Async` / 消息队列消费者：`<path + 作用，或「未发现」>`
+> 这些通道不走 HTTP URL，不要塞进第 2 节 Controller 表；在这里单列。topic/queue/操作名是动态拼接或来自配置时，标「待确认」，不臆测。
+
+- `@Scheduled` 定时任务：`<path + 触发频率 + 作用>`
+- `@Async` / 线程池：`<path + 作用>`
+- 消息队列：`<生产者 / 消费者（@KafkaListener / @RabbitListener / @StreamListener 等）+ topic/queue 名 + path>`
+- WebSocket / STOMP：`<@MessageMapping / endpoint 注册（registerStompEndpoints）+ path>`
+- SSE / 流式：`<SseEmitter / Flux<ServerSentEvent> 端点 + path>`
+- GraphQL：`<@QueryMapping/@MutationMapping/@SchemaMapping + schema 文件位置>`
+- gRPC：`<proto service 实现类 + .proto 位置>`
 
 ## 8. 外部系统调用
 

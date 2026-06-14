@@ -46,6 +46,9 @@
   "dataModels": [
     /* 数据模型,见下 */
   ],
+  "channels": [
+    /* 非 REST 通道(MQ/WS/SSE/GraphQL/gRPC),可选,见下 */
+  ],
   "evidence": [
     /* 证据条目,必须与 evidence-ledger.md 对应,见下 */
   ],
@@ -130,6 +133,26 @@
   "evidence": "E-020",
 }
 ```
+
+## `channels[]` — 非 REST 通道(可选,来源 04 第 5 节)
+
+> MQ / WebSocket / SSE / GraphQL / gRPC 等不走 HTTP URL 的通道。无则省略或空数组。
+
+```jsonc
+{
+  "id": "CH-001",
+  "type": "kafka-consumer", // kafka-producer|kafka-consumer|rabbit-*|websocket|sse|graphql|grpc|scheduled|other
+  "name": "order.created", // topic/endpoint/操作名;动态拼接时填占位并在 openQuestions 记
+  "handler": "OrderListener.onMsg",
+  "file": "<path>",
+  "line": 20,
+  "frontend": null, // 前端对应消费/订阅(如 WS 客户端、GraphQL hook),无则 null
+  "confidence": "high",
+  "evidence": "E-030",
+}
+```
+
+P8 校验 `channels[].file` 路径存在、`handler` 类有定义（`--symbols`）、`evidence` 落在 `evidence[]` 内,与其它数组同等对待。
 
 ## `evidence[]` — 证据条目(必须与 `evidence-ledger.md` 对应)
 

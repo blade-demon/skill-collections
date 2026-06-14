@@ -233,6 +233,7 @@ function validateIndexJson({ docsDir, index, root, ledgerEvidence, symbols }) {
   const apiArr = arr(data.api);
   const flowsArr = arr(data.flows);
   const modelsArr = arr(data.dataModels);
+  const channelsArr = arr(data.channels); // 可选：非 REST 通道（MQ/WS/SSE/GraphQL/gRPC）
   const evidenceArr = arr(data.evidence);
 
   // 1) 路径存在性：汇总所有 file 字段。
@@ -248,6 +249,7 @@ function validateIndexJson({ docsDir, index, root, ledgerEvidence, symbols }) {
   }
   for (const f of flowsArr) for (const st of arr(f.steps)) if (st && st.file) paths.push(st.file);
   for (const m of modelsArr) if (m && m.file) paths.push(m.file);
+  for (const c of channelsArr) if (c && c.file) paths.push(c.file);
   for (const e of evidenceArr) if (e && e.file) paths.push(e.file);
 
   let checkedPaths = 0;
@@ -272,6 +274,7 @@ function validateIndexJson({ docsDir, index, root, ledgerEvidence, symbols }) {
     ...apiArr.map((a) => a && a.evidence),
     ...flowsArr.map((f) => f && f.evidence),
     ...modelsArr.map((m) => m && m.evidence),
+    ...channelsArr.map((c) => c && c.evidence),
   ].filter(Boolean);
   for (const ref of refSites) {
     if (!definedEvidence.has(ref)) push(`evidence 引用 ${ref} 不在 index.json 的 evidence[] 内`);
@@ -294,6 +297,7 @@ function validateIndexJson({ docsDir, index, root, ledgerEvidence, symbols }) {
     const names = [
       ...symbolsArr.map((s) => s && s.name),
       ...apiArr.map((a) => a && a.backend && a.backend.handler),
+      ...channelsArr.map((c) => c && c.handler),
     ].filter(Boolean);
     for (const n of names) {
       if (classifySymbol(n, index.codeContents) === 'absent') {
