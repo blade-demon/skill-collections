@@ -60,6 +60,6 @@ react-spring-project-doc/
   README.md / CHANGELOG.md
 ```
 
-## 当前状态（v0.1.0）
+## 当前状态
 
-文档型最小可用版本：提供 SKILL.md + 模板 + 记录格式 + 样例 + 参考文档，P8 强校验由模型按 checklist 执行（Glob/Grep/跑命令）。**暂未提供独立校验脚本**——待骨架在真实项目跑通后再评估是否引入 `scripts/`。
+文档型 skill + 一个确定性校验脚本：提供 SKILL.md + 模板 + 记录格式 + 样例 + 参考文档，外加 `scripts/validate-docs.js`——P8 第一步自动核对最终文档引用的路径/符号是否真实存在，替代易错的手工 Grep。其余强校验项（双向映射、链路闭环、命令可执行性）仍由模型按 checklist 执行。脚本已对真实 demo（React 16 + Spring Boot）跑通：40 路径 + 68 符号引用零硬失败。
