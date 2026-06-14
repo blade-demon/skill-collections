@@ -180,7 +180,7 @@ P1 探索 → P2 前端索引 → P3 后端索引 → P4 API 映射 → P5 业�
 
 **目标**：校验最终文档的准确性，产出可信度报告。
 **输入**：`docs/*.md` 最终文档 + 全部 `.analysis` 产物。
-**做什么**：按 checklist 逐项校验——文件路径是否真实存在、符号是否真实存在、API 双向映射是否成立、核心链路是否闭环、结论是否有证据、文档间是否矛盾、是否把废弃代码当核心业务、低置信度是否被误写成事实、构建/测试/lint/typecheck 命令是否可执行。按失败处理规则修正文档或降级结论。
+**做什么**：先跑 `scripts/validate-docs.js` 自动核对文件路径与符号是否真实存在（替代易错的手工 Grep）；再按 checklist 逐项校验——API 双向映射是否成立、核心链路是否闭环、结论是否有证据、文档间是否矛盾、是否把废弃代码当核心业务、低置信度是否被误写成事实、构建/测试/lint/typecheck 命令是否可执行。按失败处理规则修正文档或降级结论。
 **输出**：`docs/validation-report.md`（草稿先落 `docs/.analysis/08-validation-report-draft.md`）。
 **模板**：`templates/08-validation.md`；记录格式 `schemas/validation-record.md`。
 
@@ -205,6 +205,7 @@ P1 探索 → P2 前端索引 → P3 后端索引 → P4 API 映射 → P5 业�
 - `schemas/api-map-record.md` — API 映射记录字段格式（**仅 P4**）。
 - `schemas/business-flow-record.md` — 业务链路记录字段格式（**仅 P5**）。
 - `schemas/validation-record.md` — 校验项记录字段格式（**仅 P8**）。
+- `scripts/validate-docs.js` — P8 确定性校验脚本：自动核对 docs/ 引用的路径/符号存在性（**P8 第一步运行**：`node validate-docs.js --project <项目根> [--symbols]`）；冒烟测试 `scripts/tests/validate-docs.test.js`。
 - `examples/evidence-ledger-example.md` — 填好的证据账本样例（**对齐格式时读，不整文件背**）。
 - `examples/api-map-example.md` — 填好的 API 映射表样例（**仅 P4 对齐格式时读**）。
 - `examples/business-flow-example.md` — 填好的业务链路样例（**仅 P5 对齐格式时读**）。

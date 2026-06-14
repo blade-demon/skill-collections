@@ -30,6 +30,11 @@
 
 无。
 
+### Added
+
+- `scripts/validate-docs.js` — P8 确定性校验脚本：自动抽取最终文档引用的文件路径与代码符号，逐条核对存在性，替代易错的手工 Grep（规避 `rg -o` 多文件前缀、`js` 抢匹配 `.json`、`class User` 子串命中 `UserContext`，以及 glob `*Foo.java` 等坑）。零依赖、CommonJS，带 `scripts/tests/validate-docs.test.js` 冒烟测试。已对真实 demo（React 16 + Spring Boot 登录/注册/改密）跑通：40 路径 + 68 符号引用零硬失败。
+- `templates/08-validation.md` 新增「步骤 0：先跑确定性脚本」，把脚本输出映射到 V-001/V-002。
+
 ### Changed
 
 - 基于一次真实 demo（React 16 JS/TS 混合 + Spring Boot 登录/注册/改密）的全流程试跑，加固 4 处模板：
