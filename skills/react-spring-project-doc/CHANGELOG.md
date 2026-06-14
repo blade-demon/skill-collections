@@ -30,6 +30,14 @@
 
 无。
 
+### Changed
+
+- 基于一次真实 demo（React 16 JS/TS 混合 + Spring Boot 登录/注册/改密）的全流程试跑，加固 4 处模板：
+  - `templates/05-business-flow.md`：强调每个环节 `path:line` 必须用 Grep/`rg` 现查现填，禁止凭记忆（试跑中记忆行号确有漂移）。
+  - `templates/08-validation.md`：新增「工具核对本身要自检」提示，列出 `rg -o` 多文件前缀、`js` 抢匹配 `.json`、`class User` 子串命中 `UserContext` 三类常见误差，先复核命令再判「不通过」。
+  - `templates/01-discovery.md`：构建命令表补「前端类型检查」一行。
+  - `templates/04-api-map.md`：接口多时提示按模块分块或拆「核心+附录」表，改善宽表可读性。
+
 ---
 
 ## [0.1.0] — 2026-06-14

@@ -3,6 +3,7 @@
 > 草稿先落 `docs/.analysis/08-validation-report-draft.md`，定稿写 `docs/validation-report.md`。
 > 对 P7 生成的最终文档做强校验。逐项核对——**能用工具核对的就核对**（Glob 查路径、Grep 查符号、跑构建命令），不要凭印象判过。
 > 每个校验项按 `schemas/validation-record.md` 记录。发现问题按「失败处理规则」修正文档或降级结论，并回写。
+> **工具核对本身也要自检**：发现「路径/符号缺失」时，先排除是不是校验命令的误差再判失败——常见陷阱：① `rg -o` 多文件时会前缀文件名（用 `--no-filename`）；② 正则 `js` 会抢先匹配 `.json`（把更长扩展名放前面或加词界 `\b`）；③ `class User` 会子串命中 `UserContext`（用 `@Entity` / 词界精确匹配）。先复核命令，再下「不通过」结论。
 
 ## 校验 checklist
 

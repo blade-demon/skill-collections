@@ -54,13 +54,14 @@
 
 ## 5. 构建与运行命令（先记录，P8 再验证可执行性）
 
-| 用途     | 命令                                | 来源                     |
-| -------- | ----------------------------------- | ------------------------ |
-| 前端安装 | `<npm install / pnpm i>`            | `package.json`           |
-| 前端启动 | `<npm run dev>`                     | `package.json` scripts   |
-| 前端构建 | `<npm run build>`                   | `package.json` scripts   |
-| 后端构建 | `<mvn package / gradle build>`      | `pom.xml`/`build.gradle` |
-| 后端启动 | `<mvn spring-boot:run / java -jar>` | <来源>                   |
+| 用途         | 命令                                                  | 来源                      |
+| ------------ | ----------------------------------------------------- | ------------------------- |
+| 前端安装     | `<npm install / pnpm i>`                              | `package.json`            |
+| 前端启动     | `<npm run dev>`                                       | `package.json` scripts    |
+| 前端构建     | `<npm run build>`                                     | `package.json` scripts    |
+| 前端类型检查 | `<npm run typecheck / npx tsc --noEmit / 「未配置」>` | `tsconfig.json` / scripts |
+| 后端构建     | `<mvn package / gradle build>`                        | `pom.xml`/`build.gradle`  |
+| 后端启动     | `<mvn spring-boot:run / java -jar>`                   | <来源>                    |
 
 ## 6. 部署与环境
 
