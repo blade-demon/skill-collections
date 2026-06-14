@@ -74,3 +74,22 @@
 - design-to-spec/package-hygiene.test.js：Node.js 18 兼容性问题 (node:fs/promises glob API)
 - html-article-to-markdown 测试文件缺失问题
   **决策**：按全局约束，不修复原有问题，仅在 PR Risks 中记录
+
+## 自治任务状态 (2026-06-14)
+
+**Phase 0 完成**：环境探测与基线建立
+
+- 包管理器：npm
+- Monorepo：npm workspaces
+- 预存在失败已记录，不影响后续执行
+
+**Phase 1-2 完成**：仓库探索与架构分析
+
+- 发现完善的现有文档结构 (docs/)
+- 核心架构已有高质量文档和中文注释
+- d2c-core 是设计转组件管线的核心，具有清晰的六阶段架构
+
+**Phase 3 决策**：增量文档更新而非重建
+
+- 当前文档质量高，无需大幅重写
+- 专注于补充遗漏项和更新过时内容
