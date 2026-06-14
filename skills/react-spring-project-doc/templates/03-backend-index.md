@@ -4,6 +4,8 @@
 > 输入：`01-discovery-report.md` 定位出的后端目录。只看后端源码，**不要碰前端**。
 > 每个会进入最终文档的结论，按 `schemas/evidence-record.md` 追加一条到 `docs/.analysis/evidence-ledger.md`。
 > 路径写真实相对路径；推断的职责标「推测」；不确定的进「待确认项」。
+>
+> **先跑种子（推荐）**：若 P2 已生成 `docs/.analysis/endpoints-seed.json`，直接复用；否则运行 `node skills/react-spring-project-doc/scripts/extract-endpoints.js --project <项目根> --out docs/.analysis/endpoints-seed.json`。把其中 `backend[]` 作为第 2 节 Controller URL 表的**基线清单**。**种子是基线不是事实**：逐条核对类前缀/方法映射、补全调用的 Service 与置信度；`confidence: needs-review`（`@RequestMapping` 多方法、常量/SpEL 路径）必须人工确认。
 
 ## 1. 启动与全局配置
 
@@ -48,6 +50,18 @@
 - Interceptor / Filter：`<path + 作用：鉴权 / 日志 / 跨域>`
 - 全局异常处理（`@ControllerAdvice`/`@ExceptionHandler`）：`<path + 统一返回结构>`
 - 统一返回包装（如 `Result<T>` / `ApiResponse`）：`<path + 结构>`
+
+### 安全与鉴权链（Spring Security，单列；这是新人/AI 高频盲区）
+
+> 鉴权常通过过滤器链/注解织入，线性读单个 Controller 看不到。逐项定位、给 `path`，确认不了的标「待确认」，不要臆测顺序。
+
+- 安全配置类：`<SecurityConfig / SecurityFilterChain Bean / WebSecurityConfigurerAdapter（旧版），path>`
+- 认证过滤器：`<JWT / Session / OAuth2 过滤器，path + 在链上的位置（能确认时）>`
+- 认证入口：`<登录接口 / AuthenticationManager / UserDetailsService 实现，path>`
+- Token 机制：`<JWT 签发与校验位置 / 刷新 token / 「未发现」，path>`
+- 方法级权限：`<@PreAuthorize / @Secured / @RolesAllowed 使用位置，或「未发现」>`
+- 放行/白名单：`<permitAll / 匿名路径配置，path>`
+- 待确认：`<AOP/反射织入、动态权限、外部鉴权服务等静态无法确认的点>`
 
 ## 7. 定时任务与异步
 

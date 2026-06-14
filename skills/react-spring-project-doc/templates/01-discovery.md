@@ -44,6 +44,8 @@
 - Repository/Mapper/DAO 目录：`<path>`
 - Entity/DTO/VO 目录：`<path>`
 - Config/Interceptor/Filter/ExceptionHandler：`<path 列表>`
+- 安全/鉴权配置：`<SecurityConfig / SecurityFilterChain / JWT 过滤器 path，或「未发现」>`
+- 数据库迁移：`<Flyway src/main/resources/db/migration/V*__*.sql / Liquibase db.changelog*，或「未发现」>`
 - 配置文件：`<application.yml / application.properties / bootstrap.yml>`
 
 ## 4. 测试与质量
@@ -76,7 +78,20 @@
 - <模块猜测 1> —— 推测依据：<目录名/路由名/包名>
 - <模块猜测 2> —— 推测依据：<…>
 
-## 8. 待确认项
+## 8. 代码活跃度与归属（git，可选）
+
+> 纯确定性 git 信号，给 P7 的 onboarding「先看哪、找谁」与 troubleshooting「热点区」提供输入。运行：
+> `node skills/react-spring-project-doc/scripts/git-insights.js --project <项目根>`（非 git 仓库/浅克隆会自动降级，本节标「git 信息不可用」即可，不阻塞）。
+
+- 高频改动文件 Top N：<file:次数，或「git 信息不可用」>
+- 目录热点 Top N：<dir:次数>
+- 主要贡献者 Top N：<name:次数>
+- CODEOWNERS：<path 或「未发现」>
+- 近 90 天活跃文件：<file 列表>
+
+> git 数据是事实（高置信度）；「热点≈坑」「改得多即核心」是经验推断，进文档时按置信度规则标注。
+
+## 9. 待确认项
 
 1. <Phase 1 无法确认、需后续阶段或人工澄清的点>
 2. <…>

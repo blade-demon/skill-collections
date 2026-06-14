@@ -4,6 +4,8 @@
 > 输入：`01-discovery-report.md` 定位出的前端目录。只看前端源码，**不要碰后端**。
 > 每个会进入最终文档的结论，按 `schemas/evidence-record.md` 追加一条到 `docs/.analysis/evidence-ledger.md`。
 > 路径写真实相对路径；推断的命名/职责标「推测」；不确定的进「待确认项」。
+>
+> **先跑种子（推荐）**：`node skills/react-spring-project-doc/scripts/extract-endpoints.js --project <项目根> --out docs/.analysis/endpoints-seed.json`，把其中 `frontend[]` 作为第 5 节 API 方法列表的**基线清单**。**种子是基线不是事实**：逐条 Grep 核对调用确实存在、补全被哪些页面调用与置信度；`confidence: needs-review` 的项（模板字符串/动态 URL）必须人工确认，不要直接当事实登记。
 
 ## 1. 前端入口
 

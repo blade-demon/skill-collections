@@ -3,6 +3,7 @@
 > 落盘到 `docs/.analysis/04-api-map-draft.md`。
 > 输入：`02-frontend-index.md` 第 5 节（前端 API 方法）+ `03-backend-index.md` 第 2 节（Controller URL）。
 > **本阶段不重新读源码**，只对两份索引做双向匹配。匹配规则见下；记录字段见 `schemas/api-map-record.md`；样例见 `examples/api-map-example.md`。
+> 若有 `docs/.analysis/endpoints-seed.json`，它的 `frontend[]`/`backend[]` 两侧 URL 清单已是确定性抽取结果，可直接作为匹配两端，省去重新整理；但匹配成立与否仍以已核对进 `02`/`03` 的结论为准，`needs-review` 项不得当作已确认。
 > 每条成立或不成立的映射，都按 `schemas/evidence-record.md` 追加证据账本（类型：API 映射）。
 
 ## 1. URL 拼接说明（先写清楚，再开始匹配）
