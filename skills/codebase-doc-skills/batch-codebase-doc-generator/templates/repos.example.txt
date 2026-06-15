@@ -1,0 +1,6 @@
+# One Git URL per line.
+# Branch syntax is optional: <git-url>#<branch>
+
+https://github.com/org/repo-a.git
+https://github.com/org/repo-b.git#main
+git@github.com:org/repo-c.git#develop

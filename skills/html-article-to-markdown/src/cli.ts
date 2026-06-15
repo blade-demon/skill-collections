@@ -15,6 +15,12 @@ interface ParsedArgs {
   remoteApiEndpoint?: string;
 }
 
+/**
+ * 显示命令行使用说明。
+ *
+ * 该工具将HTML文章转换为格式化的Markdown，支持本地文件和远程URL两种输入模式。
+ * 专为技术文章、博客文档等结构化内容设计，确保转换质量和图片资产的完整迁移。
+ */
 function usage(): string {
   return [
     'Usage: html-article-to-markdown (--html <file> | --url <url>) --out-dir <dir> [options]',
@@ -54,6 +60,18 @@ function requireValue(argv: string[], index: number, flag: string): string {
   return value;
 }
 
+/**
+ * 命令行参数解析器。
+ *
+ * 解析HTML到Markdown转换工具的所有命令行选项，包括输入源选择、
+ * 输出配置、图片处理策略和远程API选项。
+ *
+ * 设计目标：
+ * - 支持本地HTML文件和远程URL两种输入模式
+ * - 灵活的图片处理选项（本地化、base64嵌入、尺寸保留）
+ * - 远程API集成用于复杂页面内容提取
+ * - 严格的参数验证，避免运行时错误
+ */
 export function parseArgs(argv: string[]): ParsedArgs {
   const options: ConvertOptions = {
     htmlPath: '',
