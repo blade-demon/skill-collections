@@ -1,6 +1,6 @@
 # Phase 7 — Document Generation 模板
 
-> 在 `docs/` 下生成 8 份最终文档（不含 `validation-report.md`，它由 P8 生成）。**只装配 `.analysis` 中间产物 + 证据账本，不重新读源码、不引入新结论。**
+> 在 `docs/` 下生成 8 份散文文档 + `index.json`（结构化索引）+ `ai-context.md`（AI 上下文摘要），共 10 份产物（不含 `validation-report.md`，它由 P8 生成）。**只装配 `.analysis` 中间产物 + 证据账本，不重新读源码、不引入新结论。**
 > 允许的来源：代码证据、`.analysis` 产物、证据账本、显式标注的推测、显式标注的待确认项。
 > 低置信度结论：在最终文档里降级为「推测」或移入「待确认」，不得写成事实。
 > 每份文档**面向新入职同事**：先讲「这是什么、我该从哪看起」，再给细节，路径可点击、命令可复制。
@@ -15,26 +15,40 @@
 章节骨架：
 
 - **项目是什么**：一句话用途 + 用户是谁（来源 `01` 第 1 节）。
-- **跑起来**：环境要求 → 安装 → 启动前端 → 启动后端 → 联调方式（来源 `01` 第 5、6 节）。命令可直接复制。
+- **跑起来**：环境要求 → 安装 → 启动前端 → 启动后端 → 联调方式（来源 `01` 第 5、6 节）。命令可直接复制。若做过「环境预检」（`preflight-report.md` 存在），注明哪些命令**已实测可跑**；否则注明「命令来自配置，未实测」，不要默认它们一定能跑。
 - **代码地图**：前端在哪、后端在哪、配置在哪（来源 `01` 第 3 节），各一句话。
 - **从哪开始读**：推荐先读哪 1~2 条核心业务链路（指向 business-flows.md 的 F-1）。
+- **先看哪、找谁**（来源 `01` 第 8 节 git）：高频改动文件/目录热点指出最常变动的核心区,优先熟悉;CODEOWNERS/主要贡献者指出归属与求助对象。**git 信息不可用时省略本段**,不要编。
 - **常见第一天问题**：指向 troubleshooting.md。
 
 ## 2. architecture.md — 架构
 
 - **整体架构**：前端 → （代理/网关）→ 后端 → 数据库的请求路径（来源 `01`/`04` 拼接说明）。
 - **分层**：前端分层（页面/组件/状态/请求）、后端分层（Controller/Service/Repository/Model）（来源 `02`/`03`）。
-- **横切关注点**：鉴权、拦截器、统一返回、异常处理（来源 `03` 第 6 节）。
-- **一张文字版架构图**：用代码块画 ASCII，不引外部图。
+- **横切关注点**：鉴权链（Spring Security 过滤器/认证入口/Token，来源 `03` 第 6 节「安全与鉴权链」小节）、拦截器、统一返回、异常处理。
+- **一张运行时全景 Mermaid**：必须有且仅有一张 `flowchart LR`，覆盖用户操作、React 页面/路由/API、HTTP 边界、Spring 鉴权/Controller/Service/Repository、可确认的数据存储、成功响应与异常回流。**如有非 REST 通道（MQ/WebSocket/SSE）也画上对应节点，异步发送用单独连线并在边标上 topic/endpoint，不与同步 HTTP 调用混为一条线。**
+- 图中只放代码或配置可证实的运行时节点和主要交互，不画部署拓扑，不把所有类都塞进全景图。
+- 图开头必须声明本图使用的 Evidence：
+
+  ```mermaid
+  flowchart LR
+    %% Evidence: E-001, E-003, E-013
+    user["用户"] --> page["页面<br/>PageComponent"]
+  ```
+
+- 节点 ID 使用 ASCII；包含括号、斜杠、冒号或空格的标签使用双引号；边标签只写 HTTP 方法、URL、header 或返回类型等关键事实。
 
 ## 3. frontend.md — 前端模块分析
 
 - 直接由 `02-frontend-index.md` 提炼：路由表、页面模块、API 方法、状态管理、权限/拦截器。
 - 每个业务模块写「职责 + 关键页面 + 关键 API」，置信度低的标推测。
+- **组件构成与状态流**（来源 `02` 第 4、6 节）：核心页面的组件树、关键自定义 hooks、状态来源拆分（本地/Context/store/服务端缓存各管什么）。这是新人理解前端的心智模型,有就写。
 
 ## 4. backend.md — 后端模块分析
 
 - 直接由 `03-backend-index.md` 提炼：Controller/Service/Repository 分层、各业务模块、横切关注点、定时任务、外部调用。
+- **单列「安全与鉴权链」一节**（来源 `03` 第 6 节安全小节）：配置类、认证过滤器、认证入口、Token 机制、方法级权限；静态确认不了的保留「待确认」。
+- **「消息与非 REST 通道」一节**（来源 `03` 第 7 节，如有）：定时任务、MQ 生产/消费（topic/queue）、WebSocket/SSE、GraphQL/gRPC；动态 topic 标待确认。
 - 置信度低的标推测。
 
 ## 5. api-map.md — 前后端接口映射表
@@ -45,7 +59,11 @@
 ## 6. business-flows.md — 核心业务链路
 
 - 直接由 `05-business-flows-draft.md` 生成。每条链路保留完整性判断。
+- 每个 `## F-<编号>` 标题后必须紧跟一张 `flowchart LR` Mermaid，图数量与核心链路数量严格一致。
+- 每张图从用户操作画到前端状态/渲染，沿途包含 P5 已确认的 API、HTTP、鉴权、Controller、Service、Repository/Mapper、数据模型和返回路径。
+- 每张图开头使用 `%% Evidence: E-xxx` 声明对应业务链路和 API 映射 Evidence。
 - **不完整/需人工确认的链路必须保留该标注**，不要补全成「看起来闭环」。
+- 不完整链路只画到最后一个确定节点，再连接到 `断点["断点：待确认"]`；禁止用推测连线闭环。
 
 ## 7. data-model.md — 数据模型
 
@@ -55,7 +73,45 @@
 
 - 来源：各阶段「待确认项」+ 拦截器/异常处理/环境配置中可预见的坑（来源 `02`/`03`）。
 - 每条：**现象 → 可能原因 → 排查位置（path）→ 处理建议**。
+- **高频改动区（潜在坑）**（来源 `01` 第 8 节 git）：把 churn 最高的文件/目录列为「易出问题、改动前先看历史」的提示。明确标注「热点是经验性推断,不等于确定缺陷」。git 不可用时省略。
 - 没有证据支撑的「常见问题」不要编；宁可少写。
+
+## 9. index.json — 结构化索引（供 AI 问答，机器可读）
+
+> **不要从零手写。** 先用脚本装配骨架，再在骨架上做加法——脚本已确定性产出的结构化数据
+> 不要倒回散文再手抄一遍。字段格式见 `schemas/index-json.md`，填好的样例见
+> `examples/index-json-example.json`。
+
+**第一步：脚本装配骨架（确定性，零判断）**
+
+```bash
+node skills/react-spring-project-doc/scripts/assemble-index.js \
+  --project <目标项目根> --out <目标项目根>/docs/index.json
+```
+
+它从 `extract-endpoints.js` 的种子直接拼出骨架：`codeMap`（高信号字段）、`api[]`
+（前后端按方法+结构化 URL 精确匹配成 matched / frontend-only / backend-only，
+`method`/`url`/`file`/`line`/`handler`/`fn` 全部来自真实代码）、`openQuestions`
+（所有 needs-review 动态 URL）。骨架本身就能通过 P8。
+
+**第二步：模型在骨架上做加法（只补判断密集的部分）**
+
+- **核对 `seed`**：对每条带 `"seed": true` 的 `api`，用 Grep 确认它真实存在、匹配正确；
+  删错的、修 `status`，带 `"needsReview": true` 的逐条人工判定。**核对完删除 `seed`/`needsReview` 标记。**
+- **补脚本填不了的字段**：`api[].module`、`api[].backend.service`/`repository`（来自 `04`/`03`），
+  `codeMap` 里为 `null` 的项（来自 `01`），`project.stack`。
+- **填判断密集数组**：`symbols`（来自 `02`/`03`）、`flows`（来自 `05`，`id` 与 `business-flows.md` 的 `F-N` 一一对应）、`dataModels`（来自 `06`）、`channels`（非 REST，来自 `03` 第 7 节 / `04` 第 5 节，如有）。
+- **分配 Evidence**：每条带证据的结论引用一个 `E-xxx`，写入 `evidence[]`，`E-xxx` 必须与证据账本一致；不确定的留 `openQuestions`，**不要**塞进结构化字段冒充事实。
+- **收尾**：删除骨架里的 `_generator` 与所有 `seed`/`needsReview` 标记。
+
+> 数据**只来自** `.analysis` 产物与证据账本，不重新读源码下新结论。这是 P8 `validate-docs.js`
+> 会确定性校验的产物：路径/符号/Evidence/引用完整性出错都会被打回。
+
+## 10. ai-context.md — AI 上下文摘要（稠密入口，给 AI 助手丢进上下文）
+
+- 一屏内说清：技术栈一行、代码地图（前端/后端/配置/迁移各一行 path）、3~6 条核心链路入口（指向 `F-N` 与 `index.json`）、关键符号锚点（Top 10~20，`符号 → file:line`）。
+- **稠密、去重、可机读优先**：不重复散文文档的展开叙述，只给指针。
+- 顶部一行注明：「本文件与 `index.json` 同源；结构化查询用 `index.json`，人/AI 速览用本文件。」
 
 ---
 
@@ -65,3 +121,7 @@
 - [ ] 所有写成事实的结论，都能在证据账本里找到对应 Evidence（高置信度）。
 - [ ] 所有「推测」「待确认」标注都被保留，没有被悄悄抹平。
 - [ ] 没有出现 `.analysis` 与证据账本里都不存在的新路径、新符号、新链路。
+- [ ] `architecture.md` 恰好一张 Mermaid；`business-flows.md` 每条 F-N 链路恰好一张。
+- [ ] 每张 Mermaid 都有 `%% Evidence:` 声明，图中节点和连线未超出所列证据。
+- [ ] `index.json` 已生成：必填键齐全，`file`/`line`/`E-xxx` 真实，`flows[].id` 与 F-N 对应，引用闭合。
+- [ ] `ai-context.md` 已生成，与 `index.json` 同源、无新结论。

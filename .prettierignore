@@ -19,6 +19,8 @@ skills/sketch-to-component/scripts/src/__tests__/fixtures/*.json
 skills/sketch-to-component/output/
 **/.d2c-run-*/
 d2c-real-react/
+demo-react-spring/
+docs/.handoff/
 .scratch/
 **/.scratch/
 .understand-anything/

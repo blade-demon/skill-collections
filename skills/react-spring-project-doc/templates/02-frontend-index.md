@@ -4,6 +4,8 @@
 > 输入：`01-discovery-report.md` 定位出的前端目录。只看前端源码，**不要碰后端**。
 > 每个会进入最终文档的结论，按 `schemas/evidence-record.md` 追加一条到 `docs/.analysis/evidence-ledger.md`。
 > 路径写真实相对路径；推断的命名/职责标「推测」；不确定的进「待确认项」。
+>
+> **先跑种子（推荐）**：`node skills/react-spring-project-doc/scripts/extract-endpoints.js --project <项目根> --out docs/.analysis/endpoints-seed.json`，把其中 `frontend[]` 作为第 5 节 API 方法列表的**基线清单**。**种子是基线不是事实**：逐条 Grep 核对调用确实存在、补全被哪些页面调用与置信度；`confidence: needs-review` 的项（模板字符串/动态 URL）必须人工确认，不要直接当事实登记。
 
 ## 1. 前端入口
 
@@ -27,11 +29,23 @@
 | -------- | ------------------------- | ------------ | ---------- | ---------- |
 | <订单>   | <OrderList / OrderDetail> | `<path>`     | <…>        | <高/中/低> |
 
-## 4. 组件目录
+## 4. 组件目录与组件树
 
 - 通用/原子组件目录：`<path>`
 - 业务组件目录：`<path>`
 - 复用度高的关键组件：<列出 2~5 个 + path，仅复用信号明显的>
+- **核心页面组件树**（选 1~3 个核心页面，画 2~3 层 `页面 → 主要子组件`，供新人快速建立心智模型）：
+
+  ```
+  <OrderListPage>
+    ├─ <OrderFilterBar>
+    ├─ <OrderTable>（复用 <DataTable>）
+    └─ <Pagination>
+  ```
+
+- **自定义 hooks**：`<useXxx — 一句话职责 + path，列核心的 3~6 个；无则「无」>`
+- **状态来源拆分**（谁负责什么，避免新人混淆）：本地 `useState` / 跨组件 `Context` / 全局 `store` / 服务端缓存 `React Query/SWR` 各覆盖哪类状态。
+- **prop drilling / Context 过度使用信号**（如有，标「推测」）：`<层层透传的 prop 或被滥用的 Context + path>`
 
 ## 5. API 方法列表
 

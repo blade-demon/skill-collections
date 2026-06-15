@@ -3,6 +3,7 @@
 > 落盘到 `docs/.analysis/04-api-map-draft.md`。
 > 输入：`02-frontend-index.md` 第 5 节（前端 API 方法）+ `03-backend-index.md` 第 2 节（Controller URL）。
 > **本阶段不重新读源码**，只对两份索引做双向匹配。匹配规则见下；记录字段见 `schemas/api-map-record.md`；样例见 `examples/api-map-example.md`。
+> 若有 `docs/.analysis/endpoints-seed.json`，它的 `frontend[]`/`backend[]` 两侧 URL 清单已是确定性抽取结果，可直接作为匹配两端，省去重新整理；但匹配成立与否仍以已核对进 `02`/`03` 的结论为准，`needs-review` 项不得当作已确认。
 > 每条成立或不成立的映射，都按 `schemas/evidence-record.md` 追加证据账本（类型：API 映射）。
 
 ## 1. URL 拼接说明（先写清楚，再开始匹配）
@@ -42,7 +43,15 @@
 
 - `<Controller.method + URL>` — 可能原因：<内部/定时调用 / 被移动端等其他客户端调用 / 废弃>（待确认）
 
-## 5. 待确认项
+## 5. 非 REST 通道（如有，来自 `03` 第 7 节；无则「未发现」）
+
+> 消息队列 / WebSocket / SSE / GraphQL / gRPC 不走 HTTP URL，不进上面的映射表，在此单列。前端有对应消费/订阅时一并标出（如 WS 客户端、GraphQL query hook）；topic/操作名动态拼接的标「待确认」。
+
+| 通道类型     | 名称（topic/endpoint/操作） | 后端位置                | 前端对应（如有）    | 置信度     |
+| ------------ | --------------------------- | ----------------------- | ------------------- | ---------- |
+| <Kafka 消费> | `<order.created>`           | `<OrderListener.onMsg>` | <无 / 某 WS 客户端> | <高/中/低> |
+
+## 6. 待确认项
 
 1. <如：动态拼接的 URL（模板字符串变量）无法静态对齐>
 2. <…>

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-06-14",
+  "commit": "a1b2c3d",
+  "project": {
+    "name": "demo-shop",
+    "stack": { "frontend": "React 18 + Vite", "backend": "Spring Boot 3", "db": "MySQL 8" }
+  },
+  "codeMap": {
+    "frontend": {
+      "entry": "frontend/src/main.tsx",
+      "routes": "frontend/src/router/index.tsx",
+      "apiClient": "frontend/src/api/http.ts",
+      "store": "frontend/src/store/index.ts"
+    },
+    "backend": {
+      "mainClass": "backend/src/main/java/com/example/demo/DemoApplication.java",
+      "controllers": "backend/src/main/java/com/example/demo/controller",
+      "services": "backend/src/main/java/com/example/demo/service",
+      "repositories": "backend/src/main/java/com/example/demo/mapper",
+      "models": "backend/src/main/java/com/example/demo/model",
+      "security": "backend/src/main/java/com/example/demo/config/SecurityConfig.java",
+      "migrations": "backend/src/main/resources/db/migration"
+    }
+  },
+  "symbols": [
+    {
+      "name": "OrderController",
+      "kind": "controller",
+      "file": "backend/src/main/java/com/example/demo/controller/OrderController.java",
+      "line": 18,
+      "evidence": "E-001"
+    },
+    {
+      "name": "OrderListPage",
+      "kind": "component",
+      "file": "frontend/src/pages/OrderListPage.tsx",
+      "line": 9,
+      "evidence": "E-003"
+    }
+  ],
+  "api": [
+    {
+      "id": "API-001",
+      "module": "订单",
+      "method": "GET",
+      "url": "/api/orders",
+      "frontend": { "fn": "getOrders", "file": "frontend/src/api/order.ts", "line": 12 },
+      "backend": {
+        "handler": "OrderController.list",
+        "file": "backend/src/main/java/com/example/demo/controller/OrderController.java",
+        "line": 24,
+        "service": "OrderService.list",
+        "repository": "OrderMapper.selectAll"
+      },
+      "status": "matched",
+      "confidence": "high",
+      "evidence": "E-002"
+    }
+  ],
+  "flows": [
+    {
+      "id": "F-1",
+      "name": "查看订单列表",
+      "completeness": "complete",
+      "steps": [
+        {
+          "stage": "page",
+          "symbol": "OrderListPage",
+          "file": "frontend/src/pages/OrderListPage.tsx",
+          "line": 9
+        },
+        {
+          "stage": "controller",
+          "symbol": "OrderController.list",
+          "file": "backend/src/main/java/com/example/demo/controller/OrderController.java",
+          "line": 24
+        }
+      ],
+      "evidence": "E-010"
+    }
+  ],
+  "dataModels": [
+    {
+      "id": "M-1",
+      "name": "Order",
+      "kind": "entity",
+      "file": "backend/src/main/java/com/example/demo/model/Order.java",
+      "table": "t_order",
+      "fields": [
+        {
+          "name": "status",
+          "type": "Integer",
+          "nullable": false,
+          "enum": ["0=待付款", "1=已付款", "2=已取消"]
+        }
+      ],
+      "usedByApi": ["API-001"],
+      "usedByFlow": ["F-1"],
+      "evidence": "E-020"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E-001",
+      "file": "backend/src/main/java/com/example/demo/controller/OrderController.java",
+      "line": 18,
+      "confidence": "high",
+      "claim": "类级 @RequestMapping(\"/api/orders\")"
+    },
+    {
+      "id": "E-002",
+      "file": "backend/src/main/java/com/example/demo/controller/OrderController.java",
+      "line": 24,
+      "confidence": "high",
+      "claim": "方法 @GetMapping 对齐前端 getOrders"
+    },
+    {
+      "id": "E-003",
+      "file": "frontend/src/pages/OrderListPage.tsx",
+      "line": 9,
+      "confidence": "high",
+      "claim": "OrderListPage 组件定义"
+    },
+    {
+      "id": "E-010",
+      "file": "frontend/src/pages/OrderListPage.tsx",
+      "line": 30,
+      "confidence": "high",
+      "claim": "列表加载触发 getOrders"
+    },
+    {
+      "id": "E-020",
+      "file": "backend/src/main/java/com/example/demo/model/Order.java",
+      "line": 12,
+      "confidence": "medium",
+      "claim": "status 字段枚举推断自注释"
+    }
+  ],
+  "openQuestions": ["status 枚举值是否完整,待与产品确认"]
+}

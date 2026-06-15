@@ -8,7 +8,8 @@
 
 - 项目名称：<从 README / package.json / pom.xml 读取>
 - 一句话用途：<README 首段，或标注「README 未说明，推测：…」>
-- 仓库形态：<单体 / 前后端同仓 / 多模块 / monorepo>
+- 仓库形态：<单体 / 前后端同仓 / 多模块 / monorepo / **多独立后端服务**>
+  - 若识别出**多个独立后端服务/微服务/网关路由**：在此标明，并按 SKILL.md「适用范围与多服务降级」选定降级策略（分服务跑 / 主服务优先），不要把多服务硬塞进一条线性管线。
 - 主要语言与版本：<前端 Node 版本（.nvmrc / engines）；后端 JDK 版本（pom/gradle）>
 
 ## 2. 技术栈
@@ -44,6 +45,8 @@
 - Repository/Mapper/DAO 目录：`<path>`
 - Entity/DTO/VO 目录：`<path>`
 - Config/Interceptor/Filter/ExceptionHandler：`<path 列表>`
+- 安全/鉴权配置：`<SecurityConfig / SecurityFilterChain / JWT 过滤器 path，或「未发现」>`
+- 数据库迁移：`<Flyway src/main/resources/db/migration/V*__*.sql / Liquibase db.changelog*，或「未发现」>`
 - 配置文件：`<application.yml / application.properties / bootstrap.yml>`
 
 ## 4. 测试与质量
@@ -52,7 +55,7 @@
 - 后端测试目录/框架：`<src/test/... / JUnit 版本 / 「未发现」>`
 - Lint / typecheck / format 配置：`<eslint / tsconfig / checkstyle / spotless / 「未发现」>`
 
-## 5. 构建与运行命令（先记录，P8 再验证可执行性）
+## 5. 构建与运行命令（先记录；默认不实跑，仅当用户要求「环境预检」时才实测，见 SKILL.md「环境预检」）
 
 | 用途         | 命令                                                  | 来源                      |
 | ------------ | ----------------------------------------------------- | ------------------------- |
@@ -76,7 +79,20 @@
 - <模块猜测 1> —— 推测依据：<目录名/路由名/包名>
 - <模块猜测 2> —— 推测依据：<…>
 
-## 8. 待确认项
+## 8. 代码活跃度与归属（git，可选）
+
+> 纯确定性 git 信号，给 P7 的 onboarding「先看哪、找谁」与 troubleshooting「热点区」提供输入。运行：
+> `node skills/react-spring-project-doc/scripts/git-insights.js --project <项目根>`（非 git 仓库/浅克隆会自动降级，本节标「git 信息不可用」即可，不阻塞）。
+
+- 高频改动文件 Top N：<file:次数，或「git 信息不可用」>
+- 目录热点 Top N：<dir:次数>
+- 主要贡献者 Top N：<name:次数>
+- CODEOWNERS：<path 或「未发现」>
+- 近 90 天活跃文件：<file 列表>
+
+> git 数据是事实（高置信度）；「热点≈坑」「改得多即核心」是经验推断，进文档时按置信度规则标注。
+
+## 9. 待确认项
 
 1. <Phase 1 无法确认、需后续阶段或人工澄清的点>
 2. <…>
