@@ -78,12 +78,34 @@
 
 ## 9. index.json — 结构化索引（供 AI 问答，机器可读）
 
-- **字段格式见 `schemas/index-json.md`；填好的样例见 `examples/index-json-example.json`。**
-- 数据**只来自** `.analysis` 产物与证据账本：`codeMap` 来自 `01`，`symbols`/`api` 来自 `02`/`03`/`04`，`flows` 来自 `05`，`dataModels` 来自 `06`，`channels`（非 REST，如有）来自 `03` 第 7 节 / `04` 第 5 节，`evidence` 来自证据账本（`E-xxx` 必须与账本一致）。
-- 每条带证据的结论引用一个 `E-xxx`；`file` 写真实相对路径、`line` 写真实行号。
-- `flows[].id` 与 `business-flows.md` 的 `F-N` 一一对应。
-- 不确定的内容进 `openQuestions`，**不要**塞进结构化字段冒充事实。
-- 这是 P8 `validate-docs.js` 会确定性校验的产物：路径/符号/Evidence/引用完整性出错都会被打回。
+> **不要从零手写。** 先用脚本装配骨架，再在骨架上做加法——脚本已确定性产出的结构化数据
+> 不要倒回散文再手抄一遍。字段格式见 `schemas/index-json.md`，填好的样例见
+> `examples/index-json-example.json`。
+
+**第一步：脚本装配骨架（确定性，零判断）**
+
+```bash
+node skills/react-spring-project-doc/scripts/assemble-index.js \
+  --project <目标项目根> --out <目标项目根>/docs/index.json
+```
+
+它从 `extract-endpoints.js` 的种子直接拼出骨架：`codeMap`（高信号字段）、`api[]`
+（前后端按方法+结构化 URL 精确匹配成 matched / frontend-only / backend-only，
+`method`/`url`/`file`/`line`/`handler`/`fn` 全部来自真实代码）、`openQuestions`
+（所有 needs-review 动态 URL）。骨架本身就能通过 P8。
+
+**第二步：模型在骨架上做加法（只补判断密集的部分）**
+
+- **核对 `seed`**：对每条带 `"seed": true` 的 `api`，用 Grep 确认它真实存在、匹配正确；
+  删错的、修 `status`，带 `"needsReview": true` 的逐条人工判定。**核对完删除 `seed`/`needsReview` 标记。**
+- **补脚本填不了的字段**：`api[].module`、`api[].backend.service`/`repository`（来自 `04`/`03`），
+  `codeMap` 里为 `null` 的项（来自 `01`），`project.stack`。
+- **填判断密集数组**：`symbols`（来自 `02`/`03`）、`flows`（来自 `05`，`id` 与 `business-flows.md` 的 `F-N` 一一对应）、`dataModels`（来自 `06`）、`channels`（非 REST，来自 `03` 第 7 节 / `04` 第 5 节，如有）。
+- **分配 Evidence**：每条带证据的结论引用一个 `E-xxx`，写入 `evidence[]`，`E-xxx` 必须与证据账本一致；不确定的留 `openQuestions`，**不要**塞进结构化字段冒充事实。
+- **收尾**：删除骨架里的 `_generator` 与所有 `seed`/`needsReview` 标记。
+
+> 数据**只来自** `.analysis` 产物与证据账本，不重新读源码下新结论。这是 P8 `validate-docs.js`
+> 会确定性校验的产物：路径/符号/Evidence/引用完整性出错都会被打回。
 
 ## 10. ai-context.md — AI 上下文摘要（稠密入口，给 AI 助手丢进上下文）
 

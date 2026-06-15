@@ -206,7 +206,7 @@ P1 探索 → P2 前端索引 → P3 后端索引 → P4 API 映射 → P5 业�
 
 **目标**：基于 `.analysis` 中间产物和证据账本，装配最终文档。
 **输入**：`01`~`06` 产物 + `evidence-ledger.md`。
-**做什么**：生成 `docs/` 下 8 份散文文档 + `index.json` 结构化索引 + `ai-context.md` AI 上下文摘要。**只能引用以下来源**：代码证据、`.analysis` 中间产物、证据账本、显式标注的推测、显式标注的待确认项。**不得在 P7 引入任何未登记的新结论**。低置信度内容按规则降级或移入待确认。`architecture.md` 必须有且仅有一张 `flowchart LR` 运行时全景 Mermaid；`business-flows.md` 每条 `## F-<编号>` 核心链路必须紧跟一张 `flowchart LR`。每张图用 `%% Evidence: E-xxx` 声明证据来源。`index.json` 按 `schemas/index-json.md` 装配，`E-xxx` 与证据账本一致、`flows[].id` 与 `F-N` 对应。
+**做什么**：生成 `docs/` 下 8 份散文文档 + `index.json` 结构化索引 + `ai-context.md` AI 上下文摘要。**只能引用以下来源**：代码证据、`.analysis` 中间产物、证据账本、显式标注的推测、显式标注的待确认项。**不得在 P7 引入任何未登记的新结论**。低置信度内容按规则降级或移入待确认。`architecture.md` 必须有且仅有一张 `flowchart LR` 运行时全景 Mermaid；`business-flows.md` 每条 `## F-<编号>` 核心链路必须紧跟一张 `flowchart LR`。每张图用 `%% Evidence: E-xxx` 声明证据来源。`index.json` **先跑 `scripts/assemble-index.js` 装配骨架**（确定性预填 `codeMap`/`api[]`/`openQuestions`），模型只在骨架上核对 seed、补判断字段、分配 `E-xxx`（与证据账本一致、`flows[].id` 与 `F-N` 对应），不要从零手写。
 **输出**：`docs/onboarding.md`、`architecture.md`、`frontend.md`、`backend.md`、`api-map.md`、`business-flows.md`、`data-model.md`、`troubleshooting.md`（8 份散文）+ `docs/index.json` + `docs/ai-context.md`（共 10 份）。**P7 不生成 `validation-report.md`——那是 P8 的产物，本阶段不要顺手写它。**
 **模板**：`templates/07-doc-generation.md`（含每份文档的章节骨架）。
 
@@ -243,7 +243,8 @@ P1 探索 → P2 前端索引 → P3 后端索引 → P4 API 映射 → P5 业�
 - `scripts/validate-docs.js` — P8 确定性校验脚本：自动核对 docs/ 引用的路径/符号、Mermaid 结构与图级 Evidence（**P8 第一步运行**：`node validate-docs.js --project <项目根> --symbols --strict`）；冒烟测试 `scripts/tests/validate-docs.test.js`。
 - `scripts/git-insights.js` — P1 可选的 git 历史洞察脚本：输出高频改动文件/目录热点/贡献者/CODEOWNERS/近期活跃文件（`node git-insights.js --project <项目根> [--top N] [--days N] [--json] [--out <path>]`）；非 git 仓库/浅克隆自动降级；冒烟测试 `scripts/tests/git-insights.test.js`。
 - `scripts/extract-endpoints.js` — P2/P3/P4 的接口**种子**脚本：确定性抽取后端 Spring mapping 与前端 axios/fetch 调用（`node extract-endpoints.js --project <项目根> --out docs/.analysis/endpoints-seed.json`）。**种子是基线不是事实**，P2/P3 须逐条核对；`needs-review` 项须人工确认。冒烟测试 `scripts/tests/extract-endpoints.test.js`。
-- `scripts/lib/project-index.js` — `validate-docs.js` 与 `extract-endpoints.js` 共享的文件索引工具（`CODE_EXT` / `IGNORE_DIRS` / `indexProject` / `buildCodeContentCache`）。
+- `scripts/assemble-index.js` — **P7 的 `index.json` 骨架装配脚本**：把 `extract-endpoints.js` 的种子直接拼成 `index.json` 骨架（确定性预填 `codeMap`/`api[]` 匹配/`openQuestions`），骨架本身即能通过 P8，模型只在其上做加法（`node assemble-index.js --project <项目根> --out docs/index.json`，可选 `--endpoints <种子.json>` 复用已有种子）。冒烟测试 `scripts/tests/assemble-index.test.js`。
+- `scripts/lib/project-index.js` — `validate-docs.js`、`extract-endpoints.js` 与 `assemble-index.js` 共享的文件索引工具（`CODE_EXT` / `IGNORE_DIRS` / `indexProject` / `buildCodeContentCache`）。
 - `examples/evidence-ledger-example.md` — 填好的证据账本样例（**对齐格式时读，不整文件背**）。
 - `examples/api-map-example.md` — 填好的 API 映射表样例（**仅 P4 对齐格式时读**）。
 - `examples/business-flow-example.md` — 填好的业务链路样例（**仅 P5 对齐格式时读**）。

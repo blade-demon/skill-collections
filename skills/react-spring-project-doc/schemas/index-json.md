@@ -3,6 +3,8 @@
 > P7 生成 `docs/index.json`：一份**机器可读**的代码库索引,供 AI 助手快速加载、支持问答,无需正则去啃散文文档。
 > 它**只装配 `.analysis` 产物与证据账本**,与 8 份散文文档同源、不引入新结论。P8 用 `validate-docs.js` 对它做确定性校验。
 >
+> **不要从零手写**：先跑 `scripts/assemble-index.js` 装配骨架(确定性预填 `codeMap`/`api[]`/`openQuestions`,骨架本身即能通过 P8),模型只在骨架上核对 seed、补判断字段(`symbols`/`flows`/`dataModels`/`channels`、`module`/`service`/`repository`)、分配 `E-xxx`,完成后删除 `_generator` 与各条目的 `seed`/`needsReview` 标记。详见 `templates/07-doc-generation.md` 第 9 节。
+>
 > 设计原则:① 每条带证据的结论都引用一个 `E-xxx`(回指证据账本);② 所有 `file` 写真实相对路径、`line` 写真实行号;③ 不确定的进 `openQuestions`,不塞进结构化字段冒充事实。
 
 ## 顶层结构
