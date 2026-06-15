@@ -21,7 +21,8 @@
 
 1. 用确定性 Shell 脚本完成仓库盘点、状态判断和批次选择。
 2. 只把紧凑的结构化盘点结果放入模型上下文，再按信号优先级读取源码。
-3. 以文件系统中的核心文档作为续跑完成标志，不解析旧报告或新增状态文件。
+3. 以五份模板文档和 coverage checklist 的完成声明作为续跑完成标志，不解析旧
+   报告或新增独立状态文件。
 4. `batch-report.md` 是每次运行时重建的完整当前快照，不承担历史账本职责。
 5. 同一 Agent 会话无法真正删除已经进入上下文的内容，因此“上下文隔离”通过
    `--max-repos` 分批和跨会话续跑实现；单仓顺序处理只负责减少同时活跃的信息。
@@ -51,7 +52,8 @@ repo 后继续深挖第二个 repo。
 
 如果当前 repo 在 30 分钟内未完成，Agent 应更新
 `_analysis/coverage-checklist.md` 并结束本窗口。下一窗口优先续跑同一个 repo，
-直到三个核心文档齐全或明确记录为部分覆盖；不得为了提高仓库数量而缩短证据链。
+直到五份模板文档通过完成检查；不得为了提高仓库数量而缩短证据链。部分覆盖和
+未确认内容可以作为完整交付的一部分，但必须在覆盖矩阵、自检和 TODO 中明确列出。
 
 ## 单仓盘点脚本
 
@@ -108,7 +110,8 @@ Bash 3.2，不使用关联数组、`mapfile`、GNU-only `find -printf` 或 GNU-o
 ## 单仓预算感知执行
 
 将 `Low Capability Model Mode` 重构为 `Budget-Aware Execution Mode`，并保留
-现有三文档默认输出和 `_analysis` 增量笔记机制。
+`_analysis` 增量笔记机制。五份模板文档都是完整交付的必需产物；预算不足时可以
+先产出草稿，但不得因此声明完成。
 
 ### 执行顺序
 
@@ -119,7 +122,7 @@ Bash 3.2，不使用关联数组、`mapfile`、GNU-only `find -printf` 或 GNU-o
 5. 按入口、路由、manifest/配置、API/service、顶层业务模块的顺序分析。
 6. 每得到一组稳定证据，立即写入 `_analysis` 笔记和
    `_analysis/coverage-checklist.md`。
-7. 根据剩余预算决定继续深挖、生成核心文档或停止并记录未覆盖项。
+7. 根据剩余预算决定继续深挖、更新五份文档或停止并记录未覆盖项。
 
 “丢弃原文件内容”作为工作习惯描述，不声称模型能从同一会话历史中物理删除
 tokens。Agent 应停止重复引用已归档的原文，后续优先读取紧凑的 `_analysis`
@@ -133,21 +136,54 @@ tokens。Agent 应停止重复引用已归档的原文，后续优先读取紧�
 - 部分覆盖、未确认和未分析模块。
 - 下一批建议读取的 high-signal 文件。
 - 尚未确认的业务问题。
-- 核心三文档的生成或更新状态。
+- 五份模板文档的生成和完整性状态。
+- 固定完成声明：未完成时为 `Completion: incomplete`，全部完成检查通过后才改为
+  `Completion: complete`。
 
-临近上下文或请求上限时，Agent 停止扩大探索范围，优先完成或更新：
+临近上下文或请求上限时，Agent 停止扩大探索范围，优先更新 coverage checklist
+和已有文档。完整交付必须包含：
 
 ```text
 project-overview.md
 module-analysis.md
 onboarding-guide.md
+api-and-data-flow.md
+business-flow-summary.md
 ```
 
 覆盖矩阵使用现有状态值标明不足；`覆盖度自检` 和
-`TODO: 需要业务确认` 必须列出遗漏。可选文档只有在核心三文档和覆盖检查稳定后
-才生成。
+`TODO: 需要业务确认` 必须列出遗漏。若某仓没有 API、后端、状态管理、持久化
+数据流或可识别的业务流程，对应文档仍需生成，并在相关章节明确写明“不适用”、
+判断依据和证据路径，不能用缺少文件表示不适用。
 
 ## Batch 断点续跑与限流
+
+### 完成检查脚本
+
+新增：
+
+```text
+skills/codebase-doc-skills/codebase-explorer-docs/scripts/validate-doc-completion.sh
+```
+
+接口：
+
+```bash
+./scripts/validate-doc-completion.sh --docs-root <repo-doc-output-dir>
+```
+
+该脚本读取同 skill 下的五份 `templates/*.md`，验证目标文档是否保留模板中的全部
+一级和二级标题，并用有界的 `awk`/`grep` 检查每个标题到下一个同级或更高层级
+标题之间存在非空正文。它还单独验证：
+
+- `module-analysis.md` 的业务模块覆盖矩阵存在至少一条非表头数据行。
+- 覆盖度自检不存在空结果、空说明或模板占位值（如 `是/部分/否`）。
+- `_analysis/coverage-checklist.md` 包含独占一行的
+  `Completion: complete`。
+
+验证成功退出 0；失败退出非 0，并逐项输出缺失文件、空章节、空表格或未完成声明。
+脚本只读文档，不修改任何文件。它验证的是可机械判断的结构完整性，不宣称判断
+业务分析质量。
 
 修改：
 
@@ -166,22 +202,53 @@ skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-generate-d
 
 ### 完成判定
 
-仅当以下三个文件全部存在且为普通文件时，仓库状态才是 `done`：
+`done` 表示五份模板文档已经形成可交付结果，不是仅达到最低产物数量。必须同时
+满足以下条件：
 
 ```text
 <docs-root>/<repo-name>/project-overview.md
 <docs-root>/<repo-name>/module-analysis.md
 <docs-root>/<repo-name>/onboarding-guide.md
+<docs-root>/<repo-name>/api-and-data-flow.md
+<docs-root>/<repo-name>/business-flow-summary.md
+<docs-root>/<repo-name>/_analysis/coverage-checklist.md
 ```
 
-只存在一个或两个核心文档属于未完成仓库，可在本次预算允许时重新激活。脚本不
-解析 Markdown 内容，也不依赖旧 `batch-report.md`。
+完成检查规则：
+
+1. 五份模板文档全部存在、为普通文件且非空。
+2. 每份文档的模板必填章节标题仍然存在，并且标题后包含非空正文；正文可以明确
+   写“不适用”，但必须同时给出判断依据和证据路径。
+3. `module-analysis.md` 的业务模块覆盖矩阵至少包含一条数据行，覆盖度自检中的
+   每个检查项都有确定结果和说明，不能保留 `是/部分/否` 等模板占位值。
+4. 所有盘点发现的业务模块都在覆盖矩阵中有状态和证据路径，且不得残留
+   `未分析`。`部分覆盖` 或 `未确认` 只有在说明证据边界、缺失信息和后续确认项时
+   才能进入完整交付；`疑似非业务模块` 必须给出判断依据。
+5. `_analysis/coverage-checklist.md` 存在且包含独占一行的固定声明：
+
+```text
+Completion: complete
+```
+
+生成过程中该值必须保持：
+
+```text
+Completion: incomplete
+```
+
+`validate-doc-completion.sh` 负责规则 1、2、3、5，并拒绝覆盖矩阵中的
+`未分析`。规则 4 的证据质量以及“不适用”理由是否可信由 Agent 在写入
+`Completion: complete` 前自检；Shell 不尝试用关键词数量判断语义质量。任何一项
+机械检查失败都属于未完成仓库，可在本次预算允许时重新激活。Batch 脚本通过调用
+完成检查脚本获得 `done` 结论，不依赖旧 `batch-report.md`，也不新增独立状态
+文件。
 
 ### 状态选择顺序
 
 对输入列表中的每个去重后仓库，按以下顺序确定状态：
 
-1. 三个核心文档齐全：`done`，跳过 clone、fetch、checkout 和 scaffold。
+1. 五份文档及 coverage checklist 通过完成检查：`done`，跳过 clone、fetch、
+   checkout 和 scaffold。
 2. 未完成且本次激活数已达到 `--max-repos`：`deferred`，不 clone、不更新，
    不创建该仓文档目录。
 3. 未完成且仍有配额：执行 clone/update；成功为 `cloned`，失败为 `failed`。
@@ -215,8 +282,9 @@ Batch 脚本允许顺序处理大量仓库并运行超过 30 分钟，不设置�
 2. 保留已经完成的正式 clone、已有文档和最后一次完整报告。
 3. 以非零状态退出并输出“再次运行同一命令可继续”的提示。
 
-重新运行时仍按三个核心文档判断 `done`。已有有效 clone 可以继续 fetch/update，
-未完成仓库重新进入 `cloned` 或 `deferred` 判定，无需额外状态文件。
+重新运行时仍按五份文档和 coverage checklist 完成检查判断 `done`。已有有效
+clone 可以继续 fetch/update，未完成仓库重新进入 `cloned` 或 `deferred` 判定，
+无需额外状态文件。
 
 ### 报告语义
 
@@ -244,8 +312,8 @@ Failed
 ```
 
 Agent 完成某仓文档后不再要求手工把报告行改成 `success` 或 `partial`。源码
-干净校验结果写入该仓文档或最终响应；下一次运行由三个核心文档重新推导
-`done`。这避免脚本覆盖报告时丢失人工状态，并使续跑只依赖文件系统事实。
+干净校验结果写入该仓文档或最终响应；下一次运行由五份文档和完成声明重新推导
+`done`。这避免脚本覆盖报告时丢失人工状态，并使续跑只依赖当前文档事实。
 
 ### 执行前预检
 
@@ -261,6 +329,7 @@ clone/fetch 成功与否，而长运行脚本已经通过临时 clone、原子�
 - 每个 spec 可推导 URL、可选 branch 和确定性 repo 名称。
 - `--max-repos` 未提供或为大于零的十进制整数。
 - `git` 命令可用。
+- sibling `codebase-explorer-docs/scripts/validate-doc-completion.sh` 存在且可读。
 
 静态预检失败时不创建 `--repos-root`、`--docs-root`、每仓目录或报告文件。通过
 预检后进入正式执行；Git 运行时失败按 `failed` / `--fail-fast` 语义处理。
@@ -277,11 +346,12 @@ Batch skill 要求：
    必须放到下一个 30 分钟模型窗口。
 5. 根据 Shell 准备规模选择 `--max-repos`。未知规模且准备后立即分析时默认使用
    `--max-repos 1`；仅做长时间 clone 预热时可以使用更大的值或不设上限。
-6. 单次未完成全部仓库是正常结果；后续重新运行脚本时，三个核心文档齐全的仓库
-   自动成为 `done`，其余继续分批激活。
+6. 单次未完成全部仓库是正常结果；后续重新运行脚本时，通过五文档完成检查的
+   仓库自动成为 `done`，其余继续分批激活。
 
 30 分钟“一仓一窗口”是硬约束，而仓内 token/请求分配仍是规划启发式。Agent 应
-根据盘点结果中的规模和信号密度动态调整，并优先保证核心三文档和诚实覆盖状态。
+根据盘点结果中的规模和信号密度动态调整，并优先保证五份文档、完成检查和诚实
+覆盖状态。
 
 ## 文档同步
 
@@ -312,6 +382,7 @@ skills/codebase-doc-skills/SUMMARY.md
 
 ```bash
 bash -n skills/codebase-doc-skills/codebase-explorer-docs/scripts/repo-inventory.sh
+bash -n skills/codebase-doc-skills/codebase-explorer-docs/scripts/validate-doc-completion.sh
 bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-generate-docs.sh
 ```
 
@@ -331,26 +402,43 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 8. 使用足够大的本地 fixture 验证脚本没有固定墙钟 timeout，并能持续输出章节
    进度。
 
+### 完成检查脚本
+
+使用从五份模板生成的临时文档目录验证：
+
+1. 五份文档、全部必填标题、非空正文、有效覆盖矩阵、自检说明和
+   `Completion: complete` 均存在时退出 0。
+2. 分别删除每个文档、每个必填标题和一个章节正文时退出非 0，并输出具体原因。
+3. 只有模板空标题、只有表头、空自检说明或 `Completion: incomplete` 时退出非 0。
+4. 覆盖矩阵包含 `未分析` 时退出非 0；`未确认`、`部分覆盖` 和
+   `疑似非业务模块` 有说明时可以通过结构检查。
+5. 不适用章节包含“不适用”、判断依据和证据路径时可以通过结构检查。
+6. 验证前后文档目录文件系统快照一致，脚本没有写入。
+7. 路径包含空格和特殊字符时仍能正确验证。
+
 ### Batch 脚本
 
 使用本地临时 Git 仓库作为 clone 源，避免依赖网络：
 
 1. 参数校验覆盖合法与非法 `--max-repos`。
-2. 三个核心文档齐全时状态为 `done`，且不会 clone/update。
-3. 只有部分核心文档时仍可成为 `cloned`。
-4. `--max-repos 1` 只激活第一个未完成仓库，其余为 `deferred`。
-5. `done` 不占用激活配额。
-6. 重名仓库的 `done` 判断使用去重后的目录名。
-7. 报告包含全部输入仓库，但待办清单只包含 `cloned`。
-8. Summary 的 Total/Done/Cloned/Deferred/Failed 与表格一致。
-9. 第二次运行能把已经补齐三个核心文档的仓库识别为 `done`。
-10. 静态预检失败时文件系统快照一致，不创建目录或覆盖已有报告。
-11. 帮助文本和参数解析均不再接受 `--dry-run`。
-12. clone 失败仍按 `--fail-fast` 语义处理，并保留已生成的报告快照。
-13. `set -u` 下空数组、空分支和重复仓库名不报未绑定变量。
-14. 模拟首次 clone 被 `INT`/`TERM` 中断，正式 source path 不出现残缺仓库，
+2. 五份文档、必填章节和 `Completion: complete` 均通过时状态为 `done`，且不会
+   clone/update。
+3. 缺少任一文档、文档为空、章节缺失、表格未填写或完成声明为 incomplete 时仍
+   可成为 `cloned`。
+4. Batch 通过完成检查脚本判定 `done`，并把失败原因写入 Notes。
+5. `--max-repos 1` 只激活第一个未完成仓库，其余为 `deferred`。
+6. `done` 不占用激活配额。
+7. 重名仓库的 `done` 判断使用去重后的目录名。
+8. 报告包含全部输入仓库，但待办清单只包含 `cloned`。
+9. Summary 的 Total/Done/Cloned/Deferred/Failed 与表格一致。
+10. 第二次运行能把通过完整五文档检查的仓库识别为 `done`。
+11. 静态预检失败时文件系统快照一致，不创建目录或覆盖已有报告。
+12. 帮助文本和参数解析均不再接受 `--dry-run`。
+13. clone 失败仍按 `--fail-fast` 语义处理，并保留已生成的报告快照。
+14. `set -u` 下空数组、空分支和重复仓库名不报未绑定变量。
+15. 模拟首次 clone 被 `INT`/`TERM` 中断，正式 source path 不出现残缺仓库，
     本进程临时目录被清理。
-15. 模拟长列表运行，确认每仓均有进度输出，脚本没有总运行时限，重新运行可继续
+16. 模拟长列表运行，确认每仓均有进度输出，脚本没有总运行时限，重新运行可继续
     处理。
 
 ### 一仓一窗口规则
@@ -377,7 +465,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 3. Budget-Aware Execution Mode 同时约束请求数和上下文，不再鼓励逐文件多轮读取。
 4. 预算不足时保留续跑锚点并诚实标注覆盖不足。
 5. Batch 可通过 `--max-repos` 控制每次激活数量。
-6. 三个核心文档齐全是唯一 `done` 判定。
+6. 五份模板文档、必填结构和 `Completion: complete` 全部通过是唯一 `done`
+   判定。
 7. `batch-report.md` 是可由当前文件系统重建的完整运行快照。
 8. `--dry-run` 已删除；静态预检失败时不产生文件系统写入。
 9. 大批量工作可跨多次运行累计完成，不依赖外部 Agent CLI。
