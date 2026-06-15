@@ -226,9 +226,10 @@ skills/codebase-doc-skills/codebase-explorer-docs/scripts/validate-doc-completio
 脚本只有一种模式：验证全部规则，并要求独占一行的 `Completion: complete`。
 不提供 `--content-only` 之类的部分校验开关，避免完成判定出现两条路径。
 
-模板标题属于完成检查契约。修改 `templates/*.md` 的一级或二级标题属于破坏性
-验证变更，会使旧文档在复检时变为未完成；实施时必须同步更新验证测试，并在文档
-中说明旧产物的迁移方式。
+模板结构属于完成检查契约。修改 `templates/*.md` 的一级或二级标题、业务模块
+覆盖矩阵和覆盖度自检的小节标题、矩阵/自检列名，或覆盖度自检的检查项文案，
+都属于破坏性验证变更，会使旧文档在复检时变为未完成；实施时必须同步更新验证
+测试，并在文档中说明旧产物的迁移方式。
 
 修改：
 
@@ -310,8 +311,10 @@ Agent 的完成流程：
    不创建该仓文档目录。
 3. 未完成且仍有配额：执行 clone/update；成功为 `cloned`，失败为 `failed`。
 
-`--max-repos` 只统计进入 clone/update 流程的未完成仓库。`done`、`deferred`
-和无效输入不消耗激活配额。
+`--max-repos` 只统计进入 clone/update 流程的未完成仓库。一次 clone/update
+尝试无论最终成为 `cloned` 还是 `failed`，都消耗一个激活配额；该参数限制的是
+Git 准备尝试数，不承诺成功准备 N 个仓库。这样坏 URL 或鉴权失败不会绕过限额，
+导致一次运行发起无界的网络尝试。`done`、`deferred` 和无效输入不消耗配额。
 
 `failed` 不是持久状态。下一次运行仍按当前文档和源码目录重新判断；没有通过完成
 检查的历史 failed 仓库会再次消耗激活配额并重新 clone/update。
@@ -532,7 +535,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 9. 不适用章节包含“不适用”、判断依据和证据路径时可以通过结构检查。
 10. 验证前后文档目录文件系统快照一致，脚本没有写入。
 11. 路径包含空格和特殊字符时仍能正确验证。
-12. 修改模板标题后旧文档复检失败，并在测试中明确这是验证契约变更。
+12. 修改模板标题、矩阵/自检小节名、列名或自检检查项文案后旧文档复检失败，
+    并在测试中明确这是验证契约变更。
 
 ### Batch 脚本
 
@@ -557,7 +561,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 13. 静态预检失败时文件系统快照一致，不创建目录或覆盖已有报告。
 14. 帮助文本和参数解析均不再接受 `--dry-run`。
 15. clone 失败仍按 `--fail-fast` 语义处理，并保留已生成的报告快照。
-16. 历史 failed 仓库下次运行重新消耗配额并执行 clone/update。
+16. 本次 failed 尝试消耗激活配额；历史 failed 仓库下次运行重新消耗配额并执行
+    clone/update。
 17. 同一文档输出根目录的第二个并发进程因锁存在而退出，不覆盖报告；正常退出和
     `INT`/`TERM` 会清理本进程锁。
 18. `set -u` 下空数组、空分支和重复仓库名不报未绑定变量。
