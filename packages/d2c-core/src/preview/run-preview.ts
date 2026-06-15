@@ -24,6 +24,18 @@ export interface RunPreviewResult {
   };
 }
 
+/**
+ * Stage 4 预览生成器 - 运行完整的预览管线。
+ *
+ * 该函数是设计预览管线的入口点，将Design IR转换为可视化HTML预览。
+ * 负责协调视图派生、预览生成和审查报告的完整流程。
+ *
+ * 设计目标：
+ * - 生成高保真的静态HTML预览，用于设计审查
+ * - 提供详细的保真度审计报告，标识偏差点
+ * - 支持增量覆盖机制，允许手动调整预览参数
+ * - 确保预览输出的确定性和可重现性
+ */
 export function runPreview(
   designIr: DesignIR,
   options: GeneratePreviewOptions = {},
