@@ -22,6 +22,7 @@ export default defineConfig([
     '**/.vite/**',
     '**/coverage/**',
     '**/.d2c-run-*/**',
+    'demo-react-spring/**',
     '.claude/**',
     'fixtures/**',
     'docs/superpowers/plans/**',
