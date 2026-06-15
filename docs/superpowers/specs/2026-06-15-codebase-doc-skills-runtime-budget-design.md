@@ -150,15 +150,25 @@ tokens。Agent 应停止重复引用已归档的原文，后续优先读取紧�
 
 ### 上下文检查点与续跑
 
-`_analysis/coverage-checklist.md` 是单仓续跑锚点，至少记录：
+进度保存不依赖脚本快照模型状态——Shell 无法保存模型正在进行的推理。续跑能力
+完全来自 Agent 把增量结论写入 `_analysis/coverage-checklist.md` 这个单仓续跑
+锚点。它至少记录：
 
 - 已分析模块和证据路径。
+- 进行中模块：当前正在分析、尚未得出稳定结论的模块，及其已读文件和待确认点。
 - 部分覆盖、未确认和未分析模块。
 - 下一批建议读取的 high-signal 文件。
 - 尚未确认的业务问题。
 - 五份模板文档的生成和完整性状态。
 - 固定完成声明：未完成时为 `Completion: incomplete`，全部完成检查通过后才改为
   `Completion: complete`。
+
+因为执行顺序要求“每得到一组稳定证据立即写入”，正常进度已持续落盘；上下文
+检查点只是在停止前补记“进行中模块”和“下一批文件”。这样下一次单仓会话——
+无论隔多久——都能从被卡住的那个模块继续，而不是重头分析该 repo。
+
+Shell 不会自动唤醒或恢复 Agent。达到平台阈值后，由操作者或运行平台发起下一次
+单仓会话；新会话先读取 coverage checklist，再从“进行中模块”继续。
 
 触发“执行边界（规范）”中的上下文检查点时，Agent 停止扩大探索范围，
 优先更新 coverage checklist 和已有文档。完整交付必须包含：
@@ -189,9 +199,7 @@ skills/codebase-doc-skills/codebase-explorer-docs/scripts/validate-doc-completio
 接口：
 
 ```bash
-./scripts/validate-doc-completion.sh \
-  --docs-root <单仓文档输出目录> \
-  [--content-only]
+./scripts/validate-doc-completion.sh --docs-root <单仓文档输出目录>
 ```
 
 该脚本读取同 skill 下的五份 `templates/*.md`，验证目标文档是否保留模板中的全部
@@ -215,9 +223,8 @@ skills/codebase-doc-skills/codebase-explorer-docs/scripts/validate-doc-completio
 脚本只读文档，不修改任何文件。它验证的是可机械判断的结构完整性，不宣称判断
 业务分析质量。
 
-默认模式验证全部规则并要求 `Completion: complete`。`--content-only` 只跳过完成
-声明检查，其余规则完全相同，仅供 Agent 在仍为 incomplete 时执行最终结构预检；
-Batch 判定 `done` 时不得使用该选项。
+脚本只有一种模式：验证全部规则，并要求独占一行的 `Completion: complete`。
+不提供 `--content-only` 之类的部分校验开关，避免完成判定出现两条路径。
 
 模板标题属于完成检查契约。修改 `templates/*.md` 的一级或二级标题属于破坏性
 验证变更，会使旧文档在复检时变为未完成；实施时必须同步更新验证测试，并在文档
@@ -282,16 +289,16 @@ Completion: incomplete
 重新激活。Batch 脚本通过调用完成检查脚本获得 `done` 结论，不依赖旧
 `batch-report.md`，也不新增独立状态文件。
 
-Agent 的完成流程固定为：
+Agent 的完成流程：
 
-1. 保持 `Completion: incomplete`，完成五份文档和 coverage checklist 自检。
-2. 运行 `validate-doc-completion.sh --content-only`。
-3. 结构预检通过后，将完成声明改为 `Completion: complete`。
-4. 立即运行默认模式的 `validate-doc-completion.sh`。
-5. 若任一验证失败，保持或恢复 `Completion: incomplete`，记录失败项并继续修订。
+1. 完成五份文档和 coverage checklist 自检后，将完成声明改为 `Completion: complete`。
+2. 运行 `validate-doc-completion.sh`。
+3. 任一规则失败则恢复 `Completion: incomplete`，按报错修订后重试。
 
-`Completion: complete` 是 Agent 的语义责任声明，不是唯一闸门；只有声明和全部
-结构性代理指标同时通过，Batch 才能判定 `done`。
+短暂写入 `complete` 又结构不达标的情况由这一步验证兜住：失败即回退，Batch
+判定 `done` 时也会再跑同一验证。`Completion: complete` 是 Agent 的语义责任
+声明，不是唯一闸门；只有声明和全部结构性代理指标同时通过，Batch 才能判定
+`done`。
 
 ### 状态选择顺序
 
@@ -330,6 +337,8 @@ Agent 的完成流程固定为：
 Completion: incomplete
 
 ## 已分析模块
+
+## 进行中模块
 
 ## 部分覆盖、未确认和未分析模块
 
@@ -509,8 +518,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 
 1. 五份文档、全部必填标题、非空正文、有效覆盖矩阵、自检说明和
    `Completion: complete` 均存在时退出 0。
-2. `Completion: incomplete` 时，默认模式失败而 `--content-only` 在其他规则通过
-   时成功。
+2. 其他规则全部通过但完成声明为 `Completion: incomplete` 时退出非 0，并指出
+   是完成声明缺失。
 3. 分别删除每个文档、每个必填标题和一个章节正文时退出非 0，并输出具体原因。
 4. 只有模板空标题、只有表头或空自检说明时退出非 0。
 5. 覆盖状态单元格 trim 后完整等于 `未分析` 时退出非 0；其他单元格或正文中包含
@@ -535,8 +544,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 3. 缺少任一文档、文档为空、章节缺失、表格未填写或完成声明为 incomplete 时仍
    可成为 `cloned`。
 4. Batch 通过完成检查脚本判定 `done`，并把失败原因写入 Notes。
-5. `cloned` 仓库自动 seed 带 `Completion: incomplete` 的 coverage checklist，
-   已有 checklist 不被覆盖。
+5. `cloned` 仓库自动 seed 带 `Completion: incomplete` 和“进行中模块”章节的
+   coverage checklist，已有 checklist 不被覆盖。
 6. 静态预检成功后、写盘前，stderr 输出全部解析后的 repo 名、branch、source path
    和 docs path。
 7. `--max-repos 1` 只激活第一个未完成仓库，其余为 `deferred`。
@@ -565,7 +574,8 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 2. 当前 repo 提前完成时，当前单仓会话仍不开始第二个 repo。
 3. 平台提示 context 压力或发生上下文压缩时，Agent 立即按规范执行上下文检查点
    并结束。
-4. 下一次单仓会话优先续跑未完成 repo，而不是跳到新 repo。
+4. 下一次单仓会话优先续跑未完成 repo，并依据 coverage checklist 的“进行中
+   模块”和“下一批文件”从被卡住处继续，而不是跳到新 repo 或重头分析。
 5. Agent 不声称自己精确知道已运行分钟数或累计 API 请求数。
 6. Shell 运行超过 30 分钟不会被误判为违反模型请求预算。
 
@@ -591,5 +601,5 @@ bash -n skills/codebase-doc-skills/batch-codebase-doc-generator/scripts/batch-ge
 9. 大批量工作可跨多次运行累计完成，不依赖外部 Agent CLI。
 10. 源码仓在盘点、文档生成和验证后保持未修改。
 11. 确定性 Shell 脚本可运行超过 30 分钟，有进度输出，并能从中断后安全重跑。
-12. 每个单仓会话只深挖一个 repo，并在上下文检查点时优先
-    保存续跑状态。
+12. 每个单仓会话只深挖一个 repo，并在上下文检查点保存“进行中模块”和下一批
+    文件，使后续会话从被卡住处继续。
