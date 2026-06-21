@@ -96,7 +96,7 @@ bash -n codebase-explorer-docs/scripts/repo-inventory.sh
 bash -n codebase-explorer-docs/scripts/validate-doc-completion.sh
 bash -n batch-codebase-doc-generator/scripts/batch-generate-docs.sh
 bash -n batch-codebase-doc-generator/scripts/publish-docs.sh
-bash tests/test-runtime-budget.sh
+bash tests/run.sh
 ```
 
 最终还要检查每个 Source Path 的 `git status --short`，确认盘点与文档生成没有
