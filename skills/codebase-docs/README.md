@@ -10,7 +10,9 @@
 
 ## 能力边界
 
-- 源码只读，只在文档输出目录写 Markdown；不加注释、不改业务逻辑、不引入依赖。
+- Agent 不修改源码内容、不提交进源码仓，只在文档输出目录写 Markdown；不加注释、不改
+  业务逻辑、不引入依赖。batch 脚本可在 repos-root 执行 clone/fetch/checkout；publish
+  仅修改 docs-root Git 仓库。
 - 先用确定性 Shell 盘点，再由 Agent 深挖 high-signal 文件。
 - 一个 Agent invocation/session 只深挖一个 repo；通过 `_analysis/coverage-checklist.md`
   跨会话续跑。

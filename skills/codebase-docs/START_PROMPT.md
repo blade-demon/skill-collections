@@ -1,7 +1,8 @@
 # 启动 codebase-docs
 
-请使用 codebase-docs skill，在**源码只读**前提下生成代码/业务探索文档，只在文档输出
-目录写 Markdown，不修改任何源码。
+请使用 codebase-docs skill 生成代码/业务探索文档。**Agent 不修改源码内容、不提交进
+源码仓**，只在文档输出目录写 Markdown。（batch 脚本可在 repos-root 执行
+clone/fetch/checkout；publish 仅修改 docs-root Git 仓库。）
 
 ## 单仓（single mode）
 

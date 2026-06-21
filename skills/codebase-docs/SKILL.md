@@ -26,29 +26,30 @@ there is no cross-skill path dependency.
 
 ## Write Boundary
 
-The boundary differs for the two kinds of actor; **source repositories are
-read-only for both**.
+**No actor edits source code content or commits inside a source repository.**
+Beyond that invariant, what each actor may write differs:
 
 **Agent (documentation writing).** Create or update **only Markdown files under
 the selected documentation output directory** (default `docs/`; honor an explicit
-output directory when given). Do not modify source, configuration, package, lock,
-build, test, generated, vendor, or asset files in any repository, and do not
+output directory when given). Never edit a repository's source, configuration,
+package, lock, build, test, generated, vendor, or asset files, and do not
 reformat anything. Do not add code comments, refactor, rename, introduce
 dependencies, run migrations, or invent business meaning when the code is
-unclear. The point is a result a maintainer can review as pure documentation,
-with every claim traceable to evidence.
+unclear. The result should read as pure documentation, every claim traceable to
+evidence.
 
-**Deterministic scripts (batch/publish only).** These are not documentation
-writes and are exempt from the Markdown-only rule, but still never touch source
-repositories:
+**Deterministic scripts (batch/publish only).** Not documentation writes, and
+exempt from the Markdown-only rule:
 
-- `batch-generate-docs.sh` may clone/update repositories into `<repos-root>/`,
-  scaffold `<docs-root>/<repo>/_analysis/coverage-checklist.md`, and write
-  `<docs-root>/batch-report.md` and `<docs-root>/.batch-generate-docs.lock`.
-- `publish-docs.sh` (opt-in, step 8) may create a branch, commit, and — only with
-  `--yes` after a human reviews the plan — push and open a PR, **all inside the
-  docs-root Git repository**, plus `<docs-root>/.publish-docs.lock`. It never runs
-  Git write operations inside any cloned source repository.
+- `batch-generate-docs.sh` may run git clone/fetch/checkout to acquire or update
+  repositories under `<repos-root>/`, scaffold
+  `<docs-root>/<repo>/_analysis/coverage-checklist.md`, and write
+  `<docs-root>/batch-report.md` and `<docs-root>/.batch-generate-docs.lock`. It
+  does not edit file contents inside those repositories.
+- `publish-docs.sh` (opt-in, step 8) modifies only the **docs-root** Git
+  repository: branch, commit, and — with `--yes` after a human reviews the plan —
+  push and open a PR, plus `<docs-root>/.publish-docs.lock`. It never runs Git
+  operations inside a cloned repository.
 
 ## 8-Step Loop
 
