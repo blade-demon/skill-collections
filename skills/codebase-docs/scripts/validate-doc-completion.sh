@@ -9,7 +9,9 @@ DOCS_ROOT=""
 FAILURES=0
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEMPLATES_DIR="$SKILL_ROOT/templates"
+# 文档模板的唯一权威目录。必需文档集合由此目录的 *.md 动态推导，新增/删除一份
+# 普通文档无需改本脚本；非文档模板（coverage-checklist、repos.example 等）不放这里。
+TEMPLATES_DIR="$SKILL_ROOT/templates/documents"
 
 usage() {
   cat <<'EOF'
@@ -123,14 +125,18 @@ validate_document_structure() {
   done < <(grep -E '^#{1,2}[[:space:]]' "$template")
 }
 
-DOCUMENT_NAMES="
-project-overview.md
-module-analysis.md
-onboarding-guide.md
-api-and-data-flow.md
-business-flow-summary.md
-architecture.md
+# 必需文档集合 = templates/documents 下的全部 *.md（按名排序，输出稳定）。
+DOCUMENT_NAMES=""
+for template in "$TEMPLATES_DIR"/*.md; do
+  [[ -e "$template" ]] || continue
+  DOCUMENT_NAMES="$DOCUMENT_NAMES$(basename "$template")
 "
+done
+DOCUMENT_NAMES="$(printf '%s' "$DOCUMENT_NAMES" | LC_ALL=C sort)"
+
+if [[ -z "$DOCUMENT_NAMES" ]]; then
+  error "模板目录没有任何文档模板：$TEMPLATES_DIR"
+fi
 
 while IFS= read -r document_name; do
   [[ -z "$document_name" ]] && continue

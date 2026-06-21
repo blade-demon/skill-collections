@@ -28,8 +28,10 @@ DEFERRED_NAMES=()
 FAILED_NAMES=()
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VALIDATOR="$SKILLS_ROOT/codebase-explorer-docs/scripts/validate-doc-completion.sh"
+# validator 与本脚本同处一个 skill 的 scripts/，无跨 skill 路径依赖。
+VALIDATOR="$SCRIPT_DIR/validate-doc-completion.sh"
+# 续跑锚点模板的唯一来源；scaffold 时复制而非内嵌，模板与脚本不再双写。
+CHECKLIST_TEMPLATE="$SCRIPT_DIR/../templates/coverage-checklist.md"
 
 LOCK_DIR=""
 LOCK_HELD="false"
@@ -67,15 +69,15 @@ EOF
 }
 
 log() {
-  printf '[batch-codebase-doc-generator] %s\n' "$*" >&2
+  printf '[codebase-docs] %s\n' "$*" >&2
 }
 
 warn() {
-  printf '[batch-codebase-doc-generator][WARN] %s\n' "$*" >&2
+  printf '[codebase-docs][WARN] %s\n' "$*" >&2
 }
 
 error() {
-  printf '[batch-codebase-doc-generator][ERROR] %s\n' "$*" >&2
+  printf '[codebase-docs][ERROR] %s\n' "$*" >&2
 }
 
 cleanup() {
@@ -333,7 +335,7 @@ append_report_header() {
 # Batch Codebase Documentation Report
 
 > 本报告是当前文件系统状态的完整快照。脚本只负责仓库准备和完成判定，
-> 不调用任何大模型或 Agent CLI。`done` 必须通过六文档完成检查。
+> 不调用任何大模型或 Agent CLI。`done` 必须通过完整文档完成检查。
 
 | Repo | Git URL | Branch | Source Path | Docs Path | Status | Notes |
 |---|---|---|---|---|---|---|
@@ -439,27 +441,17 @@ seed_coverage_checklist() {
   local checklist="$docs_path/_analysis/coverage-checklist.md"
 
   mkdir -p "$docs_path/_analysis" || return 1
+  # 绝不覆盖已有 checklist——它是续跑锚点。
   if [[ -e "$checklist" ]]; then
     return 0
   fi
 
-  cat >"$checklist" <<'EOF'
-# Coverage Checklist
+  if [[ ! -f "$CHECKLIST_TEMPLATE" ]]; then
+    log "checklist 模板缺失：$CHECKLIST_TEMPLATE"
+    return 1
+  fi
 
-Completion: incomplete
-
-## 已分析模块
-
-## 进行中模块
-
-## 部分覆盖、未确认和未分析模块
-
-## 下一批 high-signal 文件
-
-## 待业务确认
-
-## 文档状态
-EOF
+  cp "$CHECKLIST_TEMPLATE" "$checklist"
 }
 
 append_report_header
@@ -490,7 +482,7 @@ while [[ "$index" -lt "$TOTAL" ]]; do
     DONE=$((DONE + 1))
     DONE_NAMES+=("$repo_name")
     append_report_row "$repo_name" "$repo_url" "$branch" "$source_path" \
-      "$docs_path" "done" "six-document completion validation passed"
+      "$docs_path" "done" "document completion validation passed"
     log "[$ordinal/$TOTAL] repo=$repo_name action=done counts Done=$DONE Cloned=$CLONED Deferred=$DEFERRED Failed=$FAILED"
     index=$((index + 1))
     continue

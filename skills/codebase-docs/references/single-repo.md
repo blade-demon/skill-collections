@@ -1,29 +1,67 @@
-# Document Specification
+# Single-Repo Workflow and Document Specification
 
-This reference defines what goes inside each generated document. Read it during
-Phase 3 (writing the docs) — `SKILL.md` keeps the workflow, budget, and
-completion contract; the per-document content lives here so the always-loaded
-skill body stays lean.
+This reference drives **single mode** and defines what goes inside each generated
+document. `SKILL.md` keeps the high-level workflow, budget, and completion
+contract; the operational detail and per-document content live here so the
+always-loaded skill body stays lean.
 
-The section headings called out below (and the matrix/self-check tables in
-`SKILL.md`) are validation contract: `validate-doc-completion.sh` checks them
-mechanically against `templates/`. Keep the exact H1/H2 wording. Everything else
-is guidance you should adapt to the repository in front of you — the goal is
-onboarding value, not filling a form.
+The section headings called out below are validation contract:
+`validate-doc-completion.sh` checks them mechanically against
+`templates/documents/`. Keep the exact H1/H2 wording. Everything else is guidance
+you should adapt to the repository in front of you — the goal is onboarding
+value, not filling a form.
 
 ## Table of Contents
 
-1. [project-overview.md](#project-overviewmd)
-2. [module-analysis.md](#module-analysismd)
-3. [onboarding-guide.md](#onboarding-guidemd)
-4. [api-and-data-flow.md](#api-and-data-flowmd)
-5. [business-flow-summary.md](#business-flow-summarymd)
-6. [architecture.md](#architecturemd)
-7. [Required Onboarding Output](#required-onboarding-output)
-8. [Required Module Coverage Matrix](#required-module-coverage-matrix)
-9. [Required Gotcha Inventory](#required-gotcha-inventory)
+1. [Workflow](#workflow)
+2. [project-overview.md](#project-overviewmd)
+3. [module-analysis.md](#module-analysismd)
+4. [onboarding-guide.md](#onboarding-guidemd)
+5. [api-and-data-flow.md](#api-and-data-flowmd)
+6. [business-flow-summary.md](#business-flow-summarymd)
+7. [architecture.md](#architecturemd)
+8. [Required Onboarding Output](#required-onboarding-output)
+9. [Required Module Coverage Matrix](#required-module-coverage-matrix)
+10. [Required Gotcha Inventory](#required-gotcha-inventory)
+11. [Required Coverage Self-Check](#required-coverage-self-check)
+12. [Intermediate Analysis Files](#intermediate-analysis-files)
 
 ---
+
+## Workflow
+
+### Phase 1: Exploration
+
+Before reading source files one by one, run the deterministic inventory script:
+
+```bash
+./scripts/repo-inventory.sh \
+  --root <source-repository> \
+  --out <文档输出目录>/_analysis/repo-inventory.md
+```
+
+Read `_analysis/repo-inventory.md` once and use it as the exploration map. Only
+deep-read high-signal files selected from the inventory and later evidence. The
+script may run longer than 30 minutes; it has no model-budget timeout and must
+not modify source files. From the inventory, identify the technology stack,
+repository structure, runtime commands, core business modules, and data flow.
+
+### Phase 2: Plan
+
+Produce a short documentation plan: which files to create/update, the key modules
+to analyze, the unclear areas needing deeper reading, and an explicit confirmation
+that only Markdown under the output directory will change and no source files will
+be modified.
+
+### Phase 3: Generate
+
+Create the output directory if needed, then generate or update every document
+listed below. Build a high-signal queue in priority order (entry files, routes,
+manifests/config, API/service, top-level business modules), read no more than
+5–10 related files per round (in parallel within one turn), and after every
+stable evidence group update the `_analysis` notes and
+`_analysis/coverage-checklist.md`. Distinguish confirmed facts from inferences;
+mark unclear business meaning with `TODO: 需要业务确认`.
 
 ## project-overview.md
 
@@ -265,3 +303,36 @@ Each gotcha uses this format:
 - Confidence: high / medium / low
 - TODO: 需要业务确认:
 ```
+
+## Required Coverage Self-Check
+
+`module-analysis.md` must contain a section named exactly `## 覆盖度自检` with this
+table. Do not claim full coverage unless the coverage matrix supports it; if
+coverage is incomplete, list the unanalyzed modules, uninspected files,
+unconfirmed flows, and open questions.
+
+```markdown
+| 检查项                     | 结果       | 说明 |
+| -------------------------- | ---------- | ---- |
+| 路由模块是否覆盖           | 是/部分/否 |      |
+| 页面模块是否覆盖           | 是/部分/否 |      |
+| API/service 是否覆盖       | 是/部分/否 |      |
+| 登录/鉴权/权限是否覆盖     | 是/部分/否 |      |
+| 状态管理是否覆盖           | 是/部分/否 |      |
+| 错误处理是否覆盖           | 是/部分/否 |      |
+| 构建/启动 gotcha 是否覆盖  | 是/部分/否 |      |
+| 核心业务流程是否覆盖       | 是/部分/否 |      |
+| 未确认模块是否列出         | 是/否      |      |
+| 需要业务确认的问题是否列出 | 是/否      |      |
+```
+
+## Intermediate Analysis Files
+
+To avoid losing context, record evidence, paths, and unresolved questions under
+`_analysis/` (e.g. `module-discovery.md`, `route-map.md`, `api-map.md`,
+`state-map.md`, `gotcha-candidates.md`). `_analysis/coverage-checklist.md` is the
+resume anchor and must keep its template sections (`Completion: incomplete` until
+done, `## 已分析模块`, `## 进行中模块`, `## 部分覆盖、未确认和未分析模块`,
+`## 下一批 high-signal 文件`, `## 待业务确认`, `## 文档状态`). For `进行中模块`,
+record the current module, files already read, unresolved questions, and the next
+files to inspect — a later session resumes from here.
