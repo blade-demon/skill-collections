@@ -1,6 +1,6 @@
 ---
 name: batch-codebase-doc-generator
-description: Prepare multiple Git repositories, resume incomplete documentation work, and process one repository per Agent session with codebase-explorer-docs.
+description: Orchestrate codebase documentation across multiple Git repositories — clone/update each repo, derive completion state, seed resume files, build an atomic batch report, then document one repository per Agent session via codebase-explorer-docs, with an opt-in step to publish the docs via pull request. Use this whenever the user supplies several repo URLs or a repos list and wants docs generated for each, e.g. "给这几个仓库批量生成文档", "document all our microservices", "batch onboarding docs for these repos", "为这批 git 地址生成代码库文档", or "resume the codebase doc batch". For a single repository, use codebase-explorer-docs instead.
 ---
 
 # Batch Codebase Doc Generator Skill
@@ -10,12 +10,20 @@ description: Prepare multiple Git repositories, resume incomplete documentation 
 Use this skill when the user provides multiple Git repository URLs and wants
 independent codebase exploration documents for each repository.
 
-This skill has two separate stages:
+This skill has three stages; the third is opt-in:
 
 1. Deterministic Shell preparation: validate input, clone/update repositories,
    derive completion state, seed resume files, and build `batch-report.md`.
 2. Agent documentation: select exactly one `cloned` repository for the current
    invocation/session and follow `codebase-explorer-docs`.
+3. Opt-in publish: after a repository is `done`, `publish-docs.sh` commits its
+   docs into the docs-root Git repository and opens a pull request behind a
+   human-review gate. This stage runs only when the user asks to publish.
+
+Together these implement an 8-step loop: clone → explore structure → identify
+tech stack → module docs → architecture & call graph → verify coverage →
+supplement until the validator passes → commit/PR (opt-in). Source repositories
+stay read-only throughout.
 
 Do not perform cross-repository architecture or business analysis unless the
 user explicitly requests it.
@@ -66,6 +74,17 @@ Treat every cloned source repository as read-only for documentation work. Do not
 modify source, configuration, package, lock, build, test, asset, generated, or
 vendor files.
 
+The opt-in publish script `publish-docs.sh` additionally creates a Git branch,
+commits, and (only with `--yes`) pushes and opens a pull request — but **only
+inside the docs-root repository**:
+
+```text
+<docs-root>/.publish-docs.lock
+<docs-root>/<repo-name>/   (staged and committed)
+```
+
+It never runs Git write operations inside any cloned source repository.
+
 ## Deterministic Orchestration Script
 
 Use:
@@ -106,7 +125,7 @@ Shell work and does not consume model requests.
 
 For each deduplicated repository, state selection is:
 
-1. `done`: all five documents and completion checks pass. Skip clone, fetch,
+1. `done`: all six documents and completion checks pass. Skip clone, fetch,
    checkout, and scaffold. This state does not consume `--max-repos`.
 2. `deferred`: documentation is incomplete and the activation limit is already
    reached. Do not clone or create that repository's document directory.
@@ -144,11 +163,12 @@ derive `done` through the completion validator.
 <docs-root>/<repo-name>/onboarding-guide.md
 <docs-root>/<repo-name>/api-and-data-flow.md
 <docs-root>/<repo-name>/business-flow-summary.md
+<docs-root>/<repo-name>/architecture.md
 <docs-root>/<repo-name>/_analysis/repo-inventory.md
 <docs-root>/<repo-name>/_analysis/coverage-checklist.md
 ```
 
-The five documents must retain all template H1/H2 sections with non-empty
+The six documents must retain all template H1/H2 sections with non-empty
 content. The coverage-matrix/self-check section titles, column names, and
 self-check item labels are also exact validation contract. The module coverage
 matrix, evidence column, inventory candidate-count proxy, coverage self-check,
@@ -188,7 +208,7 @@ Completion: incomplete
 
 ## 待业务确认
 
-## 五份文档状态
+## 文档状态
 ```
 
 Never overwrite an existing checklist. It is the Agent resume anchor.
@@ -226,7 +246,7 @@ When context pressure or compaction is observed:
 1. Stop expanding source exploration.
 2. Update the current repository's checklist, especially `进行中模块`, files
    already read, unresolved points, and the next high-signal files.
-3. Write confirmed findings into the existing five documents.
+3. Write confirmed findings into the existing six documents.
 4. Keep `Completion: incomplete`.
 5. End the current session.
 
@@ -267,12 +287,41 @@ For the one selected `cloned` repository:
 2. Read the existing coverage checklist first; resume `进行中模块` if present.
 3. Run `repo-inventory.sh` into Docs Path.
 4. Analyze high-signal files in bounded, parallel batches.
-5. Generate all five documents.
+5. Generate all six documents.
 6. Keep uncertain meaning under `TODO: 需要业务确认`.
 7. Set `Completion: complete` only after semantic self-check.
 8. Run `validate-doc-completion.sh`; on failure restore `incomplete` and fix.
 9. Run `git -C <Source Path> status --short` and confirm no source changes.
 10. End the session. A later invocation reruns Batch to derive `done`.
+
+## Publish Stage (Opt-In)
+
+This stage is step 8 of the loop. It runs only when the user asks to publish, and
+it is a separate deterministic script — never part of doc generation.
+
+```bash
+./scripts/publish-docs.sh --docs-root codebase-docs        # local commit + plan, then stop
+./scripts/publish-docs.sh --docs-root codebase-docs --yes  # push + open pull request
+```
+
+Behavior:
+
+1. Discovers repo doc directories under `--docs-root` (those with
+   `project-overview.md`) and re-derives `done` through
+   `validate-doc-completion.sh`. Only `done` repositories are published; `--only
+<name>` scopes to specific ones.
+2. Requires `--docs-root` to be a Git repository (initialize it and add a remote
+   first). It never operates on the cloned source repositories.
+3. Creates one publish branch (default `docs/codebase-docs-<timestamp>`, override
+   with `--branch`) and commits each `done` repo's docs as a scoped
+   `docs(<repo-name>): ...` commit.
+4. **Human-in-the-loop gate**: without `--yes` it stops after the local commits
+   and prints the exact `git push` and `gh pr create` commands it would run. A
+   human reviews that plan; only re-running with `--yes` pushes the branch and
+   opens the pull request (via `gh pr create --fill`, with `--base` optional).
+
+Like the preparation script, `publish-docs.sh` invokes no LLM or Agent CLI and
+acquires `<docs-root>/.publish-docs.lock` to prevent concurrent publish runs.
 
 ## Report Semantics
 
@@ -304,7 +353,7 @@ the statement. Preserve each repository's own coverage limitations.
 1. Static preflight finishes before filesystem writes or Git operations.
 2. Repositories are named predictably and duplicate names are safe.
 3. `--max-repos` limits only unfinished repositories entering clone/update.
-4. `done` requires the five-document completion validator.
+4. `done` requires the six-document completion validator.
 5. The report is an atomic, complete current snapshot.
 6. One Agent session deeply explores only one repository.
 7. Context checkpoints preserve the current module and next files.

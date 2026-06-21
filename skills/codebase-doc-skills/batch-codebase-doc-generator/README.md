@@ -32,14 +32,15 @@ branch、Source Path 和 Docs Path 输出到 stderr。
 ## 状态
 
 ```text
-done      五份文档和完成检查全部通过，不占激活配额
+done      六份文档和完成检查全部通过，不占激活配额
 cloned    本次已准备，等待一个单仓 Agent 会话
 deferred  超出本次激活配额，再次运行即可继续
 failed    clone/checkout/scaffold 失败，下次运行重新尝试
 ```
 
-不要手工把报告改成 `success` / `partial`。再次运行脚本时会根据当前五份文档、
-inventory、coverage matrix 和 `Completion: complete` 自动推导 `done`。
+不要手工把报告改成 `success` / `partial`。再次运行脚本时会根据当前六份文档、
+inventory、coverage matrix、`architecture.md` 图与证据，以及 `Completion: complete`
+自动推导 `done`。
 
 ## 续跑
 
@@ -51,3 +52,17 @@ inventory、coverage matrix 和 `Completion: complete` 自动推导 `done`。
 
 同一 docs root 不支持并行运行；脚本通过
 `.batch-generate-docs.lock` 防止报告竞争。
+
+## 发布（opt-in，第 8 步）
+
+文档生成永远不提交、不推送。发布是独立的 opt-in 步骤，由确定性脚本完成：
+
+```bash
+./scripts/publish-docs.sh --docs-root codebase-docs        # 本地建分支+commit，打印计划后停下
+./scripts/publish-docs.sh --docs-root codebase-docs --yes  # 人工确认后再 push + 开 PR
+```
+
+它只发布已 `done` 的仓库（用 `validate-doc-completion.sh` 重新判定），把每个仓库
+的文档 commit 进 **docs-root** 这个 Git 仓库，从不触碰克隆的源码仓。不带 `--yes`
+时只做本地 commit 并打印将执行的 `git push` / `gh pr create`，由人工 review 后再
+带 `--yes` 重跑——这就是人工确认关口。同样通过 `.publish-docs.lock` 防止并发。

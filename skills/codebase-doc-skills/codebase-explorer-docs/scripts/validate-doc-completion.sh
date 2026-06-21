@@ -129,6 +129,7 @@ module-analysis.md
 onboarding-guide.md
 api-and-data-flow.md
 business-flow-summary.md
+architecture.md
 "
 
 while IFS= read -r document_name; do
@@ -335,6 +336,18 @@ if [[ -f "$MODULE_DOC" && -s "$MODULE_DOC" && -n "$MODULE_COUNT" ]]; then
     }
   ' "$TEMPLATES_DIR/module-analysis.md" "$MODULE_DOC"; then
     FAILURES=$((FAILURES + 1))
+  fi
+fi
+
+ARCHITECTURE_DOC="$DOCS_ROOT/architecture.md"
+if [[ -f "$ARCHITECTURE_DOC" && -s "$ARCHITECTURE_DOC" ]]; then
+  MERMAID_BLOCKS="$(grep -c -E '^```mermaid[[:space:]]*$' "$ARCHITECTURE_DOC")"
+  EVIDENCE_LINES="$(grep -c -F '%% Evidence:' "$ARCHITECTURE_DOC")"
+  if [[ "$MERMAID_BLOCKS" -lt 2 ]]; then
+    error "architecture.md 至少需要 2 张 Mermaid 图（运行时架构 + 模块调用/依赖），当前 $MERMAID_BLOCKS 张"
+  fi
+  if [[ "$EVIDENCE_LINES" -lt 2 ]]; then
+    error "architecture.md 每张 Mermaid 图需带 '%% Evidence: <证据路径>' 声明，当前 $EVIDENCE_LINES 条"
   fi
 fi
 

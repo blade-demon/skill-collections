@@ -1,6 +1,6 @@
 ---
 name: codebase-explorer-docs
-description: Read and analyze an existing codebase, then generate onboarding-oriented code and business exploration documents without modifying source files.
+description: Explore an existing codebase read-only and generate onboarding documentation for a single repository — project overview, module analysis, onboarding guide, API/data-flow, business-flow summary, and an architecture/call-graph doc with Mermaid diagrams — without modifying any source files. Use this whenever the user wants to understand, document, map, or onboard onto one repo, e.g. "帮我看懂这个项目", "这个代码库是怎么组织的", "generate docs for this repo", "write an architecture overview", "onboarding guide for new devs", "analyze the business modules / data flow", or "整理一份新人上手文档". Trigger even when the user never says the word "documentation" but clearly needs a structured explanation of how a codebase works. For several repositories at once, use batch-codebase-doc-generator instead.
 ---
 
 # Codebase Explorer Docs Skill
@@ -105,6 +105,28 @@ Follow these principles throughout the task:
 10. Focus on onboarding value for new developers.
 11. Do not claim full coverage unless the coverage matrix supports that claim.
 
+## 8-Step Loop Overview
+
+This skill is the per-repository body of an 8-step loop. Deterministic steps are
+owned by scripts; reasoning steps are owned by the Agent. Source repositories are
+read-only at every step.
+
+| Step                         | What                                                           | Owner                    |
+| ---------------------------- | -------------------------------------------------------------- | ------------------------ |
+| 1. clone repo                | clone/update into repos-root                                   | `batch-generate-docs.sh` |
+| 2. explore structure         | `repo-inventory.sh` + high-signal reads                        | script + Agent           |
+| 3. identify tech stack       | from inventory + manifests                                     | Agent                    |
+| 4. module docs               | overview / module / onboarding / api-data-flow / business docs | Agent                    |
+| 5. architecture & call graph | `architecture.md` with required Mermaid                        | Agent                    |
+| 6. verify coverage           | `validate-doc-completion.sh` (deterministic grader)            | script                   |
+| 7. supplement if failing     | route failures back, fix, re-validate (bounded)                | Agent                    |
+| 8. commit / PR (opt-in)      | `../batch-codebase-doc-generator/scripts/publish-docs.sh`      | script + human gate      |
+
+Steps 6 and 7 form the inner verify→supplement loop: keep
+`Completion: incomplete` until the validator passes, fixing only the reported
+gaps each round instead of rewriting everything. Step 8 runs only when the user
+opts into publishing and never touches source repositories.
+
 ## Required Workflow
 
 ### Phase 1: Repository Exploration
@@ -197,268 +219,47 @@ No source files will be modified.
 
 ### Phase 3: Generate Documentation
 
-Create the documentation output directory if it does not exist.
+Create the output directory if it does not exist, then generate or update these
+six documents. Read `references/document-spec.md` before writing — it defines the
+required sections and content for each file, plus the exact contract headings for
+the onboarding section, coverage matrix, and gotcha inventory.
 
-Generate or update the following files.
+| File                       | Purpose                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `project-overview.md`      | Project intro, tech stack, structure, entry files, commands, modules, reading order |
+| `module-analysis.md`       | Per-module breakdown + `## 业务模块覆盖矩阵`                                        |
+| `onboarding-guide.md`      | `# 新同事上手指南`: setup, reading path, where-to-start, debug path                 |
+| `api-and-data-flow.md`     | API wrapper, call chains, state, auth, error handling, DTO mapping                  |
+| `business-flow-summary.md` | Domains, user journeys, states, `## Gotcha 清单`                                    |
+| `architecture.md`          | Runtime + module-dependency Mermaid diagrams with `%% Evidence:`                    |
 
-#### `project-overview.md`
+`api-and-data-flow.md` and `business-flow-summary.md` are always generated; when
+something genuinely does not apply, write `不适用` with reasoning and evidence
+paths rather than omitting the file — a reviewer cannot distinguish "absent
+because irrelevant" from "absent because skipped".
 
-Include:
+`architecture.md` must contain at least two Mermaid code blocks and at least two
+`%% Evidence:` declarations; `validate-doc-completion.sh` enforces this.
 
-1. Project introduction.
-2. Technology stack.
-3. Repository structure.
-4. Entry files.
-5. Local development commands.
-6. Build/test/lint/typecheck commands, if available.
-7. Main business modules.
-8. Recommended reading order for new developers.
-9. Common maintenance notes.
+## Contract Sections
 
-#### `module-analysis.md`
+Three sections are checked by `validate-doc-completion.sh` and must use these
+exact headings. `references/document-spec.md` carries the full content
+requirements for each.
 
-Include:
-
-1. Core module list.
-2. Business responsibility of each module.
-3. Module entry files.
-4. Important components/classes/functions.
-5. Related APIs/services.
-6. Data dependencies.
-7. Typical business flows.
-8. Maintenance risks.
-9. Unclear business assumptions.
-10. Business module coverage matrix.
-
-Each module should follow this structure:
-
-```markdown
-## Module Name
-
-- Path:
-- Responsibility:
-- Entry files:
-- Key files:
-- Related APIs/services:
-- Data flow:
-- Important business rules:
-- Maintenance risks:
-- Evidence:
-- Coverage status:
-- TODO: 需要业务确认:
-```
-
-#### `onboarding-guide.md`
-
-This document must answer:
-
-```text
-How should a new developer get started with this project?
-```
-
-Include:
-
-1. What to know before starting.
-2. How to run the project.
-3. Recommended reading order.
-4. How to locate pages, routes, APIs, state, services, and business logic.
-5. How to trace a feature from UI to API or from controller to persistence.
-6. How to debug common problems.
-7. Where to look first when modifying a requirement.
-8. Suggested first-day checklist.
-9. Suggested first-week checklist.
-
-#### `api-and-data-flow.md`
-
-Always generate this file. If the repository has no API calls, backend services,
-state management, database access, or persistent data flow, explicitly state
-`不适用`, the reasoning, and the evidence paths instead of omitting the file.
-
-Include:
-
-1. API request wrapper location.
-2. Major API modules.
-3. API call chain.
-4. Frontend data flow, if applicable.
-5. Backend controller-service-repository flow, if applicable.
-6. State management structure.
-7. Authentication, authorization, token, session, cache, or local storage logic.
-8. Error handling and user-facing feedback logic.
-9. Data transformation and DTO/model mapping.
-
-#### `business-flow-summary.md`
-
-Always generate this file for business-facing onboarding. If no business flow
-can be confirmed, explicitly state `不适用`, the reasoning, the evidence paths,
-and the questions that still require business confirmation.
-
-Include:
-
-1. Main business domains.
-2. Important user journeys.
-3. Business process diagrams in Mermaid, when helpful.
-4. Key business states and status transitions.
-5. External systems or upstream/downstream dependencies.
-6. Risky or unclear business rules.
-7. Product/operation terms found in the codebase.
-8. Gotcha inventory.
-
-Use Mermaid diagrams where they improve understanding.
-
-Example:
-
-```mermaid
-flowchart TD
-  A[用户进入页面] --> B[路由匹配]
-  B --> C[页面初始化]
-  C --> D[请求接口]
-  D --> E[状态更新]
-  E --> F[页面渲染]
-```
-
-## Required Onboarding Output
-
-The documentation must explicitly answer:
-
-> How should a new developer get started with this project?
-
-Generate a dedicated section in `onboarding-guide.md` named:
-
-```markdown
-# 新同事上手指南
-```
-
-This section must include:
-
-1. **上手前需要知道什么**
-   - 项目主要解决什么业务问题
-   - 当前工程属于前端、后端、全栈、BFF、微前端、组件库、CLI、服务端应用，还是混合工程
-   - 新人需要提前了解的技术栈
-   - 是否依赖特定运行环境、Node/Java 版本、包管理器、内网服务、代理、环境变量等
-
-2. **如何把项目跑起来**
-   - 安装依赖命令
-   - 本地启动命令
-   - 常见环境变量
-   - 开发环境、测试环境、生产环境配置差异
-   - 启动失败时优先检查哪些地方
-
-3. **推荐阅读顺序**
-   Must provide a concrete reading path.
-
-4. **新人修改需求时应该从哪里开始**
-   Cover common cases:
-   - 新增页面
-   - 修改已有页面
-   - 新增接口调用
-   - 修改后端接口
-   - 修改状态管理逻辑
-   - 修改登录/鉴权/权限逻辑
-   - 修改表单/列表/详情页
-   - 修改公共组件或工具函数
-   - 排查接口异常
-   - 排查页面跳转异常
-   - 排查构建或启动异常
-
-5. **新人调试路径**
-   Explain:
-   - 如何从页面定位到路由
-   - 如何从路由定位到页面组件
-   - 如何从页面组件定位到 API 请求
-   - 如何从 API 请求定位到后端接口或 mock
-   - 如何从状态字段定位到状态管理模块
-   - 如何从错误提示定位到异常处理逻辑
-
-6. **建议新人第一天 / 第一周阅读计划**
-
-## Required Module Coverage Matrix
-
-The documentation must explicitly answer:
-
-> Are all business modules and important gotchas covered?
-
-Generate a dedicated section in `module-analysis.md` named:
-
-```markdown
-## 业务模块覆盖矩阵
-```
-
-The matrix must include every business module discovered from the repository.
-
-Discover modules from multiple evidence sources, including but not limited to:
-
-1. route definitions
-2. page directories
-3. backend controllers
-4. backend services
-5. API modules
-6. state management modules
-7. menu configuration
-8. permission configuration
-9. domain/model/entity directories
-10. feature directories
-11. package/module naming
-12. README or existing docs
-
-For each module, include:
-
-```markdown
-| 模块 | 路径 | 入口文件 | 主要职责 | 相关 API/Service | 关键数据流 | Gotcha | 覆盖状态 | 证据来源 |
-| ---- | ---- | -------- | -------- | ---------------- | ---------- | ------ | -------- | -------- |
-```
-
-The `覆盖状态` field must use one of:
-
-1. `已覆盖`
-2. `部分覆盖`
-3. `未确认`
-4. `未分析`
-5. `疑似非业务模块`
-
-Rules:
-
-1. Do not claim full coverage unless the module has been traced through concrete files.
-2. If a module is discovered but not deeply analyzed, mark it as `部分覆盖`.
-3. If the business meaning is unclear, mark it as `未确认`.
-4. If a directory looks like infrastructure or shared utility rather than business, mark it as `疑似非业务模块`.
-5. Every module row must include concrete evidence paths.
-
-## Required Gotcha Inventory
-
-Generate a dedicated section in `business-flow-summary.md` or `module-analysis.md` named:
-
-```markdown
-## Gotcha 清单
-```
-
-A gotcha is any non-obvious behavior, hidden dependency, legacy constraint, environment requirement, fragile implementation, implicit business rule, or risky maintenance point.
-
-The gotcha list must cover, when present:
-
-1. 启动和构建 gotcha
-2. 路由和页面 gotcha
-3. 登录、鉴权和权限 gotcha
-4. API 和数据 gotcha
-5. 状态管理 gotcha
-6. 业务规则 gotcha
-7. 后端 gotcha
-
-Each gotcha must use this format:
-
-```markdown
-## Gotcha: 简短标题
-
-- 类型:
-- 涉及模块:
-- 涉及文件:
-- 现象:
-- 原因:
-- 影响:
-- 修改时注意:
-- 证据来源:
-- Confidence: high / medium / low
-- TODO: 需要业务确认:
-```
+- `# 新同事上手指南` in `onboarding-guide.md` — what to know first, how to run the
+  project, a concrete reading path, where to start for common changes (new page,
+  new/changed API, state, auth), and a debug path from page → route → component →
+  API → backend.
+- `## 业务模块覆盖矩阵` in `module-analysis.md` — one row per discovered module
+  with columns 模块 / 路径 / 入口文件 / 主要职责 / 相关 API/Service / 关键数据流 /
+  Gotcha / 覆盖状态 / 证据来源. `覆盖状态` ∈ {已覆盖, 部分覆盖, 未确认, 未分析,
+  疑似非业务模块}. The matrix exists to keep coverage honest: do not claim `已覆盖`
+  without tracing concrete files, and every row needs evidence paths.
+- `## Gotcha 清单` in `business-flow-summary.md` or `module-analysis.md` — the
+  non-obvious behaviors, hidden dependencies, environment requirements, and risky
+  maintenance points that bite new developers, each with evidence and a
+  confidence level.
 
 ## Evidence and Uncertainty Handling
 
@@ -494,7 +295,7 @@ one invocation/session may deeply explore only one repository. Even if the
 current repository finishes early, do not begin a second repository in the same
 session.
 
-All five final documents are mandatory:
+All six final documents are mandatory:
 
 ```text
 project-overview.md
@@ -502,10 +303,11 @@ module-analysis.md
 onboarding-guide.md
 api-and-data-flow.md
 business-flow-summary.md
+architecture.md
 ```
 
 Budget pressure may leave drafts incomplete, but it never reduces the completion
-contract to three documents.
+contract to a subset of documents.
 
 ### Intermediate Analysis Files
 
@@ -539,7 +341,7 @@ These files should record evidence, paths, and unresolved questions.
    issue independent reads/searches in parallel within one assistant turn.
 5. After every stable evidence group, immediately update `_analysis` notes and
    `_analysis/coverage-checklist.md`.
-6. Assemble or update all five documents.
+6. Assemble or update all six documents.
 7. Run the coverage self-check and completion validator.
 
 `_analysis/coverage-checklist.md` is the resume anchor. It must contain:
@@ -552,7 +354,7 @@ Completion: incomplete
 ## 部分覆盖、未确认和未分析模块
 ## 下一批 high-signal 文件
 ## 待业务确认
-## 五份文档状态
+## 文档状态
 ```
 
 For `进行中模块`, record the current module, files already read, unresolved
@@ -614,7 +416,7 @@ If coverage is incomplete, explicitly list:
 
 ## Completion Contract
 
-Completion requires all five documents, every template H1/H2 section with
+Completion requires all six documents, every template H1/H2 section with
 non-empty content, a populated coverage matrix, completed coverage self-check,
 the inventory module-count proxy, evidence paths, and:
 
@@ -626,7 +428,7 @@ in `_analysis/coverage-checklist.md`.
 
 Use one completion path:
 
-1. Finish the five documents and perform the semantic self-check.
+1. Finish the six documents and perform the semantic self-check.
 2. Change the checklist declaration to `Completion: complete`.
 3. Run:
 
@@ -644,45 +446,37 @@ their column names, and the template self-check item labels are all validation
 contract. Changing any of them is a breaking change for previously generated
 documents.
 
-## Lightweight Verification and Diff Review
+## Publishing (Opt-In, Step 8)
 
-This task is documentation-only. Full build/test is not required.
-
-Perform lightweight verification:
-
-1. Run `git status`.
-2. Confirm that no source files were modified.
-3. Run `validate-doc-completion.sh` before declaring completion.
-4. If the selected documentation output directory is inside the source repo, run `git diff -- <doc-output-dir>`.
-5. If the selected documentation output directory is outside the source repo, verify the files exist there and run `git status` in the source repo.
-
-Both inventory generation and documentation generation must leave source files
-unchanged.
-
-Do not run expensive commands by default.
-
-Do not run:
-
-1. full production build
-2. full test suite
-3. integration tests
-4. e2e tests
-5. commands requiring external services
-6. database migrations
-
-Optional checks:
-
-If the repository has a documentation lint command and it is fast, it may be run.
-
-Examples:
+Generating documents never commits or pushes anything. Publishing is a separate,
+opt-in step handled by the Batch skill's deterministic script:
 
 ```bash
-npm run lint:docs
-pnpm lint:docs
-yarn lint:docs
+../batch-codebase-doc-generator/scripts/publish-docs.sh --docs-root <docs-root>
 ```
 
-If no documentation validation command exists, simply state that no doc-specific validation command was found.
+It only acts on repositories whose docs already pass
+`validate-doc-completion.sh`, commits each repo's docs into the **docs-root** Git
+repository on a publish branch, and then stops. Pushing the branch and opening
+the pull request happen only when it is re-run with `--yes`, after a human has
+reviewed the printed plan. The Agent still writes Markdown only; it never edits
+source repositories, and the script never touches the cloned source repositories.
+
+## Lightweight Verification and Diff Review
+
+This task is documentation-only, so verification is about proving the source repo
+is untouched and the docs pass the validator — not about running the project:
+
+1. Run `validate-doc-completion.sh` before declaring completion.
+2. Run `git status` and confirm no source files changed (both inventory and doc
+   generation must leave source unchanged). If the docs live inside the source
+   repo, `git diff -- <doc-output-dir>`; if outside, verify the files exist there
+   and check the source repo's `git status`.
+
+Skip expensive commands — full builds, the test suite, integration/e2e tests,
+anything needing external services, and migrations — they cost budget without
+adding onboarding value. A fast doc-lint command (`npm run lint:docs` and
+friends) may be run if one exists; otherwise just note that none was found.
 
 ## Final Delivery Summary
 
@@ -718,7 +512,7 @@ The final result must satisfy:
    - code-reading path
    - onboarding path
 7. Unclear business assumptions are marked with `TODO: 需要业务确认`.
-8. All five template documents exist; `不适用` sections include reasoning and evidence.
+8. All six template documents exist; `不适用` sections include reasoning and evidence.
 9. `validate-doc-completion.sh` succeeds.
 10. Final result is documentation-only and easy to review.
 

@@ -6,11 +6,27 @@
 
 | Skill                          | 定位               | 核心机制                                                                              |
 | ------------------------------ | ------------------ | ------------------------------------------------------------------------------------- |
-| `codebase-explorer-docs`       | 单仓深度探索       | inventory-first、Budget-Aware Execution Mode、五文档完成检查、coverage checklist 续跑 |
+| `codebase-explorer-docs`       | 单仓深度探索       | inventory-first、Budget-Aware Execution Mode、六文档完成检查、coverage checklist 续跑 |
 | `batch-codebase-doc-generator` | 多仓准备与分批编排 | 静态预检、`--max-repos`、done/cloned/deferred/failed、原子报告和锁                    |
 
 Batch 只做确定性准备，不调用大模型或 Agent CLI；实际读代码与写文档由当前 Agent
 遵循单仓 skill 完成。默认不做跨仓系统分析。
+
+## 8 步 loop
+
+输入「多个 git url + 文档 root」，按仓库循环：
+
+1. clone repo（`batch-generate-docs.sh`）
+2. 探索目录结构（`repo-inventory.sh` + high-signal 读取）
+3. 识别技术栈
+4. 生成模块文档（overview / module / onboarding / api-data-flow / business）
+5. 生成架构图/调用关系（`architecture.md`，必需 Mermaid + 证据）
+6. 校验文档是否覆盖核心目录（`validate-doc-completion.sh` 确定性 grader）
+7. 不通过则补充（保持 `Completion: incomplete`，只补失败项后重校验）
+8. 通过后 commit / PR（**opt-in** `publish-docs.sh`，push/PR 前人工确认）
+
+第 6–7 步是内层 verify→supplement 循环；第 8 步是 opt-in 终态，源码仓全程只读，
+commit/PR 只发生在 docs-root 独立 Git 仓库。
 
 ## 单仓产物
 
@@ -22,14 +38,16 @@ module-analysis.md
 onboarding-guide.md
 api-and-data-flow.md
 business-flow-summary.md
+architecture.md
 _analysis/repo-inventory.md
 _analysis/coverage-checklist.md
 ```
 
-五份模板文档都必须存在并完善。不适用的 API/data flow 或业务流程也要说明理由和
-证据路径。`validate-doc-completion.sh` 机械检查模板 H1/H2、矩阵/自检小节名与
-列名、自检检查项文案、章节正文、证据来源、inventory 候选数和
-`Completion: complete`。
+六份模板文档都必须存在并完善。不适用的 API/data flow 或业务流程也要说明理由和
+证据路径。`architecture.md` 还必须含至少 2 张 Mermaid 图（运行时架构 + 模块
+调用/依赖）且每张带 `%% Evidence:` 声明。`validate-doc-completion.sh` 机械检查
+模板 H1/H2、矩阵/自检小节名与列名、自检检查项文案、章节正文、证据来源、
+inventory 候选数、架构图与证据声明数量，以及 `Completion: complete`。
 
 ## 运行预算优化
 
@@ -57,7 +75,7 @@ Shell 不保存模型正在进行的推理，也不自动唤醒 Agent；下一�
 状态只使用：
 
 ```text
-done      五份文档和完成检查通过
+done      六份文档和完成检查通过
 cloned    本次激活，等待单仓 Agent 会话
 deferred  超出本次激活配额
 failed    clone/checkout/scaffold 失败
@@ -77,6 +95,7 @@ failed    clone/checkout/scaffold 失败
 bash -n codebase-explorer-docs/scripts/repo-inventory.sh
 bash -n codebase-explorer-docs/scripts/validate-doc-completion.sh
 bash -n batch-codebase-doc-generator/scripts/batch-generate-docs.sh
+bash -n batch-codebase-doc-generator/scripts/publish-docs.sh
 bash tests/test-runtime-budget.sh
 ```
 
