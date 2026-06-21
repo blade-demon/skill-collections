@@ -183,7 +183,7 @@ make_valid_docs() {
   local name=""
 
   mkdir -p "$docs_root/_analysis"
-  for template in "$EXPLORER_ROOT"/templates/*.md; do
+  for template in "$EXPLORER_ROOT"/templates/documents/*.md; do
     name="$(basename "$template")"
     if [[ "$name" == "module-analysis.md" ]]; then
       write_valid_module_analysis "$docs_root/$name"
@@ -404,6 +404,38 @@ test_validator() {
   pass "completion validator"
 }
 
+# 证明必需文档集合由 templates/documents/ 数据化推导：往隔离的临时 skill root
+# 加一份第七份普通模板，validator 应自动把它纳入必需集合。全程不动工作区 tracked
+# 文件，避免异常退出留下脏文件。
+test_data_driven_doc_set() {
+  local skill_root="$TMP_ROOT/dd-skill"
+  local docs_root="$TMP_ROOT/dd-docs"
+  local output="$TMP_ROOT/dd.stdout"
+  local errors="$TMP_ROOT/dd.stderr"
+  local validator="$skill_root/scripts/validate-doc-completion.sh"
+
+  mkdir -p "$skill_root/scripts" "$skill_root/templates/documents"
+  cp "$EXPLORER_ROOT/scripts/validate-doc-completion.sh" "$skill_root/scripts/"
+  cp "$EXPLORER_ROOT"/templates/documents/*.md "$skill_root/templates/documents/"
+
+  # 未加第七份时，含全部现有文档的 docs-root 通过
+  make_valid_docs "$docs_root"
+  run_expect_success "$output" "$errors" bash "$validator" --docs-root "$docs_root"
+
+  # 加一份普通 H1/H2 模板后，docs-root 仍缺它 -> 失败，证明枚举生效
+  cat >"$skill_root/templates/documents/extra-doc.md" <<'EOF'
+# Extra Doc
+
+## 概述
+
+占位说明。
+EOF
+  run_expect_failure "$output" "$errors" bash "$validator" --docs-root "$docs_root"
+  assert_contains "$errors" "extra-doc.md"
+
+  pass "data-driven document set"
+}
+
 test_batch() {
   local origins="$TMP_ROOT/origins"
   local repo_a="$origins/repo-a"
@@ -525,7 +557,7 @@ test_skill_contracts() {
   assert_contains "$EXPLORER_ROOT/SKILL.md" "Shell cannot snapshot model reasoning"
   assert_contains "$EXPLORER_ROOT/SKILL.md" "business-flow-summary.md"
   assert_contains "$EXPLORER_ROOT/SKILL.md" "architecture.md"
-  assert_contains "$EXPLORER_ROOT/templates/architecture.md" "## 模块调用与依赖关系"
+  assert_contains "$EXPLORER_ROOT/templates/documents/architecture.md" "## 模块调用与依赖关系"
   assert_contains "$EXPLORER_ROOT/SKILL.md" "references/document-spec.md"
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## 业务模块覆盖矩阵"
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## Gotcha 清单"
@@ -543,6 +575,7 @@ test_skill_contracts() {
 test_inventory
 test_inventory_empty_non_git
 test_validator
+test_data_driven_doc_set
 test_batch
 test_skill_contracts
 
