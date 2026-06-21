@@ -235,4 +235,3 @@ Completion: complete
 全部已生成。
 EOF
 }
-

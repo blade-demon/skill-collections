@@ -3,9 +3,11 @@
 source "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 
 # publish-docs.sh 的行为测试（此前盲区）。全程离线、不访问真实 GitHub：
-#   - plan-only（无 --yes）：建分支 + 本地 commit + 打印 push/PR 计划后停下，不 push。
+#   - plan-only（无 --yes）：建分支 + 本地 commit + 打印 push/PR 计划后停下，不 push；
+#     不完整仓库（repo-b）被跳过、不提交。
 #   - --yes：本地 bare repo 作 origin + PATH 假 gh，验证真实本地 push 与 gh pr create
 #     参数。断言 bare repo 中出现目标 branch ref。
+#   - lock：预置锁目录后再次运行应因无法获取锁而失败。
 test_publish() {
   local docs_root="$TMP_ROOT/docs-root"
   local bare="$TMP_ROOT/origin.git"
@@ -26,17 +28,24 @@ test_publish() {
   git -C "$docs_root" commit -qm "seed"
 
   make_valid_docs "$docs_root/repo-a"
+  # repo-b 文档不完整（删 architecture.md → validator 失败），应被 publish 跳过。
+  make_valid_docs "$docs_root/repo-b"
+  rm -f "$docs_root/repo-b/architecture.md"
 
-  # --- plan-only：建分支 + commit + 打印计划，不 push ---
+  # --- plan-only：建分支 + commit + 打印计划，不 push；repo-b 被跳过 ---
   run_expect_success "$output" "$errors" \
     bash "$PUBLISH" --docs-root "$docs_root" --branch "$branch"
   assert_contains "$errors" "PUBLISH PLAN"
   assert_contains "$errors" "push -u origin"
   assert_contains "$errors" "gh pr create"
+  assert_contains "$errors" "skip (not done): repo-b"
   git -C "$docs_root" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null \
     || fail "plan-only 应已在本地创建发布分支：$branch"
   git -C "$docs_root" ls-files --error-unmatch "repo-a/project-overview.md" >/dev/null 2>&1 \
     || fail "plan-only 应已把 repo-a 文档 commit 到发布分支"
+  if git -C "$docs_root" ls-files --error-unmatch "repo-b/project-overview.md" >/dev/null 2>&1; then
+    fail "不完整的 repo-b 不应被 commit 到发布分支"
+  fi
 
   # --- --yes：bare origin + 假 gh，真实本地 push + gh pr create 参数 ---
   git init --bare -q "$bare"
@@ -61,6 +70,13 @@ EOF
   assert_contains "$ghlog" "--fill"
   assert_contains "$ghlog" "--base main"
   assert_contains "$ghlog" "$branch"
+
+  # --- lock：预置锁目录后再次运行应因无法获取锁而失败 ---
+  mkdir "$docs_root/.publish-docs.lock"
+  run_expect_failure "$output" "$errors" \
+    bash "$PUBLISH" --docs-root "$docs_root" --branch "$branch"
+  assert_contains "$errors" "Unable to acquire lock"
+  rmdir "$docs_root/.publish-docs.lock"
 
   pass "publish docs"
 }
