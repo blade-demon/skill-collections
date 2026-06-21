@@ -530,6 +530,8 @@ test_skill_contracts() {
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## 业务模块覆盖矩阵"
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## Gotcha 清单"
   assert_contains "$BATCH_ROOT/SKILL.md" "publish-docs.sh"
+  assert_contains "$BATCH_ROOT/START_PROMPT.md" "architecture.md"
+  assert_contains "$BATCH_ROOT/templates/single-repo-prompt.md" "architecture.md"
   assert_contains "$BATCH_ROOT/SKILL.md" "one Agent invocation/session = one deeply explored repository"
   assert_contains "$BATCH_ROOT/SKILL.md" "does not automatically wake"
   assert_contains "$BATCH_ROOT/SKILL.md" "done"
