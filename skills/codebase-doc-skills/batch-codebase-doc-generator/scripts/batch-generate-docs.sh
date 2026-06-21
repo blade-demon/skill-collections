@@ -30,6 +30,8 @@ FAILED_NAMES=()
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VALIDATOR="$SKILLS_ROOT/codebase-explorer-docs/scripts/validate-doc-completion.sh"
+# 续跑锚点模板的唯一来源；scaffold 时复制而非内嵌，模板与脚本不再双写。
+CHECKLIST_TEMPLATE="$SCRIPT_DIR/../templates/coverage-checklist.md"
 
 LOCK_DIR=""
 LOCK_HELD="false"
@@ -439,27 +441,17 @@ seed_coverage_checklist() {
   local checklist="$docs_path/_analysis/coverage-checklist.md"
 
   mkdir -p "$docs_path/_analysis" || return 1
+  # 绝不覆盖已有 checklist——它是续跑锚点。
   if [[ -e "$checklist" ]]; then
     return 0
   fi
 
-  cat >"$checklist" <<'EOF'
-# Coverage Checklist
+  if [[ ! -f "$CHECKLIST_TEMPLATE" ]]; then
+    log "checklist 模板缺失：$CHECKLIST_TEMPLATE"
+    return 1
+  fi
 
-Completion: incomplete
-
-## 已分析模块
-
-## 进行中模块
-
-## 部分覆盖、未确认和未分析模块
-
-## 下一批 high-signal 文件
-
-## 待业务确认
-
-## 文档状态
-EOF
+  cp "$CHECKLIST_TEMPLATE" "$checklist"
 }
 
 append_report_header

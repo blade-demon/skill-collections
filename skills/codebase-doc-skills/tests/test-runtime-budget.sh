@@ -561,6 +561,8 @@ test_skill_contracts() {
   assert_contains "$EXPLORER_ROOT/SKILL.md" "references/document-spec.md"
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## 业务模块覆盖矩阵"
   assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## Gotcha 清单"
+  assert_contains "$BATCH_ROOT/templates/coverage-checklist.md" "## 进行中模块"
+  assert_contains "$BATCH_ROOT/scripts/batch-generate-docs.sh" "CHECKLIST_TEMPLATE"
   assert_contains "$BATCH_ROOT/SKILL.md" "publish-docs.sh"
   assert_contains "$BATCH_ROOT/START_PROMPT.md" "architecture.md"
   assert_contains "$BATCH_ROOT/templates/single-repo-prompt.md" "architecture.md"
