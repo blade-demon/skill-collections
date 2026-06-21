@@ -141,6 +141,42 @@ write_valid_module_analysis() {
 EOF
 }
 
+write_valid_architecture() {
+  local output="$1"
+
+  cat >"$output" <<'EOF'
+# Architecture
+
+## 运行时架构总览
+
+```mermaid
+flowchart LR
+  %% Evidence: src/routes/index.ts
+  Client --> Routes --> Services --> DB[(Store)]
+```
+
+## 模块调用与依赖关系
+
+```mermaid
+flowchart LR
+  %% Evidence: src/services/api.ts
+  Routes --> Services
+```
+
+## 关键调用链路
+
+Client -> /items -> Routes -> Services。证据：src/routes/index.ts。
+
+## 架构风险与边界
+
+服务层与路由耦合。证据：src/services/api.ts。
+
+## TODO: 需要业务确认
+
+部分接口语义待确认。
+EOF
+}
+
 make_valid_docs() {
   local docs_root="$1"
   local template=""
@@ -151,6 +187,8 @@ make_valid_docs() {
     name="$(basename "$template")"
     if [[ "$name" == "module-analysis.md" ]]; then
       write_valid_module_analysis "$docs_root/$name"
+    elif [[ "$name" == "architecture.md" ]]; then
+      write_valid_architecture "$docs_root/$name"
     else
       add_template_bodies "$template" "$docs_root/$name"
     fi
@@ -193,7 +231,7 @@ Completion: complete
 
 接口字段语义。
 
-## 五份文档状态
+## 文档状态
 
 全部已生成。
 EOF
@@ -352,6 +390,17 @@ test_validator() {
   run_expect_failure "$output" "$errors" bash "$VALIDATOR" --docs-root "$docs_root"
   assert_contains "$errors" "缺少模板检查项"
 
+  make_valid_docs "$docs_root"
+  sed -i.bak '/%% Evidence:/d' "$docs_root/architecture.md"
+  rm -f "$docs_root/architecture.md.bak"
+  run_expect_failure "$output" "$errors" bash "$VALIDATOR" --docs-root "$docs_root"
+  assert_contains "$errors" "Evidence"
+
+  make_valid_docs "$docs_root"
+  rm -f "$docs_root/architecture.md"
+  run_expect_failure "$output" "$errors" bash "$VALIDATOR" --docs-root "$docs_root"
+  assert_contains "$errors" "architecture.md"
+
   pass "completion validator"
 }
 
@@ -475,6 +524,12 @@ test_skill_contracts() {
   assert_contains "$EXPLORER_ROOT/SKILL.md" "one invocation/session may deeply explore only one repository"
   assert_contains "$EXPLORER_ROOT/SKILL.md" "Shell cannot snapshot model reasoning"
   assert_contains "$EXPLORER_ROOT/SKILL.md" "business-flow-summary.md"
+  assert_contains "$EXPLORER_ROOT/SKILL.md" "architecture.md"
+  assert_contains "$EXPLORER_ROOT/templates/architecture.md" "## 模块调用与依赖关系"
+  assert_contains "$EXPLORER_ROOT/SKILL.md" "references/document-spec.md"
+  assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## 业务模块覆盖矩阵"
+  assert_contains "$EXPLORER_ROOT/references/document-spec.md" "## Gotcha 清单"
+  assert_contains "$BATCH_ROOT/SKILL.md" "publish-docs.sh"
   assert_contains "$BATCH_ROOT/SKILL.md" "one Agent invocation/session = one deeply explored repository"
   assert_contains "$BATCH_ROOT/SKILL.md" "does not automatically wake"
   assert_contains "$BATCH_ROOT/SKILL.md" "done"

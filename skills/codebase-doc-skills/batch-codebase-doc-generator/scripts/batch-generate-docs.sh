@@ -333,7 +333,7 @@ append_report_header() {
 # Batch Codebase Documentation Report
 
 > 本报告是当前文件系统状态的完整快照。脚本只负责仓库准备和完成判定，
-> 不调用任何大模型或 Agent CLI。`done` 必须通过五文档完成检查。
+> 不调用任何大模型或 Agent CLI。`done` 必须通过六文档完成检查。
 
 | Repo | Git URL | Branch | Source Path | Docs Path | Status | Notes |
 |---|---|---|---|---|---|---|
@@ -458,7 +458,7 @@ Completion: incomplete
 
 ## 待业务确认
 
-## 五份文档状态
+## 文档状态
 EOF
 }
 
@@ -490,7 +490,7 @@ while [[ "$index" -lt "$TOTAL" ]]; do
     DONE=$((DONE + 1))
     DONE_NAMES+=("$repo_name")
     append_report_row "$repo_name" "$repo_url" "$branch" "$source_path" \
-      "$docs_path" "done" "five-document completion validation passed"
+      "$docs_path" "done" "six-document completion validation passed"
     log "[$ordinal/$TOTAL] repo=$repo_name action=done counts Done=$DONE Cloned=$CLONED Deferred=$DEFERRED Failed=$FAILED"
     index=$((index + 1))
     continue

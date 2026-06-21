@@ -19,13 +19,19 @@
 ├── onboarding-guide.md
 ├── api-and-data-flow.md
 ├── business-flow-summary.md
+├── architecture.md
 └── _analysis/
     ├── repo-inventory.md
     └── coverage-checklist.md
 ```
 
-五份模板文档都是完整交付的必需产物。不适用的 API/data flow 或业务流程也要
-保留文档，并写清判断依据和证据路径。
+六份模板文档都是完整交付的必需产物。不适用的 API/data flow 或业务流程也要
+保留文档，并写清判断依据和证据路径。`architecture.md` 还必须含至少 2 张
+Mermaid 图（运行时架构 + 模块调用/依赖），每张带 `%% Evidence:` 证据声明。
+
+每份文档具体要写什么、契约小节（`# 新同事上手指南` / `## 业务模块覆盖矩阵` /
+`## Gotcha 清单`）的完整要求见 `references/document-spec.md`；`SKILL.md` 正文只
+保留工作流、预算与完成契约，写文档前先读该参考文件。
 
 ## 盘点与完成检查
 
@@ -38,8 +44,9 @@
   --docs-root <文档输出目录>
 ```
 
-盘点脚本不依赖 Node.js 或 `jq`，允许长时间运行；完成检查要求五份文档、模板
-章节、覆盖矩阵、证据列、自检和 `Completion: complete` 同时通过。
+盘点脚本不依赖 Node.js 或 `jq`，允许长时间运行；完成检查要求六份文档、模板
+章节、覆盖矩阵、证据列、自检、`architecture.md` 的 Mermaid 图与证据声明，以及
+`Completion: complete` 同时通过。
 
 ## 预算感知
 
