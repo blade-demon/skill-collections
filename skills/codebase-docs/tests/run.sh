@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Run all codebase-doc-skills tests. Each test-*.sh sources lib.sh, owns its own
+# Run all codebase-docs tests. Each test-*.sh sources lib.sh, owns its own
 # temp root, and exits non-zero on the first failure.
 
 set -uo pipefail
@@ -32,4 +32,4 @@ if [[ "$failed" -ne 0 ]]; then
   exit 1
 fi
 
-printf '\nAll codebase-doc-skills test suites passed.\n'
+printf '\nAll codebase-docs test suites passed.\n'

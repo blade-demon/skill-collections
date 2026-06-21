@@ -97,8 +97,8 @@ test_data_driven_doc_set() {
   local validator="$skill_root/scripts/validate-doc-completion.sh"
 
   mkdir -p "$skill_root/scripts" "$skill_root/templates/documents"
-  cp "$EXPLORER_ROOT/scripts/validate-doc-completion.sh" "$skill_root/scripts/"
-  cp "$EXPLORER_ROOT"/templates/documents/*.md "$skill_root/templates/documents/"
+  cp "$SKILL_ROOT/scripts/validate-doc-completion.sh" "$skill_root/scripts/"
+  cp "$SKILL_ROOT"/templates/documents/*.md "$skill_root/templates/documents/"
 
   # 未加第七份时，含全部现有文档的 docs-root 通过
   make_valid_docs "$docs_root"

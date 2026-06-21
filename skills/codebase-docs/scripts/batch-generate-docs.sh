@@ -28,8 +28,8 @@ DEFERRED_NAMES=()
 FAILED_NAMES=()
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VALIDATOR="$SKILLS_ROOT/codebase-explorer-docs/scripts/validate-doc-completion.sh"
+# validator 与本脚本同处一个 skill 的 scripts/，无跨 skill 路径依赖。
+VALIDATOR="$SCRIPT_DIR/validate-doc-completion.sh"
 # 续跑锚点模板的唯一来源；scaffold 时复制而非内嵌，模板与脚本不再双写。
 CHECKLIST_TEMPLATE="$SCRIPT_DIR/../templates/coverage-checklist.md"
 
@@ -69,15 +69,15 @@ EOF
 }
 
 log() {
-  printf '[batch-codebase-doc-generator] %s\n' "$*" >&2
+  printf '[codebase-docs] %s\n' "$*" >&2
 }
 
 warn() {
-  printf '[batch-codebase-doc-generator][WARN] %s\n' "$*" >&2
+  printf '[codebase-docs][WARN] %s\n' "$*" >&2
 }
 
 error() {
-  printf '[batch-codebase-doc-generator][ERROR] %s\n' "$*" >&2
+  printf '[codebase-docs][ERROR] %s\n' "$*" >&2
 }
 
 cleanup() {

@@ -1,15 +1,13 @@
-# Shared helpers for codebase-doc-skills tests. Source this from each test-*.sh.
+# Shared helpers for codebase-docs tests. Source this from each test-*.sh.
 
 set -uo pipefail
 
 TEST_DIR="$(cd "$(dirname "$0")" && pwd)"
-SKILLS_ROOT="$(cd "$TEST_DIR/.." && pwd)"
-EXPLORER_ROOT="$SKILLS_ROOT/codebase-explorer-docs"
-BATCH_ROOT="$SKILLS_ROOT/batch-codebase-doc-generator"
-INVENTORY="$EXPLORER_ROOT/scripts/repo-inventory.sh"
-VALIDATOR="$EXPLORER_ROOT/scripts/validate-doc-completion.sh"
-BATCH="$BATCH_ROOT/scripts/batch-generate-docs.sh"
-PUBLISH="$BATCH_ROOT/scripts/publish-docs.sh"
+SKILL_ROOT="$(cd "$TEST_DIR/.." && pwd)"
+INVENTORY="$SKILL_ROOT/scripts/repo-inventory.sh"
+VALIDATOR="$SKILL_ROOT/scripts/validate-doc-completion.sh"
+BATCH="$SKILL_ROOT/scripts/batch-generate-docs.sh"
+PUBLISH="$SKILL_ROOT/scripts/publish-docs.sh"
 
 TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/codebase-doc-tests.XXXXXX")"
 trap 'rm -rf "$TMP_ROOT"' EXIT INT TERM
@@ -184,7 +182,7 @@ make_valid_docs() {
   local name=""
 
   mkdir -p "$docs_root/_analysis"
-  for template in "$EXPLORER_ROOT"/templates/documents/*.md; do
+  for template in "$SKILL_ROOT"/templates/documents/*.md; do
     name="$(basename "$template")"
     if [[ "$name" == "module-analysis.md" ]]; then
       write_valid_module_analysis "$docs_root/$name"
