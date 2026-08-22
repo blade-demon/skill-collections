@@ -100,6 +100,7 @@ CLI 展平 batch，但拒绝跨 batch 重复文件名。它仍会执行 schema �
   "valid": true,
   "result": {
     "decision": "same-component",
+    "reasonCodes": ["leaf-added"],
     "skeletons": [
       {
         "filename": "pending.png",
@@ -135,6 +136,7 @@ CLI 展平 batch，但拒绝跨 batch 重复文件名。它仍会执行 schema �
 其中：
 
 - `decision` 是总体基础组件判断；
+- `reasonCodes` 聚合影响总体判断的稳定原因；集合级原因（如 `manual-mixed-large-set`）只出现在此处；
 - `skeletons` 按输入图片顺序记录 `filename` 与 T/M/B/F `slots` 的机械 skeleton；
 - `pairs` 按输入顺序生成稳定的 `(i, j)` 两两结果，包含 `left`、`right`、pair `decision`、
   `reasonCodes` 与 `slotDiffs`；每个 slot diff 记录 slot、差异类型、左右原始表达式及 role delta；
