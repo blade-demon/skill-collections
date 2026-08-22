@@ -84,3 +84,18 @@ describe('compareSignatures role and uncertainty boundaries', () => {
     expect(result.pairs[0]?.reasonCodes).toContain('uncertain-leaf');
   });
 });
+
+describe('compareSignatures task boundary', () => {
+  it('requires exactly two image signatures during the pair-comparison phase', () => {
+    expect(() => compareSignatures([image('only.png', { M: 'card(title)' })])).toThrow(
+      'compareSignatures requires exactly two images',
+    );
+    expect(() =>
+      compareSignatures([
+        image('first.png', { M: 'card(title)' }),
+        image('second.png', { M: 'card(title)' }),
+        image('third.png', { M: 'card(title)' }),
+      ]),
+    ).toThrow('compareSignatures requires exactly two images');
+  });
+});

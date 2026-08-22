@@ -331,30 +331,17 @@ function buildSkeletons(images: ImageResult[]): StructuralComparisonResult['skel
 }
 
 export function compareSignatures(images: ImageResult[]): StructuralComparisonResult {
-  const pairs: PairComparison[] = [];
-  for (let leftIndex = 0; leftIndex < images.length; leftIndex += 1) {
-    const left = images[leftIndex];
-    if (!left) continue;
-    for (let rightIndex = leftIndex + 1; rightIndex < images.length; rightIndex += 1) {
-      const right = images[rightIndex];
-      if (right) pairs.push(comparePair(left, right));
-    }
+  if (images.length !== 2) {
+    throw new Error('compareSignatures requires exactly two images');
   }
 
-  const reasonCodes = sortReasons(pairs.flatMap((pair) => pair.reasonCodes));
-  const decision: StructuralDecision = pairs.some(
-    (pair) => pair.decision === 'different-components',
-  )
-    ? 'different-components'
-    : pairs.some((pair) => pair.decision === 'manual-review')
-      ? 'manual-review'
-      : 'same-component';
+  const pair = comparePair(images[0]!, images[1]!);
 
   return {
-    decision,
-    reasonCodes,
+    decision: pair.decision,
+    reasonCodes: pair.reasonCodes,
     skeletons: buildSkeletons(images),
-    pairs,
+    pairs: [pair],
     overlayGroups: [],
   };
 }
