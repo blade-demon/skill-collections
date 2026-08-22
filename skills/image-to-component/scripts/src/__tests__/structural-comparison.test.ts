@@ -146,4 +146,37 @@ describe('compareSignatures collection rules', () => {
     expect(result.decision).toBe('same-component');
     expect(result.reasonCodes).not.toContain('manual-mixed-large-set');
   });
+
+  it('groups matching overlay types and separates different overlay types', () => {
+    const images: ImageResult[] = [
+      image('base.png', { M: 'card(title)' }),
+      {
+        ...image('modal.png', { M: 'card(title)', O: 'card(title -> action)' }),
+        notes: { overlay_type: 'modal' },
+      },
+      {
+        ...image('drawer.png', { M: 'card(title)', O: 'card(title -> action)' }),
+        notes: { overlay_type: 'drawer' },
+      },
+      {
+        ...image('modal-2.png', { M: 'card(title)', O: 'card(title -> action)' }),
+        notes: { overlay_type: 'modal' },
+      },
+    ];
+    const result = compareSignatures(images);
+    expect(result.overlayGroups.map(({ overlayType, files }) => ({ overlayType, files }))).toEqual([
+      { overlayType: 'modal', files: ['modal.png', 'modal-2.png'] },
+      { overlayType: 'drawer', files: ['drawer.png'] },
+    ]);
+  });
+
+  it('promotes one different pair to the overall decision', () => {
+    const result = compareSignatures([
+      image('idle.png', { M: 'form(form -> action)' }),
+      image('error.png', { M: 'form(form -> hint -> action)' }),
+      image('list.png', { M: 'list(card(title))' }),
+    ]);
+    expect(result.pairs).toHaveLength(3);
+    expect(result.decision).toBe('different-components');
+  });
 });
