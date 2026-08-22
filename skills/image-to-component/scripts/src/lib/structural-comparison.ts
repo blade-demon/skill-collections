@@ -1,4 +1,4 @@
-import type { ImageResult } from '../types.js';
+import { OVERLAY_TYPES, type ImageResult } from '../types.js';
 import {
   parseSlotExpr,
   type AtomNode,
@@ -330,18 +330,54 @@ function buildSkeletons(images: ImageResult[]): StructuralComparisonResult['skel
   }));
 }
 
+function buildOverlayGroups(images: ImageResult[]): OverlayGroup[] {
+  return OVERLAY_TYPES.flatMap((overlayType) => {
+    const overlays = images.filter(
+      (image) => image.signature.O !== '-' && image.notes.overlay_type === overlayType,
+    );
+    if (overlays.length === 0) return [];
+
+    return [
+      {
+        overlayType,
+        files: overlays.map((image) => image.filename),
+        skeletons: overlays.map((image) => ({
+          filename: image.filename,
+          skeleton: renderSkeleton(parseOrThrow(image.signature.O)),
+        })),
+      },
+    ];
+  });
+}
+
 export function compareSignatures(images: ImageResult[]): StructuralComparisonResult {
-  if (images.length !== 2) {
-    throw new Error('compareSignatures requires exactly two images');
+  const pairs: PairComparison[] = [];
+  for (let leftIndex = 0; leftIndex < images.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < images.length; rightIndex += 1) {
+      pairs.push(comparePair(images[leftIndex]!, images[rightIndex]!));
+    }
   }
 
-  const pair = comparePair(images[0]!, images[1]!);
+  const reasonCodes = sortReasons(pairs.flatMap((pair) => pair.reasonCodes));
+  const hasDifferentComponents = pairs.some((pair) => pair.decision === 'different-components');
+  const hasMixedLargeSet =
+    images.length >= 4 &&
+    !hasDifferentComponents &&
+    (reasonCodes.includes('leaf-added') || reasonCodes.includes('leaf-removed')) &&
+    reasonCodes.includes('whole-slot-replaced');
+  if (hasMixedLargeSet) reasonCodes.push('manual-mixed-large-set');
+
+  const decision: StructuralDecision = hasDifferentComponents
+    ? 'different-components'
+    : hasMixedLargeSet || pairs.some((pair) => pair.decision === 'manual-review')
+      ? 'manual-review'
+      : 'same-component';
 
   return {
-    decision: pair.decision,
-    reasonCodes: pair.reasonCodes,
+    decision,
+    reasonCodes: sortReasons(reasonCodes),
     skeletons: buildSkeletons(images),
-    pairs: [pair],
-    overlayGroups: [],
+    pairs,
+    overlayGroups: buildOverlayGroups(images),
   };
 }

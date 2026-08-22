@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ImageResult, SignatureObject } from '../types.js';
 import { compareSignatures } from '../lib/structural-comparison.js';
+import { caseA, caseB, caseC, caseD, caseE } from './fixtures/structural-comparison-cases.js';
 
 const image = (filename: string, signature: Partial<SignatureObject>): ImageResult => ({
   filename,
@@ -85,17 +86,64 @@ describe('compareSignatures role and uncertainty boundaries', () => {
   });
 });
 
-describe('compareSignatures task boundary', () => {
-  it('requires exactly two image signatures during the pair-comparison phase', () => {
-    expect(() => compareSignatures([image('only.png', { M: 'card(title)' })])).toThrow(
-      'compareSignatures requires exactly two images',
-    );
-    expect(() =>
-      compareSignatures([
-        image('first.png', { M: 'card(title)' }),
-        image('second.png', { M: 'card(title)' }),
-        image('third.png', { M: 'card(title)' }),
-      ]),
-    ).toThrow('compareSignatures requires exactly two images');
+describe('compareSignatures collection rules', () => {
+  it.each([
+    ['A', caseA, 'same-component'],
+    ['B', caseB, 'different-components'],
+    ['C', caseC, 'same-component'],
+    ['D', caseD, 'same-component'],
+    ['E', caseE, 'different-components'],
+  ] as const)('matches golden Case %s', (_name, batch, expected) => {
+    expect(compareSignatures(batch.images).decision).toBe(expected);
+  });
+
+  it('compares all pairs in stable input order', () => {
+    const result = compareSignatures(caseA.images);
+    expect(result.pairs.map(({ left, right }) => [left, right])).toEqual([
+      ['pending.png', 'used.png'],
+      ['pending.png', 'expired.png'],
+      ['used.png', 'expired.png'],
+    ]);
+  });
+
+  it('keeps the Case C modal outside base identity', () => {
+    const result = compareSignatures(caseC.images);
+    expect(result.decision).toBe('same-component');
+    expect(result.overlayGroups).toEqual([
+      {
+        overlayType: 'modal',
+        files: ['confirm-modal.png'],
+        skeletons: [
+          {
+            filename: 'confirm-modal.png',
+            skeleton: 'card(_ -> _ -> _ + _)',
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('requires manual review for four-image mixed additions and replacements', () => {
+    const images = [
+      image('a.png', { M: 'card(title)', B: 'hint -> action' }),
+      image('b.png', { M: 'card(title -> status)', B: 'hint -> action' }),
+      image('c.png', { M: 'card(title)', B: 'meta' }),
+      image('d.png', { M: 'card(title -> status)', B: 'meta' }),
+    ];
+    const result = compareSignatures(images);
+    expect(result.decision).toBe('manual-review');
+    expect(result.reasonCodes).toContain('manual-mixed-large-set');
+  });
+
+  it('keeps four images automatic when they repeat one explained change kind', () => {
+    const images = [
+      image('a.png', { M: 'card(title)' }),
+      image('b.png', { M: 'card(title -> status)' }),
+      image('c.png', { M: 'card(title -> meta)' }),
+      image('d.png', { M: 'card(title -> hint)' }),
+    ];
+    const result = compareSignatures(images);
+    expect(result.decision).toBe('same-component');
+    expect(result.reasonCodes).not.toContain('manual-mixed-large-set');
   });
 });
