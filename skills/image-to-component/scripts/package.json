@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "validate-signature": "tsx src/validate-signature.ts",
     "validate-coarse": "tsx src/validate-coarse.ts",
+    "compare-signatures": "tsx src/compare-signatures.ts",
     "coverage-table": "tsx src/generate-coverage-table.ts",
     "generate-skeleton": "tsx src/generate-skeleton.ts"
   },

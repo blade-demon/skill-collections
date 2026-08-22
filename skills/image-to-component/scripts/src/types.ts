@@ -68,6 +68,12 @@ export type BatchResult = z.infer<typeof BatchResultSchema>;
 export type ImageResult = z.infer<typeof ImageResultSchema>;
 export type SignatureObject = z.infer<typeof SignatureObjectSchema>;
 
+export const StructuralComparisonInputSchema = z
+  .object({ batches: z.array(BatchResultSchema).min(1) })
+  .strict();
+
+export type StructuralComparisonInput = z.infer<typeof StructuralComparisonInputSchema>;
+
 // ── Coarse Signature ─────────────────────────────────────────────────────────
 
 const COARSE_REASONS = [
