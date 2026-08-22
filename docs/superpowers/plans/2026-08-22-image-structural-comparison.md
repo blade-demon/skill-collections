@@ -412,6 +412,12 @@ function renderContainerTopology(node: SlotExprNode): string;
 function countRoles(node: SlotExprNode): number;
 function collectLeaves(node: SlotExprNode): LeafNode[];
 function containsContainer(node: SlotExprNode): boolean;
+function sameLeafLayout(left: SlotExprNode, right: SlotExprNode): boolean;
+function preservesLayoutAfterSingleLeafRemoval(
+  shorter: SlotExprNode,
+  longer: SlotExprNode,
+  longerLeafCount: number,
+): boolean;
 ```
 
 `renderSkeleton()` 用 `_` 替换 leaf 并保留完整 `->` / `+`；
@@ -421,12 +427,13 @@ function containsContainer(node: SlotExprNode): boolean;
 
 实现 slot 分类顺序：
 
-1. leaf 与 uncertain 完全相同 → 无 diff；
-2. role 数相同且仅 uncertain 不同 → `uncertain-leaf`；
-3. role 数相同但 role 不同 → `leaf-swap`；
-4. 数量差为 1，且短数组是长数组的有序子序列 → `leaf-added` / `leaf-removed`；
+1. leaf layout 投影（保留 `->` / `+` 与 container 归属）一致，且 leaf 与 uncertain 完全相同 → 无 diff；
+2. leaf layout 投影一致，role 数相同且仅 uncertain 不同 → `uncertain-leaf`；
+3. leaf layout 投影一致，role 数相同但 role 不同 → `leaf-swap`；
+4. 数量差为 1、短数组是长数组的有序子序列，且从较长 AST 删除该 leaf 后与较短 AST 完全一致
+   → `leaf-added` / `leaf-removed`；
 5. 两边都不含 container 且内容不同 → `whole-slot-replaced`；
-6. 其他 → `unresolved-leaf-variation`。
+6. 相同 leaf 的 operator/container placement 变化或其他未解释变化 → `unresolved-leaf-variation`。
 
 - [ ] **Step 4: 实现 pair 与两图总体判断**
 
@@ -1105,7 +1112,9 @@ echo '<comparison input JSON>' | npm run compare-signatures
 将 CLI 输出声明为 Step 6 机械结果权威；记录以下精确规则：
 
 - container topology 不同和 role ratio `< 0.5` 为不同组件；恰好 `0.5` 不触发；
-- leaf swap、uncertain、单 leaf 增删、leaf-only 整体替换为状态变化；
+- leaf swap、uncertain 只有在完整 leaf layout 投影一致时为状态变化；
+- 单 leaf 增删还必须保证删除该 leaf 后其余 leaf 的 operator/container placement 不变；
+- leaf-only 整体替换为状态变化，其他未解释的 operator/container placement 变化进入人工复核；
 - 仅未解释 leaf 变化跨两个以上 slot 时使用 `manual-multi-slot-variation`；
 - 四张以上图片同时混合增删与整体替换时使用 `manual-mixed-large-set`；
 - O 单独分组，F 不影响 identity；

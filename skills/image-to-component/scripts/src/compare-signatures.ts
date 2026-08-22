@@ -68,11 +68,12 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
       process.stdout.write(
         JSON.stringify({ valid: false, errors: ['input is not valid JSON'] }, null, 2) + '\n',
       );
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     const output = compareBatchInput(input);
     process.stdout.write(JSON.stringify(output, null, 2) + '\n');
-    if (!output.valid) process.exit(1);
+    if (!output.valid) process.exitCode = 1;
   });
 }

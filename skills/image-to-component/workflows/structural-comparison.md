@@ -32,14 +32,19 @@ role ratio **恰好 `0.5` 不触发**不同组件判断。
 
 对候选同一组件：
 
-| 差异                                                    | 分类                                        |
-| ------------------------------------------------------- | ------------------------------------------- |
-| Leaf role 互换，如 `hint` 到 `status`                   | 状态 variant                                |
-| 出现 leaf `?`                                           | 状态 variant，不确定                        |
-| Leaf 增删：较短序列是较长序列的有序子序列，且长度恰差 1 | 状态 variant                                |
-| 某 slot 的 leaf-only 内容被完全替换                     | 状态 variant                                |
-| 未解释 leaf 变化跨 2+ 个不同 slot                       | 结构 variant；`manual-multi-slot-variation` |
-| 容器内重复次数变化                                      | 状态 variant，数据驱动                      |
+leaf layout 投影会忽略 role 与 `?`，但保留每个 leaf 的 `->` / `+` 位置和 container 归属。
+完全相同、uncertain 或 role swap 只有在该投影一致时才属于白名单。单 leaf 增删还必须能从较长 AST
+删除恰好该 leaf，并保持其余 leaf 的完整布局不变。
+
+| 差异                                                                 | 分类                                        |
+| -------------------------------------------------------------------- | ------------------------------------------- |
+| 相同 leaf layout 中 role 互换，如 `hint` 到 `status`                 | 状态 variant                                |
+| 相同 leaf layout 中出现或消失 leaf `?`                               | 状态 variant，不确定                        |
+| Leaf 增删：有序子序列恰差 1，且删除该 leaf 后其余 AST 完全一致       | 状态 variant                                |
+| 某 slot 的 leaf-only 内容被完全替换                                  | 状态 variant                                |
+| 相同 leaf 的 operator/container placement 变化或其他未解释 leaf 变化 | 结构 variant；`unresolved-leaf-variation`   |
+| 未解释 leaf 变化跨 2+ 个不同 slot                                    | 结构 variant；`manual-multi-slot-variation` |
+| 容器内重复次数变化，且可由上述单 leaf 增删规则解释                   | 状态 variant，数据驱动                      |
 
 仅当四张及以上图片同时出现 leaf 增删与 leaf-only 整体替换，且没有任何 `different-components` pair 时，CLI 才加入 `manual-mixed-large-set` 并运行 `manual-review-exit.md`。若存在任一 `different-components` pair，顶层决策保持 `different-components`，优先于该人工复核 reason。
 

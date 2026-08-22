@@ -49,7 +49,8 @@
 }
 ```
 
-决策：T/O/F 相同；M 差一个新增 `status` leaf；B 有 leaf 互换。结论：同一组件，3 个状态。
+决策：T/O/F 相同；M 差一个新增 `status` leaf；B 是 leaf-only slot 的整体替换
+（`whole-slot-replaced`）。结论：同一组件，3 个状态。
 
 ## Case B：列表页 vs 详情页
 

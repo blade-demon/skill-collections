@@ -163,6 +163,11 @@ CLI 展平 batch，但拒绝跨 batch 重复文件名。它仍会执行 schema �
 代替 container topology 比较，否则合法的 leaf 增删会被误判为容器变化。leaf-only slot 在该投影中
 没有 container；其内容变化交给 leaf 差异规则判断。
 
+leaf 差异分类还使用完整的 **leaf layout 投影**：忽略 leaf 的 role 与 `?`，但保留每个 leaf 在 AST
+中的 `->` / `+` 位置和 container 归属。完全相同、`uncertain-leaf` 与 `leaf-swap` 只有在该投影一致时
+成立。单 leaf 增删不仅要求 role 与 `?` 的有序子序列且数量恰差 1，还必须能从较长 AST 删除恰好
+该 leaf 后得到较短 AST；其余 leaf 的操作符位置和 container 归属不得变化。
+
 示例：
 
 ```text
@@ -189,13 +194,14 @@ _ -> list(card(_ -> _))
    `different-components`，reason 为 `role-count-threshold-exceeded`。恰好 0.5 不触发该规则。
 3. F slot 的出现、消失或 leaf 变化记录为 `floating-variant`，不改变基础组件身份。
 4. 对 container 拓扑一致的 slot 分类 leaf 差异：
-   - leaf role 一对一互换：`leaf-swap`；
-   - `?` 出现或消失：`uncertain-leaf`；
-   - 单个 leaf 增删：`leaf-added` 或 `leaf-removed`；
+   - leaf layout 投影一致时，leaf role 一对一互换：`leaf-swap`；
+   - leaf layout 投影一致时，仅 `?` 出现或消失：`uncertain-leaf`；
+   - role 与 `?` 有序子序列恰差一个，且从较长 AST 删除该 leaf 后其余 AST 完全一致：
+     `leaf-added` 或 `leaf-removed`；
    - leaf-only slot 的内容整体替换：`whole-slot-replaced`。
 5. 上述差异均可解释为状态变化，pair 判为 `same-component`。
-6. 无法由上述规则解释，且未达到不同组件条件的复杂 leaf 变化判为 `manual-review`，
-   reason 为 `unresolved-leaf-variation`。
+6. 相同 leaf 的操作符或 container 归属发生变化，以及其他无法由上述规则解释、但未达到不同组件
+   条件的复杂 leaf 变化，判为 `manual-review`，reason 为 `unresolved-leaf-variation`。
 
 ### 多 Slot 与大集合规则
 

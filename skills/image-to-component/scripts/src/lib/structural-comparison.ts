@@ -156,6 +156,113 @@ function sameLeafRoles(left: LeafNode[], right: LeafNode[]): boolean {
   );
 }
 
+function sameSlotAst(
+  left: SlotExprNode,
+  right: SlotExprNode,
+  sameLeaf: (leftLeaf: LeafNode, rightLeaf: LeafNode) => boolean,
+): boolean {
+  if (left.kind === 'missing' || right.kind === 'missing') return left.kind === right.kind;
+  return sameSequenceAst(left, right, sameLeaf);
+}
+
+function sameSequenceAst(
+  left: SequenceNode,
+  right: SequenceNode,
+  sameLeaf: (leftLeaf: LeafNode, rightLeaf: LeafNode) => boolean,
+): boolean {
+  return (
+    left.rows.length === right.rows.length &&
+    left.rows.every((row, index) => {
+      const rightRow = right.rows[index];
+      return rightRow !== undefined && sameRowAst(row, rightRow, sameLeaf);
+    })
+  );
+}
+
+function sameRowAst(
+  left: RowNode,
+  right: RowNode,
+  sameLeaf: (leftLeaf: LeafNode, rightLeaf: LeafNode) => boolean,
+): boolean {
+  return (
+    left.atoms.length === right.atoms.length &&
+    left.atoms.every((atom, index) => {
+      const rightAtom = right.atoms[index];
+      if (rightAtom === undefined || atom.kind !== rightAtom.kind) return false;
+      if (atom.kind === 'leaf' && rightAtom.kind === 'leaf') return sameLeaf(atom, rightAtom);
+      if (atom.kind === 'container' && rightAtom.kind === 'container') {
+        return (
+          atom.role === rightAtom.role && sameSequenceAst(atom.child, rightAtom.child, sameLeaf)
+        );
+      }
+      return false;
+    })
+  );
+}
+
+function sameLeafLayout(left: SlotExprNode, right: SlotExprNode): boolean {
+  return sameSlotAst(left, right, () => true);
+}
+
+function sameCompleteAst(left: SlotExprNode, right: SlotExprNode): boolean {
+  return sameSlotAst(
+    left,
+    right,
+    (leftLeaf, rightLeaf) =>
+      leftLeaf.role === rightLeaf.role && leftLeaf.uncertain === rightLeaf.uncertain,
+  );
+}
+
+function removeLeafAt(node: SlotExprNode, targetIndex: number): SlotExprNode | null {
+  if (node.kind === 'missing') return null;
+
+  let leafIndex = 0;
+  let removed = false;
+
+  const removeFromSequence = (sequence: SequenceNode): SequenceNode | null => {
+    const rows: RowNode[] = [];
+
+    for (const row of sequence.rows) {
+      const atoms: AtomNode[] = [];
+
+      for (const atom of row.atoms) {
+        if (atom.kind === 'leaf') {
+          if (leafIndex === targetIndex) {
+            removed = true;
+          } else {
+            atoms.push(atom);
+          }
+          leafIndex += 1;
+          continue;
+        }
+
+        const child = removeFromSequence(atom.child);
+        if (child === null) return null;
+        atoms.push({ ...atom, child });
+      }
+
+      if (atoms.length > 0) rows.push({ kind: 'row', atoms });
+    }
+
+    return rows.length > 0 ? { kind: 'sequence', rows } : null;
+  };
+
+  const result = removeFromSequence(node);
+  return removed ? result : null;
+}
+
+function preservesLayoutAfterSingleLeafRemoval(
+  shorter: SlotExprNode,
+  longer: SlotExprNode,
+  longerLeafCount: number,
+): boolean {
+  for (let index = 0; index < longerLeafCount; index += 1) {
+    const candidate = removeLeafAt(longer, index);
+    if (candidate !== null && sameCompleteAst(shorter, candidate)) return true;
+  }
+  return false;
+}
+
 function isOrderedSubsequence(shorter: LeafNode[], longer: LeafNode[]): boolean {
   let longerIndex = 0;
   for (const leaf of shorter) {
@@ -201,14 +308,22 @@ function classifyLeafDiff(
   const leftLeaves = collectLeaves(leftAst);
   const rightLeaves = collectLeaves(rightAst);
 
-  if (sameLeaves(leftLeaves, rightLeaves)) return null;
-  if (sameLeafRoles(leftLeaves, rightLeaves)) return 'uncertain-leaf';
-  if (leftLeaves.length === rightLeaves.length) return 'leaf-swap';
+  if (sameLeafLayout(leftAst, rightAst)) {
+    if (sameLeaves(leftLeaves, rightLeaves)) return null;
+    if (sameLeafRoles(leftLeaves, rightLeaves)) return 'uncertain-leaf';
+    if (leftLeaves.length === rightLeaves.length) return 'leaf-swap';
+  }
 
   const leftIsShorter = leftLeaves.length < rightLeaves.length;
   const shorter = leftIsShorter ? leftLeaves : rightLeaves;
   const longer = leftIsShorter ? rightLeaves : leftLeaves;
-  if (longer.length - shorter.length === 1 && isOrderedSubsequence(shorter, longer)) {
+  const shorterAst = leftIsShorter ? leftAst : rightAst;
+  const longerAst = leftIsShorter ? rightAst : leftAst;
+  if (
+    longer.length - shorter.length === 1 &&
+    isOrderedSubsequence(shorter, longer) &&
+    preservesLayoutAfterSingleLeafRemoval(shorterAst, longerAst, longer.length)
+  ) {
     return leftIsShorter ? 'leaf-added' : 'leaf-removed';
   }
 

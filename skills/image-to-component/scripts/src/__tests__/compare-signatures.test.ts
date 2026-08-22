@@ -102,4 +102,22 @@ describe('compare-signatures process', () => {
       errors: ['input is not valid JSON'],
     });
   });
+
+  it('flushes schema validation JSON larger than the pipe buffer before exiting', () => {
+    const invalidImages = Array.from({ length: 5_000 }, () => ({
+      filename: '',
+      signature: { T: '-', M: '-', B: '-', O: '-', F: '-' },
+      notes: {},
+    }));
+    const run = spawnSync(process.execPath, ['--import', 'tsx', cli], {
+      input: JSON.stringify({ batches: [{ batch: 'invalid', images: invalidImages }] }),
+      encoding: 'utf8',
+    });
+
+    expect(run.status).toBe(1);
+    expect(run.stdout.length).toBeGreaterThan(65_536);
+    const output = JSON.parse(run.stdout) as { valid: boolean; errors: string[] };
+    expect(output.valid).toBe(false);
+    expect(output.errors).toHaveLength(5_000);
+  });
 });

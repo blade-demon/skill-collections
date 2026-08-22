@@ -86,6 +86,173 @@ describe('compareSignatures role and uncertainty boundaries', () => {
   });
 });
 
+describe('compareSignatures leaf layout contracts', () => {
+  it.each([
+    {
+      name: 'leaf swap',
+      left: 'card(title -> meta)',
+      right: 'card(meta -> title)',
+      decision: 'same-component',
+      reasonCodes: ['leaf-swap'],
+      roleDelta: 0,
+    },
+    {
+      name: 'leaf removal',
+      left: 'card(title -> meta)',
+      right: 'card(title)',
+      decision: 'same-component',
+      reasonCodes: ['leaf-removed'],
+      roleDelta: -1,
+    },
+    {
+      name: 'unresolved operator change',
+      left: 'card(title -> meta)',
+      right: 'card(title + meta)',
+      decision: 'manual-review',
+      reasonCodes: ['unresolved-leaf-variation'],
+      roleDelta: 0,
+    },
+  ] as const)('keeps the $name machine contract stable', (testCase) => {
+    const result = compareSignatures([
+      image('left.png', { M: testCase.left }),
+      image('right.png', { M: testCase.right }),
+    ]);
+
+    expect(result.decision).toBe(testCase.decision);
+    expect(result.reasonCodes).toEqual(testCase.reasonCodes);
+    expect(result.pairs[0]).toEqual({
+      left: 'left.png',
+      right: 'right.png',
+      decision: testCase.decision,
+      reasonCodes: testCase.reasonCodes,
+      slotDiffs: [
+        {
+          slot: 'M',
+          kind: testCase.reasonCodes[0],
+          left: testCase.left,
+          right: testCase.right,
+          roleDelta: testCase.roleDelta,
+        },
+      ],
+    });
+  });
+
+  it('requires manual review when existing leaves move between containers', () => {
+    const left = 'card(title -> meta) + form(action)';
+    const right = 'card(title) + form(meta -> action)';
+    const result = compareSignatures([
+      image('left.png', { M: left }),
+      image('right.png', { M: right }),
+    ]);
+
+    expect(result.decision).toBe('manual-review');
+    expect(result.reasonCodes).toEqual(['unresolved-leaf-variation']);
+    expect(result.pairs[0]).toEqual({
+      left: 'left.png',
+      right: 'right.png',
+      decision: 'manual-review',
+      reasonCodes: ['unresolved-leaf-variation'],
+      slotDiffs: [
+        {
+          slot: 'M',
+          kind: 'unresolved-leaf-variation',
+          left,
+          right,
+          roleDelta: 0,
+        },
+      ],
+    });
+  });
+
+  it('does not call a moved existing leaf plus one new leaf a pure addition', () => {
+    const left = 'card(title -> meta) + form(action)';
+    const right = 'card(title) + form(meta -> action -> hint)';
+    const result = compareSignatures([
+      image('left.png', { M: left }),
+      image('right.png', { M: right }),
+    ]);
+
+    expect(result.decision).toBe('manual-review');
+    expect(result.reasonCodes).toEqual(['unresolved-leaf-variation']);
+    expect(result.pairs[0]?.slotDiffs).toEqual([
+      {
+        slot: 'M',
+        kind: 'unresolved-leaf-variation',
+        left,
+        right,
+        roleDelta: 1,
+      },
+    ]);
+  });
+
+  it('reports unresolved changes in two slots with stable reason and slot order', () => {
+    const result = compareSignatures([
+      image('left.png', {
+        T: 'card(title -> meta)',
+        M: 'form(action -> hint)',
+      }),
+      image('right.png', {
+        T: 'card(title + meta)',
+        M: 'form(action + hint)',
+      }),
+    ]);
+
+    expect(result.decision).toBe('manual-review');
+    expect(result.reasonCodes).toEqual([
+      'manual-multi-slot-variation',
+      'unresolved-leaf-variation',
+    ]);
+    expect(result.pairs[0]?.reasonCodes).toEqual([
+      'manual-multi-slot-variation',
+      'unresolved-leaf-variation',
+    ]);
+    expect(result.pairs[0]?.slotDiffs).toEqual([
+      {
+        slot: 'T',
+        kind: 'unresolved-leaf-variation',
+        left: 'card(title -> meta)',
+        right: 'card(title + meta)',
+        roleDelta: 0,
+      },
+      {
+        slot: 'M',
+        kind: 'unresolved-leaf-variation',
+        left: 'form(action -> hint)',
+        right: 'form(action + hint)',
+        roleDelta: 0,
+      },
+    ]);
+  });
+
+  it('sorts explained pair reasons independently of slot traversal order', () => {
+    const result = compareSignatures([
+      image('left.png', {
+        T: 'card(title -> meta)',
+        M: 'form(action -> hint)',
+        F: '-',
+      }),
+      image('right.png', {
+        T: 'card(meta -> title)',
+        M: 'form(action)',
+        F: 'status',
+      }),
+    ]);
+
+    expect(result.pairs[0]?.reasonCodes).toEqual(['leaf-swap', 'leaf-removed', 'floating-variant']);
+    expect(
+      result.pairs[0]?.slotDiffs.map(({ slot, kind, roleDelta }) => ({
+        slot,
+        kind,
+        roleDelta,
+      })),
+    ).toEqual([
+      { slot: 'T', kind: 'leaf-swap', roleDelta: 0 },
+      { slot: 'M', kind: 'leaf-removed', roleDelta: -1 },
+      { slot: 'F', kind: 'floating-variant', roleDelta: 1 },
+    ]);
+  });
+});
+
 describe('compareSignatures collection rules', () => {
   it.each([
     ['A', caseA, 'same-component'],
