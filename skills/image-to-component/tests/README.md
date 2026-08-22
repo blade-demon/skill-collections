@@ -17,11 +17,19 @@
 | [case-2-fund-recommendation](case-2-fund-recommendation/) |      1 | 区块级列表：sparkline media、收藏 toggle、可变收益周期标签     |
 | [case-3-index-fund](case-3-index-fund/)                   |      1 | 含 tab 导航的区块：M 中 nav slot，每行双 action（申购 + 收藏） |
 
-## 覆盖缺口
+## 自动结构回归
 
-当前案例均为单截图 → 均判为独立组件。**同一组件多状态判断**（Step 6 状态 variant 逻辑）尚未覆盖。有真实多状态截图时补充案例。
+确定性 Step 6 比较器的自动回归运行：
 
-## 手动回归运行
+```bash
+npm run test:image
+```
+
+Case A–E 位于 `scripts/src/__tests__/fixtures/structural-comparison-cases.ts`。其中 Case A 自动覆盖同一组件的三种状态；Case B–E 覆盖容器拓扑差异、overlay 独立分组、单 leaf 增加，以及空状态与列表的身份边界。
+
+## 真实截图手动回归
+
+下列三个真实截图案例保留为手动回归。它们验证的是视觉子 agent 到结构 signature 的边界，以及 signature 进入后续 skeleton 流程的行为；它们不替代上面的确定性结构比较测试。
 
 对每个案例：
 

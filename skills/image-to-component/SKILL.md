@@ -51,6 +51,7 @@ description: 当用户指向 UI 截图或设计 mockup 图片目录，需要结�
 | -------------------------- | --------------------------------------------------------------------------------------------- |
 | 校验完整 signature 批次    | `echo '<json>' \| npm run validate-signature -- --batch batch-1 --expected-files a.png b.png` |
 | 校验 coarse signature 批次 | `echo '<json>' \| npm run validate-coarse -- --batch batch-1 --expected-files a.png b.png`    |
+| 比较完整 signature 集合    | `echo '<comparison input JSON>' \| npm run compare-signatures`                                |
 | 生成覆盖表                 | `echo '<json>' \| npm run coverage-table`                                                     |
 | 生成组件 skeleton          | `echo '<json>' \| npm run generate-skeleton`                                                  |
 
@@ -102,7 +103,21 @@ Step 6 前运行 `workflows/summarize-signatures.md`，为每张图输出自然�
 
 ### Step 6 —— 对比结构
 
-运行 `workflows/structural-comparison.md`。歧义结构 variant 用 `workflows/manual-review-exit.md`；冲突多图组用 `workflows/candidate-group-conflicts.md`。
+将全部已校验 batch 组装成 `{ "batches": [...] }` 后，先运行机械比较：
+
+```bash
+echo '<comparison input JSON>' | npm run compare-signatures
+```
+
+该命令输出 `{ "valid": true, "result": ... }`；仅当 `valid` 为 `true` 时使用 `result` 继续。`result.decision` 是 Step 6 的机械结果权威，按以下路径处理：
+
+- `different-components`：按组件/组继续；若与用户的“同一组件”声明冲突，先展示相关 `pairs[].slotDiffs` 与 reason codes，并等待用户选择强制合并、接受拆分或提供 corrected 图片。
+- `manual-review`：展示 `pairs[].slotDiffs` 与顶层和 pair 级 reason codes，然后运行 `workflows/manual-review-exit.md`。
+- `same-component`：继续 Image Connect。
+
+`result.overlayGroups` 始终独立处理，不改变基础 `decision`。完成上述 CLI 路由后，才执行 `workflows/candidate-group-conflicts.md` 的用户声明冲突检查和 candidate-group gate。
+
+详细机械规则见 `workflows/structural-comparison.md`。
 
 ### Step 7 —— Image Connect
 

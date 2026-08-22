@@ -1,5 +1,7 @@
 # Golden Signature 对比案例
 
+机器 fixture 位于 `scripts/src/__tests__/fixtures/structural-comparison-cases.ts`，由 `npm run test:image` 覆盖。语义判断发生变化时，必须同步修改 fixture、测试和本文档，确保示例与确定性黄金回归保持一致。
+
 这些示例使用 `protocols/subagent-return-format.md` 的结构化 JSON 形状。机械对比 `signature` 对象；不要要求子 agent 输出 markdown signature 块。
 
 ## Case A：二维码订单页
