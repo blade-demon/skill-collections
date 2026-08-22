@@ -32,16 +32,16 @@ role ratio **恰好 `0.5` 不触发**不同组件判断。
 
 对候选同一组件：
 
-| 差异                                  | 分类                                        |
-| ------------------------------------- | ------------------------------------------- |
-| Leaf role 互换，如 `hint` 到 `status` | 状态 variant                                |
-| 出现 leaf `?`                         | 状态 variant，不确定                        |
-| Leaf 增删且总数变化 <= 1              | 状态 variant                                |
-| 某 slot 的 leaf-only 内容被完全替换   | 状态 variant                                |
-| 未解释 leaf 变化跨 2+ 个不同 slot     | 结构 variant；`manual-multi-slot-variation` |
-| 容器内重复次数变化                    | 状态 variant，数据驱动                      |
+| 差异                                                    | 分类                                        |
+| ------------------------------------------------------- | ------------------------------------------- |
+| Leaf role 互换，如 `hint` 到 `status`                   | 状态 variant                                |
+| 出现 leaf `?`                                           | 状态 variant，不确定                        |
+| Leaf 增删：较短序列是较长序列的有序子序列，且长度恰差 1 | 状态 variant                                |
+| 某 slot 的 leaf-only 内容被完全替换                     | 状态 variant                                |
+| 未解释 leaf 变化跨 2+ 个不同 slot                       | 结构 variant；`manual-multi-slot-variation` |
+| 容器内重复次数变化                                      | 状态 variant，数据驱动                      |
 
-四张及以上图片同时出现 leaf 增删与 leaf-only 整体替换时，CLI 返回 `manual-mixed-large-set`，运行 `manual-review-exit.md`。
+仅当四张及以上图片同时出现 leaf 增删与 leaf-only 整体替换，且没有任何 `different-components` pair 时，CLI 才加入 `manual-mixed-large-set` 并运行 `manual-review-exit.md`。若存在任一 `different-components` pair，顶层决策保持 `different-components`，优先于该人工复核 reason。
 
 Overlay 处理：
 

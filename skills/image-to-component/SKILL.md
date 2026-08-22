@@ -111,7 +111,7 @@ echo '<comparison input JSON>' | npm run compare-signatures
 
 该命令输出 `{ "valid": true, "result": ... }`；仅当 `valid` 为 `true` 时使用 `result` 继续。`result.decision` 是 Step 6 的机械结果权威，按以下路径处理：
 
-- `different-components`：按组件/组继续；若与用户的“同一组件”声明冲突，先展示相关 `pairs[].slotDiffs` 与 reason codes，并等待用户选择强制合并、接受拆分或提供 corrected 图片。
+- `different-components`：按组件/组继续；若与用户的“同一组件”声明冲突，始终展示相关 reason codes。`pairs[].slotDiffs` 非空时展示它；若为空（例如 `role-count-threshold-exceeded` 在 leaf diff 前返回），改用 `result.skeletons` 与 Step 5 结构摘要展示左右结构差异，再等待用户选择强制合并、接受拆分或提供 corrected 图片。
 - `manual-review`：展示 `pairs[].slotDiffs` 与顶层和 pair 级 reason codes，然后运行 `workflows/manual-review-exit.md`。
 - `same-component`：继续 Image Connect。
 
