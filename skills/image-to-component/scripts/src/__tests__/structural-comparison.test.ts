@@ -172,11 +172,20 @@ describe('compareSignatures collection rules', () => {
 
   it('promotes one different pair to the overall decision', () => {
     const result = compareSignatures([
-      image('idle.png', { M: 'form(form -> action)' }),
-      image('error.png', { M: 'form(form -> hint -> action)' }),
-      image('list.png', { M: 'list(card(title))' }),
+      image('small.png', { T: 'title', M: 'meta', B: 'action + hint' }),
+      image('medium.png', { T: 'title -> meta', M: 'media -> status', B: 'action + hint' }),
+      image('large.png', {
+        T: 'title -> meta -> brand',
+        M: 'media -> status -> hint',
+        B: 'action -> hint -> status',
+      }),
     ]);
     expect(result.pairs).toHaveLength(3);
+    const differentPairs = result.pairs.filter((pair) => pair.decision === 'different-components');
+    expect(differentPairs).toHaveLength(1);
+    expect(differentPairs.map(({ left, right }) => [left, right])).toEqual([
+      ['small.png', 'large.png'],
+    ]);
     expect(result.decision).toBe('different-components');
   });
 });
