@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateSlotExpr } from '../lib/slot-parser.js';
+import { parseSlotExpr, validateSlotExpr } from '../lib/slot-parser.js';
 
 describe('validateSlotExpr', () => {
   it('accepts "-"', () => {
@@ -55,5 +55,70 @@ describe('validateSlotExpr', () => {
   it('rejects forbidden operator: "title | meta"', () => {
     const result = validateSlotExpr('title | meta');
     expect(result.valid).toBe(false);
+  });
+});
+
+describe('parseSlotExpr', () => {
+  it('parses missing slot into a missing node', () => {
+    expect(parseSlotExpr('-')).toEqual({ valid: true, ast: { kind: 'missing' } });
+  });
+
+  it('parses nested sequence and row topology into AST', () => {
+    expect(parseSlotExpr('card(media + card(title -> meta?) -> status)')).toEqual({
+      valid: true,
+      ast: {
+        kind: 'sequence',
+        rows: [
+          {
+            kind: 'row',
+            atoms: [
+              {
+                kind: 'container',
+                role: 'card',
+                child: {
+                  kind: 'sequence',
+                  rows: [
+                    {
+                      kind: 'row',
+                      atoms: [
+                        { kind: 'leaf', role: 'media', uncertain: false },
+                        {
+                          kind: 'container',
+                          role: 'card',
+                          child: {
+                            kind: 'sequence',
+                            rows: [
+                              {
+                                kind: 'row',
+                                atoms: [{ kind: 'leaf', role: 'title', uncertain: false }],
+                              },
+                              {
+                                kind: 'row',
+                                atoms: [{ kind: 'leaf', role: 'meta', uncertain: true }],
+                              },
+                            ],
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      kind: 'row',
+                      atoms: [{ kind: 'leaf', role: 'status', uncertain: false }],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it('returns the same syntax error through parse and validate APIs', () => {
+    const parsed = parseSlotExpr('status(error)');
+    const validated = validateSlotExpr('status(error)');
+    expect(parsed.valid).toBe(false);
+    expect(validated).toEqual(parsed.valid ? { valid: true } : parsed);
   });
 });
